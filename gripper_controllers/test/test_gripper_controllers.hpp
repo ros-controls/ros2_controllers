@@ -15,28 +15,33 @@
 #ifndef TEST_GRIPPER_CONTROLLERS_HPP_
 #define TEST_GRIPPER_CONTROLLERS_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "gmock/gmock.h"
 
 #include "gripper_controllers/gripper_action_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 using hardware_interface::CommandInterface;
+using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::StateInterface;
 
+namespace
+{
 // subclassing and friending so we can access member variables
+template <const char * HardwareInterface>
 class FriendGripperController
-: public gripper_action_controller::GripperActionController<HW_IF_POSITION>
+: public gripper_action_controller::GripperActionController<HardwareInterface>
 {
   FRIEND_TEST(GripperControllerTest, CommandSuccessTest);
 };
 
+template <typename T>
 class GripperControllerTest : public ::testing::Test
 {
 public:
@@ -50,7 +55,7 @@ public:
   void SetUpHandles();
 
 protected:
-  std::unique_ptr<FriendGripperController> controller_;
+  std::unique_ptr<FriendGripperController<T::value>> controller_;
 
   // dummy joint state values used for tests
   const std::string joint_name_ = "joint1";
@@ -59,7 +64,9 @@ protected:
 
   StateInterface joint_1_pos_state_{joint_name_, HW_IF_POSITION, &joint_states_[0]};
   StateInterface joint_1_vel_state_{joint_name_, HW_IF_VELOCITY, &joint_states_[1]};
-  CommandInterface joint_1_pos_cmd_{joint_name_, HW_IF_POSITION, &joint_commands_[0]};
+  CommandInterface joint_1_cmd_{joint_name_, T::value, &joint_commands_[0]};
 };
+
+}  // anonymous namespace
 
 #endif  // TEST_GRIPPER_CONTROLLERS_HPP_

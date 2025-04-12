@@ -1,0 +1,12 @@
+test_range_sensor_broadcaster:
+  ros__parameters:
+    # Setting mendatory parameters
+    sensor_name: "range_sensor"
+    frame_id: "range_sensor_frame"
+
+    # Setting parameters with changed default value to check those are used
+    radiation_type: 1
+    field_of_view: 0.1
+    min_range: 0.10
+    max_range: 7.0
+    variance: 1.0

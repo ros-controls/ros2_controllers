@@ -53,7 +53,7 @@ const std::unordered_map<InterpolationMethod, std::string> InterpolationMethodMa
   // Default
   else
   {
-    RCLCPP_INFO_STREAM(
+    RCLCPP_INFO(
       LOGGER,
       "No interpolation method parameter was given. Using the default, VARIABLE_DEGREE_SPLINE.");
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;

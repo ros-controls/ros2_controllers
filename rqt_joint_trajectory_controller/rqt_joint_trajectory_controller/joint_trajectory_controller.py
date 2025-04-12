@@ -29,7 +29,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .utils import ControllerLister, ControllerManagerLister
 from .double_editor import DoubleEditor
-from .joint_limits_urdf import get_joint_limits
+from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
 from .update_combo import update_combo
 
 # TODO:
@@ -80,8 +80,8 @@ class JointTrajectoryController(Plugin):
     the following requisites:
         - The controller type contains the C{JointTrajectoryController}
         substring, e.g., C{position_controllers/JointTrajectoryController}
-        - The controller exposes the C{command} and C{state} topics in its
-        ROS interface.
+        - The controller exposes the C{command} and C{controller_state} topics
+        in its ROS interface.
 
     Additionally, there must be a URDF loaded with a valid joint limit
     specification, namely position (when applicable) and velocity limits.
@@ -170,6 +170,9 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.timeout.connect(self._update_jtc_list)
         self._update_jtc_list_timer.start()
 
+        # subscriptions
+        subscribe_to_robot_description(self._node)
+
         # Signal connections
         w = self._widget
         w.enable_button.toggled.connect(self._on_jtc_enabled)
@@ -211,9 +214,9 @@ class JointTrajectoryController(Plugin):
             try:
                 idx = jtc_list.index(jtc_name)
                 jtc_combo.setCurrentIndex(idx)
-            except (ValueError):
+            except ValueError:
                 pass
-        except (ValueError):
+        except ValueError:
             pass
 
     # def trigger_configuration(self):
@@ -235,7 +238,11 @@ class JointTrajectoryController(Plugin):
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
         if running_jtc and not self._robot_joint_limits:
-            self._robot_joint_limits = get_joint_limits(self._node)  # Lazy evaluation
+            self._robot_joint_limits = {}
+            for jtc_info in running_jtc:
+                self._robot_joint_limits.update(
+                    get_joint_limits(self._node, _jtc_joint_names(jtc_info))
+                )
         valid_jtc = []
         if self._robot_joint_limits:
             for jtc_info in running_jtc:
@@ -252,10 +259,10 @@ class JointTrajectoryController(Plugin):
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
-    def _on_joint_state_change(self, actual_pos):
-        assert len(actual_pos) == len(self._joint_pos)
-        for name in actual_pos.keys():
-            self._joint_pos[name]["position"] = actual_pos[name]
+    def _on_joint_state_change(self, current_pos):
+        assert len(current_pos) == len(self._joint_pos)
+        for name in current_pos.keys():
+            self._joint_pos[name]["position"] = current_pos[name]
 
     def _on_cm_change(self, cm_ns):
         self._cm_ns = cm_ns
@@ -289,11 +296,11 @@ class JointTrajectoryController(Plugin):
         self._speed_scaling_widget.setEnabled(val)
 
         if val:
-            # Widgets send desired position commands to controller
+            # Widgets send reference position commands to controller
             self._update_act_pos_timer.stop()
             self._update_cmd_timer.start()
         else:
-            # Controller updates widgets with actual position
+            # Controller updates widgets with feedback position
             self._update_cmd_timer.stop()
             self._update_act_pos_timer.start()
 
@@ -332,7 +339,7 @@ class JointTrajectoryController(Plugin):
 
         # Setup ROS interfaces
         jtc_ns = _resolve_controller_ns(self._cm_ns, self._jtc_name)
-        state_topic = jtc_ns + "/state"
+        state_topic = jtc_ns + "/controller_state"
         cmd_topic = jtc_ns + "/joint_trajectory"
         self._state_sub = self._node.create_subscription(
             JointTrajectoryControllerState, state_topic, self._state_cb, 1
@@ -404,12 +411,12 @@ class JointTrajectoryController(Plugin):
             self._executor = None
 
     def _state_cb(self, msg):
-        actual_pos = {}
+        current_pos = {}
         for i in range(len(msg.joint_names)):
             joint_name = msg.joint_names[i]
-            joint_pos = msg.actual.positions[i]
-            actual_pos[joint_name] = joint_pos
-        self.jointStateChanged.emit(actual_pos)
+            joint_pos = msg.feedback.positions[i]
+            current_pos[joint_name] = joint_pos
+        self.jointStateChanged.emit(current_pos)
 
     def _update_single_cmd_cb(self, val, name):
         self._joint_pos[name]["command"] = val
@@ -424,7 +431,7 @@ class JointTrajectoryController(Plugin):
             cmd = pos
             try:
                 cmd = self._joint_pos[name]["command"]
-            except (KeyError):
+            except KeyError:
                 pass
             max_vel = self._robot_joint_limits[name]["max_velocity"]
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
@@ -442,7 +449,7 @@ class JointTrajectoryController(Plugin):
             try:
                 joint_pos = self._joint_pos[joint_name]["position"]
                 joint_widgets[id].setValue(joint_pos)
-            except (KeyError):
+            except KeyError:
                 pass  # Can happen when first connected to controller
 
     def _joint_widgets(self):  # TODO: Cache instead of compute every time?
@@ -454,14 +461,12 @@ class JointTrajectoryController(Plugin):
 
 
 def _jtc_joint_names(jtc_info):
-    # NOTE: We assume that there is at least one hardware interface that
-    # claims resources (there should be), and the resource list is fetched
-    # from the first available interface
 
     joint_names = []
-    for interface in jtc_info.claimed_interfaces:
-        name = interface.split("/")[0]
-        joint_names.append(name)
+    for interface in jtc_info.required_state_interfaces:
+        name = interface.split("/")[-2]
+        if name not in joint_names:
+            joint_names.append(name)
 
     return joint_names
 

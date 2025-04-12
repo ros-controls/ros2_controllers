@@ -2,6 +2,139 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
+* Contributors: Wiktor Bajor
+
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+
+4.18.0 (2024-12-19)
+-------------------
+* Add missing plugins to ros2_controllers dependencies (`#1413 <https://github.com/ros-controls/ros2_controllers/issues/1413>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.17.0 (2024-12-07)
+-------------------
+* Add Mecanum Drive Controller (`#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_)
+* Gpio command controller (`#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Wiktor Bajor
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+
+4.11.0 (2024-07-09)
+-------------------
+
+4.10.0 (2024-07-01)
+-------------------
+
+4.9.0 (2024-06-05)
+------------------
+* Add custom rosdoc2 config for ros2_controllers metapackage (`#1100 <https://github.com/ros-controls/ros2_controllers/issues/1100>`_)
+* Contributors: Christoph Fröhlich
+
+4.8.0 (2024-05-14)
+------------------
+
+4.7.0 (2024-03-22)
+------------------
+
+4.6.0 (2024-02-12)
+------------------
+
+4.5.0 (2024-01-31)
+------------------
+
+4.4.0 (2024-01-11)
+------------------
+
+4.3.0 (2024-01-08)
+------------------
+
+4.2.0 (2023-12-12)
+------------------
+* 🚀 Add PID controller 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/issues/434>`_)
+* Contributors: Dr. Denis
+
+4.1.0 (2023-12-01)
+------------------
+
+4.0.0 (2023-11-21)
+------------------
+
+3.17.0 (2023-10-31)
+-------------------
+
+3.16.0 (2023-09-20)
+-------------------
+
+3.15.0 (2023-09-11)
+-------------------
+* add a broadcaster for range sensor (`#725 <https://github.com/ros-controls/ros2_controllers/issues/725>`_)
+* Contributors: flochre
+
+3.14.0 (2023-08-16)
+-------------------
+
+3.13.0 (2023-08-04)
+-------------------
+
+3.12.0 (2023-07-18)
+-------------------
+
+3.11.0 (2023-06-24)
+-------------------
+
+3.10.1 (2023-06-06)
+-------------------
+
+3.10.0 (2023-06-04)
+-------------------
+
+3.9.0 (2023-05-28)
+------------------
+* Steering odometry library and controllers (`#484 <https://github.com/ros-controls/ros2_controllers/issues/484>`_)
+* Contributors: Tomislav Petković
+
+3.8.0 (2023-05-14)
+------------------
+
+3.7.0 (2023-05-02)
+------------------
+
+3.6.0 (2023-04-29)
+------------------
+
+3.5.0 (2023-04-14)
+------------------
+
 3.4.0 (2023-04-02)
 ------------------
 

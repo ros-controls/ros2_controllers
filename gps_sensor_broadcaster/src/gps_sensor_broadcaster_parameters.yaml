@@ -1,0 +1,32 @@
+gps_sensor_broadcaster:
+  sensor_name: {
+    type: string,
+    default_value: "",
+    description: "Defines sensor name used as prefix for its interfaces.
+    Interface names are: ``<sensor_name>/orientation.x, ..., <sensor_name>/angular_velocity.x, ...,
+    <sensor_name>/linear_acceleration.x.``",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  frame_id: {
+    type: string,
+    default_value: "",
+    description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  static_position_covariance: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Static position covariance.",
+    validation: {
+      fixed_size<>: [9],
+    }
+  }
+  read_covariance_from_interface: {
+    type: bool,
+    default_value: False,
+    description: "Read covariance from state interface",
+  }

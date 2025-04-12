@@ -10,5 +10,5 @@ ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 2
 DerivePointerAlignment: false
 PointerAlignment: Middle
-ReflowComments: false
+ReflowComments: true
 IncludeBlocks: Preserve

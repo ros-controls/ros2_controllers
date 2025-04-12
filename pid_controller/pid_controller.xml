@@ -1,0 +1,8 @@
+<library path="pid_controller">
+  <class name="pid_controller/PidController"
+         type="pid_controller::PidController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    PidController ros2_control controller.
+  </description>
+  </class>
+</library>

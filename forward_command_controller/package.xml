@@ -1,14 +1,25 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>forward_command_controller</name>
-  <version>3.4.0</version>
+  <version>4.23.0</version>
   <description>Generic controller for forwarding commands.</description>
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="jordan.palacios@pal-robotics.com">Jordan Palacios</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
 
   <license>Apache License 2.0</license>
 
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
+  <author email="jordan.palacios@pal-robotics.com">Jordan Palacios</author>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>backward_ros</depend>
   <depend>controller_interface</depend>
@@ -22,6 +33,7 @@
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>

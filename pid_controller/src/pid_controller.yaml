@@ -1,0 +1,96 @@
+pid_controller:
+  dof_names: {
+    type: string_array,
+    default_value: [],
+    description: "Specifies dof_names or axes used by the controller. If 'reference_and_state_dof_names' parameter is defined, then only command dof names are defined with this parameter.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+  reference_and_state_dof_names: {
+    type: string_array,
+    default_value: [],
+    description: "(optional) Specifies dof_names or axes for getting reference and reading states. This parameter is only relevant when state dof names are different then command dof names, i.e., when a following controller is used.",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  command_interface: {
+    type: string,
+    default_value: "",
+    description: "Name of the interface used by the controller for writing commands to the hardware.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+    }
+  }
+  reference_and_state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Name of the interfaces used by the controller getting hardware states and reference commands. The second interface should be the derivative of the first.",
+    read_only: true,
+    validation: {
+      not_empty<>: null,
+      size_gt<>: 0,
+      size_lt<>: 3,
+    }
+  }
+  use_external_measured_states: {
+    type: bool,
+    default_value: false,
+    description: "Use external states from a topic instead from state interfaces."
+  }
+  gains:
+    __map_dof_names:
+      p: {
+        type: double,
+        default_value: 0.0,
+        description: "Proportional gain for PID"
+      }
+      i: {
+        type: double,
+        default_value: 0.0,
+        description: "Integral gain for PID"
+      }
+      d: {
+        type: double,
+        default_value: 0.0,
+        description: "Derivative gain for PID"
+      }
+      antiwindup: {
+        type: bool,
+        default_value: false,
+        description: "Antiwindup functionality. When set to true, limits
+        the integral error to prevent windup; otherwise, constrains the
+        integral contribution to the control output. i_clamp_max and
+        i_clamp_min are applied in both scenarios."
+      }
+      i_clamp_max: {
+        type: double,
+        default_value: 0.0,
+        description: "Upper integral clamp."
+      }
+      i_clamp_min: {
+        type: double,
+        default_value: 0.0,
+        description: "Lower integral clamp."
+      }
+      feedforward_gain: {
+        type: double,
+        default_value: 0.0,
+        description: "Gain for the feed-forward part."
+      }
+      angle_wraparound: {
+        type: bool,
+        default_value: false,
+        description: "For joints that wrap around (i.e., are continuous).
+          Normalizes position-error to -pi to pi."
+      }
+      save_i_term: {
+        type: bool,
+        default_value: true,
+        description: "Indicating if integral term is retained after re-activation"
+      }

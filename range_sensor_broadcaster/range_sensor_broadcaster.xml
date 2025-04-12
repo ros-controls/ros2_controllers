@@ -1,0 +1,8 @@
+<library path="range_sensor_broadcaster">
+  <class name="range_sensor_broadcaster/RangeSensorBroadcaster"
+         type="range_sensor_broadcaster::RangeSensorBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+	  This controller publishes the readings of an Range sensor as sensor_msgs/Range message.
+  </description>
+  </class>
+</library>

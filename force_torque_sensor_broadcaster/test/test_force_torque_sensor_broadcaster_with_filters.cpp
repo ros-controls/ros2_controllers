@@ -53,7 +53,8 @@ void ForceTorqueSensorBroadcasterWithFilterTest::TearDown() { fts_broadcaster_.r
 
 void ForceTorqueSensorBroadcasterWithFilterTest::SetUpFTSBroadcaster(const std::string & name)
 {
-  const auto result = fts_broadcaster_->init(name);
+  const auto result =
+    fts_broadcaster_->init(name, "", 0, "", fts_broadcaster_->define_custom_node_options());
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;

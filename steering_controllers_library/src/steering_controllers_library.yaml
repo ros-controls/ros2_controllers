@@ -1,0 +1,121 @@
+steering_controllers_library:
+  reference_timeout: {
+    type: double,
+    default_value: 1.0,
+    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
+  }
+
+  front_steering: {
+    type: bool,
+    default_value: true,
+    description: "Is the steering on the front of the robot?",
+    read_only: true,
+  }
+
+  rear_wheels_names: {
+    type: string_array,
+    description: "Names of rear wheel joints.",
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  front_wheels_names: {
+    type: string_array,
+    description: "Names of front wheel joints.",
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  rear_wheels_state_names: {
+    type: string_array,
+    description: "(Optional) Names of rear wheel joints to read states from. If not set joint names from 'rear_wheels_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  front_wheels_state_names: {
+    type: string_array,
+    description: "(Optional) Names of front wheel joints to read states from. If not set joint names from 'front_wheels_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "Choose if open-loop or not (feedback) is used for odometry calculation.",
+    read_only: false,
+  }
+
+  reduce_wheel_speed_until_steering_reached: {
+    type: bool,
+    default_value: false,
+    description: "Reduce wheel speed until the steering angle has been reached.",
+    read_only: false,
+  }
+
+  velocity_rolling_window_size: {
+    type: int,
+    default_value: 10,
+    description: "The number of velocity samples to average together to compute the odometry twist.linear.x and twist.angular.z velocities.",
+    read_only: false,
+  }
+
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Base frame_id set to value of base_frame_id.",
+    read_only: false,
+  }
+
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description: "Odometry frame_id set to value of odom_frame_id.",
+    read_only: false,
+  }
+
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "Publishing to tf is enabled or disabled?",
+    read_only: false,
+  }
+
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
+    description: "diagonal values of twist covariance matrix.",
+    read_only: false,
+  }
+
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
+    description: "diagonal values of pose covariance matrix.",
+    read_only: false,
+  }
+
+  position_feedback: {
+    type: bool,
+    default_value: false,
+    description: "Choice of feedback type, if position_feedback is false then ``HW_IF_VELOCITY`` is taken as interface type, if
+    position_feedback is true then ``HW_IF_POSITION`` is taken as interface type",
+    read_only: false,
+  }

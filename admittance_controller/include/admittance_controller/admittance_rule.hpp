@@ -18,23 +18,16 @@
 #define ADMITTANCE_CONTROLLER__ADMITTANCE_RULE_HPP_
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <map>
+
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "admittance_controller/admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
-#include "control_toolbox/filters.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "geometry_msgs/msg/wrench_stamped.hpp"
+#include "controller_interface/controller_interface_base.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "tf2_eigen/tf2_eigen.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_kdl/tf2_kdl.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace admittance_controller
@@ -43,13 +36,17 @@ struct AdmittanceTransforms
 {
   // transformation from force torque sensor frame to base link frame at reference joint angles
   Eigen::Isometry3d ref_base_ft_;
-  // transformation from force torque sensor frame to base link frame at reference + admittance offset joint angles
+  // transformation from force torque sensor frame to base link frame at reference + admittance
+  // offset joint angles
   Eigen::Isometry3d base_ft_;
-  // transformation from control frame to base link frame at reference + admittance offset joint angles
+  // transformation from control frame to base link frame at reference + admittance offset joint
+  // angles
   Eigen::Isometry3d base_control_;
-  // transformation from end effector frame to base link frame at reference + admittance offset joint angles
+  // transformation from end effector frame to base link frame at reference + admittance offset
+  // joint angles
   Eigen::Isometry3d base_tip_;
-  // transformation from center of gravity frame to base link frame at reference + admittance offset joint angles
+  // transformation from center of gravity frame to base link frame at reference + admittance offset
+  // joint angles
   Eigen::Isometry3d base_cog_;
   // transformation from world frame to base link frame
   Eigen::Isometry3d world_base_;
@@ -66,10 +63,11 @@ struct AdmittanceState
     mass_inv.setZero();
     stiffness.setZero();
     selected_axes.setZero();
-    current_joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_pos = Eigen::VectorXd::Zero(num_joints);
-    joint_vel = Eigen::VectorXd::Zero(num_joints);
-    joint_acc = Eigen::VectorXd::Zero(num_joints);
+    auto idx = static_cast<Eigen::Index>(num_joints);
+    current_joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_pos = Eigen::VectorXd::Zero(idx);
+    joint_vel = Eigen::VectorXd::Zero(idx);
+    joint_acc = Eigen::VectorXd::Zero(idx);
   }
 
   Eigen::VectorXd current_joint_pos;
@@ -105,26 +103,27 @@ public:
 
   /// Configure admittance rule memory using number of joints.
   controller_interface::return_type configure(
-    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint);
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node, const size_t num_joint,
+    const std::string & robot_description);
 
   /// Reset all values back to default
   controller_interface::return_type reset(const size_t num_joints);
 
   /**
-   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If the transform does
-   * not exist in the kinematics model, then TF will be used for lookup. The return value is true if all transformation
-   * are calculated without an error
-   * \param[in] current_joint_state current joint state of the robot
-   * \param[in] reference_joint_state input joint state reference
-   * \param[out] success true if no calls to the kinematics interface fail
+   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If
+   * the transform does not exist in the kinematics model, then TF will be used for lookup. The
+   * return value is true if all transformation are calculated without an error \param[in]
+   * current_joint_state current joint state of the robot \param[in] reference_joint_state input
+   * joint state reference \param[out] success true if no calls to the kinematics interface fail
    */
   bool get_all_transforms(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state);
 
   /**
-   * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent Eigen field
-   * members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes, damping_) are also updated
+   * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent
+   * Eigen field members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes,
+   * damping_) are also updated
    */
   void apply_parameters_update();
 
@@ -136,7 +135,8 @@ public:
    * \param[in] measured_wrench most recent measured wrench from force torque sensor
    * \param[in] reference_joint_state input joint state reference
    * \param[in] period time in seconds since last controller update
-   * \param[out] desired_joint_state joint state reference after the admittance offset is applied to the input reference
+   * \param[out] desired_joint_state joint state reference after the admittance offset is applied to
+   * the input reference
    */
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -148,7 +148,8 @@ public:
   /**
    * Set fields of `state_message` from current admittance controller state.
    *
-   * \param[out] state_message message containing target position/vel/accel, wrench, and actual robot state, among other things
+   * \param[out] state_message message containing target position/vel/accel, wrench, and actual
+   * robot state, among other things
    */
   const control_msgs::msg::AdmittanceControllerState & get_controller_state();
 
@@ -159,22 +160,21 @@ public:
 
 protected:
   /**
-   * Calculates the admittance rule from given the robot's current joint angles. The admittance controller state input
-   * is updated with the new calculated values. A boolean value is returned indicating if any of the kinematics plugin
-   * calls failed.
-   * \param[in] admittance_state contains all the information needed to calculate the admittance offset
-   * \param[in] dt controller period
+   * Calculates the admittance rule from given the robot's current joint angles. The admittance
+   * controller state input is updated with the new calculated values. A boolean value is returned
+   * indicating if any of the kinematics plugin calls failed. \param[in] admittance_state contains
+   * all the information needed to calculate the admittance offset \param[in] dt controller period
    * \param[out] success true if no calls to the kinematics interface fail
    */
   bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
   /**
-   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement `measured_wrench`,
-   * the sensor to base frame rotation `sensor_world_rot`, and the center of gravity frame to base frame rotation `cog_world_rot`.
-   * The `wrench_world_` estimate includes gravity compensation
-   * \param[in] measured_wrench  most recent measured wrench from force torque sensor
-   * \param[in] sensor_world_rot rotation matrix from world frame to sensor frame
-   * \param[in] cog_world_rot rotation matrix from world frame to center of gravity frame
+   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement
+   * `measured_wrench`, the sensor to base frame rotation `sensor_world_rot`, and the center of
+   * gravity frame to base frame rotation `cog_world_rot`. The `wrench_world_` estimate includes
+   * gravity compensation \param[in] measured_wrench  most recent measured wrench from force torque
+   * sensor \param[in] sensor_world_rot rotation matrix from world frame to sensor frame \param[in]
+   * cog_world_rot rotation matrix from world frame to center of gravity frame
    */
   void process_wrench_measurements(
     const geometry_msgs::msg::Wrench & measured_wrench,

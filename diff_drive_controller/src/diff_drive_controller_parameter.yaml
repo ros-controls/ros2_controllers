@@ -2,27 +2,34 @@ diff_drive_controller:
   left_wheel_names: {
     type: string_array,
     default_value: [],
-    description: "Link names of the left side wheels",
+    description: "Names of the left side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
   }
   right_wheel_names: {
     type: string_array,
     default_value: [],
-    description: "Link names of the right side wheels",
+    description: "Names of the right side wheels' joints",
+    validation: {
+      not_empty<>: []
+    }
   }
   wheel_separation: {
     type: double,
     default_value: 0.0,
     description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
-  }
-  wheels_per_side: {
-    type: int,
-    default_value: 0,
-    description: "Number of wheels on each wide of the robot. This is important to take the wheels slip into account when multiple wheels on each side are present. If there are more wheels then control signals for each side, you should enter number or control signals. For example, Husky has two wheels on each side, but they use one control signal, in this case '1' is the correct value of the parameter.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_radius: {
     type: double,
     default_value: 0.0,
     description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    validation: {
+      gt<>: [0.0]
+    }
   }
   wheel_separation_multiplier: {
     type: double,
@@ -38,6 +45,16 @@ diff_drive_controller:
     type: double,
     default_value: 1.0,
     description: "Correction factor when radius of right wheels differs from the nominal value in ``wheel_radius`` parameter.",
+  }
+  tf_frame_prefix_enable: {
+    type: bool,
+    default_value: true,
+    description:  "Enables or disables appending tf_prefix to tf frame id's.",
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
   }
   odom_frame_id: {
     type: string,
@@ -62,7 +79,7 @@ diff_drive_controller:
   open_loop: {
     type: bool,
     default_value: false,
-    description: "If set to false the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
   }
   position_feedback: {
     type: bool,
@@ -77,7 +94,7 @@ diff_drive_controller:
   cmd_vel_timeout: {
     type: double,
     default_value: 0.5, # seconds
-    description: "Timeout after which input command on ``cmd_vel`` topic is considered staled.",
+    description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
   }
   publish_limited_velocity: {
     type: bool,
@@ -89,11 +106,6 @@ diff_drive_controller:
     default_value: 10,
     description: "Size of the rolling window for calculation of mean velocity use in odometry.",
   }
-  use_stamped_vel: {
-    type: bool,
-    default_value: true,
-    description: "Use stamp from input velocity message to calculate how old the command actually is.",
-  }
   publish_rate: {
     type: double,
     default_value: 50.0, # Hz
@@ -103,75 +115,163 @@ diff_drive_controller:
     x:
       has_velocity_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_jerk_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       max_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }
       max_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "Maximum acceleration in forward direction.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in forward direction.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }
       min_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "deprecated, use max_deceleration"
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       max_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }
   angular:
     z:
       has_velocity_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_acceleration_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       has_jerk_limits: {
         type: bool,
-        default_value: false,
+        default_value: true,
+        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
       }
       max_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_velocity: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }
       max_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "Maximum acceleration in positive direction.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in positive direction.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }
       min_acceleration: {
         type: double,
         default_value: .NAN,
+        description: "deprecated, use max_deceleration"
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in negative direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in negative direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       max_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
       }
       min_jerk: {
         type: double,
         default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
       }

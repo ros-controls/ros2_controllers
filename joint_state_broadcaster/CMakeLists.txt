@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(joint_state_broadcaster LANGUAGES CXX)
+project(joint_state_broadcaster)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   builtin_interfaces
@@ -15,6 +15,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rcutils
   realtime_tools
   sensor_msgs
+  urdf
 )
 
 find_package(ament_cmake REQUIRED)
@@ -39,9 +40,6 @@ target_link_libraries(joint_state_broadcaster PUBLIC
   joint_state_broadcaster_parameters
 )
 ament_target_dependencies(joint_state_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(joint_state_broadcaster PRIVATE "JOINT_STATE_BROADCASTER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface joint_state_plugin.xml)
 
 if(BUILD_TESTING)
@@ -71,6 +69,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_joint_state_broadcaster
     hardware_interface
+    ros2_control_test_assets
   )
 endif()
 

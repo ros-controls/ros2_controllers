@@ -36,7 +36,7 @@ def update_combo(combo, new_vals):
         selected_id = -1
         try:
             selected_id = new_vals.index(selected_val)
-        except (ValueError):
+        except ValueError:
             combo.setCurrentIndex(-1)
 
         # Re-populate items
