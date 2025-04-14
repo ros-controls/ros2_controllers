@@ -101,7 +101,7 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
 
   // set command statically
   const double TEST_LINEAR_VELOCITY_X = 1.5;
-  const float TEST_STEERING_ANGLE = 0.575875;
+  const float TEST_STEERING_ANGLE = static_cast<float>(0.575875);
 
   std::shared_ptr<ControllerAckermannReferenceMsg> msg =
     std::make_shared<ControllerAckermannReferenceMsg>();
