@@ -268,7 +268,8 @@ protected:
     msg = *received_msg;
   }
 
-  void publish_commands(const float linear = 0.1, const float angular = 0.2)
+  void publish_commands(
+    const float linear = static_cast<float>(0.1), const float angular = static_cast<float>(0.2))
   {
     auto wait_for_topic = [&](const auto topic_name)
     {
