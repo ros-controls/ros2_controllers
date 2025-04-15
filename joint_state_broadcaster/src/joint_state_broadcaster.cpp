@@ -361,6 +361,22 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
     }
     dynamic_joint_state_msg.interface_values.emplace_back(if_value);
   }
+
+  // save dynamic joint state data
+  dynamic_joint_states_data_.clear();
+  const auto & msg = realtime_dynamic_joint_state_publisher_->msg_;
+  for (auto ji = 0u; ji < msg.joint_names.size(); ++ji)
+  {
+    dynamic_joint_states_data_.push_back(std::vector<const double *>());
+
+    const auto & name = msg.joint_names[ji];
+
+    for (auto ii = 0u; ii < msg.interface_values[ji].interface_names.size(); ++ii)
+    {
+      const auto & interface_name = msg.interface_values[ji].interface_names[ii];
+      dynamic_joint_states_data_[ji].push_back(&name_if_value_mapping_[name][interface_name]);
+    }
+  }
 }
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
@@ -422,21 +438,13 @@ controller_interface::return_type JointStateBroadcaster::update(
 
   if (realtime_dynamic_joint_state_publisher_ && realtime_dynamic_joint_state_publisher_->trylock())
   {
-    auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
-    dynamic_joint_state_msg.header.stamp = time;
-    for (size_t joint_index = 0; joint_index < dynamic_joint_state_msg.joint_names.size();
-         ++joint_index)
+    auto & msg = realtime_dynamic_joint_state_publisher_->msg_;
+    msg.header.stamp = time;
+    for (auto ji = 0u; ji < msg.joint_names.size(); ++ji)
     {
-      const auto & name = dynamic_joint_state_msg.joint_names[joint_index];
-      for (size_t interface_index = 0;
-           interface_index <
-           dynamic_joint_state_msg.interface_values[joint_index].interface_names.size();
-           ++interface_index)
+      for (auto ii = 0u; ii < msg.interface_values[ji].interface_names.size(); ++ii)
       {
-        const auto & interface_name =
-          dynamic_joint_state_msg.interface_values[joint_index].interface_names[interface_index];
-        dynamic_joint_state_msg.interface_values[joint_index].values[interface_index] =
-          name_if_value_mapping_[name][interface_name];
+        msg.interface_values[ji].values[ii] = *dynamic_joint_states_data_[ji][ii];
       }
     }
     realtime_dynamic_joint_state_publisher_->unlockAndPublish();

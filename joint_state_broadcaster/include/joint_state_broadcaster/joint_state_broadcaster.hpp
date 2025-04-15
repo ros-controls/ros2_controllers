@@ -130,6 +130,8 @@ protected:
   };
 
   std::vector<JointStateData> joint_states_data_;
+
+  std::vector<std::vector<const double *>> dynamic_joint_states_data_;
 };
 
 }  // namespace joint_state_broadcaster
