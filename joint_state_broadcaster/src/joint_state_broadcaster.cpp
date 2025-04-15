@@ -353,11 +353,18 @@ controller_interface::return_type JointStateBroadcaster::update(
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] =
-      state_interface.get_value();
-    RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
-      state_interface.get_value());
+
+    /// @note should we limit the number of retries here? does it even
+    /// make sense to try to get the latest value on every iteration?
+    const auto & opt = state_interface.get_optional();
+    if (opt.has_value())
+    {
+      name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] = opt.value();
+
+      /// @warning calling this for each interface is too costly, even if it ends up not logging
+      // RCLCPP_DEBUG(get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
+      // opt.value());
+    }
   }
 
   if (realtime_joint_state_publisher_ && realtime_joint_state_publisher_->trylock())
