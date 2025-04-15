@@ -116,6 +116,20 @@ protected:
   bool is_model_loaded_ = false;
 
   std::vector<std::string> mapped_joint_states_;
+
+  struct JointStateData
+  {
+    JointStateData(const double & position, const double & velocity, const double & effort)
+    : position_(position), velocity_(velocity), effort_(effort)
+    {
+    }
+
+    const double & position_;
+    const double & velocity_;
+    const double & effort_;
+  };
+
+  std::vector<JointStateData> joint_states_data_;
 };
 
 }  // namespace joint_state_broadcaster

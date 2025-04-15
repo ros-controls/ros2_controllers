@@ -290,10 +290,9 @@ bool JointStateBroadcaster::init_joint_data()
 
 void JointStateBroadcaster::init_auxiliary_data()
 {
+  // save the mapping of state interfaces to joint states
   mapped_joint_states_.clear();
   mapped_joint_states_.resize(state_interfaces_.size());
-
-  // save the mapping of state interfaces to joint states
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     std::string interface_name = state_interfaces_[i].get_interface_name();
@@ -318,6 +317,30 @@ void JointStateBroadcaster::init_joint_state_msg()
   joint_state_msg.position.resize(num_joints, kUninitializedValue);
   joint_state_msg.velocity.resize(num_joints, kUninitializedValue);
   joint_state_msg.effort.resize(num_joints, kUninitializedValue);
+
+  // save joint state data
+  auto get_address =
+    [&](const std::string & joint_name, const std::string & interface_name) -> const double &
+  {
+    const auto & interfaces_and_values = name_if_value_mapping_.at(joint_name);
+    const auto interface_and_value = interfaces_and_values.find(interface_name);
+    if (interface_and_value != interfaces_and_values.cend())
+    {
+      return interface_and_value->second;
+    }
+    else
+    {
+      return kUninitializedValue;
+    }
+  };
+
+  joint_states_data_.clear();
+  for (auto i = 0u; i < joint_names_.size(); ++i)
+  {
+    joint_states_data_.push_back(JointStateData(
+      get_address(joint_names_[i], HW_IF_POSITION), get_address(joint_names_[i], HW_IF_VELOCITY),
+      get_address(joint_names_[i], HW_IF_EFFORT)));
+  }
 }
 
 void JointStateBroadcaster::init_dynamic_joint_state_msg()
@@ -390,11 +413,9 @@ controller_interface::return_type JointStateBroadcaster::update(
     // update joint state message and dynamic joint state message
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
-      joint_state_msg.position[i] =
-        get_value(name_if_value_mapping_, joint_names_[i], HW_IF_POSITION);
-      joint_state_msg.velocity[i] =
-        get_value(name_if_value_mapping_, joint_names_[i], HW_IF_VELOCITY);
-      joint_state_msg.effort[i] = get_value(name_if_value_mapping_, joint_names_[i], HW_IF_EFFORT);
+      joint_state_msg.position[i] = joint_states_data_[i].position_;
+      joint_state_msg.velocity[i] = joint_states_data_[i].velocity_;
+      joint_state_msg.effort[i] = joint_states_data_[i].effort_;
     }
     realtime_joint_state_publisher_->unlockAndPublish();
   }
