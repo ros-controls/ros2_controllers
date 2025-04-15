@@ -86,6 +86,7 @@ public:
 
 protected:
   bool init_joint_data();
+  void init_auxiliary_data();
   void init_joint_state_msg();
   void init_dynamic_joint_state_msg();
   bool use_all_available_interfaces() const;
@@ -113,6 +114,8 @@ protected:
 
   urdf::Model model_;
   bool is_model_loaded_ = false;
+
+  std::vector<std::string> mapped_joint_states_;
 };
 
 }  // namespace joint_state_broadcaster

@@ -195,6 +195,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
     return CallbackReturn::ERROR;
   }
 
+  init_auxiliary_data();
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
 
@@ -287,6 +288,23 @@ bool JointStateBroadcaster::init_joint_data()
   return true;
 }
 
+void JointStateBroadcaster::init_auxiliary_data()
+{
+  mapped_joint_states_.clear();
+  mapped_joint_states_.resize(state_interfaces_.size());
+
+  // save the mapping of state interfaces to joint states
+  for (auto i = 0u; i < state_interfaces_.size(); ++i)
+  {
+    std::string interface_name = state_interfaces_[i].get_interface_name();
+    if (map_interface_to_joint_state_.count(interface_name) > 0)
+    {
+      interface_name = map_interface_to_joint_state_[interface_name];
+    }
+    mapped_joint_states_[i] = interface_name;
+  }
+}
+
 void JointStateBroadcaster::init_joint_state_msg()
 {
   const size_t num_joints = joint_names_.size();
@@ -346,23 +364,19 @@ double get_value(
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  for (const auto & state_interface : state_interfaces_)
+  for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    std::string interface_name = state_interface.get_interface_name();
-    if (map_interface_to_joint_state_.count(interface_name) > 0)
-    {
-      interface_name = map_interface_to_joint_state_[interface_name];
-    }
+    const auto & interface_name = mapped_joint_states_[i];
 
     /// @note should we limit the number of retries here? does it even
     /// make sense to try to get the latest value on every iteration?
-    const auto & opt = state_interface.get_optional();
+    const auto & opt = state_interfaces_[i].get_optional();
     if (opt.has_value())
     {
-      name_if_value_mapping_[state_interface.get_prefix_name()][interface_name] = opt.value();
+      name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name] = opt.value();
 
       /// @warning calling this for each interface is too costly, even if it ends up not logging
-      // RCLCPP_DEBUG(get_node()->get_logger(), "%s: %f\n", state_interface.get_name().c_str(),
+      // RCLCPP_DEBUG(get_node()->get_logger(), "%s: %f\n", state_interfaces_[i].get_name().c_str(),
       // opt.value());
     }
   }
