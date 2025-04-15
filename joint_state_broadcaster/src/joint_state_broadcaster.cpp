@@ -291,8 +291,7 @@ bool JointStateBroadcaster::init_joint_data()
 void JointStateBroadcaster::init_auxiliary_data()
 {
   // save the mapping of state interfaces to joint states
-  mapped_joint_states_.clear();
-  mapped_joint_states_.resize(state_interfaces_.size());
+  mapped_values_.clear();
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     std::string interface_name = state_interfaces_[i].get_interface_name();
@@ -300,7 +299,8 @@ void JointStateBroadcaster::init_auxiliary_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    mapped_joint_states_[i] = interface_name;
+    mapped_values_.push_back(
+      &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name]);
   }
 }
 
@@ -405,14 +405,12 @@ controller_interface::return_type JointStateBroadcaster::update(
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    const auto & interface_name = mapped_joint_states_[i];
-
     /// @note should we limit the number of retries here? does it even
     /// make sense to try to get the latest value on every iteration?
     const auto & opt = state_interfaces_[i].get_optional();
     if (opt.has_value())
     {
-      name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name] = opt.value();
+      *mapped_values_[i] = opt.value();
 
       /// @warning calling this for each interface is too costly, even if it ends up not logging
       // RCLCPP_DEBUG(get_node()->get_logger(), "%s: %f\n", state_interfaces_[i].get_name().c_str(),

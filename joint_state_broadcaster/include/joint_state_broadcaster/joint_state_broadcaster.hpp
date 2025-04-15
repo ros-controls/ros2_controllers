@@ -115,7 +115,7 @@ protected:
   urdf::Model model_;
   bool is_model_loaded_ = false;
 
-  std::vector<std::string> mapped_joint_states_;
+  std::vector<double *> mapped_values_;
 
   struct JointStateData
   {
