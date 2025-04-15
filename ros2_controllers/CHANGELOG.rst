@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
+* Contributors: Wiktor Bajor
+
 4.22.0 (2025-03-17)
 -------------------
 

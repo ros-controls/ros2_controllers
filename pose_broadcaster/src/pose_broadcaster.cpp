@@ -78,10 +78,21 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
   params_ = param_listener_->get_params();
 
   pose_sensor_ = std::make_unique<semantic_components::PoseSensor>(params_.pose_name);
-  tf_publish_period_ =
-    params_.tf.publish_rate == 0.0
-      ? std::nullopt
-      : std::optional{rclcpp::Duration::from_seconds(1.0 / params_.tf.publish_rate)};
+
+  // TODO(amronos): Remove this check and its contents
+  if (params_.tf.publish_rate == 0.0)
+  {
+    tf_publish_period_ = std::nullopt;
+  }
+  else
+  {
+    tf_publish_period_ =
+      std::optional{rclcpp::Duration::from_seconds(1.0 / params_.tf.publish_rate)};
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[deprecated] tf.publish_rate parameter is deprecated, please set the value to 0.0. "
+      "The publish rate of TF messages should not be limited.");
+  }
 
   try
   {
@@ -170,6 +181,7 @@ controller_interface::return_type PoseBroadcaster::update(
       pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z,
       pose.orientation.w);
   }
+  // TODO(amronos): Remove publish rate functionality
   else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
   {
     bool do_publish = false;
