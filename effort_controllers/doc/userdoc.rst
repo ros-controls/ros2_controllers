@@ -82,7 +82,7 @@ and can be implemented in C++ as
 The role of the inverse dynamics solver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To facilitate the implementation of these controllers, the robot-agnostic `inverse dynamics solver <https://index.ros.org/r/inverse_dynamics_solver/github-unisa-acg-inverse-dynamics-solver/>`_ can retrieve the dynamics terms with
+To facilitate the implementation of these controllers, the robot-agnostic `inverse dynamics solver <https://index.ros.org/r/inverse_dynamics_solver/github-unisa-acg-inverse-dynamics-solver/>`_ plugin can retrieve the dynamics terms with
 
 .. code-block:: cpp
 
