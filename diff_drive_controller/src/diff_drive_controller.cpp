@@ -167,9 +167,19 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     double right_feedback_mean = 0.0;
     for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
     {
-      const double left_feedback = registered_left_wheel_handles_[index].feedback.get().get_value();
-      const double right_feedback =
-        registered_right_wheel_handles_[index].feedback.get().get_value();
+      const auto left_feedback_op =
+        registered_left_wheel_handles_[index].feedback.get().get_optional();
+      const auto right_feedback_op =
+        registered_right_wheel_handles_[index].feedback.get().get_optional();
+
+      if (!left_feedback_op.has_value() || !right_feedback_op.has_value())
+      {
+        RCLCPP_DEBUG(logger, "Unable to retrieve the data from the left or right wheels feedback!");
+        return controller_interface::return_type::OK;
+      }
+
+      const double left_feedback = left_feedback_op.value();
+      const double right_feedback = right_feedback_op.value();
 
       if (std::isnan(left_feedback) || std::isnan(right_feedback))
       {
@@ -278,11 +288,17 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
 
   // Set wheels velocities:
+  bool set_command_result = true;
   for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
   {
-    registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
-    registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
+    set_command_result &=
+      registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
+    set_command_result &=
+      registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
   }
+
+  RCLCPP_DEBUG_EXPRESSION(
+    logger, !set_command_result, "Unable to set the command to one of the command handles!");
 
   return controller_interface::return_type::OK;
 }
@@ -699,13 +715,15 @@ DiffDriveController::on_export_reference_interfaces()
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[0]));
+  reference_interfaces.push_back(
+    hardware_interface::CommandInterface(
+      get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[0]));
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[1]));
+  reference_interfaces.push_back(
+    hardware_interface::CommandInterface(
+      get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[1]));
 
   return reference_interfaces;
 }

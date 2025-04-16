@@ -391,9 +391,10 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   {
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
-      reference_interfaces.push_back(hardware_interface::CommandInterface(
-        std::string(get_node()->get_name()) + "/" + dof_name, interface,
-        &reference_interfaces_[index]));
+      reference_interfaces.push_back(
+        hardware_interface::CommandInterface(
+          std::string(get_node()->get_name()) + "/" + dof_name, interface,
+          &reference_interfaces_[index]));
       ++index;
     }
   }
@@ -414,9 +415,10 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
   {
     for (const auto & dof_name : reference_and_state_dof_names_)
     {
-      state_interfaces.push_back(hardware_interface::StateInterface(
-        std::string(get_node()->get_name()) + "/" + dof_name, interface,
-        &state_interfaces_values_[index]));
+      state_interfaces.push_back(
+        hardware_interface::StateInterface(
+          std::string(get_node()->get_name()) + "/" + dof_name, interface,
+          &state_interfaces_values_[index]));
       ++index;
     }
   }

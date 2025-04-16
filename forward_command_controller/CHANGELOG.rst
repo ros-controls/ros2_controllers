@@ -2,6 +2,16 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich
+
+4.22.0 (2025-03-17)
+-------------------
+* [ForwardCommandController] Fix the duplicate command interface types when reconfiguring the controller (`#1568 <https://github.com/ros-controls/ros2_controllers/issues/1568>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.21.0 (2025-03-01)
 -------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
