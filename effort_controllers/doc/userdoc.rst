@@ -71,7 +71,7 @@ Similarly, the inverse dynamics control law is the following
 
 .. math::
 
-  \tau = B(q) (K_p \tilde q + K_d \dot{\tilde q} + \ddot q_d) + C(q, \dot q) \dot q + f(\dot q) + g(q)
+  \tau = B(q) \left( K_p \tilde q + K_d \dot{\tilde q} + \ddot q_d \right) + C(q, \dot q) \dot q + f(\dot q) + g(q)
 
 and can be implemented in C++ as
 
