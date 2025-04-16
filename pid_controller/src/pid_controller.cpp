@@ -477,7 +477,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   // check for any parameter updates
-  update_parameters();
+  param_listener_->try_get_params(params_);
 
   // Update feedback either from external measured state or from state interfaces
   if (params_.use_external_measured_states)
