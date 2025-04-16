@@ -17,7 +17,7 @@ joint_trajectory_controller:
         * JTC is used in a controller chain where command and state interfaces don't have same names.
 
         * If the number of command joints is smaller than the degrees-of-freedom. For example to track the state and error of passive joints. ``command_joints`` must then be a subset of ``joints``.",
-    read_only: true,
+    read_only: false, # should be set to true after configuration of the controller
     validation: {
       unique<>: null,
     }
@@ -72,11 +72,12 @@ joint_trajectory_controller:
       Therefore it is important set command interfaces to NaN (i.e., ``std::numeric_limits<double>::quiet_NaN()``) or state values when the hardware is started.\n",
     read_only: true,
   }
-  allow_integration_in_goal_trajectories: {
-    type: bool,
-    default_value: false,
-    description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
-  }
+  allow_integration_in_goal_trajectories:
+    {
+      type: bool,
+      default_value: false,
+      description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
+    }
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
     default_value: true,
@@ -91,78 +92,61 @@ joint_trajectory_controller:
       gt_eq: [0.1]
     }
   }
-  interpolation_method: {
-    type: string,
-    default_value: "splines",
-    description: "The type of interpolation to use, if any",
-    read_only: true,
-    validation: {
-      one_of<>: [["splines", "none"]],
+  interpolation_method:
+    {
+      type: string,
+      default_value: "splines",
+      description: "The type of interpolation to use, if any",
+      read_only: true,
+      validation: { one_of<>: [["splines", "none"]] },
     }
-  }
-  allow_nonzero_velocity_at_trajectory_end: {
-    type: bool,
-    default_value: false,
-    description: "If false, the last velocity point has to be zero or the goal will be rejected",
-  }
+  allow_nonzero_velocity_at_trajectory_end:
+    {
+      type: bool,
+      default_value: false,
+      description: "If false, the last velocity point has to be zero or the goal will be rejected",
+    }
   cmd_timeout: {
-    type: double,
-    default_value: 0.0, # seconds
-    description: "Timeout after which the input command is considered stale.
-     Timeout is counted from the end of the trajectory (the last point).
-     ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
-     If zero, timeout is deactivated",
-  }
-  gains:
-    __map_joints:
-      p: {
-        type: double,
-        default_value: 0.0,
-        description: "Proportional gain :math:`k_p` for PID"
-      }
-      i: {
-        type: double,
-        default_value: 0.0,
-        description: "Integral gain :math:`k_i` for PID"
-      }
-      d: {
-        type: double,
-        default_value: 0.0,
-        description: "Derivative gain :math:`k_d` for PID"
-      }
-      i_clamp: {
-        type: double,
-        default_value: 0.0,
-        description: "Integral clamp. Symmetrical in both positive and negative direction."
-      }
-      ff_velocity_scale: {
-        type: double,
-        default_value: 0.0,
-        description: "Feed-forward scaling :math:`k_{ff}` of velocity"
-      }
+      type: double,
+      default_value: 0.0, # seconds
+      description: "Timeout after which the input command is considered stale.
+        Timeout is counted from the end of the trajectory (the last point).
+        ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
+        If zero, timeout is deactivated",
+    }
+  controller_plugin:
+    {
+      type: string,
+      default_value: "joint_trajectory_controller_plugins::PidTrajectoryPlugin",
+      description: "Type of the plugin for the trajectory controller",
+      read_only: true,
+    }
   constraints:
-    stopped_velocity_tolerance: {
-      type: double,
-      default_value: 0.01,
-      description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
-    }
-    goal_time: {
-      type: double,
-      default_value: 0.0,
-      description: "Time tolerance for achieving trajectory goal before or after commanded time.
-        If set to zero, the controller will wait a potentially infinite amount of time.",
-      validation: {
-        gt_eq: [0.0],
+    stopped_velocity_tolerance:
+      {
+        type: double,
+        default_value: 0.01,
+        description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
       }
-    }
+    goal_time:
+      {
+        type: double,
+        default_value: 0.0,
+        description:
+          "Time tolerance for achieving trajectory goal before or after commanded time.
+          If set to zero, the controller will wait a potentially infinite amount of time.",
+        validation: { gt_eq: [0.0] },
+      }
     __map_joints:
-      trajectory: {
-        type: double,
-        default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance during movement.",
-      }
-      goal: {
-        type: double,
-        default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance at the goal position.",
-      }
+      trajectory:
+        {
+          type: double,
+          default_value: 0.0,
+          description: "Per-joint trajectory offset tolerance during movement.",
+        }
+      goal:
+        {
+          type: double,
+          default_value: 0.0,
+          description: "Per-joint trajectory offset tolerance at the goal position.",
+        }
