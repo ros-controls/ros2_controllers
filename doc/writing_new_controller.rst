@@ -139,9 +139,14 @@ That's it! Enjoy writing great controllers!
 
 
 Useful External References
----------------------------
+--------------------------
 
 - `Templates and scripts for generating controllers shell <https://rtw.b-robotized.com/master/use-cases/ros2_control/setup_controller.html>`_
 
 
   .. NOTE:: The script is currently only recommended to use with Humble, not compatible with the API from Jazzy and onwards.
+
+- Writing a new dynamics-based controller
+
+   When writing dynamics-based controllers, e.g. gravity compensation or inverse dynamics controllers, the manipulator's dynamic matrices can be retrieved using the `inverse_dynamics_solver plugin <https://index.ros.org/r/inverse_dynamics_solver/github-unisa-acg-inverse-dynamics-solver/>`_.
+   For more information, please refer to the :ref:`effort-based controllers <effort_controllers_userdoc>` documentation.
