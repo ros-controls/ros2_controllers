@@ -59,7 +59,11 @@ controller_interface::CallbackReturn JointGroupVelocityController::on_deactivate
   // stop all joints
   for (auto & command_interface : command_interfaces_)
   {
-    command_interface.set_value(0.0);
+    if (!command_interface.set_value(0.0))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Error while setting command interface to value 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
+    }
   }
 
   return ret;
