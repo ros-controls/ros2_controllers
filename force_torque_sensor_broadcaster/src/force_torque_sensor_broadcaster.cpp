@@ -102,7 +102,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // TODO (xjia) remove the logging after resolving
+  // TODO (juliaj) remove the logging after resolving
   // https://github.com/ros-controls/ros2_controllers/issues/1574
   RCLCPP_INFO(get_node()->get_logger(), "Locking realtime publisher");
   realtime_publisher_->lock();

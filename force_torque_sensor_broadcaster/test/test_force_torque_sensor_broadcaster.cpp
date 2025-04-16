@@ -50,7 +50,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
 
 void ForceTorqueSensorBroadcasterTest::TearDown()
 {
-  // TODO (xjia) remove the logging after resolving
+  // TODO (juliaj) remove the logging after resolving
   // https://github.com/ros-controls/ros2_controllers/issues/1574
   RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "In TearDown");
   fts_broadcaster_.reset(nullptr);
@@ -72,7 +72,7 @@ void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
   state_ifs.emplace_back(fts_torque_z_);
 
   fts_broadcaster_->assign_interfaces({}, std::move(state_ifs));
-  // TODO (xjia) remove the logging after resolving
+  // TODO (juliaj) remove the logging after resolving
   // https://github.com/ros-controls/ros2_controllers/issues/1574
   RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "FTSBroadcaster setup done");
 }
@@ -189,7 +189,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
 {
   SetUpFTSBroadcaster();
 
-  // TODO (xjia) remove the logging after resolving
+  // TODO (juliaj) remove the logging after resolving
   // https://github.com/ros-controls/ros2_controllers/issues/1574
   RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "Setting up interface names");
 
