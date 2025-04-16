@@ -102,11 +102,19 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // TODO (xjia) remove the logging after resolving
+  // https://github.com/ros-controls/ros2_controllers/issues/1574
+  RCLCPP_INFO(get_node()->get_logger(), "Locking realtime publisher");
   realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_publisher_->unlock();
+  RCLCPP_INFO(get_node()->get_logger(), "Locked realtime publisher");
 
-  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
+  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+
+  RCLCPP_INFO(get_node()->get_logger(), "Unlocking realtime publisher");
+  realtime_publisher_->unlock();
+  RCLCPP_INFO(get_node()->get_logger(), "Unlocked realtime publisher");
+
+  RCLCPP_INFO(get_node()->get_logger(), "Configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
