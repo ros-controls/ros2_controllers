@@ -405,9 +405,8 @@ controller_interface::return_type JointStateBroadcaster::update(
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    /// @note should we limit the number of retries here? does it even
-    /// make sense to try to get the latest value on every iteration?
-    const auto & opt = state_interfaces_[i].get_optional();
+    // no retries, just try to get the latest value once
+    const auto & opt = state_interfaces_[i].get_optional(0);
     if (opt.has_value())
     {
       *mapped_values_[i] = opt.value();
