@@ -411,10 +411,6 @@ controller_interface::return_type JointStateBroadcaster::update(
     if (opt.has_value())
     {
       *mapped_values_[i] = opt.value();
-
-      /// @warning calling this for each interface is too costly, even if it ends up not logging
-      // RCLCPP_DEBUG(get_node()->get_logger(), "%s: %f\n", state_interfaces_[i].get_name().c_str(),
-      // opt.value());
     }
   }
 
