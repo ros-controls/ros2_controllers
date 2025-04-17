@@ -59,19 +59,19 @@ For instance, the PD Control with Gravity Compensation law is the following
 
 .. math::
 
-  \tau = K_p \tilde q + K_d \dot{\tilde q} + g(q)
+  \mathbf\tau = \mathbf K_p \tilde{\mathbf q} - \mathbf K_d \dot{\mathbf q} + \mathbf g(\mathbf q)
 
 and can be implemented in C++ as
 
 .. code-block:: cpp
 
-  torque_output = K_p * position_error + K_d * velocity_error + g;
+  torque_output = K_p * position_error - K_d * velocity + g;
 
 Similarly, the inverse dynamics control law is the following
 
 .. math::
 
-  \tau = B(q) \left( K_p \tilde q + K_d \dot{\tilde q} + \ddot q_d \right) + C(q, \dot q) \dot q + f(\dot q) + g(q)
+  \mathbf\tau = \mathbf B(\mathbf q) \left( \mathbf K_p \tilde{\mathbf q} + \mathbf K_d \dot{\tilde{\mathbf q}} + \ddot{\mathbf q}_d \right) + \mathbf C(\mathbf q, \dot{\mathbf q}) \dot{\mathbf q} + \mathbf f(\dot{\mathbf q}) + \mathbf g(\mathbf q)
 
 and can be implemented in C++ as
 
