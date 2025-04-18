@@ -146,4 +146,4 @@ Useful External References
 
   .. NOTE:: The script is currently only recommended to use with Humble, not compatible with the API from Jazzy and onwards.
 
-- :ref:`Writing a new dynamics-based controller <effort_controllers_userdoc>`: when writing dynamics-based controllers, e.g. gravity compensation or inverse dynamics controllers, the manipulator's dynamic matrices can be retrieved using the `inverse_dynamics_solver plugin <https://index.ros.org/r/inverse_dynamics_solver/github-unisa-acg-inverse-dynamics-solver/>`_.
+- :ref:`Writing a new model-based controller <effort_controllers_userdoc>`: when writing model-based controllers, e.g. gravity compensation or inverse dynamics controllers, the manipulator's dynamic matrices can be retrieved using the `inverse_dynamics_solver plugin <https://index.ros.org/r/inverse_dynamics_solver/github-unisa-acg-inverse-dynamics-solver/>`_.
