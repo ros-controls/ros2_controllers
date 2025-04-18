@@ -46,10 +46,10 @@ An example parameter file is given here
       joints:
         - slider_to_cart
 
-Dynamics-based controllers
+Model-based controllers
 --------------------------
 
-Dynamics-based controllers' control laws often require computing the manipulator's dynamics terms, e.g. inertia, coriolis, friction, and gravity contributions.
+Model-based controllers' control laws often require computing the manipulator's dynamics terms, e.g. inertia, coriolis, friction, and gravity contributions.
 Notable examples are `gravity-compensation PD controllers or inverse dynamics controllers <https://doi.org/10.1007/978-1-84628-642-1>`_.
 
 Control laws
@@ -59,7 +59,7 @@ For instance, the PD Control with Gravity Compensation law is the following
 
 .. math::
 
-  \mathbf\tau = \mathbf K_p \tilde{\mathbf q} - \mathbf K_d \dot{\mathbf q} + \mathbf g(\mathbf q)
+  \boldsymbol\tau = \boldsymbol K_p \tilde{\boldsymbol q} - \boldsymbol K_d \dot{\boldsymbol q} + \boldsymbol g(\boldsymbol q)
 
 and can be implemented in C++ as
 
@@ -71,7 +71,7 @@ Similarly, the inverse dynamics control law is the following
 
 .. math::
 
-  \mathbf\tau = \mathbf B(\mathbf q) \left( \mathbf K_p \tilde{\mathbf q} + \mathbf K_d \dot{\tilde{\mathbf q}} + \ddot{\mathbf q}_d \right) + \mathbf C(\mathbf q, \dot{\mathbf q}) \dot{\mathbf q} + \mathbf f(\dot{\mathbf q}) + \mathbf g(\mathbf q)
+  \boldsymbol\tau = \boldsymbol B(\boldsymbol q) \left( \boldsymbol K_p \tilde{\boldsymbol q} + \boldsymbol K_d \dot{\tilde{\boldsymbol q}} + \ddot{\boldsymbol q}_d \right) + \boldsymbol C(\boldsymbol q, \dot{\boldsymbol q}) \dot{\boldsymbol q} + \boldsymbol f(\dot{\boldsymbol q}) + \boldsymbol g(\boldsymbol q)
 
 and can be implemented in C++ as
 
