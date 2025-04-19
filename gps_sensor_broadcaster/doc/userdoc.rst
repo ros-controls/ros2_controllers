@@ -11,7 +11,7 @@ The controller is a wrapper around ``GPSSensor`` semantic component (see ``contr
 
 Parameters
 ^^^^^^^^^^^
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gps_sensor_broadcaster/src/gps_sensor_broadcaster_params.yaml>`_ contains descriptions for all the parameters used by the controller.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gps_sensor_broadcaster/src/gps_sensor_broadcaster_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
 List of parameters
 =========================
