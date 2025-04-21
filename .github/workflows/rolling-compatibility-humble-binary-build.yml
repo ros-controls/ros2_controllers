@@ -46,5 +46,7 @@ jobs:
     with:
       ros_distro: humble
       ros_repo: testing
-      upstream_workspace: ros2_controllers.rolling.repos
+      upstream_workspace: |
+        ros2_controllers-not-released.humble.repos
+        ros2_controllers.rolling.repos
       ref_for_scheduled_build: master
