@@ -942,6 +942,119 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
     controller_interface::return_type::OK);
 }
 
+TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
+{
+  const auto result = state_broadcaster_->init(
+    "joint_state_broadcaster", "", 0, "", state_broadcaster_->define_custom_node_options());
+  ASSERT_EQ(result, controller_interface::return_type::OK);
+
+  custom_joint_value_ = 12.34;
+
+  // build our own test interfaces: robot has ~500 state interfaces
+  for (auto joint = 1u; joint < 30; ++joint)
+  {
+    const auto joint_name = "joint_" + std::to_string(joint);
+
+    // standard
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "position", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "velocity", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "effort", &custom_joint_value_});
+
+    // non standard
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "mode", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "absolute_position", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "acceleration", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "current", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "torque", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "force", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "temperature_board", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "temperature_motor", &custom_joint_value_});
+
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "position.kd", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "position.ki", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "position.kp", &custom_joint_value_});
+
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "velocity.kd", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "velocity.ki", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "velocity.kp", &custom_joint_value_});
+
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "current.kd", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "current.ki", &custom_joint_value_});
+    test_interfaces_.emplace_back(
+      hardware_interface::StateInterface{joint_name, "current.kp", &custom_joint_value_});
+  }
+
+  RCLCPP_INFO(
+    state_broadcaster_->get_node()->get_logger(), "Number of test interfaces: %lu",
+    test_interfaces_.size());
+
+  std::vector<LoanedStateInterface> state_interfaces;
+  for (const auto & tif : test_interfaces_)
+  {
+    state_interfaces.emplace_back(tif);
+  }
+
+  state_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
+
+  auto node_state = state_broadcaster_->get_node()->configure();
+  node_state = state_broadcaster_->get_node()->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  if (!realtime_tools::configure_sched_fifo(50))
+  {
+    RCLCPP_WARN(
+      state_broadcaster_->get_node()->get_logger(),
+      "Could not enable FIFO RT scheduling policy: with error number <%i>(%s)", errno,
+      strerror(errno));
+  }
+
+  constexpr auto kNumSamples = 10000u;
+  std::vector<int64_t> measures;
+  for (auto i = 0u; i < kNumSamples; ++i)
+  {
+    const auto now = std::chrono::steady_clock::now();
+
+    ASSERT_EQ(
+      state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+
+    // print time taken
+    const auto elapsed = std::chrono::steady_clock::now() - now;
+    const auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
+
+    measures.push_back(elapsed_us.count());
+  }
+
+  const auto average =
+    std::accumulate(measures.begin(), measures.end(), 0.0) / static_cast<double>(measures.size());
+  const auto variance = std::accumulate(
+                          measures.begin(), measures.end(), 0.0, [average](double accum, double x)
+                          { return accum + (x - average) * (x - average); }) /
+                        static_cast<double>(measures.size());
+
+  RCLCPP_INFO(state_broadcaster_->get_node()->get_logger(), "Average update time: %lf us", average);
+  RCLCPP_INFO(state_broadcaster_->get_node()->get_logger(), "Variance: %lf us", variance);
+}
+
 void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
