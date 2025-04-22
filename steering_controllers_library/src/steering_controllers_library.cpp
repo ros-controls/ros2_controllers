@@ -157,6 +157,9 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   }
   // END OF DEPRECATED
 
+  // call method from implementations, sets odometry type
+  configure_odometry();
+
   // Check if the number of traction joints is correct
   if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
   {
@@ -228,8 +231,6 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 
   odometry_.set_velocity_rolling_window_size(
     static_cast<size_t>(params_.velocity_rolling_window_size));
-
-  configure_odometry();
 
   if (!params_.traction_joints_state_names.empty())
   {
