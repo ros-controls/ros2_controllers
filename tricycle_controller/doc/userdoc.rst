@@ -10,12 +10,7 @@ Controller for mobile robots with a single double-actuated wheel, including trac
 Input for control are robot base_link twist commands which are translated to traction and steering
 commands for the tricycle drive base. Odometry is computed from hardware feedback and published.
 
-Velocity commands
------------------
-
-The controller works with a velocity twist from which it extracts
-the x component of the linear velocity and the z component of the angular velocity.
-Velocities on other components are ignored.
+For an introduction to mobile robot kinematics and the nomenclature used here, see :ref:`mobile_robot_kinematics`.
 
 
 Other features
@@ -25,6 +20,16 @@ Other features
     Odometry publishing
     Velocity, acceleration and jerk limits
     Automatic stop after command timeout
+
+ROS 2 Interfaces
+------------------------
+
+Subscribers
+,,,,,,,,,,,,
+
+~/cmd_vel [geometry_msgs/msg/TwistStamped]
+  Velocity command for the controller. The controller extracts the x component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
+
 
 Parameters
 --------------

@@ -18,11 +18,11 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 
+#include <cmath>
 #include <tuple>
 #include <vector>
 
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include <rclcpp/time.hpp>
 
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
@@ -36,6 +36,9 @@ namespace steering_odometry
 const unsigned int BICYCLE_CONFIG = 0;
 const unsigned int TRICYCLE_CONFIG = 1;
 const unsigned int ACKERMANN_CONFIG = 2;
+
+inline bool is_close_to_zero(double val) { return std::fabs(val) < 1e-6; }
+
 /**
  * \brief The Odometry class handles odometry readings
  * (2D pose and velocity with related timestamp)
@@ -61,7 +64,7 @@ public:
   /**
    * \brief Updates the odometry class with latest wheels position
    * \param traction_wheel_pos  traction wheel position [rad]
-   * \param steer_pos Front Steer position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -72,7 +75,7 @@ public:
    * \brief Updates the odometry class with latest wheels position
    * \param right_traction_wheel_pos  Right traction wheel velocity [rad]
    * \param left_traction_wheel_pos  Left traction wheel velocity [rad]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -96,7 +99,7 @@ public:
   /**
    * \brief Updates the odometry class with latest wheels position
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -107,7 +110,7 @@ public:
    * \brief Updates the odometry class with latest wheels position
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
-   * \param front_steer_pos Steer wheel position [rad]
+   * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
    * \return true if the odometry is actually updated
    */
@@ -130,11 +133,11 @@ public:
 
   /**
    * \brief Updates the odometry class with latest velocity command
-   * \param linear  Linear velocity [m/s]
-   * \param angular Angular velocity [rad/s]
-   * \param time    Current time
+   * \param v_bx  Linear velocity   [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt      time difference to last call
    */
-  void update_open_loop(const double linear, const double angular, const double dt);
+  void update_open_loop(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Set odometry type
@@ -175,22 +178,27 @@ public:
   /**
    * \brief Sets the wheel parameters: radius, separation and wheelbase
    */
-  void set_wheel_params(double wheel_radius, double wheelbase = 0.0, double wheel_track = 0.0);
+  void set_wheel_params(
+    const double wheel_radius, const double wheelbase = 0.0, const double wheel_track = 0.0);
 
   /**
    * \brief Velocity rolling window size setter
    * \param velocity_rolling_window_size Velocity rolling window size
    */
-  void set_velocity_rolling_window_size(size_t velocity_rolling_window_size);
+  void set_velocity_rolling_window_size(const size_t velocity_rolling_window_size);
 
   /**
    * \brief Calculates inverse kinematics for the desired linear and angular velocities
-   * \param Vx  Desired linear velocity [m/s]
-   * \param theta_dot Desired angular velocity [rad/s]
+   * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
+   * \param omega_bz Desired angular velocity of the robot around x_z-axis
+   * \param open_loop If false, the IK will be calculated using measured steering angle
+   * \param reduce_wheel_speed_until_steering_reached Reduce wheel speed until the steering angle
+   * has been reached
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double Vx, const double theta_dot);
+    const double v_bx, const double omega_bz, const bool open_loop = true,
+    const bool reduce_wheel_speed_until_steering_reached = false);
 
   /**
    *  \brief Reset poses, heading, and accumulators
@@ -199,35 +207,45 @@ public:
 
 private:
   /**
-   * \brief Uses precomputed linear and angular velocities to compute dometry and update
-   * accumulators \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt)
-   * computed by previous odometry method \param angular Angular velocity [rad] (angular
-   * displacement, i.e. m/s * dt) computed by previous odometry method
+   * \brief Uses precomputed linear and angular velocities to compute odometry
+   * \param v_bx  Linear  velocity   [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt      time difference to last call
    */
-  bool update_odometry(const double linear_velocity, const double angular, const double dt);
+  bool update_odometry(const double v_bx, const double omega_bz, const double dt);
 
   /**
    * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-   * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by
-   * encoders \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed
-   * by encoders
+   * \param v_bx Linear velocity [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt time difference to last call
    */
-  void integrate_runge_kutta_2(double linear, double angular);
+  void integrate_runge_kutta_2(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Integrates the velocities (linear and angular) using exact method
-   * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by
-   * encoders \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed
-   * by encoders
+   * \brief Integrates the velocities (linear and angular)
+   * \param v_bx Linear velocity [m/s]
+   * \param omega_bz Angular velocity [rad/s]
+   * \param dt time difference to last call
    */
-  void integrate_exact(double linear, double angular);
+  void integrate_fk(const double v_bx, const double omega_bz, const double dt);
 
   /**
-   * \brief Calculates steering angle from the desired translational and rotational velocity
-   * \param Vx   Linear  velocity   [m]
-   * \param theta_dot Angular velocity [rad]
+   * \brief Calculates steering angle from the desired twist
+   * \param v_bx     Linear velocity of the robot in x_b-axis direction
+   * \param omega_bz Angular velocity of the robot around x_z-axis
    */
-  double convert_trans_rot_vel_to_steering_angle(double Vx, double theta_dot);
+  double convert_twist_to_steering_angle(const double v_bx, const double omega_bz);
+
+  /**
+   * \brief Calculates linear velocity of a robot with double traction axle
+   * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
+   * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
+   * \param steer_pos Steer wheel position [rad]
+   */
+  double get_linear_velocity_double_traction_axle(
+    const double right_traction_wheel_vel, const double left_traction_wheel_vel,
+    const double steer_pos);
 
   /**
    *  \brief Reset linear and angular accumulators

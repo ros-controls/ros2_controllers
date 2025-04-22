@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test_tricycle_steering_controller.hpp"
-
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "test_tricycle_steering_controller.hpp"
 class TricycleSteeringControllerTest
 : public TricycleSteeringControllerFixture<TestableTricycleSteeringController>
 {
@@ -80,15 +78,17 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
-  auto ref_if_conf = controller_->export_reference_interfaces();
-  ASSERT_EQ(ref_if_conf.size(), joint_reference_interfaces_.size());
+  auto reference_interfaces = controller_->export_reference_interfaces();
+  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
   {
-    const std::string ref_itf_name =
+    const std::string ref_itf_prefix_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
-    EXPECT_EQ(ref_if_conf[i].get_name(), ref_itf_name);
-    EXPECT_EQ(ref_if_conf[i].get_prefix_name(), controller_->get_node()->get_name());
-    EXPECT_EQ(ref_if_conf[i].get_interface_name(), joint_reference_interfaces_[i]);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   }
 }
 

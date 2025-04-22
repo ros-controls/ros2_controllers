@@ -34,6 +34,7 @@ pid_controller:
     read_only: true,
     validation: {
       not_empty<>: null,
+      size_gt<>: 0,
       size_lt<>: 3,
     }
   }
@@ -62,17 +63,20 @@ pid_controller:
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Antiwindup functionality."
+        description: "Antiwindup functionality. When set to true, limits
+        the integral error to prevent windup; otherwise, constrains the
+        integral contribution to the control output. i_clamp_max and
+        i_clamp_min are applied in both scenarios."
       }
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp. Only used if antiwindup is activated."
+        description: "Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp. Only used if antiwindup is activated."
+        description: "Lower integral clamp."
       }
       feedforward_gain: {
         type: double,
@@ -84,4 +88,9 @@ pid_controller:
         default_value: false,
         description: "For joints that wrap around (i.e., are continuous).
           Normalizes position-error to -pi to pi."
+      }
+      save_i_term: {
+        type: bool,
+        default_value: true,
+        description: "Indicating if integral term is retained after re-activation"
       }

@@ -2,6 +2,65 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+
+4.18.0 (2024-12-19)
+-------------------
+
+4.17.0 (2024-12-07)
+-------------------
+* Don't call shutdown() after an exception (`#1400 <https://github.com/ros-controls/ros2_controllers/issues/1400>`_)
+* Add another dependency (`#1382 <https://github.com/ros-controls/ros2_controllers/issues/1382>`_)
+* Add missing deps for test_nodes (`#1378 <https://github.com/ros-controls/ros2_controllers/issues/1378>`_)
+* test_nodes: catch keyboard interrupt and add simple launch tests (`#1369 <https://github.com/ros-controls/ros2_controllers/issues/1369>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+
+4.14.0 (2024-09-11)
+-------------------
+* Fix deprecation warning in paramater declaration (`#1280 <https://github.com/ros-controls/ros2_controllers/issues/1280>`_)
+* Contributors: Sanjeev
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+
+4.11.0 (2024-07-09)
+-------------------
+
+4.10.0 (2024-07-01)
+-------------------
+
+4.9.0 (2024-06-05)
+------------------
+
+4.8.0 (2024-05-14)
+------------------
+
 4.7.0 (2024-03-22)
 ------------------
 

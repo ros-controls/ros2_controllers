@@ -15,15 +15,16 @@
 #ifndef TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 #define TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
 
+#include <gmock/gmock.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "gmock/gmock.h"
-
 #include "effort_controllers/joint_group_effort_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 
 using hardware_interface::CommandInterface;
 using hardware_interface::HW_IF_EFFORT;
@@ -57,6 +58,7 @@ protected:
   CommandInterface joint_1_cmd_{joint_names_[0], HW_IF_EFFORT, &joint_commands_[0]};
   CommandInterface joint_2_cmd_{joint_names_[1], HW_IF_EFFORT, &joint_commands_[1]};
   CommandInterface joint_3_cmd_{joint_names_[2], HW_IF_EFFORT, &joint_commands_[2]};
+  rclcpp::executors::SingleThreadedExecutor executor;
 };
 
 #endif  // TEST_JOINT_GROUP_EFFORT_CONTROLLER_HPP_
