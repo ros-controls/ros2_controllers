@@ -55,10 +55,8 @@ static constexpr size_t NR_CMD_ITFS = 4;
 static constexpr size_t NR_REF_ITFS = 2;
 
 static constexpr double WHEELBASE_ = 3.24644;
-static constexpr double FRONT_WHEEL_TRACK_ = 2.12321;
 static constexpr double REAR_WHEEL_TRACK_ = 1.76868;
 static constexpr double FRONT_WHEELS_RADIUS_ = 0.45;
-static constexpr double REAR_WHEELS_RADIUS_ = 0.45;
 
 namespace
 {
@@ -127,7 +125,14 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
+  bool update_odometry(const rclcpp::Duration & period)
+  {
+    if (params_.open_loop)
+    {
+      odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+    }
+    return true;
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -297,39 +302,18 @@ protected:
 
 protected:
   // Controller-related parameters
-  double reference_timeout_ = 2.0;
-  bool front_steering_ = true;
-  bool open_loop_ = false;
-  unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
   std::vector<std::string> rear_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> front_wheels_names_ = {
     "front_right_steering_joint", "front_left_steering_joint"};
-  std::vector<std::string> joint_names_ = {
-    rear_wheels_names_[0], rear_wheels_names_[1], front_wheels_names_[0], front_wheels_names_[1]};
-
-  std::vector<std::string> rear_wheels_preceeding_names_ = {
-    "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
-  std::vector<std::string> front_wheels_preceeding_names_ = {
-    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
-  std::vector<std::string> preceeding_joint_names_ = {
-    rear_wheels_preceeding_names_[0], rear_wheels_preceeding_names_[1],
-    front_wheels_preceeding_names_[0], front_wheels_preceeding_names_[1]};
-
-  double wheelbase_ = 3.24644;
-  double front_wheel_track_ = 2.12321;
-  double rear_wheel_track_ = 1.76868;
-  double front_wheels_radius_ = 0.45;
-  double rear_wheels_radius_ = 0.45;
 
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
-  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
+  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 0.575875, 0.575875}};
 
   std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
-  std::string preceeding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
