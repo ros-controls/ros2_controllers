@@ -49,7 +49,7 @@ steering_controllers_library:
 
   steering_joints_names: {
     type: string_array,
-    description: "Names of steering joints. For kinematic configurations with two steering joints, the expected order is: right joint, left joint. The orientation of the steering axes is expected to be in the direction of the z-axis of the vehicle, see REP-103.",
+    description: "Names of steering joints. For kinematic configurations with two steering joints, the expected order is: right joint, left joint. The orientation of the steering axes is expected as such: When positive steering position value is commanded, then the robot should turn in positive direction of the z-axis of the vehicle (see REP-103).",
     default_value: [],
     read_only: true,
     validation: {
