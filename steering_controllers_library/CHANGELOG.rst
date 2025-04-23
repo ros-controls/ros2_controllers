@@ -2,6 +2,82 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Fix use of M_PI in steering_controllers_library and tricycle_controller (`#1536 <https://github.com/ros-controls/ros2_controllers/issues/1536>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Update generate_parameter_library dependency in steering_controllers_library (`#1465 <https://github.com/ros-controls/ros2_controllers/issues/1465>`_)
+* Fix typos in steering_controllers_lib (`#1464 <https://github.com/ros-controls/ros2_controllers/issues/1464>`_)
+* Fix open-loop odometry in case of ref timeout (`#1454 <https://github.com/ros-controls/ros2_controllers/issues/1454>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Christoph Fröhlich, Silvio Traversaro
+
+4.18.0 (2024-12-19)
+-------------------
+* steering_controllers_library: Add `reduce_wheel_speed_until_steering_reached` parameter (`#1314 <https://github.com/ros-controls/ros2_controllers/issues/1314>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Add Mecanum Drive Controller (`#512 <https://github.com/ros-controls/ros2_controllers/issues/512>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Sai Kishor Kothakota
+
+4.16.0 (2024-11-08)
+-------------------
+
+4.15.0 (2024-10-07)
+-------------------
+* Adapt test to new way of exporting reference interfaces (Related to `#1240 <https://github.com/ros-controls/ros2_controllers/issues/1240>`_ in ros2_control) (`#1103 <https://github.com/ros-controls/ros2_controllers/issues/1103>`_)
+* fix(timeout): do not reset steer wheels to 0. on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/issues/1289>`_)
+* fix(steering-odometry): convert twist to steering angle (`#1288 <https://github.com/ros-controls/ros2_controllers/issues/1288>`_)
+* Contributors: Manuel Muth, Rein Appeldoorn
+
+4.14.0 (2024-09-11)
+-------------------
+* fix(steering-odometry): handle infinite turning radius properly (`#1285 <https://github.com/ros-controls/ros2_controllers/issues/1285>`_)
+* Contributors: Rein Appeldoorn
+
+4.13.0 (2024-08-22)
+-------------------
+
+4.12.1 (2024-08-14)
+-------------------
+
+4.12.0 (2024-07-23)
+-------------------
+* Add missing includes (`#1226 <https://github.com/ros-controls/ros2_controllers/issues/1226>`_)
+* Change the subscription timeout in the tests to 5ms (`#1219 <https://github.com/ros-controls/ros2_controllers/issues/1219>`_)
+* Unused header cleanup (`#1199 <https://github.com/ros-controls/ros2_controllers/issues/1199>`_)
+* Fix WaitSet issue in tests  (`#1206 <https://github.com/ros-controls/ros2_controllers/issues/1206>`_)
+* Contributors: Christoph Fröhlich, Henry Moore, Sai Kishor Kothakota
+
+4.11.0 (2024-07-09)
+-------------------
+* Fix steering controllers library kinematics (`#1150 <https://github.com/ros-controls/ros2_controllers/issues/1150>`_)
+* Contributors: Christoph Fröhlich
+
 4.10.0 (2024-07-01)
 -------------------
 * [STEERING] Add missing `tan` call for ackermann (`#1117 <https://github.com/ros-controls/ros2_controllers/issues/1117>`_)

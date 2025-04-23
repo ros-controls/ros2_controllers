@@ -22,8 +22,7 @@
 #include <tuple>
 #include <vector>
 
-#include "realtime_tools/realtime_buffer.h"
-#include "realtime_tools/realtime_publisher.h"
+#include <rclcpp/time.hpp>
 
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6
@@ -193,10 +192,13 @@ public:
    * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
    * \param omega_bz Desired angular velocity of the robot around x_z-axis
    * \param open_loop If false, the IK will be calculated using measured steering angle
+   * \param reduce_wheel_speed_until_steering_reached Reduce wheel speed until the steering angle
+   * has been reached
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double v_bx, const double omega_bz, const bool open_loop = true);
+    const double v_bx, const double omega_bz, const bool open_loop = true,
+    const bool reduce_wheel_speed_until_steering_reached = false);
 
   /**
    *  \brief Reset poses, heading, and accumulators

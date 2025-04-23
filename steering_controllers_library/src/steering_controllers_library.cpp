@@ -16,15 +16,11 @@
 
 #include <limits>
 #include <memory>
-#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
-#include "tf2/transform_datatypes.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -85,7 +81,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
-  odometry_.set_velocity_rolling_window_size(params_.velocity_rolling_window_size);
+  odometry_.set_velocity_rolling_window_size(
+    static_cast<size_t>(params_.velocity_rolling_window_size));
 
   configure_odometry();
 
@@ -182,7 +179,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   try
   {
     // State publisher
-    controller_s_publisher_ = get_node()->create_publisher<AckermanControllerState>(
+    controller_s_publisher_ = get_node()->create_publisher<AckermannControllerState>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
@@ -319,13 +316,15 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(nr_ref_itfs_);
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("linear/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[0]));
+  reference_interfaces.push_back(
+    hardware_interface::CommandInterface(
+      get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[0]));
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name(), std::string("angular/") + hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[1]));
+  reference_interfaces.push_back(
+    hardware_interface::CommandInterface(
+      get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
+      &reference_interfaces_[1]));
 
   return reference_interfaces;
 }
@@ -356,29 +355,14 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 }
 
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
-  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - (current_ref)->header.stamp;
 
-  // send message only if there is no timeout
-  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
   {
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-    {
-      reference_interfaces_[0] = current_ref->twist.linear.x;
-      reference_interfaces_[1] = current_ref->twist.angular.z;
-    }
-  }
-  else
-  {
-    if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
-    {
-      reference_interfaces_[0] = 0.0;
-      reference_interfaces_[1] = 0.0;
-      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-    }
+    reference_interfaces_[0] = current_ref->twist.linear.x;
+    reference_interfaces_[1] = current_ref->twist.angular.z;
   }
 
   return controller_interface::return_type::OK;
@@ -396,17 +380,23 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    // store (for open loop odometry) and set commands
-    last_linear_velocity_ = reference_interfaces_[0];
-    last_angular_velocity_ = reference_interfaces_[1];
+    const auto age_of_last_command = time - (*(input_ref_.readFromRT()))->header.stamp;
+    const auto timeout =
+      age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
 
-    auto [traction_commands, steering_commands] =
-      odometry_.get_commands(last_linear_velocity_, last_angular_velocity_, params_.open_loop);
+    // store (for open loop odometry) and set commands
+    last_linear_velocity_ = timeout ? 0.0 : reference_interfaces_[0];
+    last_angular_velocity_ = timeout ? 0.0 : reference_interfaces_[1];
+
+    auto [traction_commands, steering_commands] = odometry_.get_commands(
+      reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
+      params_.reduce_wheel_speed_until_steering_reached);
+
     if (params_.front_steering)
     {
       for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
       {
-        command_interfaces_[i].set_value(traction_commands[i]);
+        command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
       }
       for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
       {
@@ -418,7 +408,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       {
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
-          command_interfaces_[i].set_value(traction_commands[i]);
+          command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
         }
         for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
         {

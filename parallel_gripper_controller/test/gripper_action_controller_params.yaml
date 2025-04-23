@@ -1,0 +1,7 @@
+test_gripper_action_position_controller:
+  ros__parameters:
+    joint: "joint1"
+
+test_gripper_action_position_controller_empty_joint:
+  ros__parameters:
+    joint: ""

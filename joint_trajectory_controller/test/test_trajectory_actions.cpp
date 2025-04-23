@@ -15,27 +15,22 @@
 #ifndef _MSC_VER
 #include <cxxabi.h>
 #endif
-#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <future>
 #include <memory>
-#include <ratio>
 #include <stdexcept>
 #include <string>
-#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
 #include "controller_interface/controller_interface.hpp"
-#include "gtest/gtest.h"
 #include "hardware_interface/resource_manager.hpp"
 #include "rclcpp/clock.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/node.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
@@ -91,12 +86,15 @@ protected:
       {
         // controller hardware cycle update loop
         auto clock = rclcpp::Clock(RCL_STEADY_TIME);
-        auto start_time = clock.now();
+        auto now_time = clock.now();
+        auto last_time = now_time;
         rclcpp::Duration wait = rclcpp::Duration::from_seconds(2.0);
-        auto end_time = start_time + wait;
+        auto end_time = last_time + wait;
         while (clock.now() < end_time)
         {
-          traj_controller_->update(clock.now(), clock.now() - start_time);
+          now_time = clock.now();
+          traj_controller_->update(now_time, now_time - last_time);
+          last_time = now_time;
         }
       });
 
@@ -124,6 +122,7 @@ protected:
   {
     TearDownControllerHardware();
     TearDownExecutor();
+    TrajectoryControllerTest::TearDown();
   }
 
   void TearDownExecutor()
@@ -153,14 +152,15 @@ protected:
   using GoalOptions = rclcpp_action::Client<FollowJointTrajectoryMsg>::SendGoalOptions;
 
   std::shared_future<typename GoalHandle::SharedPtr> sendActionGoal(
-    const std::vector<JointTrajectoryPoint> & points, double timeout, const GoalOptions & opt,
+    const std::vector<JointTrajectoryPoint> & points, double goal_time_tolerance,
+    const GoalOptions & opt,
     const std::vector<control_msgs::msg::JointTolerance> path_tolerance =
       std::vector<control_msgs::msg::JointTolerance>(),
     const std::vector<control_msgs::msg::JointTolerance> goal_tolerance =
       std::vector<control_msgs::msg::JointTolerance>())
   {
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
-    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(timeout);
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(goal_time_tolerance);
     goal_msg.goal_tolerance = goal_tolerance;
     goal_msg.path_tolerance = path_tolerance;
     goal_msg.trajectory.joint_names = joint_names_;
@@ -529,7 +529,7 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      gh_future = sendActionGoal(points, 1.0, goal_options_);
+      gh_future = sendActionGoal(points, 0.0, goal_options_);
     }
     controller_hw_thread_.join();
 
@@ -539,7 +539,6 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
     auto active_tolerances = traj_controller_->get_active_tolerances();
-    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 1.0);
     expectDefaultTolerances(active_tolerances);
   }
 
@@ -639,7 +638,7 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       point.positions[2] = 3.0;
       points.push_back(point);
 
-      gh_future = sendActionGoal(points, 1.0, goal_options_);
+      gh_future = sendActionGoal(points, 0.0, goal_options_);
     }
     controller_hw_thread_.join();
 
@@ -649,7 +648,6 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
       control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
     auto active_tolerances = traj_controller_->get_active_tolerances();
-    EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 1.0);
     expectDefaultTolerances(active_tolerances);
   }
 }
@@ -973,6 +971,88 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_tr
   }
 
   EXPECT_TRUE(gh_future.get());
+}
+
+TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_action)
+{
+  // deactivate velocity tolerance
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.0)};
+  SetUpExecutor(params, false, 1.0, 0.0);
+
+  // We use our own hardware thread here, as we want to make sure the controller is deactivated
+  auto controller_thread = std::thread(
+    [&]()
+    {
+      // controller hardware cycle update loop
+      auto clock = rclcpp::Clock(RCL_STEADY_TIME);
+      auto now_time = clock.now();
+      auto last_time = now_time;
+      rclcpp::Duration wait = rclcpp::Duration::from_seconds(0.5);
+      auto end_time = last_time + wait;
+      while (now_time < end_time)
+      {
+        now_time = now_time + rclcpp::Duration::from_seconds(0.01);
+        traj_controller_->update(now_time, now_time - last_time);
+        last_time = now_time;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      RCLCPP_INFO(node_->get_logger(), "Controller hardware thread finished");
+      traj_controller_->get_node()->deactivate();
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    });
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal
+  std::vector<double> point_positions{1.0, 2.0, 3.0};
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(2.5);
+    point.positions = point_positions;
+
+    points.push_back(point);
+
+    gh_future = sendActionGoal(points, 1.0, goal_options_);
+  }
+
+  controller_thread.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+
+  auto state_ref = traj_controller_->get_state_reference();
+  auto state = traj_controller_->get_state_feedback();
+
+  // There will be no active trajectory upon deactivation, so we can't use the expectCommandPoint
+  // method.
+  if (traj_controller_->has_position_command_interface())
+  {
+    EXPECT_NEAR(state_ref.positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
+  }
+
+  if (traj_controller_->has_velocity_command_interface())
+  {
+    EXPECT_EQ(0.0, joint_vel_[0]);
+    EXPECT_EQ(0.0, joint_vel_[1]);
+    EXPECT_EQ(0.0, joint_vel_[2]);
+  }
+
+  if (traj_controller_->has_acceleration_command_interface())
+  {
+    EXPECT_EQ(0.0, joint_acc_[0]);
+    EXPECT_EQ(0.0, joint_acc_[1]);
+    EXPECT_EQ(0.0, joint_acc_[2]);
+  }
+
+  if (traj_controller_->has_effort_command_interface())
+  {
+    EXPECT_EQ(0.0, joint_eff_[0]);
+    EXPECT_EQ(0.0, joint_eff_[1]);
+    EXPECT_EQ(0.0, joint_eff_[2]);
+  }
 }
 
 // position controllers

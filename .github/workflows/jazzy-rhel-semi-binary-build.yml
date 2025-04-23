@@ -8,15 +8,21 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/jazzy-rhel-semi-binary-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
+      - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 1 * * *'
 
+concurrency:
+  # cancel previous runs of the same workflow, except for pushes on master branch
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
   jazzy_rhel:

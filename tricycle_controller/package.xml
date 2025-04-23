@@ -2,15 +2,26 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>tricycle_controller</name>
-  <version>4.10.0</version>
+  <version>4.23.0</version>
   <description>Controller for a tricycle drive mobile base</description>
+
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
-  <maintainer email="tony.najjar@logivations.com">Tony Najjar</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
   <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
   <author email="tony.najjar@logivations.com">Tony Najjar</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <build_depend>generate_parameter_library</build_depend>
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>ackermann_msgs</depend>
   <depend>backward_ros</depend>

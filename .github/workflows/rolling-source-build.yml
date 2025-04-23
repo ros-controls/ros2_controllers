@@ -8,11 +8,13 @@ on:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
+      - '**.py'
       - '**.yaml'
       - '.github/workflows/rolling-source-build.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
+      - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 3 * * *'
