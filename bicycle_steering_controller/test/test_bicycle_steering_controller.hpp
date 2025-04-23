@@ -259,10 +259,9 @@ protected:
   std::vector<std::string> steering_joints_names_ = {{"steering_axis_joint"}};
   std::vector<std::string> joint_names_ = {{traction_joints_names_[0], steering_joints_names_[0]}};
 
-  std::vector<std::string> wheels_preceding_names_ = {{"pid_controller/rear_wheel_joint"}};
-  std::vector<std::string> steers_preceding_names_ = {{"pid_controller/steering_axis_joint"}};
-  std::vector<std::string> preceding_joint_names_ = {
-    {wheels_preceding_names_[0], steers_preceding_names_[0]}};
+  std::vector<std::string> traction_joints_preceding_names_ = {{"pid_controller/rear_wheel_joint"}};
+  std::vector<std::string> steering_joints_preceding_names_ = {
+    {"pid_controller/steering_axis_joint"}};
 
   double wheelbase_ = 3.24644;
   double traction_wheel_radius_ = 0.45;

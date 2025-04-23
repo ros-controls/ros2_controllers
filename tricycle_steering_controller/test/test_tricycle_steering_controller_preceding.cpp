@@ -30,9 +30,11 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_THAT(
-    controller_->params_.traction_joints_names, testing::ElementsAreArray(wheels_preceding_names_));
+    controller_->params_.traction_joints_names,
+    testing::ElementsAreArray(traction_joints_preceding_names_));
   ASSERT_THAT(
-    controller_->params_.steering_joints_names, testing::ElementsAreArray(steers_preceding_names_));
+    controller_->params_.steering_joints_names,
+    testing::ElementsAreArray(steering_joints_preceding_names_));
   ASSERT_EQ(controller_->params_.open_loop, open_loop_);
   ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
