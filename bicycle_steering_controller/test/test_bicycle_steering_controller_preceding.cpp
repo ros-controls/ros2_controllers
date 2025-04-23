@@ -33,10 +33,10 @@ TEST_F(BicycleSteeringControllerTest, all_parameters_set_configure_success)
 
   ASSERT_THAT(
     controller_->params_.rear_wheels_names,
-    testing::ElementsAreArray(rear_wheels_preceeding_names_));
+    testing::ElementsAreArray(rear_wheels_preceding_names_));
   ASSERT_THAT(
     controller_->params_.front_wheels_names,
-    testing::ElementsAreArray(front_wheels_preceeding_names_));
+    testing::ElementsAreArray(front_wheels_preceding_names_));
   ASSERT_EQ(controller_->params_.front_steering, front_steering_);
   ASSERT_EQ(controller_->params_.open_loop, open_loop_);
   ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
@@ -56,10 +56,10 @@ TEST_F(BicycleSteeringControllerTest, check_exported_interfaces)
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_WHEEL],
-    preceeding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
+    preceding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_WHEEL],
-    preceeding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
+    preceding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();
