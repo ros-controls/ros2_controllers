@@ -22,6 +22,7 @@
 #include "steering_controllers_library/steering_odometry.hpp"
 
 #include <cmath>
+#include <iostream>
 #include <limits>
 
 namespace steering_odometry
@@ -338,6 +339,10 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
         std::atan2(numerator, denominator_first_member - denominator_second_member);
       steering_commands = {alpha_r, alpha_l};
     }
+    std::cout << "traction_commands: " << traction_commands[0] << ", " << traction_commands[1]
+              << " steering_commands: " << steering_commands[0] << ", " << steering_commands[1]
+              << " phi: " << phi << " phi_IK: " << phi_IK << " Ws: " << Ws << std::endl
+              << std::endl;
     return std::make_tuple(traction_commands, steering_commands);
   }
   else

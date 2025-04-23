@@ -3,11 +3,19 @@ tricycle_steering_controller:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      description: "(deprecated) Axle track, use 'traction_track_width' instead",
       read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
+    }
+  traction_track_width:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Axle track",
+      read_only: false,
+      # TODO(anyone): activate validation if wheel_track is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
     }
 
   wheelbase:

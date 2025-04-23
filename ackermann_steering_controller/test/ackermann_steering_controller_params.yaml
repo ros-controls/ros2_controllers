@@ -9,5 +9,5 @@ test_ackermann_steering_controller:
     steering_joints_names: [front_right_steering_joint, front_left_steering_joint]
 
     wheelbase: 3.24644
-    traction_wheel_track: 1.76868
+    traction_track_width: 1.76868
     traction_wheels_radius: 0.45

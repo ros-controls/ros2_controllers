@@ -41,7 +41,7 @@ TEST_F(AckermannSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
   ASSERT_EQ(controller_->ackermann_params_.wheelbase, wheelbase_);
   ASSERT_EQ(controller_->ackermann_params_.traction_wheels_radius, traction_wheels_radius_);
-  ASSERT_EQ(controller_->ackermann_params_.traction_wheel_track, traction_wheel_track_);
+  ASSERT_EQ(controller_->ackermann_params_.traction_track_width, traction_track_width_);
 }
 
 TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)

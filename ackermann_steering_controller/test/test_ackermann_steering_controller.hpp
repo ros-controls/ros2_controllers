@@ -297,7 +297,7 @@ protected:
     steers_preceeding_names_[1]};
 
   double wheelbase_ = 3.24644;
-  double traction_wheel_track_ = 1.76868;
+  double traction_track_width_ = 1.76868;
   double traction_wheels_radius_ = 0.45;
 
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};

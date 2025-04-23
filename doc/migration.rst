@@ -29,4 +29,4 @@ steering_controllers_library
   * *General*: Remove ``front_steering`` and use ``traction_joints_names``/``steering_joints_names`` instead of ``rear_wheels_names``/``front_wheels_names``, respectively.
   * *bicycle_steering_controller*: Set ``traction_wheel_radius`` instead of ``front_wheel_radius``, ``rear_wheel_radius``.
   * *tricycle_steering_controller*: Set ``traction_wheels_radius`` instead of ``front_wheels_radius``, ``rear_wheels_radius``.
-  * *ackermann_steering_controller*: Set ``traction_wheels_radius`` instead of ``front_wheels_radius``, ``rear_wheels_radius``, and ``traction_wheel_track`` (and optionally ``steering_wheel_track``, if it differs) instead of ``rear_wheel_track``, ``front_wheel_track``.
+  * *ackermann_steering_controller*: Set ``traction_wheels_radius`` instead of ``front_wheels_radius``, ``rear_wheels_radius``, and ``traction_track_width`` (and optionally ``steering_track_width``, if it differs) instead of ``rear_wheel_track``, ``front_wheel_track``.
