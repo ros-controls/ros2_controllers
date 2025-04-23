@@ -307,13 +307,13 @@ protected:
     traction_joints_names_[0], traction_joints_names_[1], steering_joints_names_[0],
     steering_joints_names_[1]};
 
-  std::vector<std::string> wheels_preceeding_names_ = {
+  std::vector<std::string> wheels_preceding_names_ = {
     "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
-  std::vector<std::string> steers_preceeding_names_ = {
+  std::vector<std::string> steers_preceding_names_ = {
     "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
-  std::vector<std::string> preceeding_joint_names_ = {
-    wheels_preceeding_names_[0], wheels_preceeding_names_[1], steers_preceeding_names_[0],
-    steers_preceeding_names_[1]};
+  std::vector<std::string> preceding_joint_names_ = {
+    wheels_preceding_names_[0], wheels_preceding_names_[1], steers_preceding_names_[0],
+    steers_preceding_names_[1]};
 
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
   std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
@@ -322,7 +322,7 @@ protected:
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
-  std::string preceeding_prefix_ = "pid_controller";
+  std::string preceding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
