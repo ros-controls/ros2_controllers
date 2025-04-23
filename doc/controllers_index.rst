@@ -6,7 +6,7 @@
 ros2_controllers
 #################
 
-Commonly used and generalized controllers for ros2_control framework that are ready to use with many robots, `MoveIt2 <https://moveit.picknik.ai/main/index.html>`_ and `Nav2 <https://navigation.ros.org/>`_.
+Commonly used and generalized controllers for ros2_control framework that are ready to use with many robots, `MoveIt2 <https://moveit.picknik.ai/main/index.html>`_ and `Nav2 <https://nav2.org/>`_.
 
 `Link to GitHub Repository <https://github.com/ros-controls/ros2_controllers>`_
 
@@ -16,23 +16,21 @@ Guidelines and Best Practices
 
 .. toctree::
    :titlesonly:
-   :glob:
 
-   *
+   mobile_robot_kinematics.rst
+   writing_new_controller.rst
 
 
-Controllers for Mobile Robots
-*****************************
+Controllers for Wheeled Mobile Robots
+*************************************
 
 .. toctree::
    :titlesonly:
 
-   Ackermann Steering Controller <../ackermann_steering_controller/doc/userdoc.rst>
-   Bicycle Steering Controller <../bicycle_steering_controller/doc/userdoc.rst>
    Differential Drive Controller <../diff_drive_controller/doc/userdoc.rst>
+   Mecanum Drive Controllers <../mecanum_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
-   Tricycle Steering Controller <../tricycle_steering_controller/doc/userdoc.rst>
 
 Controllers for Manipulators and Other Robots
 *********************************************
@@ -55,9 +53,11 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
+   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
 
 
 Broadcasters
@@ -73,7 +73,8 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
-
+   Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
+   GPS Sensor Broadcaster <../gps_sensor_broadcaster/doc/userdoc.rst>
 
 Common Controller Parameters
 ****************************

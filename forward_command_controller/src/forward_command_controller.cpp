@@ -14,14 +14,11 @@
 
 #include "forward_command_controller/forward_command_controller.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "rclcpp/logging.hpp"
-#include "rclcpp/qos.hpp"
 
 namespace forward_command_controller
 {
@@ -34,11 +31,6 @@ void ForwardCommandController::declare_parameters()
 
 controller_interface::CallbackReturn ForwardCommandController::read_parameters()
 {
-  if (!param_listener_)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   params_ = param_listener_->get_params();
 
   if (params_.joints.empty())
@@ -53,6 +45,7 @@ controller_interface::CallbackReturn ForwardCommandController::read_parameters()
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  command_interface_types_.clear();
   for (const auto & joint : params_.joints)
   {
     command_interface_types_.push_back(joint + "/" + params_.interface_name);

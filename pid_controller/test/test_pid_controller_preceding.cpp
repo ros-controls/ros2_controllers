@@ -17,10 +17,8 @@
 
 #include "test_pid_controller.hpp"
 
-#include <limits>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 using pid_controller::feedforward_mode_type;
@@ -86,10 +84,31 @@ TEST_F(PidControllerTest, check_exported_interfaces)
     {
       const std::string ref_itf_name =
         std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
-      EXPECT_EQ(ref_if_conf[ri_index].get_name(), ref_itf_name);
-      EXPECT_EQ(ref_if_conf[ri_index].get_prefix_name(), controller_->get_node()->get_name());
-      EXPECT_EQ(ref_if_conf[ri_index].get_interface_name(), dof_name + "/" + interface);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_name(), ref_itf_name);
+      EXPECT_EQ(
+        ref_if_conf[ri_index]->get_prefix_name(),
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name);
+      EXPECT_EQ(ref_if_conf[ri_index]->get_interface_name(), interface);
       ++ri_index;
+    }
+  }
+
+  // check exported state itfs
+  auto exported_state_itfs = controller_->export_state_interfaces();
+  ASSERT_EQ(exported_state_itfs.size(), dof_state_values_.size());
+  size_t esi_index = 0;
+  for (const auto & interface : state_interfaces_)
+  {
+    for (const auto & dof_name : reference_and_state_dof_names_)
+    {
+      const std::string state_itf_name =
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name + "/" + interface;
+      EXPECT_EQ(exported_state_itfs[esi_index]->get_name(), state_itf_name);
+      EXPECT_EQ(
+        exported_state_itfs[esi_index]->get_prefix_name(),
+        std::string(controller_->get_node()->get_name()) + "/" + dof_name);
+      EXPECT_EQ(exported_state_itfs[esi_index]->get_interface_name(), interface);
+      ++esi_index;
     }
   }
 }

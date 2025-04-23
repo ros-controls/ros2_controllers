@@ -36,7 +36,6 @@ tricycle_controller:
 
     # cmd_vel input
     cmd_vel_timeout: 500 # In milliseconds. Timeout to stop if no cmd_vel is received
-    use_stamped_vel: false # Set to True if using TwistStamped.
 
     # Debug
     publish_ackermann_command: true # Publishes AckermannDrive. The speed does not comply to the msg definition, it the wheel angular speed in rad/s.
