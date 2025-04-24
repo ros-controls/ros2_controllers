@@ -6,7 +6,7 @@
   <description>Package to control robots using motion primitives like PTP, LIN and CIRC</description>
   <maintainer email="todo@todo.de">todo</maintainer>
   <author>Mathias Fuhrer</author>
-  <license>BSD-3-Clause</license>
+  <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
