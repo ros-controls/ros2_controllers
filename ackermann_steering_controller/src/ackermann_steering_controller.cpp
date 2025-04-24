@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
+
 #include "ackermann_steering_controller/ackermann_steering_controller.hpp"
 
 namespace ackermann_steering_controller
@@ -31,21 +33,77 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   ackermann_params_ = ackermann_param_listener_->get_params();
 
-  const double front_wheels_radius = ackermann_params_.front_wheels_radius;
-  const double rear_wheels_radius = ackermann_params_.rear_wheels_radius;
-  const double front_wheel_track = ackermann_params_.front_wheel_track;
-  const double rear_wheel_track = ackermann_params_.rear_wheel_track;
+  // TODO(anyone): Remove deprecated parameters
+  // START OF DEPRECATED
+  if (ackermann_params_.front_wheels_radius > 0.0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheels_radius' instead");
+    ackermann_params_.traction_wheels_radius = ackermann_params_.front_wheels_radius;
+  }
+
+  if (ackermann_params_.rear_wheels_radius > 0.0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheels_radius' instead");
+    ackermann_params_.traction_wheels_radius = ackermann_params_.rear_wheels_radius;
+  }
+
+  if (ackermann_params_.front_wheel_track > 0.0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheel_track', set 'traction_track_width' or "
+      "'steering_track_width' instead");
+    if (params_.front_steering)
+    {
+      ackermann_params_.steering_track_width = ackermann_params_.front_wheel_track;
+    }
+    else
+    {
+      ackermann_params_.traction_track_width = ackermann_params_.front_wheel_track;
+    }
+  }
+
+  if (ackermann_params_.rear_wheel_track > 0.0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheel_track', set 'traction_track_width' or "
+      "'steering_track_width' instead");
+    if (params_.front_steering)
+    {
+      ackermann_params_.traction_track_width = ackermann_params_.rear_wheel_track;
+    }
+    else
+    {
+      ackermann_params_.steering_track_width = ackermann_params_.rear_wheel_track;
+    }
+  }
+
+  if (ackermann_params_.traction_wheels_radius <= std::numeric_limits<double>::epsilon())
+  {
+    RCLCPP_FATAL(
+      get_node()->get_logger(),
+      "parameter 'traction_wheels_radius' is not set, cannot configure odometry");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  // END OF DEPRECATED
+
+  if (ackermann_params_.steering_track_width <= std::numeric_limits<double>::epsilon())
+  {
+    ackermann_params_.steering_track_width = ackermann_params_.traction_track_width;
+  }
+
+  const double traction_wheels_radius = ackermann_params_.traction_wheels_radius;
+  const double traction_track_width = ackermann_params_.traction_track_width;
+  const double steering_track_width = ackermann_params_.steering_track_width;
   const double wheelbase = ackermann_params_.wheelbase;
 
-  if (params_.front_steering)
-  {
-    odometry_.set_wheel_params(rear_wheels_radius, wheelbase, rear_wheel_track);
-  }
-  else
-  {
-    odometry_.set_wheel_params(front_wheels_radius, wheelbase, front_wheel_track);
-  }
-
+  odometry_.set_wheel_params(
+    traction_wheels_radius, wheelbase, steering_track_width, traction_track_width);
   odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
