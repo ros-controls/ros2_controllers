@@ -24,7 +24,6 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
-#include "motion_primitives_forward_controller/visibility_control.h"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -45,31 +44,23 @@ static constexpr size_t CMD_MY_ITFS = 0;
 class MotionPrimitivesForwardController : public controller_interface::ControllerInterface
 {
 public:
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   MotionPrimitivesForwardController();
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_init() override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_PUBLIC
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -93,7 +84,6 @@ protected:
 
 private:
   // callback for topic interface
-  MOTION_PRIMITIVES_CONTTROLLER_PKG__VISIBILITY_LOCAL
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg); // callback for reference message
   // std::atomic<bool> new_msg_available_ = false; // flag to indicate if new message is available
   void reset_command_interfaces(); // Reset all command interfaces to NaN()
