@@ -2,11 +2,21 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>motion_primitives_forward_controller</name>
-  <version>0.0.0</version>
+  <version>4.23.0</version>
   <description>Package to control robots using motion primitives like PTP, LIN and CIRC</description>
-  <maintainer email="todo@todo.de">todo</maintainer>
-  <author email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</author>
+
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
   <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
+  <author email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
