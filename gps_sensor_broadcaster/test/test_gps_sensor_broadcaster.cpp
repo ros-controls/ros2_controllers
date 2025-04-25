@@ -60,11 +60,7 @@ class GPSSensorBroadcasterTest : public ::testing::Test
 public:
   GPSSensorBroadcasterTest() { rclcpp::init(0, nullptr); }
 
-  ~GPSSensorBroadcasterTest()
-  {
-    gps_broadcaster_.reset(nullptr);
-    rclcpp::shutdown();
-  }
+  ~GPSSensorBroadcasterTest() { rclcpp::shutdown(); }
 
   void SetUp()
   {
