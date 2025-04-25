@@ -63,7 +63,18 @@ class GPSSensorBroadcasterTest : public ::testing::Test
 public:
   GPSSensorBroadcasterTest() { rclcpp::init(0, nullptr); }
 
-  ~GPSSensorBroadcasterTest() { rclcpp::shutdown(); }
+  ~GPSSensorBroadcasterTest()
+  {
+    gps_broadcaster_.reset(nullptr);
+    rclcpp::shutdown();
+  }
+
+  void SetUp()
+  {
+    gps_broadcaster_ = std::make_unique<gps_sensor_broadcaster::GPSSensorBroadcaster>();
+  }
+
+  void TearDown() { gps_broadcaster_.reset(nullptr); }
 
   void SetUp()
   {
