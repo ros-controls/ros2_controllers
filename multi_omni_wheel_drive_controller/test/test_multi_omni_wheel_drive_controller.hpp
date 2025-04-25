@@ -67,6 +67,10 @@ class TestableMultiOmniWheelDriveController
   FRIEND_TEST(MultiOmniWheelDriveControllerTest, deactivate_then_activate);
   FRIEND_TEST(
     MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning);
+  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 3_wheel_test);
+  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 3_wheel_rot_test);
+  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 4_wheel_rot_test);
+  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 5_wheel_test);
 
   /**
    * @brief wait_for_twist block until a new twist is received.
@@ -157,7 +161,7 @@ protected:
     }
   }
 
-  void assignResourcesPosFeedback()
+  void assignResourcesPosFeedback(const std::vector<std::string> wheel_names = wheel_names_)
   {
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_ifs.reserve(wheels_pos_states_.size());
@@ -165,8 +169,7 @@ protected:
     for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
-          wheel_names_[i], HW_IF_POSITION, &wheels_pos_states_[i]));
+        hardware_interface::StateInterface(wheel_names[i], HW_IF_POSITION, &wheels_pos_states_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -176,8 +179,7 @@ protected:
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
-          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+        hardware_interface::CommandInterface(wheel_names[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -213,14 +215,16 @@ protected:
 
   controller_interface::return_type InitController(
     const std::vector<std::string> wheel_joints_init = wheel_names_,
-    const std::vector<rclcpp::Parameter> & parameters = {}, const std::string ns = "")
+    const double wheel_offset = 0.0, const std::vector<rclcpp::Parameter> & parameters = {},
+    const std::string ns = "")
   {
     auto node_options = rclcpp::NodeOptions();
     std::vector<rclcpp::Parameter> parameter_overrides;
 
     parameter_overrides.push_back(
       rclcpp::Parameter("wheel_names", rclcpp::ParameterValue(wheel_joints_init)));
-    parameter_overrides.push_back(rclcpp::Parameter("wheel_offset", rclcpp::ParameterValue(0.0)));
+    parameter_overrides.push_back(
+      rclcpp::Parameter("wheel_offset", rclcpp::ParameterValue(wheel_offset)));
     parameter_overrides.push_back(rclcpp::Parameter("robot_radius", rclcpp::ParameterValue(0.5)));
     parameter_overrides.push_back(rclcpp::Parameter("wheel_radius", rclcpp::ParameterValue(0.1)));
 

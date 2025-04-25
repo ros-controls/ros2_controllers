@@ -90,10 +90,11 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_fals
 
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-                     rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-                     rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-                     rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
+      wheel_names_, 0.0,
+      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
+       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
+       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -114,10 +115,11 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true
 
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-                     rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-                     rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-                     rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
+      wheel_names_, 0.0,
+      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
+       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -140,10 +142,11 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_tru
 
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-                     rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-                     rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-                     rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
+      wheel_names_, 0.0,
+      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
+       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -167,7 +170,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_fals
 
   ASSERT_EQ(
     InitController(
-      wheel_names_,
+      wheel_names_, 0.0,
       {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
        rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
@@ -195,7 +198,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true
 
   ASSERT_EQ(
     InitController(
-      wheel_names_,
+      wheel_names_, 0.0,
       {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
        rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
@@ -224,7 +227,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_tru
 
   ASSERT_EQ(
     InitController(
-      wheel_names_,
+      wheel_names_, 0.0,
       {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
        rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
@@ -265,7 +268,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_a
 {
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
+      wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -277,7 +280,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_as
 {
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
+      wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -289,7 +292,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_as
 {
   ASSERT_EQ(
     InitController(
-      wheel_names_, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
+      wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -592,6 +595,277 @@ TEST_F(MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepte
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
+}
+
+TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_test)
+{
+  ASSERT_EQ(
+    InitController({"wheel_1", "wheel_2", "wheel_3"}, 0.0), controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  wheels_pos_states_ = {1, 1, 1};
+  wheels_vel_states_ = {1, 1, 1};
+  wheels_vel_cmds_ = {0.1, 0.2, 0.3};
+  assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3"});
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // Reference interfaces should be NaN on initialization
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  // But NaNs should not propagate to command interfaces
+  for (size_t i = 0; i < 3; i++)
+  {
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+  }
+
+  // Check that a published command msg sets the command interfaces to the correct values
+  publish_twist();
+  // wait for msg to be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  std::vector<double> expected_wheels_vel_cmds = {-15.0, 8.66025, -8.66025};
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+  }
+
+  // Now check that the command interfaces are set to 0.0 on deactivation
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  // cleanup
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_rot_test)
+{
+  ASSERT_EQ(
+    InitController({"wheel_1", "wheel_2", "wheel_3"}, 1.0471975512),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  wheels_pos_states_ = {1, 1, 1};
+  wheels_vel_states_ = {1, 1, 1};
+  wheels_vel_cmds_ = {0.1, 0.2, 0.3};
+  assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3"});
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // Reference interfaces should be NaN on initialization
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  // But NaNs should not propagate to command interfaces
+  for (size_t i = 0; i < 3; i++)
+  {
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+  }
+
+  // Check that a published command msg sets the command interfaces to the correct values
+  publish_twist();
+  // wait for msg to be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  std::vector<double> expected_wheels_vel_cmds = {-1.33975, 5.0, -18.6603};
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+  }
+
+  // Now check that the command interfaces are set to 0.0 on deactivation
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  // cleanup
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  for (size_t i = 0; i < 3; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(MultiOmniWheelDriveControllerTest, 4_wheel_rot_test)
+{
+  ASSERT_EQ(
+    InitController({"wheel_1", "wheel_2", "wheel_3", "wheel_4"}, 0.7853981634),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  wheels_pos_states_ = {1, 1, 1, 1};
+  wheels_vel_states_ = {1, 1, 1, 1};
+  wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
+  assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3", "wheel_4"});
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // Reference interfaces should be NaN on initialization
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  // But NaNs should not propagate to command interfaces
+  for (size_t i = 0; i < 4; i++)
+  {
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+  }
+
+  // Check that a published command msg sets the command interfaces to the correct values
+  publish_twist();
+  // wait for msg to be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  std::vector<double> expected_wheels_vel_cmds = {-5.0, 9.14214, -5.0, -19.1421};
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+  }
+
+  // Now check that the command interfaces are set to 0.0 on deactivation
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  // cleanup
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(MultiOmniWheelDriveControllerTest, 5_wheel_test)
+{
+  ASSERT_EQ(
+    InitController({"wheel_1", "wheel_2", "wheel_3", "wheel_4", "wheel_5"}, 0.0),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  wheels_pos_states_ = {1, 1, 1, 1, 1};
+  wheels_vel_states_ = {1, 1, 1, 1, 1};
+  wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4, 0.5};
+  assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3", "wheel_4", "wheel_5"});
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup();
+
+  // Reference interfaces should be NaN on initialization
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+  // But NaNs should not propagate to command interfaces
+  for (size_t i = 0; i < 5; i++)
+  {
+    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+  }
+
+  // Check that a published command msg sets the command interfaces to the correct values
+  publish_twist();
+  // wait for msg to be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  std::vector<double> expected_wheels_vel_cmds = {-15.0, 1.42040, 8.96802, -2.78768, -17.6007};
+  for (size_t i = 0; i < 5; i++)
+  {
+    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+  }
+
+  // Now check that the command interfaces are set to 0.0 on deactivation
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  for (size_t i = 0; i < 5; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  // cleanup
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  for (size_t i = 0; i < 5; i++)
+  {
+    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+  }
+
+  state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
 
