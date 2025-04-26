@@ -52,16 +52,16 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   ASSERT_EQ(state_if_conf.names.size(), joint_state_values_.size());
   EXPECT_EQ(
     state_if_conf.names[STATE_TRACTION_RIGHT_WHEEL],
-    controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
+    controller_->traction_joints_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
-    controller_->rear_wheels_state_names_[1] + "/" + traction_interface_name_);
+    controller_->traction_joints_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_STEER_RIGHT_WHEEL],
-    controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
+    controller_->steering_joints_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_STEER_LEFT_WHEEL],
-    controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
+    controller_->steering_joints_state_names_[1] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
@@ -150,12 +150,12 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   }
 
   // Wheel velocities should reset to 0
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0);
 
   // Steer angles should not reset
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 
   // case 2 position_feedback = true
   controller_->params_.position_feedback = true;
@@ -197,12 +197,12 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   }
 
   // Wheel velocities should reset to 0
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0);
 
   // Steer angles should not reset
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
 int main(int argc, char ** argv)

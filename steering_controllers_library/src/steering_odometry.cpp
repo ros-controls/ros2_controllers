@@ -237,7 +237,7 @@ double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double ome
 
 double SteeringOdometry::convert_steering_angle_to_angular_velocity(double v_bx, double phi)
 {
-  return std::tan(phi) * v_bx / wheelbase_;
+  return std::tan(phi) * v_bx / wheel_base_;
 }
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
@@ -252,7 +252,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     // TODO(anyone) this would be only possible if traction is on the steering axis
     phi = omega_bz > 0 ? M_PI_2 : -M_PI_2;
-    Ws = abs(omega_bz) * wheelbase_ / wheel_radius_;
+    Ws = abs(omega_bz) * wheel_base_ / wheel_radius_;
   }
   else
   {
