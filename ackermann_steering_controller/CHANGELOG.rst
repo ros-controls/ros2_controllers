@@ -2,6 +2,12 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Rename ackermann msg to controller state msg type (backport `#1662 <https://github.com/ros-controls/ros2_controllers/issues/1662>`_) (`#1663 <https://github.com/ros-controls/ros2_controllers/issues/1663>`_)
+* Fix preceeding->preceding typos (backport `#1655 <https://github.com/ros-controls/ros2_controllers/issues/1655>`_) (`#1657 <https://github.com/ros-controls/ros2_controllers/issues/1657>`_)
+* Contributors: mergify[bot]
+
 2.44.0 (2025-04-10)
 -------------------
 * Bump version of pre-commit hooks (backport `#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_) (`#1620 <https://github.com/ros-controls/ros2_controllers/issues/1620>`_)
