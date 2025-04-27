@@ -34,7 +34,7 @@
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
+  steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
