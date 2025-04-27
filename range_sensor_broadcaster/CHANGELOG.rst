@@ -2,6 +2,9 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+
 4.23.0 (2025-04-10)
 -------------------
 * Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
