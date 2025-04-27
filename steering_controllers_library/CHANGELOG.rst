@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.24.0 (2025-04-27)
+-------------------
 * Rename ackermann msg to controller state msg type (`#1662 <https://github.com/ros-controls/ros2_controllers/issues/1662>`_)
 * Remove front_steering from steering library (`#1166 <https://github.com/ros-controls/ros2_controllers/issues/1166>`_)
 * Fix preceeding->preceding typos (`#1655 <https://github.com/ros-controls/ros2_controllers/issues/1655>`_)

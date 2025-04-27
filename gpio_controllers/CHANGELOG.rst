@@ -2,8 +2,8 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.24.0 (2025-04-27)
+-------------------
 * Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
 * Contributors: Junius Santoso
 
