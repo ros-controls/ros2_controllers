@@ -85,7 +85,7 @@ public:
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
   using SteeringControllerStateMsg = control_msgs::msg::SteeringControllerStatus;
-  using AckermannControllerState =
+  using AckermannControllerState [[deprecated]] =
     SteeringControllerStateMsg;  // unused, but kept for backwards compatibility
 
 protected:
@@ -97,6 +97,8 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
+  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_ackermann_ =
+    nullptr;  // unused, but kept for avoiding ABI break
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr ref_subscriber_unstamped_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
