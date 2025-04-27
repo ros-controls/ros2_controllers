@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
+* Contributors: Junius Santoso
+
 4.23.0 (2025-04-10)
 -------------------
 * Use gmock instead of gtest (`#1625 <https://github.com/ros-controls/ros2_controllers/issues/1625>`_)

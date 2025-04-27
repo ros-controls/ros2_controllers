@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Fix joint_state_broadcaster performance issues (`#1640 <https://github.com/ros-controls/ros2_controllers/issues/1640>`_)
+* Contributors: Christoph Fröhlich, Jordan Palacios
+
 4.23.0 (2025-04-10)
 -------------------
 * [JSB] added fixes to mantain the joint names order (`#1572 <https://github.com/ros-controls/ros2_controllers/issues/1572>`_)
