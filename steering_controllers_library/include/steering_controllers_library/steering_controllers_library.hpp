@@ -27,7 +27,6 @@
 #include "realtime_tools/realtime_publisher.hpp"
 
 // TODO(anyone): Replace with controller specific messages
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -70,11 +69,10 @@ public:
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  using ControllerAckermannReferenceMsg = ackermann_msgs::msg::AckermannDriveStamped;
   using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
-  using AckermannControllerState = control_msgs::msg::SteeringControllerStatus;
+  using SteeringControllerStateMsg = control_msgs::msg::SteeringControllerStatus;
 
 protected:
   controller_interface::CallbackReturn set_interface_numbers(
@@ -85,7 +83,6 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
-  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_ackermann_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
@@ -106,10 +103,10 @@ protected:
   /// Odometry:
   steering_odometry::SteeringOdometry odometry_;
 
-  AckermannControllerState published_state_;
+  SteeringControllerStateMsg published_state_;
 
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<AckermannControllerState>;
-  rclcpp::Publisher<AckermannControllerState>::SharedPtr controller_s_publisher_;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<SteeringControllerStateMsg>;
+  rclcpp::Publisher<SteeringControllerStateMsg>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
   // name constants for state interfaces
