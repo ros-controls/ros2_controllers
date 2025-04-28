@@ -397,7 +397,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   try
   {
     // State publisher
-    controller_s_publisher_ = get_node()->create_publisher<AckermannControllerState>(
+    controller_s_publisher_ = get_node()->create_publisher<SteeringControllerStateMsg>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
