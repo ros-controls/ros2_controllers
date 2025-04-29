@@ -496,7 +496,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   {
     for (size_t i = 0; i < measured_state_values_.size(); ++i)
     {
-      measured_state_values_[i] = state_interfaces_[i].get_value();
+      measured_state_values_[i] = state_interfaces_[i].get_optional().value();
     }
   }
 
@@ -533,6 +533,23 @@ controller_interface::return_type PidController::update_and_write_commands(
       }
 
       double error = reference_interfaces_[i] - measured_state_values_[i];
+
+      const auto zero_threshold = params_.gains.dof_names_map[params_.dof_names[i]].zero_threshold;
+      if (std::abs(reference_interfaces_[i]) < zero_threshold && std::abs(error) < zero_threshold)
+      {
+        reset_pid_time_ += period.seconds();
+        if (
+          reset_pid_time_ >
+          params_.gains.dof_names_map[params_.dof_names[i]].zero_threshold_duration)
+        {
+          pids_[i]->reset();
+        }
+      }
+      else
+      {
+        reset_pid_time_ = 0.0;
+      }
+
       if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
       {
         // for continuous angles the error is normalized between -pi<error<pi
@@ -601,7 +618,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       state_publisher_->msg_.dof_states[i].time_step = period.seconds();
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
-      state_publisher_->msg_.dof_states[i].output = command_interfaces_[i].get_value();
+      state_publisher_->msg_.dof_states[i].output = command_interfaces_[i].get_optional().value();
     }
     state_publisher_->unlockAndPublish();
   }
