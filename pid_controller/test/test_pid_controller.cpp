@@ -181,15 +181,15 @@ TEST_F(PidControllerTest, reactivate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -272,7 +272,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
   const double expected_command_value = 30102.30102;
 
-  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  double actual_value =
+    std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 }
 
@@ -331,7 +332,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
     // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.3 + 0 * 101.101 = 30102.3
     const double expected_command_value = 30102.301020;
 
-    double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+    double actual_value =
+      std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
     EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
   }
 }
@@ -388,7 +390,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   // feedforward OFF -> cmd = p_term + i_term + d_term = 3.9 + 0.078 + 1170.0 = 1173.978
   const double expected_command_value = 1173.978;
 
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
 }
 
 /**
@@ -415,7 +417,8 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
 
   // check the result of the commands - the values are not wrapped
   const double expected_command_value = 2679.078;
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
 }
 
 /**
@@ -446,7 +449,8 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
 
   // Check the command value
   const double expected_command_value = 787.713559;
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
 }
 
 TEST_F(PidControllerTest, subscribe_and_get_messages_success)
@@ -583,7 +587,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
 }
 
 /**
@@ -641,7 +645,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
 }
 
 /**
@@ -677,7 +681,8 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
   const double expected_command_value = 30102.30102;
 
-  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  double actual_value =
+    std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 
   // deactivate the controller and set command=state
@@ -690,7 +695,7 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  actual_value = std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, 0.0, 1e-5);
 }
 
@@ -727,7 +732,8 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
   const double expected_command_value = 30102.30102;
 
-  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  double actual_value =
+    std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 
   // deactivate the controller and set command=state
@@ -740,8 +746,61 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  actual_value = std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, 2.00002, 1e-5);  // i_term from above
+}
+
+/**
+ * @brief Test if zero_threshold is working
+ *
+ */
+
+TEST_F(PidControllerTest, test_zero_threshold)
+{
+  SetUpController("test_zero_threshold");
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  executor.add_node(service_caller_node_->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_NE(controller_->params_.gains.dof_names_map[dof_name].zero_threshold, 0.0);
+  }
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  controller_->set_reference(dof_command_values_);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check the command value
+  // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
+  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
+  const double expected_command_value = 30102.30102;
+
+  double actual_value =
+    std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+
+  // set command and state to a value slightly less than zero threshold
+  const auto near_zero_value =
+    controller_->params_.gains.dof_names_map[dof_names_[0]].zero_threshold * 0.9;
+  controller_->set_reference({near_zero_value});
+  dof_state_values_[0] = near_zero_value;
+
+  // set the duration to a value larger than the zero threshold duration
+  const auto duration =
+    controller_->params_.gains.dof_names_map[dof_names_[0]].zero_threshold_duration * 1.1;
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(duration)),
+    controller_interface::return_type::OK);
+  actual_value = std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
+  EXPECT_NEAR(actual_value, 0.0, 1e-5);
 }
 
 int main(int argc, char ** argv)
