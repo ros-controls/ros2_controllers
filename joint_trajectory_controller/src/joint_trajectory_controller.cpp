@@ -123,7 +123,6 @@ JointTrajectoryController::command_interface_configuration() const
 controller_interface::InterfaceConfiguration
 JointTrajectoryController::state_interface_configuration() const
 {
-  const auto logger = get_node()->get_logger();
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
