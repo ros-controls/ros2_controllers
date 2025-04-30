@@ -99,7 +99,6 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint command_next_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
-  trajectory_msgs::msg::JointTrajectoryPoint goal_error_;
 
   // Degrees of freedom
   size_t dof_;

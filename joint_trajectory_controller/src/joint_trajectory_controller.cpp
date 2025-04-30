@@ -149,11 +149,6 @@ controller_interface::return_type JointTrajectoryController::update(
     scaling_factor_ = scaling_state_interface_->get().get_value();
   }
 
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
-    return controller_interface::return_type::OK;
-  }
-
   if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     if (scaling_command_interface_.has_value())
@@ -289,26 +284,23 @@ controller_interface::return_type JointTrajectoryController::update(
           tolerance_violated_while_moving = true;
         }
         // past the final point, check that we end up inside goal tolerance
-        if (!before_last_point && *(rt_is_holding_.readFromRT()) == false)
+        if (
+          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
+          !check_state_tolerance_per_joint(
+            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
         {
-          compute_error_for_joint(goal_error_, index, state_current_, command_next_);
-          if (!check_state_tolerance_per_joint(
-                goal_error_, index, active_tol->goal_state_tolerance[index],
-                false /* show_errors */))
-          {
-            outside_goal_tolerance = true;
+          outside_goal_tolerance = true;
 
-            if (active_tol->goal_time_tolerance != 0.0)
+          if (active_tol->goal_time_tolerance != 0.0)
+          {
+            // if we exceed goal_time_tolerance set it to aborted
+            if (time_difference > active_tol->goal_time_tolerance)
             {
-              // if we exceed goal_time_tolerance set it to aborted
-              if (time_difference > active_tol->goal_time_tolerance)
-              {
-                within_goal_time = false;
-                // print once, goal will be aborted afterwards
-                check_state_tolerance_per_joint(
-                  goal_error_, index, default_tolerances_.goal_state_tolerance[index],
-                  true /* show_errors */);
-              }
+              within_goal_time = false;
+              // print once, goal will be aborted afterwards
+              check_state_tolerance_per_joint(
+                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                true /* show_errors */);
             }
           }
         }
@@ -378,6 +370,7 @@ controller_interface::return_type JointTrajectoryController::update(
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
         feedback->header.stamp = time;
         feedback->joint_names = params_.joints;
+
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -983,7 +976,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     command_current_, dof_, std::numeric_limits<double>::quiet_NaN());
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
-  resize_joint_trajectory_point(goal_error_, dof_);
   resize_joint_trajectory_point(
     last_commanded_state_, dof_, std::numeric_limits<double>::quiet_NaN());
 
