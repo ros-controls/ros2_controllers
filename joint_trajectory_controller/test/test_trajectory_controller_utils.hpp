@@ -413,13 +413,15 @@ public:
 
     speed_scaling_factor_ = 1.0;
     target_speed_scaling_factor_ = 1.0;
-    gpio_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      "speed_scaling", "speed_scaling_factor",
-      separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
+    gpio_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        "speed_scaling", "speed_scaling_factor",
+        separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
     state_interfaces.emplace_back(gpio_state_interfaces.back());
 
-    gpio_command_interfaces_.emplace_back(hardware_interface::CommandInterface(
-      "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
+    gpio_command_interfaces_.emplace_back(
+      hardware_interface::CommandInterface(
+        "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
     cmd_interfaces.emplace_back(gpio_command_interfaces_.back());
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
