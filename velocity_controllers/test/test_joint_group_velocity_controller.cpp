@@ -175,7 +175,7 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_2_cmd_.get_value(), 2.1);
   ASSERT_EQ(joint_3_cmd_.get_value(), 3.1);
 
-  auto node_state = controller_->get_node()->configure();
+  auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   node_state = controller_->get_node()->activate();
