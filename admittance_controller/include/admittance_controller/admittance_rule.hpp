@@ -99,7 +99,7 @@ public:
   /**
    * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
    * 'current_joint_state'.
-   * 
+   *
    * All transforms (e.g., world to base, sensor to base, CoG to base) are now computed
    * directly in this function and stored in `admittance_state_`, removing the
    * need for an intermediate transform struct.
