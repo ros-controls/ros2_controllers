@@ -1,0 +1,9 @@
+[0.000000] (-) TimerEvent: {}
+[0.000105] (admittance_controller) JobQueued: {'identifier': 'admittance_controller', 'dependencies': OrderedDict({'admittance_controller': '/home/geethik/code/git/random_ws/src/ros2_controllers/install/admittance_controller'})}
+[0.000329] (admittance_controller) JobStarted: {'identifier': 'admittance_controller'}
+[0.099962] (-) TimerEvent: {}
+[0.200206] (-) TimerEvent: {}
+[0.300539] (-) TimerEvent: {}
+[0.381215] (admittance_controller) StderrLine: {'line': b'Traceback (most recent call last):\n  File "/usr/lib/python3/dist-packages/colcon_core/executor/__init__.py", line 91, in __call__\n    rc = await self.task(*args, **kwargs)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/lib/python3/dist-packages/colcon_core/task/__init__.py", line 93, in __call__\n    return await task_method(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/lib/python3/dist-packages/colcon_ros/task/ament_cmake/test.py", line 29, in test\n    return await extension.test()\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File "/usr/lib/python3/dist-packages/colcon_cmake/task/cmake/test.py", line 44, in test\n    assert os.path.exists(args.build_base), \\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Has this package been built before?\n'}
+[0.382225] (admittance_controller) JobEnded: {'identifier': 'admittance_controller', 'rc': 1}
+[0.391893] (-) EventReactorShutdown: {}

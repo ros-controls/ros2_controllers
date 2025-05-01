@@ -161,10 +161,6 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Reusable transform variable
   Eigen::Isometry3d tf;
-  bool success = true;
-
-  // Reusable transform variable
-  Eigen::Isometry3d tf;
 
   // --- FT sensor frame to base frame (translation + rotation) ---
   success &= kinematics_->calculate_link_transform(
