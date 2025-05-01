@@ -149,6 +149,7 @@ controller_interface::return_type AdmittanceRule::update(
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
   // duration & live-parameter refresh
+  // duration & live-parameter refresh
   const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
@@ -156,6 +157,10 @@ controller_interface::return_type AdmittanceRule::update(
     apply_parameters_update();
   }
 
+  bool success = true;
+
+  // Reusable transform variable
+  Eigen::Isometry3d tf;
   bool success = true;
 
   // Reusable transform variable
@@ -183,6 +188,7 @@ controller_interface::return_type AdmittanceRule::update(
     rot_world_base * admittance_state_.ref_trans_base_ft.rotation(),
     rot_world_base * /* CoG rotation */ tf.rotation());
 
+  // transform filtered wrench into the robot base frame
   // transform filtered wrench into the robot base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
     rot_world_base.transpose() * wrench_world_.block<3, 1>(0, 0);
