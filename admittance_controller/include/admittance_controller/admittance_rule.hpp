@@ -104,10 +104,6 @@ public:
    * directly in this function and stored in `admittance_state_`, removing the
    * need for an intermediate transform struct.
    *
-   * All transforms (e.g., world to base, sensor to base, CoG to base) are now computed
-   * directly in this function and stored in `admittance_state_`, removing the
-   * need for an intermediate transform struct.
-   *
    * \param[in] current_joint_state current joint state of the robot
    * \param[in] measured_wrench most recent measured wrench from force torque sensor
    * \param[in] reference_joint_state input joint state reference
