@@ -202,7 +202,7 @@ controller_interface::return_type AdmittanceRule::update(
     return controller_interface::return_type::ERROR;
   }
 
-  // form final desired_joint_state by adding computed offsets
+  // Update final desired_joint_state using the computed transforms
   for (size_t i = 0; i < num_joints_; ++i)
   {
     auto idx = static_cast<Eigen::Index>(i);
