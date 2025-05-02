@@ -1,12 +1,20 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package ros2_controllers_test_nodes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package gps_sensor_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 4.24.0 (2025-04-27)
 -------------------
+* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
+* Fix wrong link in GPSBroadcaster doc (`#1637 <https://github.com/ros-controls/ros2_controllers/issues/1637>`_)
+* Contributors: Christoph Fröhlich, Junius Santoso
 
 4.23.0 (2025-04-10)
 -------------------
+* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
+* Contributors: Wiktor Bajor
+
+* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
+* Contributors: Wiktor Bajor
 
 4.22.0 (2025-03-17)
 -------------------
@@ -25,12 +33,6 @@ Changelog for package ros2_controllers_test_nodes
 
 4.17.0 (2024-12-07)
 -------------------
-* Don't call shutdown() after an exception (`#1400 <https://github.com/ros-controls/ros2_controllers/issues/1400>`_)
-* Add another dependency (`#1382 <https://github.com/ros-controls/ros2_controllers/issues/1382>`_)
-* Add missing deps for test_nodes (`#1378 <https://github.com/ros-controls/ros2_controllers/issues/1378>`_)
-* test_nodes: catch keyboard interrupt and add simple launch tests (`#1369 <https://github.com/ros-controls/ros2_controllers/issues/1369>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich
 
 4.16.0 (2024-11-08)
 -------------------
@@ -40,8 +42,6 @@ Changelog for package ros2_controllers_test_nodes
 
 4.14.0 (2024-09-11)
 -------------------
-* Fix deprecation warning in paramater declaration (`#1280 <https://github.com/ros-controls/ros2_controllers/issues/1280>`_)
-* Contributors: Sanjeev
 
 4.13.0 (2024-08-22)
 -------------------
@@ -90,8 +90,6 @@ Changelog for package ros2_controllers_test_nodes
 
 3.17.0 (2023-10-31)
 -------------------
-* [TestNodes] Optimize output about setup of JTC publisher (`#792 <https://github.com/ros-controls/ros2_controllers/issues/792>`_)
-* Contributors: Dr. Denis
 
 3.16.0 (2023-09-20)
 -------------------
@@ -110,8 +108,6 @@ Changelog for package ros2_controllers_test_nodes
 
 3.11.0 (2023-06-24)
 -------------------
-* Removes deprecated if-branch (`#653 <https://github.com/ros-controls/ros2_controllers/issues/653>`_)
-* Contributors: Christoph Fröhlich
 
 3.10.1 (2023-06-06)
 -------------------
@@ -145,8 +141,6 @@ Changelog for package ros2_controllers_test_nodes
 
 3.1.0 (2023-01-26)
 ------------------
-* add publisher topic parameter to forward_position_controller (`#494 <https://github.com/ros-controls/ros2_controllers/issues/494>`_)
-* Contributors: Manuel Muth
 
 3.0.0 (2023-01-19)
 ------------------
@@ -156,13 +150,9 @@ Changelog for package ros2_controllers_test_nodes
 
 2.14.0 (2022-11-18)
 -------------------
-* Remove deprecation warning when parameter without value is set. (`#445 <https://github.com/ros-controls/ros2_controllers/issues/445>`_)
-* Contributors: Denis Štogl
 
 2.13.0 (2022-10-05)
 -------------------
-* Enable definition of all fields in JointTrajectory message when using test node. (`#389 <https://github.com/ros-controls/ros2_controllers/issues/389>`_)
-* Contributors: Denis Štogl
 
 2.12.0 (2022-09-01)
 -------------------
@@ -178,8 +168,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.8.0 (2022-07-09)
 ------------------
-* Fix deprecation in setup.cfg on Jammy (Humble and Rolling). (`#375 <https://github.com/ros-controls/ros2_controllers/issues/375>`_)
-* Contributors: Denis Štogl
 
 2.7.0 (2022-07-03)
 ------------------
@@ -201,8 +189,6 @@ Changelog for package ros2_controllers_test_nodes
 
 2.1.0 (2022-02-23)
 ------------------
-* Move test nodes from the ros2_control_demos repository. (`#294 <https://github.com/ros-controls/ros2_controllers/issues/294>`_)
-* Contributors: Denis Štogl, Lovro Ivanov
 
 2.0.1 (2022-02-01)
 ------------------

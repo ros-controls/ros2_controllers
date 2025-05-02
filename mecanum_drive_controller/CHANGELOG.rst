@@ -2,6 +2,17 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Fix preceeding->preceding typos (`#1655 <https://github.com/ros-controls/ros2_controllers/issues/1655>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
 4.22.0 (2025-03-17)
 -------------------
 * [mecanum_drive_controller] Fix Odometry Initialization  (`#1573 <https://github.com/ros-controls/ros2_controllers/issues/1573>`_)
