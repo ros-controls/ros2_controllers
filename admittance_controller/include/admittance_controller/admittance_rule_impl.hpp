@@ -148,8 +148,6 @@ controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
-  // duration & live-parameter refresh
-  // duration & live-parameter refresh
   const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
