@@ -32,7 +32,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 using ControllerStateMsg =
-  steering_controllers_library::SteeringControllersLibrary::AckermannControllerState;
+  steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
@@ -150,13 +150,14 @@ protected:
 
     command_itfs_.emplace_back(
       hardware_interface::CommandInterface(
-        rear_wheels_names_[0], traction_interface_name_,
+        traction_joints_names_[0], traction_interface_name_,
         &joint_command_values_[CMD_TRACTION_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(
       hardware_interface::CommandInterface(
-        front_wheels_names_[0], steering_interface_name_, &joint_command_values_[CMD_STEER_WHEEL]));
+        steering_joints_names_[0], steering_interface_name_,
+        &joint_command_values_[CMD_STEER_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -165,13 +166,14 @@ protected:
 
     state_itfs_.emplace_back(
       hardware_interface::StateInterface(
-        rear_wheels_names_[0], traction_interface_name_,
+        traction_joints_names_[0], traction_interface_name_,
         &joint_state_values_[STATE_TRACTION_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(
       hardware_interface::StateInterface(
-        front_wheels_names_[0], steering_interface_name_, &joint_state_values_[STATE_STEER_AXIS]));
+        steering_joints_names_[0], steering_interface_name_,
+        &joint_state_values_[STATE_STEER_AXIS]));
     state_ifs.emplace_back(state_itfs_.back());
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -253,19 +255,16 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  std::vector<std::string> rear_wheels_names_ = {{"rear_wheel_joint"}};
-  std::vector<std::string> front_wheels_names_ = {{"steering_axis_joint"}};
-  std::vector<std::string> joint_names_ = {{rear_wheels_names_[0], front_wheels_names_[0]}};
+  std::vector<std::string> traction_joints_names_ = {{"rear_wheel_joint"}};
+  std::vector<std::string> steering_joints_names_ = {{"steering_axis_joint"}};
+  std::vector<std::string> joint_names_ = {{traction_joints_names_[0], steering_joints_names_[0]}};
 
-  std::vector<std::string> rear_wheels_preceeding_names_ = {{"pid_controller/rear_wheel_joint"}};
-  std::vector<std::string> front_wheels_preceeding_names_ = {
+  std::vector<std::string> traction_joints_preceding_names_ = {{"pid_controller/rear_wheel_joint"}};
+  std::vector<std::string> steering_joints_preceding_names_ = {
     {"pid_controller/steering_axis_joint"}};
-  std::vector<std::string> preceeding_joint_names_ = {
-    rear_wheels_preceeding_names_[0], front_wheels_preceeding_names_[0]};
 
   double wheelbase_ = 3.24644;
-  double front_wheels_radius_ = 0.45;
-  double rear_wheels_radius_ = 0.45;
+  double traction_wheel_radius_ = 0.45;
 
   std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
   std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
@@ -274,7 +273,7 @@ protected:
 
   // defined in setup
   std::string traction_interface_name_ = "";
-  std::string preceeding_prefix_ = "pid_controller";
+  std::string preceding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
