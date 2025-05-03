@@ -2,6 +2,64 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Replace RCLCPP\_*_STREAM macros with RCLCPP\_* (`#1600 <https://github.com/ros-controls/ros2_controllers/issues/1600>`_)
+* [jtc tests] avoid dangling ref of command / state interfaces (`#1596 <https://github.com/ros-controls/ros2_controllers/issues/1596>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Vedant Randive, github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Use constructor parameters instead of initializer list (`#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_)
+* [JTC] Enable feed-forward effort trajectories (`#1200 <https://github.com/ros-controls/ros2_controllers/issues/1200>`_)
+* [JTC] Rename open_loop_control parameter and slightly change its scope (`#1525 <https://github.com/ros-controls/ros2_controllers/issues/1525>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Thies Oelerich, Vladimir Ivan
+
+4.21.0 (2025-03-01)
+-------------------
+* [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)
+* [JTC] Use time of the last command for set_point_before_trajectory_msg in open-loop mode (`#780 <https://github.com/ros-controls/ros2_controllers/issues/780>`_)
+* Update API of PID class (`#1437 <https://github.com/ros-controls/ros2_controllers/issues/1437>`_)
+* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
+* [JTC]: Abort goal on deactivate (`#1517 <https://github.com/ros-controls/ros2_controllers/issues/1517>`_)
+* Contributors: Christoph Fröhlich, Dr. Denis, Felix Exner
+
+4.20.0 (2025-01-29)
+-------------------
+* Remove empty callbacks (`#1488 <https://github.com/ros-controls/ros2_controllers/issues/1488>`_)
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich, Julia Jia
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove empty on_shutdown() callbacks (`#1477 <https://github.com/ros-controls/ros2_controllers/issues/1477>`_)
+* Use urdf/model.hpp for rolling (`#1473 <https://github.com/ros-controls/ros2_controllers/issues/1473>`_)
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar, Julia Jia, verma nakul
+
+4.18.0 (2024-12-19)
+-------------------
+* Add an error msg if empty message is received (`#1424 <https://github.com/ros-controls/ros2_controllers/issues/1424>`_)
+* [CI] Add clang job and setup concurrency (`#1407 <https://github.com/ros-controls/ros2_controllers/issues/1407>`_)
+* Contributors: Christoph Fröhlich
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* JTC: sum periods (`#1395 <https://github.com/ros-controls/ros2_controllers/issues/1395>`_)
+* [JTC] Sample at t + dT instead of the beginning of the control cycle (`#1306 <https://github.com/ros-controls/ros2_controllers/issues/1306>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
 4.16.0 (2024-11-08)
 -------------------
 * [JTC] Fix the JTC length_error exceptions in the tests (`#1360 <https://github.com/ros-controls/ros2_controllers/issues/1360>`_)

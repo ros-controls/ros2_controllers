@@ -2,41 +2,89 @@ steering_controllers_library:
   reference_timeout: {
     type: double,
     default_value: 1.0,
-    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
+    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
 
   front_steering: {
     type: bool,
-    default_value: true,
-    description: "Is the steering on the front of the robot?",
     read_only: true,
+    default_value: true,
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names' instead"
   }
 
   rear_wheels_names: {
     type: string_array,
-    description: "Names of rear wheel joints.",
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names' instead",
+    read_only: true,
+    default_value: [],
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  traction_joints_names: {
+    type: string_array,
+    description: "Names of traction wheel joints. For kinematic configurations with two traction joints, the expected order is: right joint, left joint.",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
       unique<>: null,
-      not_empty<>: null,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # not_empty<>: null,
     }
   }
 
   front_wheels_names: {
     type: string_array,
-    description: "Names of front wheel joints.",
+    description: "DEPRECATED: Use 'traction_joints_names' or 'steering_joints_names'' instead",
+    read_only: true,
+    default_value: [],
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  steering_joints_names: {
+    type: string_array,
+    description: "Names of steering joints. For kinematic configurations with two steering joints, the expected order is: right joint, left joint. The orientation of the steering axes is expected as such: When positive steering position value is commanded, then the robot should turn in positive direction of the z-axis of the vehicle (see REP-103).",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
       unique<>: null,
-      not_empty<>: null,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # not_empty<>: null,
+    }
+  }
+
+  traction_joints_state_names: {
+    type: string_array,
+    description: "(Optional) Names of tractions joints to read states from. If not set joint names from 'traction_joints_names' will be used.",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
     }
   }
 
   rear_wheels_state_names: {
     type: string_array,
-    description: "(Optional) Names of rear wheel joints to read states from. If not set joint names from 'rear_wheels_names' will be used.",
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names' instead",
+    default_value: [],
+    read_only: true,
+    validation: {
+      size_lt<>: [5],
+      unique<>: null,
+    }
+  }
+
+  steering_joints_state_names: {
+    type: string_array,
+    description: "(Optional) Names of steering joints to read states from. If not set joint names from 'steering_joints_names' will be used.",
     default_value: [],
     read_only: true,
     validation: {
@@ -47,7 +95,7 @@ steering_controllers_library:
 
   front_wheels_state_names: {
     type: string_array,
-    description: "(Optional) Names of front wheel joints to read states from. If not set joint names from 'front_wheels_names' will be used.",
+    description: "DEPRECATED: Use 'traction_joints_state_names' or 'steering_joints_state_names' instead",
     default_value: [],
     read_only: true,
     validation: {
@@ -60,6 +108,13 @@ steering_controllers_library:
     type: bool,
     default_value: false,
     description: "Choose if open-loop or not (feedback) is used for odometry calculation.",
+    read_only: false,
+  }
+
+  reduce_wheel_speed_until_steering_reached: {
+    type: bool,
+    default_value: false,
+    description: "Reduce wheel speed until the steering angle has been reached.",
     read_only: false,
   }
 

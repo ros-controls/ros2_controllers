@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(force_torque_sensor_broadcaster LANGUAGES CXX)
+project(force_torque_sensor_broadcaster)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -40,10 +38,6 @@ target_link_libraries(force_torque_sensor_broadcaster PUBLIC
   force_torque_sensor_broadcaster_parameters
 )
 ament_target_dependencies(force_torque_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(force_torque_sensor_broadcaster PRIVATE "FORCE_TORQUE_SENSOR_BROADCASTER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)

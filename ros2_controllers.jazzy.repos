@@ -6,20 +6,20 @@ repositories:
   realtime_tools:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
-    version: master
+    version: jazzy
   control_msgs:
     type: git
     url: https://github.com/ros-controls/control_msgs.git
-    version: master
+    version: jazzy
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
-    version: ros2-master
+    version: jazzy
   kinematics_interface:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git
-    version: master
-  generate_parameter_library:
+    version: jazzy
+  ros2_control_cmake:
     type: git
-    url: https://github.com/picknikrobotics/generate_parameter_library.git
-    version: main
+    url: https://github.com/ros-controls/ros2_control_cmake.git
+    version: master

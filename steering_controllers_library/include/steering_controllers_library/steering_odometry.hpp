@@ -146,6 +146,12 @@ public:
   void set_odometry_type(const unsigned int type);
 
   /**
+   * \brief Get odometry type
+   * \return odometry type
+   */
+  unsigned int get_odometry_type() const { return static_cast<unsigned int>(config_type_); }
+
+  /**
    * \brief heading getter
    * \return heading [rad]
    */
@@ -176,10 +182,17 @@ public:
   double get_angular() const { return angular_; }
 
   /**
-   * \brief Sets the wheel parameters: radius, separation and wheelbase
+   * \brief Sets the wheel parameters: radius, wheel_base, and wheel_track
    */
   void set_wheel_params(
-    const double wheel_radius, const double wheelbase = 0.0, const double wheel_track = 0.0);
+    const double wheel_radius, const double wheel_base = 0.0, const double wheel_track = 0.0);
+
+  /**
+   * \brief Sets the wheel parameters: radius, wheel_base, and wheel_track for steering and traction
+   */
+  void set_wheel_params(
+    const double wheel_radius, const double wheel_base, const double wheel_track_steering,
+    const double wheel_track_traction);
 
   /**
    * \brief Velocity rolling window size setter
@@ -192,10 +205,13 @@ public:
    * \param v_bx     Desired linear velocity of the robot in x_b-axis direction
    * \param omega_bz Desired angular velocity of the robot around x_z-axis
    * \param open_loop If false, the IK will be calculated using measured steering angle
+   * \param reduce_wheel_speed_until_steering_reached Reduce wheel speed until the steering angle
+   * has been reached
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
-    const double v_bx, const double omega_bz, const bool open_loop = true);
+    const double v_bx, const double omega_bz, const bool open_loop = true,
+    const bool reduce_wheel_speed_until_steering_reached = false);
 
   /**
    *  \brief Reset poses, heading, and accumulators
@@ -270,9 +286,10 @@ private:
   double angular_;  // [rad/s]
 
   /// Kinematic parameters
-  double wheel_track_;   // [m]
-  double wheelbase_;     // [m]
-  double wheel_radius_;  // [m]
+  double wheel_track_traction_;  // [m]
+  double wheel_track_steering_;  // [m]
+  double wheel_base_;            // [m]
+  double wheel_radius_;          // [m]
 
   /// Configuration type used for the forward kinematics
   int config_type_ = -1;

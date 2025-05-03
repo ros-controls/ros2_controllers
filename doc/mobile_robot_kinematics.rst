@@ -23,7 +23,91 @@ The forward integration of the kinematic model using the encoders of the wheel a
 Omnidirectional Wheeled Mobile Robots
 .....................................
 
-Robots with omniwheels or mecanum wheels. Section will be updated if controllers for these robots are implemented.
+Omnidirectional Drive Robots using Omni Wheels
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+The below explains the kinematics of omnidirectional drive robots using 3 or more omni wheels.
+It follows the coordinate conventions defined in `ROS REP 103 <https://www.ros.org/reps/rep-0103.html>`__.
+
+.. image:: images/omni_wheel_omnidirectional_drive.svg
+   :width: 550
+   :align: center
+   :alt: Omnidirectional Drive Robot using Omni Wheels
+
+* :math:`x_b,y_b` is the robot's body-frame coordinate system, located at the contact point of the wheel on the ground.
+* :math:`x_w,y_w` is the world coordinate system.
+* :math:`v_{b,x},` is the robot's linear velocity on the x-axis.
+* :math:`v_{b,y}` is the robot's linear velocity on the y-axis.
+* :math:`\omega_{b,z}` is the robot's angular velocity on the z-axis.
+* :math:`R` is the robot's radius / the distance between the robot's center and the wheels.
+* Red arrows on the wheel :math:`i` signify the positive direction of their rotation :math:`\omega_i`
+* :math:`\gamma` is the angular offset of the first wheel from :math:`x_b`.
+* :math:`\theta` is the angle between each wheel which can be calculated using the below equation where :math:`n` is the number of wheels.
+
+.. math::
+
+   θ = \frac{2\pi}{n}
+
+**Inverse Kinematics**
+
+The necessary angular velocity of the wheels to achieve a desired body twist can be calculated using the below matrix:
+
+.. math::
+
+  A =
+  \begin{bmatrix}
+    \sin(\gamma) & -\cos(\gamma) & -R  \\
+    \sin(\theta + \gamma) & -\cos(\theta + \gamma) & -R\\
+    \sin(2\theta + \gamma) & -\cos(2\theta + \gamma) & -R\\
+    \sin(3\theta + \gamma) & -\cos(3\theta + \gamma) & -R\\
+    \vdots & \vdots & \vdots\\
+    \sin((n-1)\theta + \gamma) & -\cos((n-1)\theta + \gamma) & -R\\
+  \end{bmatrix}
+
+.. math::
+
+  \begin{bmatrix}
+    \omega_1\\
+    \omega_2\\
+    \omega_3\\
+    \omega_4\\
+    \vdots\\
+    \omega_n
+  \end{bmatrix} =
+  \frac{1}{r}
+  A
+  \begin{bmatrix}
+    v_{b,x}\\
+    v_{b,y}\\
+    \omega_{b,z}\\
+  \end{bmatrix}
+
+Here :math:`\omega_1,\ldots,\omega_n` are the angular velocities of the wheels and :math:`r` is the radius of the wheels.
+These equations can be written in algebraic form for any wheel :math:`i` like this:
+
+.. math::
+  \omega_i = \frac{\sin((i-1)\theta + \gamma) v_{b,x} - \cos((i-1)\theta + \gamma) v_{b,y} - R \omega_{b,z}}{r}
+
+**Forward Kinematics**
+
+The body twist of the robot can be obtained from the wheel velocities by using the pseudoinverse of matrix :math:`A`.
+
+.. math::
+
+  \begin{bmatrix}
+    v_{b,x}\\
+    v_{b,y}\\
+    \omega_{b,z}\\
+  \end{bmatrix} =
+  rA^\dagger
+  \begin{bmatrix}
+    \omega_1\\
+    \omega_2\\
+    \omega_3\\
+    \omega_4\\
+    \vdots\\
+    \omega_n
+  \end{bmatrix}
 
 Nonholonomic Wheeled Mobile Robots
 .....................................

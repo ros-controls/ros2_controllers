@@ -2,6 +2,37 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Contributors: github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Update documentation of rqt_joint_trajectory_controller (`#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_)
+* Contributors: Aditya Pawar, Christoph Fröhlich
+
+4.21.0 (2025-03-01)
+-------------------
+
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+
+4.18.0 (2024-12-19)
+-------------------
+
+4.17.0 (2024-12-07)
+-------------------
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich
+
 4.16.0 (2024-11-08)
 -------------------
 

@@ -7,11 +7,14 @@ This list summarizes the changes between Iron (previous) and Jazzy (current) rel
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
+* Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
 
 diff_drive_controller
 *****************************
 * The twist message on ``~/cmd_vel`` is now required to be of stamped type (`#812 <https://github.com/ros-controls/ros2_controllers/pull/812>`_).
 * Remove unused parameter ``wheels_per_side`` (`#958 <https://github.com/ros-controls/ros2_controllers/pull/958>`_).
+* Parameters ``has_velocity_limits``, ``has_acceleration_limits``, and ``has_jerk_limits`` are removed. Instead, set the respective limits to ``.NAN``. (`#1315 <https://github.com/ros-controls/ros2_controllers/pull/1315>`_).
+* Parameters ``max_acceleration_reverse`` and ``max_deceleration_reverse`` were added to configure asymmetric acceleration/deceleration behavior. (`#1315 <https://github.com/ros-controls/ros2_controllers/pull/1315>`_).
 
 joint_trajectory_controller
 *****************************
@@ -49,6 +52,8 @@ joint_trajectory_controller
             allowed to move without restriction.
 
 * Add the boolean parameter ``set_last_command_interface_value_as_state_on_activation``. When set to ``true``, the last command interface value is used as both the current state and the last commanded state upon activation. When set to ``false``, the current state is used for both (`#1231 <https://github.com/ros-controls/ros2_controllers/pull/1231>`_).
+* Feed-forward effort trajectories are supported now (`#1200 <https://github.com/ros-controls/ros2_controllers/pull/1200>`_).
+* Parameter ``open_loop_control`` is replaced by ``interpolate_from_desired_state`` and setting the feedback gains to zero (`#1525 <https://github.com/ros-controls/ros2_controllers/pull/1525>`_).
 
 mecanum_drive_controller
 ************************
@@ -57,12 +62,16 @@ mecanum_drive_controller
 pid_controller
 ************************
 * 🚀 The PID controller was added 🎉 (`#434 <https://github.com/ros-controls/ros2_controllers/pull/434>`_).
+* Add ``save_i_term`` parameter to control retention of integral state after re-activation (`#1507 <https://github.com/ros-controls/ros2_controllers/pull/1507>`_).
 
 steering_controllers_library
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
 * A fix for Ackermann steering odometry was added (`#921 <https://github.com/ros-controls/ros2_controllers/pull/921>`_).
 * Do not reset the steering wheels to ``0.0`` on timeout (`#1289 <https://github.com/ros-controls/ros2_controllers/pull/1289>`_).
+* New parameter ``reduce_wheel_speed_until_steering_reached`` was added. If set to true, then the wheel speed(s) is reduced until the steering angle has been reached. Only considered if ``open_loop = false`` (`#1314 <https://github.com/ros-controls/ros2_controllers/pull/1314>`_).
+* Ackermann kinematics now supports different wheel tracks for traction and steering axle (`#1166 <https://github.com/ros-controls/ros2_controllers/pull/1166>`_).
+* ``front_steering`` parameter was removed, see migration notes (`#1166 <https://github.com/ros-controls/ros2_controllers/pull/1166>`_).
 
 tricycle_controller
 ************************

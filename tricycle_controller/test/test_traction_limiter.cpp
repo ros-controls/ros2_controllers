@@ -19,16 +19,17 @@
 
 TEST(SpeedLimiterTest, testWrongParams)
 {
-  EXPECT_NO_THROW(tricycle_controller::TractionLimiter limiter(
-    std::numeric_limits<double>::quiet_NaN(),  // min_velocity
-    std::numeric_limits<double>::quiet_NaN(),  // max_velocity
-    std::numeric_limits<double>::quiet_NaN(),  // min_acceleration
-    std::numeric_limits<double>::quiet_NaN(),  // max_acceleration
-    std::numeric_limits<double>::quiet_NaN(),  // min_deceleration
-    std::numeric_limits<double>::quiet_NaN(),  // max_deceleration
-    std::numeric_limits<double>::quiet_NaN(),  // min_jerk
-    std::numeric_limits<double>::quiet_NaN()   // max_jerk
-    ));
+  EXPECT_NO_THROW(
+    tricycle_controller::TractionLimiter limiter(
+      std::numeric_limits<double>::quiet_NaN(),  // min_velocity
+      std::numeric_limits<double>::quiet_NaN(),  // max_velocity
+      std::numeric_limits<double>::quiet_NaN(),  // min_acceleration
+      std::numeric_limits<double>::quiet_NaN(),  // max_acceleration
+      std::numeric_limits<double>::quiet_NaN(),  // min_deceleration
+      std::numeric_limits<double>::quiet_NaN(),  // max_deceleration
+      std::numeric_limits<double>::quiet_NaN(),  // min_jerk
+      std::numeric_limits<double>::quiet_NaN()   // max_jerk
+      ));
 
   // velocity
   {

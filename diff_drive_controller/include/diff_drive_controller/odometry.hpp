@@ -22,8 +22,6 @@
 #ifndef DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
 #define DIFF_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
-#include <cmath>
-
 #include "rclcpp/time.hpp"
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if RCPPUTILS_VERSION_MAJOR >= 2 && RCPPUTILS_VERSION_MINOR >= 6

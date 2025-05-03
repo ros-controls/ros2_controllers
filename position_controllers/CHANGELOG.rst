@@ -2,6 +2,44 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Use gmock instead of gtest (`#1625 <https://github.com/ros-controls/ros2_controllers/issues/1625>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, Yassine Cherni
+
+4.22.0 (2025-03-17)
+-------------------
+* Fix the `ActivateWithWrongJointsNamesFails` test (`#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_)
+* Contributors: Christoph Fröhlich
+
+4.21.0 (2025-03-01)
+-------------------
+
+4.20.0 (2025-01-29)
+-------------------
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar
+
+4.18.0 (2024-12-19)
+-------------------
+* Update position controller package.xml (`#1431 <https://github.com/ros-controls/ros2_controllers/issues/1431>`_)
+* Contributors: Jakub "Deli" Delicat
+
+4.17.0 (2024-12-07)
+-------------------
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.16.0 (2024-11-08)
 -------------------
 

@@ -7,11 +7,9 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -45,9 +43,6 @@ target_include_directories(range_sensor_broadcaster
   PRIVATE $<INSTALL_INTERFACE:include>
 )
 ament_target_dependencies(range_sensor_broadcaster ${THIS_PACKAGE_INCLUDE_DEPENDS})
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(range_sensor_broadcaster PRIVATE "RANGE_SENSOR_BROADCASTER_BUILDING_DLL")
 target_link_libraries(range_sensor_broadcaster
   range_sensor_broadcaster_parameters
 )

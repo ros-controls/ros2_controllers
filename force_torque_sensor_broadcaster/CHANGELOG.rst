@@ -2,6 +2,47 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* [CI]  test_force_torque_sensor_broadcaster regularily times out (`#1639 <https://github.com/ros-controls/ros2_controllers/issues/1639>`_)
+* Contributors: Julia Jia
+
+4.23.0 (2025-04-10)
+-------------------
+* [CI] Revert test changes to debug the timeout from test_force_torque_sensor_broadcaster  (`#1622 <https://github.com/ros-controls/ros2_controllers/issues/1622>`_)
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* [CI] Time out from test_force_torque_sensor_broadcaster  (`#1586 <https://github.com/ros-controls/ros2_controllers/issues/1586>`_)
+* Contributors: Christoph Fröhlich, Julia Jia, github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+
+4.21.0 (2025-03-01)
+-------------------
+* Fix the exported interface naming in the chainable controllers (`#1528 <https://github.com/ros-controls/ros2_controllers/issues/1528>`_)
+* Contributors: Sai Kishor Kothakota
+
+4.20.0 (2025-01-29)
+-------------------
+* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
+* Contributors: Christoph Fröhlich
+
+4.19.0 (2025-01-13)
+-------------------
+* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
+* Contributors: Bence Magyar
+
+4.18.0 (2024-12-19)
+-------------------
+
+4.17.0 (2024-12-07)
+-------------------
+* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
+* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
+* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.16.0 (2024-11-08)
 -------------------
 * [ForceTorqueSensorBroadcaster] added force and torque offsets to the parameters + export state interfaces (`#1215 <https://github.com/ros-controls/ros2_controllers/issues/1215>`_)

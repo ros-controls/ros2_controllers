@@ -1,16 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(gripper_controllers LANGUAGES CXX)
+project(gripper_controllers)
 
-if(APPLE OR WIN32)
-  message(WARNING "gripper controllers are not available on OSX or Windows")
-  return()
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
@@ -46,10 +39,6 @@ target_link_libraries(gripper_action_controller PUBLIC
   gripper_action_controller_parameters
 )
 ament_target_dependencies(gripper_action_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(gripper_action_controller PRIVATE "GRIPPER_ACTION_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 
