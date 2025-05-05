@@ -89,14 +89,14 @@ if(BUILD_TESTING)
     hardware_interface
   )
 
-  # add_rostest_with_parameters_gmock(test_motion_primitives_forward_controller_preceeding test/test_motion_primitives_forward_controller_preceeding.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml)
-  # target_include_directories(test_motion_primitives_forward_controller_preceeding PRIVATE include)
-  # target_link_libraries(test_motion_primitives_forward_controller_preceeding motion_primitives_forward_controller)
-  # ament_target_dependencies(
-  #   test_motion_primitives_forward_controller_preceeding
-  #   controller_interface
-  #   hardware_interface
-  # )
+  add_rostest_with_parameters_gmock(test_motion_primitives_forward_controller_preceeding test/test_motion_primitives_forward_controller_preceeding.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml)
+  target_include_directories(test_motion_primitives_forward_controller_preceeding PRIVATE include)
+  target_link_libraries(test_motion_primitives_forward_controller_preceeding motion_primitives_forward_controller)
+  ament_target_dependencies(
+    test_motion_primitives_forward_controller_preceeding
+    controller_interface
+    hardware_interface
+  )
 endif()
 
 ament_export_include_directories(
