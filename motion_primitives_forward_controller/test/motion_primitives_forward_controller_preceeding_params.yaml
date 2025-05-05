@@ -1,9 +1,33 @@
 test_motion_primitives_forward_controller:
   ros__parameters:
-    joints:
-      - joint1
-
-    interface_name: acceleration
-
-    state_joints:
-      - joint1state
+    name: motion_primitive
+    command_interfaces:
+      - motion_type
+      - q1
+      - q2
+      - q3
+      - q4
+      - q5
+      - q6
+      - pos_x
+      - pos_y
+      - pos_z
+      - pos_qx
+      - pos_qy
+      - pos_qz
+      - pos_qw
+      - pos_via_x
+      - pos_via_y
+      - pos_via_z
+      - pos_via_qx
+      - pos_via_qy
+      - pos_via_qz
+      - pos_via_qw
+      - blend_radius
+      - velocity
+      - acceleration
+      - move_time
+    state_interfaces:
+      - execution_status
+      - ready_for_new_primitive
+    queue_size: 20    # queue size to buffer incoming commands
