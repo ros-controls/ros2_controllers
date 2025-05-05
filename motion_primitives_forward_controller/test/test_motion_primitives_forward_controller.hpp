@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors:
+// Authors: Mathias Fuhrer
 
 #ifndef TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 #define TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
@@ -36,10 +36,14 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
-// TODO(anyone): replace the state and command message types
-using ControllerStateMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerStateMsg;
-using ControllerReferenceMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerReferenceMsg;
-using ControllerModeSrvType = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerModeSrvType;
+#include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
+#include "std_msgs/msg/int8.hpp"
+#include "motion_primitives_forward_controller/motion_type.hpp"
+#include "motion_primitives_forward_controller/execution_state.hpp"
+#include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
+
+using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+using ControllerStateMsg = std_msgs::msg::Int8;
 
 namespace
 {
@@ -53,53 +57,38 @@ class TestableMotionPrimitivesForwardController : public motion_primitives_forwa
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
-  FRIEND_TEST(MotionPrimitivesForwardControllerTest, test_setting_slow_mode_service);
-  FRIEND_TEST(MotionPrimitivesForwardControllerTest, test_update_logic_fast);
-  FRIEND_TEST(MotionPrimitivesForwardControllerTest, test_update_logic_slow);
-
+  FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_message_and_publish_updated_status);
+  
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ret = motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(previous_state);
-    // Only if on_configure is successful create subscription
-    if (ret == CallbackReturn::SUCCESS)
-    {
-      ref_subscriber_wait_set_.add_subscription(ref_subscriber_);
-    }
-    return ret;
+    return motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(previous_state);
   }
 
   /**
    * @brief wait_for_command blocks until a new ControllerReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
-   *
-   * @return true if new ControllerReferenceMsg msg was received, false if timeout.
    */
-  bool wait_for_command(
-    rclcpp::Executor & executor, rclcpp::WaitSet & subscriber_wait_set,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    bool success = subscriber_wait_set.wait(timeout).kind() == rclcpp::WaitResultKind::Ready;
-    if (success)
-    {
-      executor.spin_some();
-    }
-    return success;
-  }
-
-  bool wait_for_commands(
+  void wait_for_command(
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    return wait_for_command(executor, ref_subscriber_wait_set_, timeout);
+    auto until = get_node()->get_clock()->now() + timeout;
+    while (get_node()->get_clock()->now() < until)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
   }
 
-  // TODO(anyone): add implementation of any methods of your controller is needed
-
-private:
-  rclcpp::WaitSet ref_subscriber_wait_set_;
+  void wait_for_commands(
+    rclcpp::Executor & executor,
+    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
+  {
+    return wait_for_command(executor, timeout);
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -116,11 +105,7 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_motion_primitives_forward_controller/commands", rclcpp::SystemDefaultsQoS());
-
-    service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    slow_control_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
-      "/test_motion_primitives_forward_controller/set_slow_control_mode");
+      "/test_motion_primitives_forward_controller/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() {}
@@ -135,28 +120,26 @@ protected:
       controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-    command_itfs_.reserve(joint_command_values_.size());
-    command_ifs.reserve(joint_command_values_.size());
+    command_itfs_.reserve(command_values_.size());
+    command_ifs.reserve(command_values_.size());
 
-    for (size_t i = 0; i < joint_command_values_.size(); ++i)
+    for (size_t i = 0; i < command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], interface_name_, &joint_command_values_[i]));
+        interface_namespace_, command_interface_names_[i], &command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
-    // TODO(anyone): Add other command interfaces, if any
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-    state_itfs_.reserve(joint_state_values_.size());
-    state_ifs.reserve(joint_state_values_.size());
+    state_itfs_.reserve(state_values_.size());
+    state_ifs.reserve(state_values_.size());
 
-    for (size_t i = 0; i < joint_state_values_.size(); ++i)
+    for (size_t i = 0; i < state_values_.size(); ++i)
     {
       state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], interface_name_, &joint_state_values_[i]));
+        interface_namespace_, state_interface_names_[i], &state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
-    // TODO(anyone): Add other state interfaces, if any
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -195,12 +178,15 @@ protected:
     rclcpp::MessageInfo msg_info;
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
-
-  // TODO(anyone): add/remove arguments as it suites your command message type
+  
   void publish_commands(
-    const std::vector<double> & displacements = {0.45},
-    const std::vector<double> & velocities = {0.0}, const double duration = 1.25)
+    const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
+    double velocity = 0.7,
+    double acceleration = 1.0,
+    double move_time = 2.0,
+    double blend_radius = 3.0)
   {
+    std::cout << "Publishing command message ..." << std::endl;
     auto wait_for_topic = [&](const auto topic_name)
     {
       size_t wait_count = 0;
@@ -215,57 +201,83 @@ protected:
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         ++wait_count;
       }
+      std::cout << "Found subscriber for topic: " << topic_name << std::endl;
     };
 
-    wait_for_topic(command_publisher_->get_topic_name());
+    auto topic_name = command_publisher_->get_topic_name();
+    std::cout << "Waiting for subscriber on topic: " << topic_name << std::endl;
+    wait_for_topic(topic_name);
 
     ControllerReferenceMsg msg;
-    msg.joint_names = joint_names_;
-    msg.displacements = displacements;
-    msg.velocities = velocities;
-    msg.duration = duration;
+
+    // TODO(mathias31415): Add other tests for other motion types
+    msg.type = MotionType::LINEAR_JOINT;
+    msg.joint_positions = joint_positions;
+    msg.blend_radius = blend_radius;
+
+    msg.additional_arguments.resize(3);
+    msg.additional_arguments[0].argument_name = "velocity";
+    msg.additional_arguments[0].argument_value = velocity;
+    msg.additional_arguments[1].argument_name = "acceleration";
+    msg.additional_arguments[1].argument_value = acceleration;
+    msg.additional_arguments[2].argument_name = "move_time";
+    msg.additional_arguments[2].argument_value = move_time;
 
     command_publisher_->publish(msg);
   }
 
-  std::shared_ptr<ControllerModeSrvType::Response> call_service(
-    const bool slow_control, rclcpp::Executor & executor)
-  {
-    auto request = std::make_shared<ControllerModeSrvType::Request>();
-    request->data = slow_control;
-
-    bool wait_for_service_ret =
-      slow_control_service_client_->wait_for_service(std::chrono::milliseconds(500));
-    EXPECT_TRUE(wait_for_service_ret);
-    if (!wait_for_service_ret)
-    {
-      throw std::runtime_error("Services is not available!");
-    }
-    auto result = slow_control_service_client_->async_send_request(request);
-    EXPECT_EQ(executor.spin_until_future_complete(result), rclcpp::FutureReturnCode::SUCCESS);
-
-    return result.get();
-  }
 
 protected:
-  // TODO(anyone): adjust the members as needed
+    // Controller-related parameters
+    std::vector<std::string> command_interface_names_ = {
+    "motion_type",
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "q5",
+    "q6",
+    "pos_x",
+    "pos_y",
+    "pos_z",
+    "pos_qx",
+    "pos_qy",
+    "pos_qz",
+    "pos_qw",
+    "pos_via_x",
+    "pos_via_y",
+    "pos_via_z",
+    "pos_via_qx",
+    "pos_via_qy",
+    "pos_via_qz",
+    "pos_via_qw",
+    "blend_radius",
+    "velocity",
+    "acceleration",
+    "move_time"};
 
-  // Controller-related parameters
-  std::vector<std::string> joint_names_ = {"joint1"};
-  std::vector<std::string> state_joint_names_ = {"joint1state"};
-  std::string interface_name_ = "acceleration";
-  std::array<double, 1> joint_state_values_ = {1.1};
-  std::array<double, 1> joint_command_values_ = {101.101};
+    std::vector<std::string> state_interface_names_ = {
+        "execution_status",
+        "ready_for_new_primitive"};
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+    std::string interface_namespace_ = "motion_primitive";
+    std::array<double, 2> state_values_ = {ExecutionState::IDLE, ReadyForNewPrimitive::READY};
+    std::array<double, 25> command_values_ = {
+        101.101, 101.101, 101.101, 101.101, 101.101,
+        101.101, 101.101, 101.101, 101.101, 101.101,
+        101.101, 101.101, 101.101, 101.101, 101.101,
+        101.101, 101.101, 101.101, 101.101, 101.101,
+        101.101, 101.101, 101.101, 101.101, 101.101
+      };
 
-  // Test related parameters
-  std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
-  rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-  rclcpp::Node::SharedPtr service_caller_node_;
-  rclcpp::Client<ControllerModeSrvType>::SharedPtr slow_control_service_client_;
+    std::vector<hardware_interface::StateInterface> state_itfs_;
+    std::vector<hardware_interface::CommandInterface> command_itfs_;
+
+    // Test related parameters
+    std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
+    rclcpp::Node::SharedPtr command_publisher_node_;
+    rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
+    rclcpp::Node::SharedPtr service_caller_node_;
 };
 
 #endif  // TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
