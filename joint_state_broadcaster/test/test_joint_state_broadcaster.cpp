@@ -934,7 +934,7 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();
 
-  auto node_state = state_broadcaster_->get_node()->configure();
+  auto node_state = state_broadcaster_->configure();
   node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
   ASSERT_EQ(
@@ -1015,7 +1015,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 
   state_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
 
-  auto node_state = state_broadcaster_->get_node()->configure();
+  auto node_state = state_broadcaster_->configure();
   node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
@@ -1058,7 +1058,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
-  auto node_state = state_broadcaster_->get_node()->configure();
+  auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   node_state = state_broadcaster_->get_node()->activate();
@@ -1135,7 +1135,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
 void JointStateBroadcasterTest::test_published_dynamic_joint_state_message(
   const std::string & topic)
 {
-  auto node_state = state_broadcaster_->get_node()->configure();
+  auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   node_state = state_broadcaster_->get_node()->activate();
