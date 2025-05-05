@@ -86,6 +86,8 @@ protected:
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> feedforward_gain_;
 
+  double reset_pid_time_;
+
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
