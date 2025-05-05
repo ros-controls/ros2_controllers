@@ -3,7 +3,7 @@ motion_primitives_forward_controller
 
 Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ), LINEAR_CARTESIAN (LIN/ MOVEL) and CIRCULAR_CARTESIAN (CIRC/ MOVEC)
 
-![Licence](https://img.shields.io/badge/License-BSD-3-Clause-blue.svg)
+[![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 
 This project provides an interface for sending motion primitives to an industrial robot controller using the `MotionPrimitive.msg` message type from the [industrial_robot_motion_interfaces](https://github.com/StoglRobotics-forks/industrial_robot_motion_interfaces/tree/helper-types) package. A custom fork of this package is used, which includes additional helper types to enhance motion command flexibility and sequencing.
