@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_trajectory_controller</name>
-  <version>4.22.0</version>
+  <version>4.24.0</version>
   <description>Controller for executing joint-space trajectories on a group of joints</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -16,6 +16,8 @@
   <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>angles</depend>
   <depend>backward_ros</depend>
