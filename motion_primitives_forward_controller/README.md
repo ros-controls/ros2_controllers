@@ -26,7 +26,8 @@ For this setup, the [`motion_primitive_ur_driver`](https://github.com/StoglRobot
 
 
 1. **Command Reception**  
-   Python scripts can publish motion primitives to the `~/reference` topic. These messages are received by the `reference_callback()` method in the controller.
+   Motion primitives can be published to the `~/reference` topic. These messages are received by the `reference_callback()` method in the controller.  
+   This can be done, for example, via a Python script as demonstrated in the [`motion_primitive_ur_driver`](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives.py) package.
 
 2. **Command Handling Logic**  
    - If the received primitive is of type `STOP_MOTION`, it is directly forwarded to the hardware interface through the command interface, and all queued primitives in the controller are discarded.
