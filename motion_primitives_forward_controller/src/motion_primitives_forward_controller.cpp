@@ -254,7 +254,12 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 {
   // read the status from the state interface
   // TODO(mathias31415) Is check needed if the value is .0?
-  uint8_t execution_status = static_cast<int8_t>(std::round(state_interfaces_[0].get_value()));
+  auto opt_value_execution = state_interfaces_[0].get_optional();
+  if (!opt_value_execution.has_value()) {
+    RCLCPP_ERROR(get_node()->get_logger(), "State interface 0 (execution_state) returned no value.");
+    return controller_interface::return_type::ERROR;
+  }
+  uint8_t execution_status = static_cast<int8_t>(std::round(opt_value_execution.value()));
 
   switch (execution_status) {
     case ExecutionState::IDLE:
@@ -289,7 +294,12 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   state_publisher_->unlockAndPublish();
 
   // TODO(mathias31415) Is check needed if the value is .0?
-  uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(state_interfaces_[1].get_value()));
+  auto opt_value_ready = state_interfaces_[1].get_optional();
+  if (!opt_value_ready.has_value()) {
+    RCLCPP_ERROR(get_node()->get_logger(), "State interface 1 (ready_for_new_primitive) returned no value.");
+    return controller_interface::return_type::ERROR;
+  }
+  uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(opt_value_ready.value()));
 
   // sending new command?
   if(!msg_queue_.empty()) // check if new command is available
