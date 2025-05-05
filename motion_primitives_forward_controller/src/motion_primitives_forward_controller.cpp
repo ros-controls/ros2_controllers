@@ -43,31 +43,6 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
 
-using ControllerReferenceMsg = motion_primitives_forward_controller::MotionPrimitivesForwardController::ControllerReferenceMsg;
-
-// reset the controller reference message to NaN
-void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg)
-{
-  msg->type = 0;
-  msg->blend_radius = std::numeric_limits<double>::quiet_NaN();
-  
-  for (auto & arg : msg->additional_arguments) {
-    arg.argument_name = "";
-    arg.argument_value = std::numeric_limits<double>::quiet_NaN();
-  }
-
-  for (auto & pose : msg->poses) {
-      pose.pose.position.x = std::numeric_limits<double>::quiet_NaN();
-      pose.pose.position.y = std::numeric_limits<double>::quiet_NaN();
-      pose.pose.position.z = std::numeric_limits<double>::quiet_NaN();
-
-      pose.pose.orientation.x = std::numeric_limits<double>::quiet_NaN();
-      pose.pose.orientation.y = std::numeric_limits<double>::quiet_NaN();
-      pose.pose.orientation.z = std::numeric_limits<double>::quiet_NaN();
-      pose.pose.orientation.w = std::numeric_limits<double>::quiet_NaN();
-  }
-}
-
 }  // namespace
 
 
@@ -427,6 +402,28 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
   return true;
 }
 
+// reset the controller reference message to NaN
+void MotionPrimitivesForwardController::reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg)
+{
+  msg->type = 0;
+  msg->blend_radius = std::numeric_limits<double>::quiet_NaN();
+  
+  for (auto & arg : msg->additional_arguments) {
+    arg.argument_name = "";
+    arg.argument_value = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  for (auto & pose : msg->poses) {
+      pose.pose.position.x = std::numeric_limits<double>::quiet_NaN();
+      pose.pose.position.y = std::numeric_limits<double>::quiet_NaN();
+      pose.pose.position.z = std::numeric_limits<double>::quiet_NaN();
+
+      pose.pose.orientation.x = std::numeric_limits<double>::quiet_NaN();
+      pose.pose.orientation.y = std::numeric_limits<double>::quiet_NaN();
+      pose.pose.orientation.z = std::numeric_limits<double>::quiet_NaN();
+      pose.pose.orientation.w = std::numeric_limits<double>::quiet_NaN();
+  }
+}
 
 }  // namespace motion_primitives_forward_controller
 

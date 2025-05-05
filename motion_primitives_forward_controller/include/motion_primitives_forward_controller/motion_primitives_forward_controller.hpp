@@ -90,6 +90,7 @@ private:
   // std::atomic<bool> new_msg_available_ = false; // flag to indicate if new message is available
   void reset_command_interfaces(); // Reset all command interfaces to NaN()
   bool set_command_interfaces(); // Set command interfaces from the message
+  void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg);
 
   size_t queue_size_ = 0; 
 
