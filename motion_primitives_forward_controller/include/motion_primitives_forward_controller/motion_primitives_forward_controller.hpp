@@ -82,6 +82,8 @@ protected:
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr s_publisher_;
   std::unique_ptr<ControllerStatePublisher> state_publisher_;
 
+  std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
+
 private:
   // callback for topic interface
   void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg); // callback for reference message
@@ -89,7 +91,6 @@ private:
   void reset_command_interfaces(); // Reset all command interfaces to NaN()
   bool set_command_interfaces(); // Set command interfaces from the message
 
-  std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
   size_t queue_size_ = 0; 
 
   std::mutex command_mutex_;
