@@ -20,7 +20,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   realtime_tools
   std_srvs
   tf2
-  tf2_msgs
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -69,7 +69,7 @@ if(BUILD_TESTING)
     rclcpp_lifecycle
     realtime_tools
     tf2
-    tf2_msgs
+    tf2_geometry_msgs
   )
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
