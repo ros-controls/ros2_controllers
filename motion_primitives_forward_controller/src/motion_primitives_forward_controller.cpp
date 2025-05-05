@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 // Authors: Mathias Fuhrer
-//
 
 #include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 
@@ -42,7 +41,6 @@ static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
   RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
   RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
   false};
-
 }  // namespace
 
 
@@ -101,6 +99,8 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
   ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
     "~/reference", subscribers_qos,
     std::bind(&MotionPrimitivesForwardController::reference_callback, this, std::placeholders::_1));
+  RCLCPP_INFO(get_node()->get_logger(), "Subscribed to reference topic: %s", ref_subscriber_->get_topic_name());
+
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   reset_controller_reference_msg(msg);
@@ -138,9 +138,9 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
   {
     case MotionType::STOP_MOTION:{
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: STOP_MOTION");
-      reset_command_interfaces(); // Reset all command interfaces to NaN
+      reset_command_interfaces();
       std::lock_guard<std::mutex> guard(command_mutex_);
-      (void)command_interfaces_[0].set_value(static_cast<double>(msg->type)); // send stop command to the driver
+      (void)command_interfaces_[0].set_value(static_cast<double>(msg->type)); // send stop command immediately to the hw-interface
       while (!msg_queue_.empty()) {   // clear the queue
         msg_queue_.pop();   
       }
@@ -149,7 +149,6 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
 
     case MotionType::LINEAR_JOINT:
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_JOINT (PTP)");
-      // Check if joint positions are provided
       if (msg->joint_positions.empty()) {
         RCLCPP_ERROR(get_node()->get_logger(), "Received LINEAR_JOINT motion type without joint positions");
         return;
@@ -158,7 +157,6 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
 
     case MotionType::LINEAR_CARTESIAN:
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_CARTESIAN (LIN)");
-      // Check if poses are provided
       if (msg->poses.empty()) {
         RCLCPP_ERROR(get_node()->get_logger(), "Received LINEAR_CARTESIAN motion type without poses");
         return;
@@ -167,7 +165,6 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
 
     case MotionType::CIRCULAR_CARTESIAN:
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: CIRCULAR_CARTESIAN (CIRC)");
-      // Check if poses are provided
       if (msg->poses.size() != 2) {
         RCLCPP_ERROR(get_node()->get_logger(), "Received CIRCULAR_CARTESIAN motion type without two poses");
         return;
@@ -182,13 +179,11 @@ void MotionPrimitivesForwardController::reference_callback(const std::shared_ptr
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: MOTION_SEQUENCE_END");
       break;
 
-    // Additional motion types can be added here
     default:
       RCLCPP_ERROR(get_node()->get_logger(), "Received unknown motion type: %u", msg->type);
       return;
   }
 
-  // Check if the queue size is exceeded
   if (msg_queue_.size() >= queue_size_) {
     RCLCPP_ERROR(get_node()->get_logger(), "Queue size exceeded. Can't add new motion primitive.");
     return;
@@ -203,13 +198,11 @@ controller_interface::InterfaceConfiguration MotionPrimitivesForwardController::
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  // Reserve memory for the command interfaces
   command_interfaces_config.names.reserve(params_.command_interfaces.size());
 
   // Iterate over all command interfaces from the config yaml file
   for (const auto & interface_name : params_.command_interfaces)
   {
-      // Combine the joint with the interface name and add it to the list
       command_interfaces_config.names.push_back(params_.name + "/" + interface_name);
   }
   return command_interfaces_config;
@@ -220,13 +213,11 @@ controller_interface::InterfaceConfiguration MotionPrimitivesForwardController::
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  // Reserve memory for the state interfaces
   state_interfaces_config.names.reserve(params_.state_interfaces.size());
 
   // Iterate over all state interfaces from the config yaml file
   for (const auto & interface_name : params_.state_interfaces)
   {
-      // Combine the joint with the interface name and add it to the list
       state_interfaces_config.names.push_back(params_.name + "/" + interface_name);
   }
   return state_interfaces_config;
@@ -235,7 +226,7 @@ controller_interface::InterfaceConfiguration MotionPrimitivesForwardController::
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  reset_command_interfaces(); // Reset all command interfaces to NaN
+  reset_command_interfaces();
   RCLCPP_INFO(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -243,7 +234,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  reset_command_interfaces(); // Reset all command interfaces to NaN
+  reset_command_interfaces();
   RCLCPP_INFO(get_node()->get_logger(), "Controller deactivated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -253,7 +244,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   // read the status from the state interface
-  // TODO(mathias31415) Is check needed if the value is .0?
   auto opt_value_execution = state_interfaces_[0].get_optional();
   if (!opt_value_execution.has_value()) {
     RCLCPP_ERROR(get_node()->get_logger(), "State interface 0 (execution_state) returned no value.");
@@ -293,7 +283,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   state_publisher_->msg_.data = execution_status;
   state_publisher_->unlockAndPublish();
 
-  // TODO(mathias31415) Is check needed if the value is .0?
   auto opt_value_ready = state_interfaces_[1].get_optional();
   if (!opt_value_ready.has_value()) {
     RCLCPP_ERROR(get_node()->get_logger(), "State interface 1 (ready_for_new_primitive) returned no value.");
@@ -301,15 +290,14 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   }
   uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(opt_value_ready.value()));
 
-  // sending new command?
   if(!msg_queue_.empty()) // check if new command is available
   { 
     switch (ready_for_new_primitive) {
-      case ReadyForNewPrimitive::NOT_READY:{ // hw-interface is not ready for a new command
+      case ReadyForNewPrimitive::NOT_READY:{
         return controller_interface::return_type::OK;
       }
-      case ReadyForNewPrimitive::READY:{ // hw-interface is ready for a new command
-        if(!set_command_interfaces()){ // Set the command interfaces with next motion primitive
+      case ReadyForNewPrimitive::READY:{
+        if(!set_command_interfaces()){
           RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
           return controller_interface::return_type::ERROR;
         }
@@ -386,7 +374,6 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     }
   }
 
-  // Set blend_radius
   (void)command_interfaces_[21].set_value(current_ref->blend_radius); // blend_radius
 
   // Read additional arguments

@@ -64,7 +64,6 @@ public:
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-    // state and command message types
     using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
     using ControllerStateMsg = std_msgs::msg::Int8;
   
@@ -73,9 +72,7 @@ protected:
   std::shared_ptr<motion_primitives_forward_controller::ParamListener> param_listener_;
   motion_primitives_forward_controller::Params params_;
 
-  // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
-  // realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
 
@@ -85,18 +82,14 @@ protected:
   std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
 
 private:
-  // callback for topic interface
-  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg); // callback for reference message
-  // std::atomic<bool> new_msg_available_ = false; // flag to indicate if new message is available
-  void reset_command_interfaces(); // Reset all command interfaces to NaN()
-  bool set_command_interfaces(); // Set command interfaces from the message
+  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
+  void reset_command_interfaces();
+  bool set_command_interfaces();
   void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg);
 
   size_t queue_size_ = 0; 
-
   std::mutex command_mutex_;
-  
-  bool print_error_once_ = true; // Flag to print error message only once if ExecutionState::ERROR
+  bool print_error_once_ = true;
 };
 
 }  // namespace motion_primitives_forward_controller

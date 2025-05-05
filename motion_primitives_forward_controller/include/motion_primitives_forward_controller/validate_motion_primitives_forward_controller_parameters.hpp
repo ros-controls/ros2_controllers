@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Authors:
 
 #ifndef MOTION_PRIMITIVES_CONTTROLLER_PKG__VALIDATE_MOTION_PRIMITIVES_FORWARD_CONTROLLER_PARAMETERS_HPP_
 #define MOTION_PRIMITIVES_CONTTROLLER_PKG__VALIDATE_MOTION_PRIMITIVES_FORWARD_CONTROLLER_PARAMETERS_HPP_

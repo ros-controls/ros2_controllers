@@ -5,7 +5,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
 endif()
 
-# find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   controller_interface
@@ -28,7 +27,6 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-# Add motion_primitives_forward_controller library related compile commands
 generate_parameter_library(motion_primitives_forward_controller_parameters
   src/motion_primitives_forward_controller.yaml
   include/motion_primitives_forward_controller/validate_motion_primitives_forward_controller_parameters.hpp
@@ -58,11 +56,6 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
-
-# install(
-#   DIRECTORY include/
-#   DESTINATION include/${PROJECT_NAME}
-# )
 
 install(
   DIRECTORY include/
