@@ -113,21 +113,6 @@ diff_drive_controller:
   }
   linear:
     x:
-      has_velocity_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
-      has_acceleration_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
-      has_jerk_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
       max_velocity: {
         type: double,
         default_value: .NAN,
@@ -157,11 +142,6 @@ diff_drive_controller:
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
-      }
-      min_acceleration: {
-        type: double,
-        default_value: .NAN,
-        description: "deprecated, use max_deceleration"
       }
       max_acceleration_reverse: {
         type: double,
@@ -195,21 +175,6 @@ diff_drive_controller:
       }
   angular:
     z:
-      has_velocity_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
-      has_acceleration_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
-      has_jerk_limits: {
-        type: bool,
-        default_value: true,
-        description: "deprecated, set the respective limits to ``.NAN`` for deactivation"
-      }
       max_velocity: {
         type: double,
         default_value: .NAN,
@@ -239,11 +204,6 @@ diff_drive_controller:
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
-      }
-      min_acceleration: {
-        type: double,
-        default_value: .NAN,
-        description: "deprecated, use max_deceleration"
       }
       max_acceleration_reverse: {
         type: double,
