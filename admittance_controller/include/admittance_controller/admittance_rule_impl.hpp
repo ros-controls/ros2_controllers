@@ -148,6 +148,7 @@ controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
+  // duration & live-parameter refresh
   const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
@@ -172,17 +173,20 @@ controller_interface::return_type AdmittanceRule::update(
 
   // --- control/base frame to base frame (rotation only) ---
   success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.kinematics.base, tf);
+    current_joint_state.positions, parameters_.control.frame.id, tf);
   admittance_state_.rot_base_control = tf.rotation();
+
+  Eigen::Isometry3d tf_cog;
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf_cog);
 
   // wrench processing (gravity + filter) in world
   process_wrench_measurements(
     measured_wrench,
     // pass rotations into sensor and CoG:
     rot_world_base * admittance_state_.ref_trans_base_ft.rotation(),
-    rot_world_base * /* CoG rotation */ tf.rotation());
+    rot_world_base * tf_cog.rotation());
 
-  // transform filtered wrench into the robot base frame
   // transform filtered wrench into the robot base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
     rot_world_base.transpose() * wrench_world_.block<3, 1>(0, 0);
@@ -191,6 +195,8 @@ controller_interface::return_type AdmittanceRule::update(
 
   // populate current joint positions in the state
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
+
+  admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
 
   // compute admittance dynamics
   success &= calculate_admittance_rule(admittance_state_, dt);
