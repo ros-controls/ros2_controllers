@@ -1,5 +1,5 @@
 // Copyright (c) 2025, b»robotized
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,12 +18,12 @@
 #define MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
-#include <queue>
 
-#include "controller_interface/controller_interface.hpp"
 #include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include "controller_interface/controller_interface.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -31,7 +31,6 @@
 
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
 #include "std_msgs/msg/int8.hpp"
-
 
 namespace motion_primitives_forward_controller
 {
@@ -64,9 +63,8 @@ public:
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-    using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-    using ControllerStateMsg = std_msgs::msg::Int8;
-  
+  using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+  using ControllerStateMsg = std_msgs::msg::Int8;
 
 protected:
   std::shared_ptr<motion_primitives_forward_controller::ParamListener> param_listener_;
@@ -87,7 +85,7 @@ private:
   bool set_command_interfaces();
   void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg);
 
-  size_t queue_size_ = 0; 
+  size_t queue_size_ = 0;
   std::mutex command_mutex_;
   bool print_error_once_ = true;
 };

@@ -1,5 +1,5 @@
 // Copyright (c) 2025, b»robotized
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,16 +14,15 @@
 //
 // Authors: Mathias Fuhrer
 
-#ifndef EXECUTION_STATE_HPP
-#define EXECUTION_STATE_HPP
-
+#ifndef MOTION_PRIMITIVES_FORWARD_CONTROLLER__EXECUTION_STATE_HPP_
+#define MOTION_PRIMITIVES_FORWARD_CONTROLLER__EXECUTION_STATE_HPP_
 
 namespace ExecutionState
 {
-    static constexpr uint8_t IDLE = 0;
-    static constexpr uint8_t EXECUTING = 1;
-    static constexpr uint8_t SUCCESS = 2;
-    static constexpr uint8_t ERROR = 3;
-}
+static constexpr uint8_t IDLE = 0;
+static constexpr uint8_t EXECUTING = 1;
+static constexpr uint8_t SUCCESS = 2;
+static constexpr uint8_t ERROR = 3;
+}  // namespace ExecutionState
 
-#endif // EXECUTION_STATE_HPP
+#endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__EXECUTION_STATE_HPP_

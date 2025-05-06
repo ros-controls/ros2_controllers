@@ -1,5 +1,5 @@
 // Copyright (c) 2025, b»robotized
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,7 +25,8 @@
 using motion_primitives_forward_controller::CMD_MY_ITFS;
 using motion_primitives_forward_controller::STATE_MY_ITFS;
 
-class MotionPrimitivesForwardControllerTest : public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>
+class MotionPrimitivesForwardControllerTest
+: public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>
 {
 };
 
@@ -39,8 +40,10 @@ TEST_F(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_succe
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_THAT(controller_->params_.command_interfaces, testing::ElementsAreArray(command_interface_names_));
-  ASSERT_THAT(controller_->params_.state_interfaces, testing::ElementsAreArray(state_interface_names_));
+  ASSERT_THAT(
+    controller_->params_.command_interfaces, testing::ElementsAreArray(command_interface_names_));
+  ASSERT_THAT(
+    controller_->params_.state_interfaces, testing::ElementsAreArray(state_interface_names_));
   ASSERT_EQ(controller_->params_.name, interface_namespace_);
 }
 

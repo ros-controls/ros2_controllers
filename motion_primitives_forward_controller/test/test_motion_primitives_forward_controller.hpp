@@ -1,5 +1,5 @@
 // Copyright (c) 2025, b»robotized
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,8 +14,8 @@
 //
 // Authors: Mathias Fuhrer
 
-#ifndef TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
-#define TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#ifndef TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#define TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <chrono>
 #include <limits>
@@ -25,11 +25,11 @@
 #include <utility>
 #include <vector>
 
-#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
@@ -37,10 +37,10 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
-#include "std_msgs/msg/int8.hpp"
-#include "motion_primitives_forward_controller/motion_type.hpp"
 #include "motion_primitives_forward_controller/execution_state.hpp"
+#include "motion_primitives_forward_controller/motion_type.hpp"
 #include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
+#include "std_msgs/msg/int8.hpp"
 
 using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
 using ControllerStateMsg = std_msgs::msg::Int8;
@@ -52,18 +52,20 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
-class TestableMotionPrimitivesForwardController : public motion_primitives_forward_controller::MotionPrimitivesForwardController
+class TestableMotionPrimitivesForwardController
+: public motion_primitives_forward_controller::MotionPrimitivesForwardController
 {
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_message_and_publish_updated_status);
-  
+
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    return motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(previous_state);
+    return motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(
+      previous_state);
   }
 
   /**
@@ -113,7 +115,8 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_motion_primitives_forward_controller")
+  void SetUpController(
+    const std::string controller_name = "test_motion_primitives_forward_controller")
   {
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
@@ -125,8 +128,9 @@ protected:
 
     for (size_t i = 0; i < command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        interface_namespace_, command_interface_names_[i], &command_values_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          interface_namespace_, command_interface_names_[i], &command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -136,8 +140,9 @@ protected:
 
     for (size_t i = 0; i < state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        interface_namespace_, state_interface_names_[i], &state_values_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          interface_namespace_, state_interface_names_[i], &state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -178,12 +183,10 @@ protected:
     rclcpp::MessageInfo msg_info;
     ASSERT_TRUE(subscription->take(msg, msg_info));
   }
-  
+
   void publish_commands(
     const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
-    double velocity = 0.7,
-    double acceleration = 1.0,
-    double move_time = 2.0,
+    double velocity = 0.7, double acceleration = 1.0, double move_time = 2.0,
     double blend_radius = 3.0)
   {
     std::cout << "Publishing command message ..." << std::endl;
@@ -226,58 +229,32 @@ protected:
     command_publisher_->publish(msg);
   }
 
-
 protected:
-    // Controller-related parameters
-    std::vector<std::string> command_interface_names_ = {
-    "motion_type",
-    "q1",
-    "q2",
-    "q3",
-    "q4",
-    "q5",
-    "q6",
-    "pos_x",
-    "pos_y",
-    "pos_z",
-    "pos_qx",
-    "pos_qy",
-    "pos_qz",
-    "pos_qw",
-    "pos_via_x",
-    "pos_via_y",
-    "pos_via_z",
-    "pos_via_qx",
-    "pos_via_qy",
-    "pos_via_qz",
-    "pos_via_qw",
-    "blend_radius",
-    "velocity",
-    "acceleration",
-    "move_time"};
+  // Controller-related parameters
+  std::vector<std::string> command_interface_names_ = {
+    "motion_type", "q1",           "q2",         "q3",           "q4",
+    "q5",          "q6",           "pos_x",      "pos_y",        "pos_z",
+    "pos_qx",      "pos_qy",       "pos_qz",     "pos_qw",       "pos_via_x",
+    "pos_via_y",   "pos_via_z",    "pos_via_qx", "pos_via_qy",   "pos_via_qz",
+    "pos_via_qw",  "blend_radius", "velocity",   "acceleration", "move_time"};
 
-    std::vector<std::string> state_interface_names_ = {
-        "execution_status",
-        "ready_for_new_primitive"};
+  std::vector<std::string> state_interface_names_ = {"execution_status", "ready_for_new_primitive"};
 
-    std::string interface_namespace_ = "motion_primitive";
-    std::array<double, 2> state_values_ = {ExecutionState::IDLE, ReadyForNewPrimitive::READY};
-    std::array<double, 25> command_values_ = {
-        101.101, 101.101, 101.101, 101.101, 101.101,
-        101.101, 101.101, 101.101, 101.101, 101.101,
-        101.101, 101.101, 101.101, 101.101, 101.101,
-        101.101, 101.101, 101.101, 101.101, 101.101,
-        101.101, 101.101, 101.101, 101.101, 101.101
-      };
+  std::string interface_namespace_ = "motion_primitive";
+  std::array<double, 2> state_values_ = {ExecutionState::IDLE, ReadyForNewPrimitive::READY};
+  std::array<double, 25> command_values_ = {
+    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
+    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
+    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101};
 
-    std::vector<hardware_interface::StateInterface> state_itfs_;
-    std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface> state_itfs_;
+  std::vector<hardware_interface::CommandInterface> command_itfs_;
 
-    // Test related parameters
-    std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
-    rclcpp::Node::SharedPtr command_publisher_node_;
-    rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-    rclcpp::Node::SharedPtr service_caller_node_;
+  // Test related parameters
+  std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
+  rclcpp::Node::SharedPtr command_publisher_node_;
+  rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
+  rclcpp::Node::SharedPtr service_caller_node_;
 };
 
-#endif  // TEMPLATES__ROS2_CONTROL__CONTROLLER__TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#endif  // TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_

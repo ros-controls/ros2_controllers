@@ -63,9 +63,13 @@ install(
 )
 
 if(BUILD_TESTING)
-
-  ament_add_gmock(test_load_motion_primitives_forward_controller test/test_load_motion_primitives_forward_controller.cpp)
-  target_include_directories(test_load_motion_primitives_forward_controller PRIVATE include)
+  ament_add_gmock(
+    test_load_motion_primitives_forward_controller
+    test/test_load_motion_primitives_forward_controller.cpp
+  )
+  target_include_directories(
+    test_load_motion_primitives_forward_controller PRIVATE include
+  )
   ament_target_dependencies(
     test_load_motion_primitives_forward_controller
     controller_manager
@@ -73,18 +77,34 @@ if(BUILD_TESTING)
     ros2_control_test_assets
   )
 
-  add_rostest_with_parameters_gmock(test_motion_primitives_forward_controller test/test_motion_primitives_forward_controller.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_params.yaml)
-  target_include_directories(test_motion_primitives_forward_controller PRIVATE include)
-  target_link_libraries(test_motion_primitives_forward_controller motion_primitives_forward_controller)
+  add_rostest_with_parameters_gmock(
+    test_motion_primitives_forward_controller
+    test/test_motion_primitives_forward_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_params.yaml
+  )
+  target_include_directories(
+    test_motion_primitives_forward_controller PRIVATE include
+  )
+  target_link_libraries(
+    test_motion_primitives_forward_controller motion_primitives_forward_controller
+  )
   ament_target_dependencies(
     test_motion_primitives_forward_controller
     controller_interface
     hardware_interface
   )
 
-  add_rostest_with_parameters_gmock(test_motion_primitives_forward_controller_preceeding test/test_motion_primitives_forward_controller_preceeding.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml)
-  target_include_directories(test_motion_primitives_forward_controller_preceeding PRIVATE include)
-  target_link_libraries(test_motion_primitives_forward_controller_preceeding motion_primitives_forward_controller)
+  add_rostest_with_parameters_gmock(
+    test_motion_primitives_forward_controller_preceeding
+    test/test_motion_primitives_forward_controller_preceeding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml
+  )
+  target_include_directories(
+    test_motion_primitives_forward_controller_preceeding PRIVATE include
+  )
+  target_link_libraries(
+    test_motion_primitives_forward_controller_preceeding motion_primitives_forward_controller
+  )
   ament_target_dependencies(
     test_motion_primitives_forward_controller_preceeding
     controller_interface

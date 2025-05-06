@@ -25,20 +25,20 @@ For this setup, the [`motion_primitive_ur_driver`](https://github.com/StoglRobot
 ![UR Robot Architecture](doc/ros2_control_motion_primitives_ur_whiteBackground.drawio.png)
 
 
-1. **Command Reception**  
-   Motion primitives can be published to the `~/reference` topic. These messages are received by the `reference_callback()` method in the controller.  
+1. **Command Reception**
+   Motion primitives can be published to the `~/reference` topic. These messages are received by the `reference_callback()` method in the controller.
    This can be done, for example, via a Python script as demonstrated in the [`motion_primitive_ur_driver`](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives.py) package.
 
-2. **Command Handling Logic**  
+2. **Command Handling Logic**
    - If the received primitive is of type `STOP_MOTION`, it is directly forwarded to the hardware interface through the command interface, and all queued primitives in the controller are discarded.
    - If the primitive is of any other type, it is appended to the internal motion primitive queue. The maximum queue size is configurable via a YAML configuration file.
 
-3. **Motion Execution Flow**  
+3. **Motion Execution Flow**
    The `update()` method in the controller:
    - Reads the current `execution_state` from the hardware interface via the state interface and publishes it to the `~/state` topic.
    - Reads the `ready_for_new_primitive` state flag. If `true`, the next primitive from the queue is sent to the hardware interface for execution.
 
-4. **Sequencing Logic**  
+4. **Sequencing Logic**
    Sequencing logic for grouped execution (between `MOTION_SEQUENCE_START` and `MOTION_SEQUENCE_END`) is handled within the hardware interface layer. The controller itself only manages queueing and forwarding logic.
 
 

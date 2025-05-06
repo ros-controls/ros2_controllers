@@ -1,5 +1,5 @@
 // Copyright (c) 2025, b»robotized
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -32,8 +32,9 @@ TEST(TestLoadMotionPrimitivesForwardController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller("test_motion_primitives_forward_controller", "motion_primitives_forward_controller/MotionPrimitivesForwardController"));
+  ASSERT_NO_THROW(cm.load_controller(
+    "test_motion_primitives_forward_controller",
+    "motion_primitives_forward_controller/MotionPrimitivesForwardController"));
 
   rclcpp::shutdown();
 }
