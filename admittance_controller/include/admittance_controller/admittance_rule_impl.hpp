@@ -179,7 +179,7 @@ controller_interface::return_type AdmittanceRule::update(
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf);
   const Eigen::Matrix3d rot_tf_cog = tf.rotation();
-  
+
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
   const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
