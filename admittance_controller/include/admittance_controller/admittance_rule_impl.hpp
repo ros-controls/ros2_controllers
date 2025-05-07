@@ -183,13 +183,12 @@ controller_interface::return_type AdmittanceRule::update(
   Eigen::Isometry3d tf_base_ft;
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.ft_sensor.frame.id, tf_base_ft);
-    
+
   // wrench processing (gravity + filter) in world
   process_wrench_measurements(
     measured_wrench,
     // pass rotations into sensor and CoG:
-    rot_world_base * tf_base_ft.rotation(),
-    rot_world_base * tf_cog.rotation());
+    rot_world_base * tf_base_ft.rotation(), rot_world_base * tf_cog.rotation());
 
   // transform filtered wrench into the robot base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
