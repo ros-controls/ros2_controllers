@@ -10,6 +10,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   control_toolbox
   controller_interface
+  Eigen3
+  filters
   generate_parameter_library
   geometry_msgs
   hardware_interface
