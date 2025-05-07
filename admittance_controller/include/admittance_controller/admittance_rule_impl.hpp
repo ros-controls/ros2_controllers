@@ -188,7 +188,7 @@ controller_interface::return_type AdmittanceRule::update(
   process_wrench_measurements(
     measured_wrench,
     // pass rotations into sensor and CoG:
-    rot_world_base * tf_base_ft, rot_world_base * tf_cog);
+    rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
 
   // transform filtered wrench into the robot base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
