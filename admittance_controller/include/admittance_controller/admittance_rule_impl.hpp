@@ -163,13 +163,13 @@ controller_interface::return_type AdmittanceRule::update(
 
   // --- FT sensor frame to base frame (translation + rotation) ---
   success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
+    reference_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
   admittance_state_.ref_trans_base_ft = tf;
 
   // --- world frame to base frame (we only need the rotation) ---
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.fixed_world_frame.frame.id, tf);
-  Eigen::Matrix3d rot_world_base = tf.rotation();
+  const Eigen::Matrix3d rot_world_base = tf.rotation();
 
   // --- control/base frame to base frame (rotation only) ---
   success &= kinematics_->calculate_link_transform(
@@ -180,11 +180,15 @@ controller_interface::return_type AdmittanceRule::update(
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf_cog);
 
+  Eigen::Isometry3d tf_base_ft;
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.ft_sensor.frame.id, tf_base_ft);
+    
   // wrench processing (gravity + filter) in world
   process_wrench_measurements(
     measured_wrench,
     // pass rotations into sensor and CoG:
-    rot_world_base * admittance_state_.ref_trans_base_ft.rotation(),
+    rot_world_base * tf_base_ft.rotation(),
     rot_world_base * tf_cog.rotation());
 
   // transform filtered wrench into the robot base frame
