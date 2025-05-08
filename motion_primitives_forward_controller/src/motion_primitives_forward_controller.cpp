@@ -160,6 +160,16 @@ void MotionPrimitivesForwardController::reference_callback(
       return;
     }
 
+    case MotionType::RESET_STOP:
+    {
+      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: RESET_STOP");
+      reset_command_interfaces();
+      std::lock_guard<std::mutex> guard(command_mutex_);
+      (void)command_interfaces_[0].set_value(
+        static_cast<double>(msg->type));  // send reset stop command immediately to the hw-interface
+      return;
+    }
+
     case MotionType::LINEAR_JOINT:
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_JOINT (PTP)");
       if (msg->joint_positions.empty())
@@ -286,6 +296,11 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     case ExecutionState::SUCCESS:
       // RCLCPP_INFO(get_node()->get_logger(), "Execution state: SUCCESS");
+      print_error_once_ = true;
+      break;
+    
+    case ExecutionState::STOPPED:
+      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: STOPPED");
       print_error_once_ = true;
       break;
 

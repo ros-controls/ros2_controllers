@@ -26,6 +26,7 @@ static constexpr uint8_t CIRCULAR_CARTESIAN = 51;
 
 // Helper types
 static constexpr uint8_t STOP_MOTION = 66;
+static constexpr uint8_t RESET_STOP = 67;
 // indicate motion sequence instead of executing single primitives
 static constexpr uint8_t MOTION_SEQUENCE_START = 100;
 static constexpr uint8_t MOTION_SEQUENCE_END = 101;

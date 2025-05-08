@@ -23,6 +23,7 @@ static constexpr uint8_t IDLE = 0;
 static constexpr uint8_t EXECUTING = 1;
 static constexpr uint8_t SUCCESS = 2;
 static constexpr uint8_t ERROR = 3;
+static constexpr uint8_t STOPPED = 4;
 }  // namespace ExecutionState
 
 #endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__EXECUTION_STATE_HPP_
