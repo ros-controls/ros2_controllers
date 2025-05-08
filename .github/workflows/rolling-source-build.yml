@@ -14,6 +14,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
+      - 'ros2_controllers.kilted.repos'
       - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
@@ -22,8 +23,11 @@ on:
 jobs:
   source:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-source-build.yml@master
+    strategy:
+      fail-fast: false
+      matrix:
+        ROS_DISTRO: [kilted, rolling]
     with:
-      ros_distro: rolling
+      ros_distro: ${{ matrix.ROS_DISTRO }}
       ref: master
-      ros2_repo_branch: rolling
       container: ubuntu:24.04

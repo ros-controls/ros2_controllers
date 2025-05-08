@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches:
-      - master
+      - jazzy
     paths:
       - '**.hpp'
       - '**.h'
@@ -20,7 +20,7 @@ on:
     - cron: '03 1 * * *'
 
 concurrency:
-  # cancel previous runs of the same workflow, except for pushes on master branch
+  # cancel previous runs of the same workflow, except for pushes on jazzy branch
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
@@ -30,5 +30,5 @@ jobs:
     with:
       ros_distro: jazzy
       upstream_workspace: ros2_controllers.jazzy.repos
-      ref_for_scheduled_build: master
+      ref_for_scheduled_build: jazzy
       skip_packages: rqt_joint_trajectory_controller
