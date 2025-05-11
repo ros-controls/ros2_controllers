@@ -81,6 +81,10 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  // New methods to handle velocity and acceleration tolerances
+  void setVelocityTolerance(double tolerance);
+  void setAccelerationTolerance(double tolerance);
+
 protected:
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
@@ -290,6 +294,9 @@ private:
       joint_interface[index].get().set_value(trajectory_point_interface[map_cmd_to_joints_[index]]);
     }
   }
+
+  double velocity_tolerance_;
+  double acceleration_tolerance_;
 };
 
 }  // namespace joint_trajectory_controller
