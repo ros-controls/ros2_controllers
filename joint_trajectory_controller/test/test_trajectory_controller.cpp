@@ -86,7 +86,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   compare_joints(joint_names_, command_joint_names);
@@ -102,7 +102,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
 }
 
@@ -116,7 +116,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
 }
 
@@ -2643,7 +2643,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort", "position"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
+  state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);

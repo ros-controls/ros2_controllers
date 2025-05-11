@@ -261,7 +261,7 @@ TEST_F(TestTricycleController, cleanup)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResources();
 
@@ -308,7 +308,7 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   assignResources();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -351,7 +351,7 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value());
   EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_optional().value());
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }

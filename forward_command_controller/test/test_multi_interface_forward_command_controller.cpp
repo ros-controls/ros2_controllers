@@ -76,7 +76,7 @@ void MultiInterfaceForwardCommandControllerTest::SetParametersAndActivateControl
   controller_->get_node()->set_parameter(
     {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
 
-  auto node_state = controller_->get_node()->configure();
+  auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
   node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);

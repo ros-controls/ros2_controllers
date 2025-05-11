@@ -294,7 +294,7 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
   ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
-  auto node_state = controller_->get_node()->configure();
+  auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   node_state = controller_->get_node()->activate();
