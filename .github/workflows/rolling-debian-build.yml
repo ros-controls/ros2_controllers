@@ -14,6 +14,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
+      - 'ros2_controllers.kilted.repos'
       - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
@@ -28,8 +29,12 @@ jobs:
   rolling_debian:
     name: Rolling debian build
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
+    strategy:
+      fail-fast: false
+      matrix:
+        ROS_DISTRO: [kilted, rolling]
     with:
-      ros_distro: rolling
-      upstream_workspace: ros2_controllers.rolling.repos
+      ros_distro: ${{ matrix.ROS_DISTRO }}
+      upstream_workspace: ros2_controllers.${{ matrix.ROS_DISTRO }}.repos
       ref_for_scheduled_build: master
       skip_packages: rqt_joint_trajectory_controller
