@@ -150,6 +150,7 @@ void MotionPrimitivesForwardController::reference_callback(
     {
       RCLCPP_INFO(get_node()->get_logger(), "Received motion type: STOP_MOTION");
       reset_command_interfaces();
+      robot_stopped_ = true;
       std::lock_guard<std::mutex> guard(command_mutex_);
       (void)command_interfaces_[0].set_value(
         static_cast<double>(msg->type));  // send stop command immediately to the hw-interface
@@ -167,6 +168,7 @@ void MotionPrimitivesForwardController::reference_callback(
       std::lock_guard<std::mutex> guard(command_mutex_);
       (void)command_interfaces_[0].set_value(
         static_cast<double>(msg->type));  // send reset stop command immediately to the hw-interface
+      robot_stopped_ = false;
       return;
     }
 
@@ -213,13 +215,20 @@ void MotionPrimitivesForwardController::reference_callback(
       return;
   }
 
-  if (msg_queue_.size() >= queue_size_)
+  if(!robot_stopped_)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Queue size exceeded. Can't add new motion primitive.");
+    if (msg_queue_.size() >= queue_size_)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Queue size exceeded. Can't add new motion primitive.");
+      return;
+    }
+    msg_queue_.push(msg);
+  }
+  else
+  {
+    RCLCPP_WARN(get_node()->get_logger(), "Robot is stopped. Discarding the new command.");
     return;
   }
-
-  msg_queue_.push(msg);
 }
 
 controller_interface::InterfaceConfiguration

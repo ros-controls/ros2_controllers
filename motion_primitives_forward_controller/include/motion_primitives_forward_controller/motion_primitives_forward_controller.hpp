@@ -88,6 +88,7 @@ private:
   size_t queue_size_ = 0;
   std::mutex command_mutex_;
   bool print_error_once_ = true;
+  bool robot_stopped_ = false;
 };
 
 }  // namespace motion_primitives_forward_controller
