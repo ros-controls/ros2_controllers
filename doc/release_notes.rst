@@ -1,6 +1,5 @@
 :github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes.rst
 
-<<<<<<< HEAD
 Release Notes: Galactic to Humble
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Galactic (previous) and Humble (current) releases. Bugfixes are not included in this list.
@@ -64,9 +63,3 @@ steering_controllers_library
 gpio_controllers
 ************************
 * The GPIO command controller was added 🎉 (`#1251 <https://github.com/ros-controls/ros2_controllers/pull/1251>`_).
-=======
-Release Notes: Jazzy to Kilted
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This list summarizes the changes between Jazzy (previous) and Kilted (current) releases.
->>>>>>> b75fe9e (Add Kilted Kaiju (#1646))
