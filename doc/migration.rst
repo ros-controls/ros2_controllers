@@ -1,8 +1,8 @@
 :github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/migration.rst
 
-Migration Guides: Iron to Jazzy
+Migration Guides: Humble to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This list summarizes important changes between Iron (previous) and Jazzy (current) releases, where changes to user code might be necessary.
+This list summarizes important changes between Humble (previous) and Jazzy (current) releases, where changes to user code might be necessary.
 
 
 diff_drive_controller

@@ -1,8 +1,8 @@
 :github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/doc/release_notes.rst
 
-Release Notes: Iron to Jazzy
+Release Notes: Humble to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This list summarizes the changes between Iron (previous) and Jazzy (current) releases.
+This list summarizes the changes between Humble (previous) and Jazzy (current) releases.
 
 admittance_controller
 ************************
