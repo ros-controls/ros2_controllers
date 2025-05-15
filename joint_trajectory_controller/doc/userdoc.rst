@@ -209,6 +209,7 @@ Further information
    :titlesonly:
 
    Trajectory Representation <trajectory.rst>
+   Speed scaling <speed_scaling.rst>
    joint_trajectory_controller Parameters <parameters.rst>
    rqt_joint_trajectory_controller <../../rqt_joint_trajectory_controller/doc/userdoc.rst>
 
