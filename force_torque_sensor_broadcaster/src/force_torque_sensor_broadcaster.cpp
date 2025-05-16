@@ -76,6 +76,12 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(params_.sensor_name));
+
+    // TODO(juliaj): remove the logging after resolving
+    // https://github.com/ros-controls/ros2_controllers/issues/1574
+    RCLCPP_INFO(
+      get_node()->get_logger(), "Initialized force_torque_sensor with sensor name %s",
+      params_.sensor_name.c_str());
   }
   else
   {
@@ -85,6 +91,14 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       semantic_components::ForceTorqueSensor(
         force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
         torque_names.z));
+
+    // TODO(juliaj): remove the logging after resolving
+    // https://github.com/ros-controls/ros2_controllers/issues/1574
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "Initialized force_torque_sensor with interface names %s, %s, %s, %s, %s, %s",
+      force_names.x.c_str(), force_names.y.c_str(), force_names.z.c_str(), torque_names.x.c_str(),
+      torque_names.y.c_str(), torque_names.z.c_str());
   }
 
   try
@@ -102,11 +116,19 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // TODO(juliaj): remove the logging after resolving
+  // https://github.com/ros-controls/ros2_controllers/issues/1574
+  RCLCPP_INFO(get_node()->get_logger(), "Locking realtime publisher");
   realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_publisher_->unlock();
+  RCLCPP_INFO(get_node()->get_logger(), "Locked realtime publisher");
 
-  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
+  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+
+  RCLCPP_INFO(get_node()->get_logger(), "Unlocking realtime publisher");
+  realtime_publisher_->unlock();
+  RCLCPP_INFO(get_node()->get_logger(), "Unlocked realtime publisher");
+
+  RCLCPP_INFO(get_node()->get_logger(), "Configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -198,33 +220,39 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
   }
   if (!force_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
   }
   if (!force_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
   }
   if (!force_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
   }
   if (!torque_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
   }
   if (!torque_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
   }
   if (!torque_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
   }
   return exported_state_interfaces;
 }

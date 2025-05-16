@@ -361,24 +361,31 @@ public:
     acc_state_interfaces_.reserve(joint_names_.size());
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
-      pos_cmd_interfaces_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
-      vel_cmd_interfaces_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
-      acc_cmd_interfaces_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
-      eff_cmd_interfaces_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], hardware_interface::HW_IF_EFFORT, &joint_eff_[i]));
+      pos_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i], hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
+      vel_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i], hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
+      acc_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i], hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
+      eff_cmd_interfaces_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i], hardware_interface::HW_IF_EFFORT, &joint_eff_[i]));
 
-      pos_state_interfaces_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], hardware_interface::HW_IF_POSITION,
-        separate_cmd_and_state_values ? &joint_state_pos_[i] : &joint_pos_[i]));
-      vel_state_interfaces_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], hardware_interface::HW_IF_VELOCITY,
-        separate_cmd_and_state_values ? &joint_state_vel_[i] : &joint_vel_[i]));
-      acc_state_interfaces_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
-        separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
+      pos_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i], hardware_interface::HW_IF_POSITION,
+          separate_cmd_and_state_values ? &joint_state_pos_[i] : &joint_pos_[i]));
+      vel_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i], hardware_interface::HW_IF_VELOCITY,
+          separate_cmd_and_state_values ? &joint_state_vel_[i] : &joint_vel_[i]));
+      acc_state_interfaces_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
+          separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
       // Add to export lists and set initial values
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());

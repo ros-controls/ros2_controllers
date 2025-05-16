@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_state_broadcaster</name>
-  <version>4.22.0</version>
+  <version>4.24.0</version>
   <description>Broadcaster to publish joint state</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -20,6 +20,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>ros2_control_cmake</build_depend>
+
   <depend>backward_ros</depend>
   <depend>builtin_interfaces</depend>
   <depend>control_msgs</depend>
@@ -27,6 +29,7 @@
   <depend>generate_parameter_library</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rclcpp</depend>
   <depend>rcutils</depend>
   <depend>realtime_tools</depend>
   <depend>sensor_msgs</depend>
@@ -36,7 +39,6 @@
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface_testing</test_depend>
   <test_depend>hardware_interface</test_depend>
-  <test_depend>rclcpp</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
   <export>
