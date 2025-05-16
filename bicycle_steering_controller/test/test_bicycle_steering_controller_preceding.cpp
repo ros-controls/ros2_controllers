@@ -17,37 +17,33 @@
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "test_ackermann_steering_controller.hpp"
+#include "test_bicycle_steering_controller.hpp"
 
-class AckermannSteeringControllerTest
-: public AckermannSteeringControllerFixture<TestableAckermannSteeringController>
+class BicycleSteeringControllerTest
+: public BicycleSteeringControllerFixture<TestableBicycleSteeringController>
 {
 };
 
-TEST_F(AckermannSteeringControllerTest, all_parameters_set_configure_success)
+TEST_F(BicycleSteeringControllerTest, all_parameters_set_configure_success)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_THAT(
-    controller_->params_.rear_wheels_names,
-    testing::ElementsAreArray(rear_wheels_preceeding_names_));
+    controller_->params_.traction_joints_names,
+    testing::ElementsAreArray(traction_joints_preceding_names_));
   ASSERT_THAT(
-    controller_->params_.front_wheels_names,
-    testing::ElementsAreArray(front_wheels_preceeding_names_));
-  ASSERT_EQ(controller_->params_.front_steering, front_steering_);
+    controller_->params_.steering_joints_names,
+    testing::ElementsAreArray(steering_joints_preceding_names_));
   ASSERT_EQ(controller_->params_.open_loop, open_loop_);
   ASSERT_EQ(controller_->params_.velocity_rolling_window_size, velocity_rolling_window_size_);
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
-  ASSERT_EQ(controller_->ackermann_params_.wheelbase, wheelbase_);
-  ASSERT_EQ(controller_->ackermann_params_.front_wheels_radius, front_wheels_radius_);
-  ASSERT_EQ(controller_->ackermann_params_.rear_wheels_radius, rear_wheels_radius_);
-  ASSERT_EQ(controller_->ackermann_params_.front_wheel_track, front_wheel_track_);
-  ASSERT_EQ(controller_->ackermann_params_.rear_wheel_track, rear_wheel_track_);
+  ASSERT_EQ(controller_->bicycle_params_.wheelbase, wheelbase_);
+  ASSERT_EQ(controller_->bicycle_params_.traction_wheel_radius, traction_wheel_radius_);
 }
 
-TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
+TEST_F(BicycleSteeringControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
@@ -56,33 +52,21 @@ TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
-    preceeding_prefix_ + "/" + rear_wheels_names_[0] + "/" + traction_interface_name_);
+    cmd_if_conf.names[CMD_TRACTION_WHEEL],
+    preceding_prefix_ + "/" + traction_joints_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
-    preceeding_prefix_ + "/" + rear_wheels_names_[1] + "/" + traction_interface_name_);
-  EXPECT_EQ(
-    cmd_if_conf.names[CMD_STEER_RIGHT_WHEEL],
-    preceeding_prefix_ + "/" + front_wheels_names_[0] + "/" + steering_interface_name_);
-  EXPECT_EQ(
-    cmd_if_conf.names[CMD_STEER_LEFT_WHEEL],
-    preceeding_prefix_ + "/" + front_wheels_names_[1] + "/" + steering_interface_name_);
+    cmd_if_conf.names[CMD_STEER_WHEEL],
+    preceding_prefix_ + "/" + steering_joints_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_EQ(state_if_conf.names.size(), joint_state_values_.size());
   EXPECT_EQ(
-    state_if_conf.names[STATE_TRACTION_RIGHT_WHEEL],
-    controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
+    state_if_conf.names[STATE_TRACTION_WHEEL],
+    controller_->traction_joints_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
-    controller_->rear_wheels_state_names_[1] + "/" + traction_interface_name_);
-  EXPECT_EQ(
-    state_if_conf.names[STATE_STEER_RIGHT_WHEEL],
-    controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
-  EXPECT_EQ(
-    state_if_conf.names[STATE_STEER_LEFT_WHEEL],
-    controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
+    state_if_conf.names[STATE_STEER_AXIS],
+    controller_->steering_joints_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
