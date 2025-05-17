@@ -66,6 +66,7 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface);
   FRIEND_TEST(PidControllerTest, test_save_i_term_on);
   FRIEND_TEST(PidControllerTest, test_save_i_term_off);
+  FRIEND_TEST(PidControllerTest, test_zero_threshold);
 
 public:
   controller_interface::CallbackReturn on_configure(
