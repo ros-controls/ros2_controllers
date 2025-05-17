@@ -644,7 +644,7 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
 bool DiffDriveController::on_set_chained_mode(bool chained_mode)
 {
-  // Fix to adhere to CppLint standards
+  // Fix to overcome https://github.com/cpplint/cpplint/issues/131
   (void)chained_mode;
   return true;
 }
