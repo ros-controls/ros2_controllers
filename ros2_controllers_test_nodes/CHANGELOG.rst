@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use `warning`  attribute of RcutilsLogger (backport `#1690 <https://github.com/ros-controls/ros2_controllers/issues/1690>`_) (`#1691 <https://github.com/ros-controls/ros2_controllers/issues/1691>`_)
+* Contributors: mergify[bot], Sai Kishor Kothakota
+
 4.24.0 (2025-04-27)
 -------------------
 
