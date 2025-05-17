@@ -487,7 +487,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -700,7 +700,7 @@ TEST_F(TestDiffDriveController, cleanup)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -753,7 +753,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   assignResourcesPosFeedback();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -795,7 +795,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value());
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -821,7 +821,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(false));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -892,7 +892,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -917,7 +917,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(true));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -971,7 +971,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -1021,7 +1021,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -1119,7 +1119,7 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 

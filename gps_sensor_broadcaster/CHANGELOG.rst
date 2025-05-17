@@ -2,6 +2,12 @@
 Changelog for package gps_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
+* Fix wrong link in GPSBroadcaster doc (`#1637 <https://github.com/ros-controls/ros2_controllers/issues/1637>`_)
+* Contributors: Christoph Fröhlich, Junius Santoso
+
 4.23.0 (2025-04-10)
 -------------------
 * Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
