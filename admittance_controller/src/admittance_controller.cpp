@@ -148,8 +148,9 @@ AdmittanceController::on_export_reference_interfaces()
         velocity_reference_.emplace_back(reference_interfaces_[index]);
       }
       const auto exported_prefix = std::string(get_node()->get_name()) + "/" + joint;
-      chainable_command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        exported_prefix, interface, reference_interfaces_.data() + index));
+      chainable_command_interfaces.emplace_back(
+        hardware_interface::CommandInterface(
+          exported_prefix, interface, reference_interfaces_.data() + index));
 
       index++;
     }
@@ -299,10 +300,11 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
           msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
           !msg.header.frame_id.empty())
         {
-          RCLCPP_ERROR_STREAM(
-            get_node()->get_logger(), "Ignoring wrench reference as it is on the wrong frame: "
-                                        << msg.header.frame_id << ". Expected reference frame: "
-                                        << admittance_->parameters_.ft_sensor.frame.id);
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: "
+            "%s",
+            msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
           return;
         }
         input_wrench_command_.writeFromNonRT(msg);

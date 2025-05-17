@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(joint_trajectory_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   angles
@@ -79,6 +73,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_trajectory_controller ros2_control_test_assets)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp
   )

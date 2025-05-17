@@ -82,6 +82,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(
     MecanumDriveControllerTest,
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
+  FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -174,8 +175,9 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        command_joint_names_[i], interface_name_, &joint_command_values_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          command_joint_names_[i], interface_name_, &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -185,8 +187,9 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        command_joint_names_[i], interface_name_, &joint_state_values_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          command_joint_names_[i], interface_name_, &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 

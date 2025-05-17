@@ -36,32 +36,32 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
-    rear_wheels_names_[0] + "/" + traction_interface_name_);
+    traction_joints_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
-    rear_wheels_names_[1] + "/" + traction_interface_name_);
+    traction_joints_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_RIGHT_WHEEL],
-    front_wheels_names_[0] + "/" + steering_interface_name_);
+    steering_joints_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_LEFT_WHEEL],
-    front_wheels_names_[1] + "/" + steering_interface_name_);
+    steering_joints_names_[1] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_EQ(state_if_conf.names.size(), joint_state_values_.size());
   EXPECT_EQ(
     state_if_conf.names[STATE_TRACTION_RIGHT_WHEEL],
-    controller_->rear_wheels_state_names_[0] + "/" + traction_interface_name_);
+    controller_->traction_joints_state_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
-    controller_->rear_wheels_state_names_[1] + "/" + traction_interface_name_);
+    controller_->traction_joints_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_STEER_RIGHT_WHEEL],
-    controller_->front_wheels_state_names_[0] + "/" + steering_interface_name_);
+    controller_->steering_joints_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     state_if_conf.names[STATE_STEER_LEFT_WHEEL],
-    controller_->front_wheels_state_names_[1] + "/" + steering_interface_name_);
+    controller_->steering_joints_state_names_[1] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs

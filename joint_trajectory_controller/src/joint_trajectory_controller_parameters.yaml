@@ -2,16 +2,21 @@ joint_trajectory_controller:
   joints: {
     type: string_array,
     default_value: [],
-    description: "Joint names to control and listen to",
+    description: "Joint names of the system",
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
     }
   }
   command_joints: {
     type: string_array,
     default_value: [],
-    description: "Joint names to control. This parameters is used if JTC is used in a controller chain where command and state interfaces don't have same names.",
+    description: "Joint names to control. If left empty, ``joints`` will be used. This parameters can be used if:
+      \n\n
+        * JTC is used in a controller chain where command and state interfaces don't have same names.
+
+        * If the number of command joints is smaller than the degrees-of-freedom. For example to track the state and error of passive joints. ``command_joints`` must then be a subset of ``joints``.",
     read_only: true,
     validation: {
       unique<>: null,
@@ -24,6 +29,7 @@ joint_trajectory_controller:
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
       subset_of<>: [["position", "velocity", "acceleration", "effort",]],
       "joint_trajectory_controller::command_interface_type_combinations": null,
     }
@@ -35,6 +41,7 @@ joint_trajectory_controller:
     read_only: true,
     validation: {
       unique<>: null,
+      size_gt<>: [0],
       subset_of<>: [["position", "velocity", "acceleration",]],
       "joint_trajectory_controller::state_interface_type_combinations": null,
     }
@@ -44,15 +51,15 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow joint goals defining trajectory for only some joints.",
   }
-  open_loop_control: {
+  interpolate_from_desired_state: {
     type: bool,
     default_value: false,
-    description: "Use controller in open-loop control mode
+    description: "Interpolate from the current desired state when receiving a new trajectory.
       \n\n
-      * The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.\n
-      * It deactivates the feedback control, see the ``gains`` structure.
+      The controller ignores the states provided by hardware interface but using last commands as states for starting the trajectory interpolation.
       \n\n
       This is useful if hardware states are not following commands, i.e., an offset between those (typical for hydraulic manipulators).
+      Furthermore, it is necessary if you have a reference trajectory that you send over multiple messages (e.g. for MPC-style trajectory planning).
       \n\n
       If this flag is set, the controller tries to read the values from the command interfaces on activation.
       If they have real numeric values, those will be used instead of state interfaces.
@@ -72,7 +79,7 @@ joint_trajectory_controller:
   action_monitor_rate: {
     type: double,
     default_value: 20.0,
-    description: "Rate to monitor status changes when the controller is executing action (control_msgs::action::FollowJointTrajectory)",
+    description: "Rate to monitor status changes when the controller is executing action (``control_msgs::action::FollowJointTrajectory``)",
     read_only: true,
     validation: {
       gt_eq: [0.1]

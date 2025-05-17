@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>gpio_controllers</name>
-  <version>4.21.0</version>
+  <version>4.24.0</version>
   <description>Controllers to interact with gpios.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -20,6 +20,8 @@
   <author email="wiktorbajor1@gmail.com">Wiktor Bajor</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>

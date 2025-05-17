@@ -2,6 +2,22 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Use gmock instead of gtest (`#1625 <https://github.com/ros-controls/ros2_controllers/issues/1625>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, Yassine Cherni
+
+4.22.0 (2025-03-17)
+-------------------
+* Fix the `ActivateWithWrongJointsNamesFails` test (`#1570 <https://github.com/ros-controls/ros2_controllers/issues/1570>`_)
+* Contributors: Christoph Fröhlich
+
 4.21.0 (2025-03-01)
 -------------------
 
