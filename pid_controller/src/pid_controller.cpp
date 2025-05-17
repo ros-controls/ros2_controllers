@@ -358,11 +358,38 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   return reference_interfaces;
 }
 
+<<<<<<< HEAD
 bool PidController::on_set_chained_mode(bool chained_mode)
 {
   // Always accept switch to/from chained mode
   return true || chained_mode;
 }
+=======
+std::vector<hardware_interface::StateInterface> PidController::on_export_state_interfaces()
+{
+  std::vector<hardware_interface::StateInterface> state_interfaces;
+  state_interfaces.reserve(state_interfaces_values_.size());
+
+  state_interfaces_values_.resize(
+    reference_and_state_dof_names_.size() * params_.reference_and_state_interfaces.size(),
+    std::numeric_limits<double>::quiet_NaN());
+  size_t index = 0;
+  for (const auto & interface : params_.reference_and_state_interfaces)
+  {
+    for (const auto & dof_name : reference_and_state_dof_names_)
+    {
+      state_interfaces.push_back(
+        hardware_interface::StateInterface(
+          std::string(get_node()->get_name()) + "/" + dof_name, interface,
+          &state_interfaces_values_[index]));
+      ++index;
+    }
+  }
+  return state_interfaces;
+}
+
+bool PidController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
+>>>>>>> d8dc4b1 (Simplify `on_set_chained_mode` implementations avoiding cpplint warnings (#1564))
 
 controller_interface::CallbackReturn PidController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
