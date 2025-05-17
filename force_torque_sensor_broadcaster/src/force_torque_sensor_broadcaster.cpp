@@ -270,13 +270,14 @@ void ForceTorqueSensorBroadcaster::apply_sensor_offset(
 }
 
 void ForceTorqueSensorBroadcaster::apply_sensor_multiplier(
-  const Params & params, geometry_msgs::msg::WrenchStamped & msg) {
-    msg.wrench.force.x *= params.multiplier.force.x;
-    msg.wrench.force.y *= params.multiplier.force.y;
-    msg.wrench.force.z *= params.multiplier.force.z;
-    msg.wrench.torque.x *= params.multiplier.torque.x;
-    msg.wrench.torque.y *= params.multiplier.torque.y;
-    msg.wrench.torque.z *= params.multiplier.torque.z;
+  const Params & params, geometry_msgs::msg::WrenchStamped & msg)
+{
+  msg.wrench.force.x *= params.multiplier.force.x;
+  msg.wrench.force.y *= params.multiplier.force.y;
+  msg.wrench.force.z *= params.multiplier.force.z;
+  msg.wrench.torque.x *= params.multiplier.torque.x;
+  msg.wrench.torque.y *= params.multiplier.torque.y;
+  msg.wrench.torque.z *= params.multiplier.torque.z;
 }
 }  // namespace force_torque_sensor_broadcaster
 
