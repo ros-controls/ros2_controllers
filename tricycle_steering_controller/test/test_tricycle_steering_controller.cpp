@@ -39,7 +39,7 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
   ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
   ASSERT_EQ(controller_->tricycle_params_.traction_wheels_radius, traction_wheels_radius_);
-  ASSERT_EQ(controller_->tricycle_params_.wheel_track, wheel_track_);
+  ASSERT_EQ(controller_->tricycle_params_.traction_track_width, traction_track_width_);
 }
 
 TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
