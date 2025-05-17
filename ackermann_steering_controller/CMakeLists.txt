@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(ackermann_steering_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -80,12 +74,12 @@ if(BUILD_TESTING)
   )
 
   add_rostest_with_parameters_gmock(
-    test_ackermann_steering_controller_preceeding test/test_ackermann_steering_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_preceeding_params.yaml)
-  target_include_directories(test_ackermann_steering_controller_preceeding PRIVATE include)
-  target_link_libraries(test_ackermann_steering_controller_preceeding ackermann_steering_controller)
+    test_ackermann_steering_controller_preceding test/test_ackermann_steering_controller_preceding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_preceding_params.yaml)
+  target_include_directories(test_ackermann_steering_controller_preceding PRIVATE include)
+  target_link_libraries(test_ackermann_steering_controller_preceding ackermann_steering_controller)
   ament_target_dependencies(
-    test_ackermann_steering_controller_preceeding
+    test_ackermann_steering_controller_preceding
     controller_interface
     hardware_interface
   )

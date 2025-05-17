@@ -2,6 +2,27 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Replace RCLCPP\_*_STREAM macros with RCLCPP\_* (`#1600 <https://github.com/ros-controls/ros2_controllers/issues/1600>`_)
+* [jtc tests] avoid dangling ref of command / state interfaces (`#1596 <https://github.com/ros-controls/ros2_controllers/issues/1596>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Vedant Randive, github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
+* Use constructor parameters instead of initializer list (`#1587 <https://github.com/ros-controls/ros2_controllers/issues/1587>`_)
+* [JTC] Enable feed-forward effort trajectories (`#1200 <https://github.com/ros-controls/ros2_controllers/issues/1200>`_)
+* [JTC] Rename open_loop_control parameter and slightly change its scope (`#1525 <https://github.com/ros-controls/ros2_controllers/issues/1525>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Thies Oelerich, Vladimir Ivan
+
 4.21.0 (2025-03-01)
 -------------------
 * [JTC] Renaming variables, reordering trajectory checks (`#1032 <https://github.com/ros-controls/ros2_controllers/issues/1032>`_)

@@ -36,15 +36,15 @@ The command for the wheels are calculated using ``odometry`` library where based
 Currently implemented kinematics
 --------------------------------------------------------------
 
-* :ref:`Bicycle <bicycle_steering_controller_userdoc>` - with one steering and one drive joints;
-* :ref:`Tricylce <tricycle_steering_controller_userdoc>` - with one steering and two drive joints;
-* :ref:`Ackermann <ackermann_steering_controller_userdoc>` - with two steering and two drive joints.
+* Bicycle - with one steering and one drive joints;
+* Tricycle - with one steering and two drive joints;
+* Ackermann - with two steering and two drive joints.
 
 .. toctree::
-  :hidden:
+   :titlesonly:
 
    Bicycle <../../bicycle_steering_controller/doc/userdoc.rst>
-   Tricylce <../../tricycle_steering_controller/doc/userdoc.rst>
+   Tricycle <../../tricycle_steering_controller/doc/userdoc.rst>
    Ackermann <../../ackermann_steering_controller/doc/userdoc.rst>
 
 Description of controller's interfaces
@@ -63,15 +63,8 @@ representing the body twist.
 Command interfaces
 ,,,,,,,,,,,,,,,,,,,
 
-If parameter ``front_steering == true``
-
-- ``<front_wheels_names[i]>/position``     double, in rad
-- ``<rear_wheels_names[i]>/velocity``      double, in m/s
-
-If parameter ``front_steering == false``
-
-- ``<front_wheels_names[i]>/velocity``     double, in m/s
-- ``<rear_wheels_names[i]>/position``      double, in rad
+- ``<steering_joints_names[i]>/position``     double, in rad
+- ``<traction_joints_names[i]>/velocity``      double, in m/s
 
 State interfaces
 ,,,,,,,,,,,,,,,,,
@@ -81,15 +74,10 @@ Depending on the ``position_feedback``, different feedback types are expected
 * ``position_feedback == true`` --> ``TRACTION_FEEDBACK_TYPE = position``
 * ``position_feedback == false`` --> ``TRACTION_FEEDBACK_TYPE = velocity``
 
-If parameter ``front_steering == true``
+With the following state interfaces:
 
-- ``<front_wheels_names[i]>/position``                  double, in rad
-- ``<rear_wheels_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in m or m/s
-
-If parameter ``front_steering == false``
-
-- ``<front_wheels_names[i]>/<TRACTION_FEEDBACK_TYPE>``  double, in m or m/s
-- ``<rear_wheels_names[i]>/position``                   double, in rad
+- ``<steering_joints_names[i]>/position``                  double, in rad
+- ``<traction_joints_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in m or m/s
 
 Subscribers
 ,,,,,,,,,,,,

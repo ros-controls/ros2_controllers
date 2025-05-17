@@ -22,7 +22,7 @@
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "tf2/transform_datatypes.h"
+#include "tf2/transform_datatypes.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -289,9 +289,10 @@ MecanumDriveController::on_export_reference_interfaces()
 
   for (size_t i = 0; i < reference_interfaces_.size(); ++i)
   {
-    reference_interfaces.push_back(hardware_interface::CommandInterface(
-      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[i]));
+    reference_interfaces.push_back(
+      hardware_interface::CommandInterface(
+        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
+        &reference_interfaces_[i]));
   }
 
   return reference_interfaces;

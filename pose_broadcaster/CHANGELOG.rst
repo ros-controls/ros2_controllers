@@ -2,6 +2,19 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.24.0 (2025-04-27)
+-------------------
+* Deprecate tf.publish_rate parameter for pose_broadcaster (`#1614 <https://github.com/ros-controls/ros2_controllers/issues/1614>`_)
+* Contributors: Aarav Gupta
+
+4.23.0 (2025-04-10)
+-------------------
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich
+
+4.22.0 (2025-03-17)
+-------------------
+
 4.21.0 (2025-03-01)
 -------------------
 
