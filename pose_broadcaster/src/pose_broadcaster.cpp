@@ -166,7 +166,6 @@ controller_interface::return_type PoseBroadcaster::update(
       pose.position.z, pose.orientation.x, pose.orientation.y, pose.orientation.z,
       pose.orientation.w);
   }
-  // TODO(amronos): Remove publish rate functionality
   else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
   {
     auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
@@ -182,8 +181,6 @@ controller_interface::return_type PoseBroadcaster::update(
     tf_transform.transform.rotation.w = pose.orientation.w;
 
     realtime_tf_publisher_->unlockAndPublish();
-
-    tf_last_publish_time_ = time;
   }
 
   return controller_interface::return_type::OK;
