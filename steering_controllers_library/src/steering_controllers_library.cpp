@@ -81,27 +81,245 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
+
+  // TODO(anyone): Remove deprecated parameters
+  // START OF DEPRECATED
+  if (!params_.front_steering)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_steering'. Instead, set 'traction_joints_names' or "
+      "'steering_joints_names'");
+  }
+
+  if (params_.front_wheels_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheels_names', set 'traction_joints_names' or "
+      "'steering_joints_names' instead");
+    if (params_.front_steering)
+    {
+      params_.steering_joints_names = params_.front_wheels_names;
+    }
+    else
+    {
+      params_.traction_joints_names = params_.front_wheels_names;
+    }
+  }
+
+  if (params_.rear_wheels_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheels_names', set 'traction_joints_names' or "
+      "'steering_joints_names' instead");
+    if (params_.front_steering)
+    {
+      params_.traction_joints_names = params_.rear_wheels_names;
+    }
+    else
+    {
+      params_.steering_joints_names = params_.rear_wheels_names;
+    }
+  }
+
+  if (params_.front_wheels_state_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'front_wheels_state_names', set 'traction_joints_state_names' or "
+      "'steering_joints_state_names' instead");
+    if (params_.front_steering)
+    {
+      params_.steering_joints_state_names = params_.front_wheels_state_names;
+    }
+    else
+    {
+      params_.traction_joints_state_names = params_.front_wheels_state_names;
+    }
+  }
+
+  if (params_.rear_wheels_state_names.size() > 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "DEPRECATED parameter 'rear_wheels_state_names', set 'traction_joints_state_names' or "
+      "'steering_joints_state_names' instead");
+    if (params_.front_steering)
+    {
+      params_.traction_joints_state_names = params_.rear_wheels_state_names;
+    }
+    else
+    {
+      params_.steering_joints_state_names = params_.rear_wheels_state_names;
+    }
+  }
+  // END OF DEPRECATED
+
+  // call method from implementations, sets odometry type
+  configure_odometry();
+
+  // Check if the number of traction joints is correct
+  if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+  {
+    if (params_.traction_joints_names.size() != 1)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Bicycle configuration requires exactly one traction joint, but %zu were provided",
+        params_.traction_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+  else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+  {
+    if (params_.traction_joints_names.size() != 2)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Tricycle configuration requires exactly two traction joints, but %zu were provided",
+        params_.traction_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+  else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+  {
+    if (params_.traction_joints_names.size() != 2)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Ackermann configuration requires exactly two traction joints, but %zu were provided",
+        params_.traction_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+  // Check if the number of steering joints is correct
+  if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+  {
+    if (params_.steering_joints_names.size() != 1)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Bicycle configuration requires exactly one steering joint, but %zu were provided",
+        params_.steering_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+  else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+  {
+    if (params_.steering_joints_names.size() != 1)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Tricycle configuration requires exactly one steering joint, but %zu were provided",
+        params_.steering_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+  else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+  {
+    if (params_.steering_joints_names.size() != 2)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Ackermann configuration requires exactly two steering joints, but %zu were provided",
+        params_.steering_joints_names.size());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+  }
+
   odometry_.set_velocity_rolling_window_size(
     static_cast<size_t>(params_.velocity_rolling_window_size));
 
-  configure_odometry();
-
-  if (!params_.rear_wheels_state_names.empty())
+  if (!params_.traction_joints_state_names.empty())
   {
-    rear_wheels_state_names_ = params_.rear_wheels_state_names;
+    if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+    {
+      if (params_.traction_joints_state_names.size() != 1)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Bicycle configuration requires exactly one traction joint, but %zu state interface "
+          "names were provided",
+          params_.traction_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+    {
+      if (params_.traction_joints_state_names.size() != 2)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Tricycle configuration requires exactly two traction joints, but %zu state interface "
+          "names were provided",
+          params_.traction_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+    {
+      if (params_.traction_joints_state_names.size() != 2)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Ackermann configuration requires exactly two traction joints, but %zu state interface "
+          "names were provided",
+          params_.traction_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    traction_joints_state_names_ = params_.traction_joints_state_names;
   }
   else
   {
-    rear_wheels_state_names_ = params_.rear_wheels_names;
+    traction_joints_state_names_ = params_.traction_joints_names;
   }
 
-  if (!params_.front_wheels_state_names.empty())
+  if (!params_.steering_joints_state_names.empty())
   {
-    front_wheels_state_names_ = params_.front_wheels_state_names;
+    if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+    {
+      if (params_.steering_joints_state_names.size() != 1)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Bicycle configuration requires exactly one steering joint, but %zu state interface "
+          "names were provided",
+          params_.steering_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+    {
+      if (params_.steering_joints_state_names.size() != 1)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Tricycle configuration requires exactly one steering joint, but %zu state interface "
+          "names were provided",
+          params_.steering_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+    {
+      if (params_.steering_joints_state_names.size() != 2)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Ackermann configuration requires exactly two steering joints, but %zu state interface "
+          "names were provided",
+          params_.steering_joints_state_names.size());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+    }
+    steering_joints_state_names_ = params_.steering_joints_state_names;
   }
   else
   {
-    front_wheels_state_names_ = params_.front_wheels_names;
+    steering_joints_state_names_ = params_.steering_joints_names;
   }
 
   // topics QoS
@@ -179,7 +397,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   try
   {
     // State publisher
-    controller_s_publisher_ = get_node()->create_publisher<AckermannControllerState>(
+    controller_s_publisher_ = get_node()->create_publisher<SteeringControllerStateMsg>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
@@ -234,34 +452,16 @@ SteeringControllersLibrary::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
-
-  if (params_.front_steering)
+  for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
   {
-    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-    {
-      command_interfaces_config.names.push_back(
-        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
-    }
-
-    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-    {
-      command_interfaces_config.names.push_back(
-        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
-    }
+    command_interfaces_config.names.push_back(
+      params_.traction_joints_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
   }
-  else
-  {
-    for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-    {
-      command_interfaces_config.names.push_back(
-        params_.front_wheels_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
-    }
 
-    for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-    {
-      command_interfaces_config.names.push_back(
-        params_.rear_wheels_names[i] + "/" + hardware_interface::HW_IF_POSITION);
-    }
+  for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
+  {
+    command_interfaces_config.names.push_back(
+      params_.steering_joints_names[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
   return command_interfaces_config;
 }
@@ -276,33 +476,17 @@ SteeringControllersLibrary::state_interface_configuration() const
   const auto traction_wheels_feedback = params_.position_feedback
                                           ? hardware_interface::HW_IF_POSITION
                                           : hardware_interface::HW_IF_VELOCITY;
-  if (params_.front_steering)
-  {
-    for (size_t i = 0; i < rear_wheels_state_names_.size(); i++)
-    {
-      state_interfaces_config.names.push_back(
-        rear_wheels_state_names_[i] + "/" + traction_wheels_feedback);
-    }
 
-    for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
-    {
-      state_interfaces_config.names.push_back(
-        front_wheels_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
-    }
+  for (size_t i = 0; i < traction_joints_state_names_.size(); i++)
+  {
+    state_interfaces_config.names.push_back(
+      traction_joints_state_names_[i] + "/" + traction_wheels_feedback);
   }
-  else
-  {
-    for (size_t i = 0; i < front_wheels_state_names_.size(); i++)
-    {
-      state_interfaces_config.names.push_back(
-        front_wheels_state_names_[i] + "/" + traction_wheels_feedback);
-    }
 
-    for (size_t i = 0; i < rear_wheels_state_names_.size(); i++)
-    {
-      state_interfaces_config.names.push_back(
-        rear_wheels_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
-    }
+  for (size_t i = 0; i < steering_joints_state_names_.size(); i++)
+  {
+    state_interfaces_config.names.push_back(
+      steering_joints_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
 
   return state_interfaces_config;
@@ -329,11 +513,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool SteeringControllersLibrary::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool SteeringControllersLibrary::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
@@ -392,30 +572,13 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
 
-    if (params_.front_steering)
+    for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
-      for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-      {
-        command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
-      }
-      for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-      {
-        command_interfaces_[i + params_.rear_wheels_names.size()].set_value(steering_commands[i]);
-      }
+      command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
     }
-    else
+    for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
     {
-      {
-        for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
-        {
-          command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
-        }
-        for (size_t i = 0; i < params_.rear_wheels_names.size(); i++)
-        {
-          command_interfaces_[i + params_.front_wheels_names.size()].set_value(
-            steering_commands[i]);
-        }
-      }
+      command_interfaces_[i + params_.traction_joints_names.size()].set_value(steering_commands[i]);
     }
   }
 
@@ -458,14 +621,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     controller_state_publisher_->msg_.steer_positions.clear();
     controller_state_publisher_->msg_.steering_angle_command.clear();
 
-    auto number_of_traction_wheels = params_.rear_wheels_names.size();
-    auto number_of_steering_wheels = params_.front_wheels_names.size();
-
-    if (!params_.front_steering)
-    {
-      number_of_traction_wheels = params_.front_wheels_names.size();
-      number_of_steering_wheels = params_.rear_wheels_names.size();
-    }
+    auto number_of_traction_wheels = params_.traction_joints_names.size();
+    auto number_of_steering_wheels = params_.steering_joints_names.size();
 
     for (size_t i = 0; i < number_of_traction_wheels; ++i)
     {
