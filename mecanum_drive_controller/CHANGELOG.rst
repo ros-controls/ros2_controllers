@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.46.0 (2025-05-17)
+-------------------
 * Simplify `on_set_chained_mode` avoiding cpplint warnings (backport `#1564 <https://github.com/ros-controls/ros2_controllers/issues/1564>`_) (`#1687 <https://github.com/ros-controls/ros2_controllers/issues/1687>`_)
 * Contributors: mergify[bot], Bhagyesh Agresar
 
