@@ -298,12 +298,7 @@ MecanumDriveController::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool MecanumDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Fix to overcome https://github.com/cpplint/cpplint/issues/131
-  (void)chained_mode;
-  return true;
-}
+bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)

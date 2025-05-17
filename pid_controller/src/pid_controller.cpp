@@ -425,12 +425,7 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
   return state_interfaces;
 }
 
-bool PidController::on_set_chained_mode(bool chained_mode)
-{
-  // Fix to overcome https://github.com/cpplint/cpplint/issues/131
-  (void)chained_mode;
-  return true;
-}
+bool PidController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn PidController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)

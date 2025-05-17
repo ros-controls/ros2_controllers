@@ -642,12 +642,7 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-bool DiffDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Fix to overcome https://github.com/cpplint/cpplint/issues/131
-  (void)chained_mode;
-  return true;
-}
+bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface>
 DiffDriveController::on_export_reference_interfaces()
