@@ -248,7 +248,7 @@ controller_interface::CallbackReturn PidController::on_configure(
   {
     feedforward_mode_enabled_.writeFromNonRT(request->data);
 
-    RCLCPP_ERROR(
+    RCLCPP_WARN(
       get_node()->get_logger(),
       "This service will be deprecated in favour of setting the ``feedforward_gain`` parameter to "
       "a non-zero value.");
