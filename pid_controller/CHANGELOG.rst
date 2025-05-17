@@ -2,8 +2,8 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.25.0 (2025-05-17)
+-------------------
 * [Pid] Add enable_feedforward parameter (backport `#1553 <https://github.com/ros-controls/ros2_controllers/issues/1553>`_) (`#1689 <https://github.com/ros-controls/ros2_controllers/issues/1689>`_)
 * Simplify `on_set_chained_mode` avoiding cpplint warnings (backport `#1564 <https://github.com/ros-controls/ros2_controllers/issues/1564>`_) (`#1688 <https://github.com/ros-controls/ros2_controllers/issues/1688>`_)
 * Contributors: mergify[bot], Pascal Auf der Maur, hagyesh Agresar
