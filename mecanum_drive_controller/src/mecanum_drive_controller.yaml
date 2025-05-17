@@ -113,12 +113,21 @@ mecanum_drive_controller:
       read_only: false,
     }
 
+  tf_frame_prefix_enable: {
+    type: bool,
+    default_value: true,
+    description:  "Enables or disables appending tf_prefix to tf frame id's.",
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_frame_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+  }
   base_frame_id: {
     type: string,
     default_value: "base_link",
     description: "Base frame_id set to value of base_frame_id.",
     read_only: false,
-
   }
   odom_frame_id: {
     type: string,
