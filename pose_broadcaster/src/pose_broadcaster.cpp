@@ -79,21 +79,6 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
 
   pose_sensor_ = std::make_unique<semantic_components::PoseSensor>(params_.pose_name);
 
-  // TODO(amronos): Remove this check and its contents
-  if (params_.tf.publish_rate == 0.0)
-  {
-    tf_publish_period_ = std::nullopt;
-  }
-  else
-  {
-    tf_publish_period_ =
-      std::optional{rclcpp::Duration::from_seconds(1.0 / params_.tf.publish_rate)};
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "[deprecated] tf.publish_rate parameter is deprecated, please set the value to 0.0. "
-      "The publish rate of TF messages should not be limited.");
-  }
-
   try
   {
     pose_publisher_ = get_node()->create_publisher<geometry_msgs::msg::PoseStamped>(
