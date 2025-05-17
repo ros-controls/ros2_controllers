@@ -428,7 +428,7 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
 bool PidController::on_set_chained_mode(bool chained_mode)
 {
   // Fix to adhere to CppLint standards
-  (void)chained_mode
+  (void)chained_mode;
   return true;
 }
 
