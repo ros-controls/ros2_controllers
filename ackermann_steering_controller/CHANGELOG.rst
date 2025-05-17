@@ -2,6 +2,9 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.24.0 (2025-04-27)
 -------------------
 * Rename ackermann msg to controller state msg type (`#1662 <https://github.com/ros-controls/ros2_controllers/issues/1662>`_)

@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [AdmittanceController] Remove superfluous `admittance_tranforms\_` structure (`#1668 <https://github.com/ros-controls/ros2_controllers/issues/1668>`_)
+* Contributors: Geethik Mylapur
+
 4.24.0 (2025-04-27)
 -------------------
 
