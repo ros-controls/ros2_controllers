@@ -431,12 +431,19 @@ controller_interface::return_type JointTrajectoryController::update(
 
 void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
 {
+  auto logger = get_node()->get_logger();
   auto assign_point_from_state_interface =
     [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
     for (size_t index = 0; index < dof_; ++index)
     {
-      trajectory_point_interface[index] = joint_interface[index].get().get_value();
+      const auto joint_state_interface_value_op = joint_interface[index].get().get_optional();
+      if (!joint_state_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          logger, "Unable to retrieve joint state interface value for joint at index %zu", index);
+      }
+      trajectory_point_interface[index] = joint_state_interface_value_op.value();
     }
   };
   auto assign_point_from_command_interface =
@@ -447,8 +454,14 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       std::numeric_limits<double>::quiet_NaN());
     for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
+      const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
+      if (!joint_command_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          logger, "Unable to retrieve joint command interface value for joint at index %zu", index);
+      }
       trajectory_point_interface[map_cmd_to_joints_[index]] =
-        joint_interface[index].get().get_value();
+        joint_command_interface_value_op.value();
     }
   };
 
@@ -492,8 +505,14 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   {
     for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      trajectory_point_interface[map_cmd_to_joints_[index]] =
-        joint_interface[index].get().get_value();
+      const auto joint_interface_value_op = joint_interface[index].get().get_optional();
+      if (!joint_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(),
+          "Unable to retrieve value of joint interface for joint at index %zu", index);
+      }
+      trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_value_op.value();
     }
   };
 
@@ -1018,8 +1037,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   resize_joint_trajectory_point(state, dof_);
   // read from cmd joints only if all joints have command interface
   // otherwise it leaves the entries of joints without command interface NaN.
-  // if no open_loop control, state_current_ is then used for `set_point_before_trajectory_msg` and
-  // future trajectory sampling will always give NaN for these joints
+  // if no open_loop control, state_current_ is then used for `set_point_before_trajectory_msg`
+  // and future trajectory sampling will always give NaN for these joints
   if (
     params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_ &&
     read_state_from_command_interfaces(state))
@@ -1067,6 +1086,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   const auto active_goal = *rt_active_goal_.readFromNonRT();
+  auto logger = get_node()->get_logger();
   if (active_goal)
   {
     rt_has_pending_goal_.writeFromNonRT(false);
@@ -1081,24 +1101,41 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   {
     if (has_position_command_interface_)
     {
-      joint_command_interface_[0][index].get().set_value(
-        joint_command_interface_[0][index].get().get_value());
+      const auto joint_position_value_op = joint_command_interface_[0][index].get().get_optional();
+      if (!joint_position_value_op.has_value())
+      {
+        RCLCPP_DEBUG(logger, "Unable to retrieve joint position value");
+        return controller_interface::CallbackReturn::SUCCESS;
+      }
+      if (!joint_command_interface_[0][index].get().set_value(joint_position_value_op.value()))
+        ;
+      {
+        RCLCPP_WARN(
+          logger, "Error while setting joint position to value %f",
+          joint_position_value_op.value());
+        return controller_interface::CallbackReturn::SUCCESS;
+      }
     }
 
-    if (has_velocity_command_interface_)
+    if (has_velocity_command_interface_ && !joint_command_interface_[1][index].get().set_value(0.0))
     {
-      joint_command_interface_[1][index].get().set_value(0.0);
+      RCLCPP_WARN(logger, "Error while setting joint velocity to value 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
     }
 
-    if (has_acceleration_command_interface_)
+    if (
+      has_acceleration_command_interface_ &&
+      !joint_command_interface_[2][index].get().set_value(0.0))
     {
-      joint_command_interface_[2][index].get().set_value(0.0);
+      RCLCPP_WARN(logger, "Error while setting joint acceleration to value 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
     }
 
     // TODO(anyone): How to halt when using effort commands?
-    if (has_effort_command_interface_)
+    if (has_effort_command_interface_ && !joint_command_interface_[3][index].get().set_value(0.0))
     {
-      joint_command_interface_[3][index].get().set_value(0.0);
+      RCLCPP_WARN(logger, "Error while setting joint effort to value 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
     }
   }
 
@@ -1331,17 +1368,31 @@ void JointTrajectoryController::fill_partial_goal(
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          if (
-            has_position_command_interface_ &&
-            !std::isnan(joint_command_interface_[0][index].get().get_value()))
+          const auto position_command_value_op =
+            joint_command_interface_[0][index].get().get_optional();
+          if (!position_command_value_op.has_value())
+          {
+            RCLCPP_DEBUG(
+              get_node()->get_logger(),
+              "Unable to retrieve position command value of joint at index %zu", index);
+          }
+          if (has_position_command_interface_)
           {
             // copy last command if cmd interface exists
-            it.positions.push_back(joint_command_interface_[0][index].get().get_value());
+            it.positions.push_back(position_command_value_op.has_value());
           }
           else if (has_position_state_interface_)
           {
             // copy current state if state interface exists
-            it.positions.push_back(joint_state_interface_[0][index].get().get_value());
+            const auto position_state_value_op =
+              joint_state_interface_[0][index].get().get_optional();
+            if (!position_state_value_op.has_value())
+            {
+              RCLCPP_DEBUG(
+                get_node()->get_logger(),
+                "Unable to retrieve position state value of joint at index %zu", index);
+            }
+            it.positions.push_back(position_state_value_op.value());
           }
         }
         if (!it.velocities.empty())
@@ -1517,7 +1568,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
+        "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
+        "respectively",
         i - 1, i, previous_traj_time.seconds(),
         rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
       return false;
