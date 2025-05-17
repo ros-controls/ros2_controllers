@@ -2,5 +2,4 @@
 
 Release Notes: Jazzy to Kilted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 This list summarizes the changes between Jazzy (previous) and Kilted (current) releases.
