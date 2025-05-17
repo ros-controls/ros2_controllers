@@ -607,31 +607,6 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
-<<<<<<< HEAD
-=======
-
-bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
-
-std::vector<hardware_interface::CommandInterface>
-DiffDriveController::on_export_reference_interfaces()
-{
-  std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(reference_interfaces_.size());
-
-  reference_interfaces.push_back(
-    hardware_interface::CommandInterface(
-      get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[0]));
-
-  reference_interfaces.push_back(
-    hardware_interface::CommandInterface(
-      get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[1]));
-
-  return reference_interfaces;
-}
-
->>>>>>> d8dc4b1 (Simplify `on_set_chained_mode` implementations avoiding cpplint warnings (#1564))
 }  // namespace diff_drive_controller
 
 #include "class_loader/register_macro.hpp"
