@@ -1,0 +1,10 @@
+<library path="libchained_filter_controller">
+  <class name="chained_filter_controller/ChainedFilter"
+         type="chained_filter_controller::ChainedFilter"
+         base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      A chainable ROS 2 controller that applies a sequence of filters to a state interface using the filters package,
+      and exports the filtered output as a new state interface.
+    </description>
+  </class>
+</library>
