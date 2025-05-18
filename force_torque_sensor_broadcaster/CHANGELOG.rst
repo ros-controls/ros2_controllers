@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2025-05-17)
+------------------
+* Add multiplier support to ForceTorqueSensorBroadcaster (`#1647 <https://github.com/ros-controls/ros2_controllers/issues/1647>`_)
+* Contributors: edward.ix
+
 4.24.0 (2025-04-27)
 -------------------
 * [CI]  test_force_torque_sensor_broadcaster regularily times out (`#1639 <https://github.com/ros-controls/ros2_controllers/issues/1639>`_)

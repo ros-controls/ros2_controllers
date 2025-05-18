@@ -337,67 +337,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   const int nr_ref_itfs = 2;
   reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
 
-  // TODO(christophfroehlich) remove deprecated parameters
-  // START DEPRECATED
-  if (!params_.linear.x.has_velocity_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
-      "to NAN");
-    params_.linear.x.min_velocity = params_.linear.x.max_velocity =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.linear.x.has_acceleration_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
-      "limits to "
-      "NAN");
-    params_.linear.x.max_deceleration = params_.linear.x.max_acceleration =
-      params_.linear.x.max_deceleration_reverse = params_.linear.x.max_acceleration_reverse =
-        std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.linear.x.has_jerk_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
-      "NAN");
-    params_.linear.x.min_jerk = params_.linear.x.max_jerk =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_velocity_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
-      "to NAN");
-    params_.angular.z.min_velocity = params_.angular.z.max_velocity =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_acceleration_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
-      "limits to "
-      "NAN");
-    params_.angular.z.max_deceleration = params_.angular.z.max_acceleration =
-      params_.angular.z.max_deceleration_reverse = params_.angular.z.max_acceleration_reverse =
-        std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_jerk_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
-      "NAN");
-    params_.angular.z.min_jerk = params_.angular.z.max_jerk =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  // END DEPRECATED
   limiter_linear_ = std::make_unique<SpeedLimiter>(
     params_.linear.x.min_velocity, params_.linear.x.max_velocity,
     params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
@@ -703,11 +642,7 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-bool DiffDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode (without linting type-cast error)
-  return true || chained_mode;
-}
+bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface>
 DiffDriveController::on_export_reference_interfaces()
