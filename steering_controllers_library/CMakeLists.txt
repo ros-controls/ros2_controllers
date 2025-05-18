@@ -21,6 +21,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2
   tf2_msgs
   tf2_geometry_msgs
+  ackermann_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -61,6 +62,16 @@ if(BUILD_TESTING)
   target_link_libraries(test_steering_controllers_library steering_controllers_library)
   ament_target_dependencies(
     test_steering_controllers_library
+    controller_interface
+    hardware_interface
+  )
+  add_rostest_with_parameters_gmock(
+    test_steering_controllers_library_ackermann test/test_steering_controllers_library_ackermann.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_ackermann_params.yaml)
+  target_include_directories(test_steering_controllers_library_ackermann PRIVATE include)
+  target_link_libraries(test_steering_controllers_library_ackermann steering_controllers_library)
+  ament_target_dependencies(
+    test_steering_controllers_library_ackermann
     controller_interface
     hardware_interface
   )
