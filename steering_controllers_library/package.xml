@@ -40,6 +40,7 @@
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
+  <depend>ackermann_msgs</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>

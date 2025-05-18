@@ -32,6 +32,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 
 #include "steering_controllers_library/steering_controllers_library_parameters.hpp"
 #include "steering_controllers_library/steering_odometry.hpp"
@@ -71,6 +72,7 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
+  using ControllerAckermannReferenceMsg = ackermann_msgs::msg::AckermannDriveStamped;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
   using SteeringControllerStateMsg = control_msgs::msg::SteeringControllerStatus;

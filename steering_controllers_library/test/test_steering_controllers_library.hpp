@@ -33,7 +33,7 @@
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
-using ControllerReferenceMsg =
+using ControllerTwistReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 using ControllerAckermannReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
