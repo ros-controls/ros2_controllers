@@ -1,0 +1,83 @@
+swerve_drive_controller:
+  ros__parameters:
+    front_wheel_joint: {
+      type: string,
+      default_value: "front_wheel_joint",
+      description: "Name of the front wheel joint."
+    }
+    rear_left_wheel_joint: {
+      type: string,
+      default_value: "rear_left_wheel_joint",
+      description: "Name of the rear left wheel joint."
+    }
+    rear_right_wheel_joint: {
+      type: string,
+      default_value: "rear_right_wheel_joint",
+      description: "Name of the rear right wheel joint."
+    }
+
+    front_axle_joint: {
+      type: string,
+      default_value: "front_axle_joint",
+      description: "Name of the front axle joint."
+    }
+    rear_left_axle_joint: {
+      type: string,
+      default_value: "rear_left_axle_joint",
+      description: "Name of the rear left axle joint."
+    }
+    rear_right_axle_joint: {
+      type: string,
+      default_value: "rear_right_axle_joint",
+      description: "Name of the rear right axle joint."
+    }
+
+    chassis_length: {
+      type: double,
+      default_value: 0.85,
+      description: "Length of the robot chassis.",
+      validation: {
+        "swerve_drive_controller::gt<>": [0.0]
+      }
+    }
+    chassis_width: {
+      type: double,
+      default_value: 0.75,
+      description: "Width of the robot chassis.",
+      validation: {
+        "swerve_drive_controller::gt<>": [0.0]
+      }
+    }
+    wheel_radius: {
+      type: double,
+      default_value: 0.0775,
+      description: "Radius of the wheels.",
+      validation: {
+        "swerve_drive_controller::gt<>": [0.0]
+      }
+    }
+
+    cmd_vel_timeout: {
+      type: double,
+      default_value: 10.0,
+      description: "Timeout in seconds before velocity commands are considered stale.",
+      validation: {
+        "swerve_drive_controller::gt<>": [0.0]
+      }
+    }
+    use_stamped_vel: {
+      type: bool,
+      default_value: false,
+      description: "If true, velocity commands will be expected to have a timestamp."
+    }
+    cmd_vel_topic: {
+      type: string,
+      default_value: "/cmd_vel",
+      description: "Topic name for velocity commands."
+    }
+
+    open_loop: {
+      type: bool,
+      default_value: false,
+      description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    }
