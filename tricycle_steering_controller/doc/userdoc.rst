@@ -5,9 +5,12 @@
 tricycle_steering_controller
 =============================
 
-This controller implements the kinematics with two axes and three wheels, where two wheels on an axis are fixed (traction/drive), and the wheel on the other axis is steerable.
+This controller implements the kinematics with two axes and three wheels.
 
-The controller expects to have two commanding joints for traction, one for each fixed wheel and one commanding joint for steering.
+Two possible configurations are supported:
+1. Two wheels on an axis are fixed (traction/drive), and the wheel on the other axis is steerable. The controller expects to have two commanding joints for traction, one for each fixed wheel and one commanding joint for steering.
+2. A single traction wheel, which is also steerable: The controller expects a single command joint for traction and one commanding joint for steering.
+
 
 For more details on controller's execution and interfaces check the :ref:`Steering Controller Library <steering_controllers_library_userdoc>`.
 

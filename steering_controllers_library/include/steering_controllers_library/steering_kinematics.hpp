@@ -220,7 +220,17 @@ public:
    * \param heading heading [rad]
    */
   void set_odometry(const double & x, const double & y, const double & heading);
+  /**
+   * \brief Set tricycle config
+   * \param nr_traction_wheels number of traction wheels
+   */
+  void set_tricycle_config(const size_t nr_traction_wheels);
 
+  /**
+   * \brief Get tricycle config
+   * \return number of traction wheels
+   */
+  size_t get_tricycle_config() const { return tricycle_nr_traction_wheels_; }
 private:
   /**
    * \brief Uses precomputed linear and angular velocities to compute odometry
@@ -296,6 +306,7 @@ private:
 
   /// Configuration type used for the forward kinematics
   int config_type_ = -1;
+  size_t tricycle_nr_traction_wheels_ = 1;
 
   /// Previous wheel position/state [rad]:
   double traction_wheel_old_pos_;

@@ -93,9 +93,11 @@ public:
   unsigned int get_odometry_type() const;
   double get_heading() const;
 
-  double get_x() const;
+  void set_tricycle_config(const size_t nr_traction_wheels);
 
-  double get_y() const;
+  size_t get_tricycle_config() const;
+
+  double get_x() const;
 
   double get_linear() const;
 
