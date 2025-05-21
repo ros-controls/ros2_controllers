@@ -1,0 +1,4 @@
+test_force_torque_sensor_broadcaster:
+  ros__parameters:
+
+    frame_id:  "fts_sensor_frame"

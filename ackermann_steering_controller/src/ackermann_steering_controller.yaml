@@ -1,0 +1,76 @@
+ackermann_steering_controller:
+
+  front_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_track_width' or 'steering_track_width'",
+      read_only: false,
+    }
+
+  steering_track_width:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "(Optional) Steering wheel track length. If not set, 'traction_track_width' will be used.",
+      read_only: false,
+    }
+
+  rear_wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_track_width' or 'steering_track_width'",
+      read_only: false,
+    }
+
+  traction_track_width:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Traction wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+      # TODO(anyone): activate validation if front/rear wheel track is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Distance between front and rear wheels. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
+    }
+
+  traction_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Traction wheels radius.",
+      read_only: false,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
+  front_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_wheels_radius'",
+      read_only: false,
+    }
+
+  rear_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: use 'traction_wheels_radius'",
+      read_only: false,
+    }

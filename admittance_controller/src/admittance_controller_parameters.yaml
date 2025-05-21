@@ -1,0 +1,155 @@
+admittance_controller:
+  joints: {
+    type: string_array,
+    description: "Specifies which joints will be used by the controller. ",
+    read_only: true
+  }
+  command_joints: {
+    type: string_array,
+    default_value: [],
+    description: "(optional) Specifies the joints for writing into another controllers reference. This parameter is only relevant when chaining the output of this controller to the input of another controller.",
+    read_only: true
+  }
+  command_interfaces:
+    {
+      type: string_array,
+      description: "Specifies which command interfaces the controller will claim.",
+      read_only: true
+    }
+
+  state_interfaces:
+    {
+      type: string_array,
+      description: "Specifies which state interfaces the controller will claim.",
+      read_only: true
+    }
+
+  chainable_command_interfaces:
+    {
+      type: string_array,
+      default_value: ["position", "velocity"],
+      description: "Specifies which reference interfaces the controller will export. Normally, the position and velocity are used.",
+      read_only: true
+    }
+
+  kinematics:
+    plugin_name: {
+      type: string,
+      description: "Specifies the name of the kinematics plugin to load."
+    }
+    plugin_package: {
+      type: string,
+      description: "Specifies the package name that contains the kinematics plugin."
+    }
+    base: {
+      type: string,
+      description: "Specifies the base link of the robot description used by the kinematics plugin."
+    }
+    tip: {
+      type: string,
+      description: "Specifies the end effector link of the robot description used by the kinematics plugin."
+    }
+    alpha: {
+      type: double,
+      default_value: 0.01,
+      description: "Specifies the damping coefficient for the Jacobian pseudo inverse."
+    }
+
+  ft_sensor:
+    name: {
+      type: string,
+      description: "Specifies the name of the force torque sensor in the robot description which will be used in the admittance calculation."
+    }
+    frame:
+      id: {
+        type: string,
+        description: "Specifies the frame/link name of the force torque sensor."
+      }
+    filter_coefficient: {
+      type: double,
+      default_value: 0.05,
+      description: "Specifies the filter coefficient for the sensor's exponential filter."
+    }
+
+  control:
+    frame:
+      id: {
+        type: string,
+        description: "Specifies the control frame used for admittance calculation."
+      }
+
+  fixed_world_frame: # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
+    frame:
+      id: {
+        type: string,
+        description: "Specifies the world frame use for admittance calculation. Gravity must point down in this frame."
+      }
+
+  gravity_compensation:
+    frame:
+      id: {
+        type: string,
+        description: "Specifies the frame which center of gravity (CoG) is defined in. Normally, the force torque sensor frame should be used."
+      }
+    CoG:
+      pos: {
+        type: double_array,
+        description: "Specifies the position of the center of gravity (CoG) of the end effector in the gravity compensation frame.",
+        validation: {
+          fixed_size<>: 3
+        }
+      }
+      force: {
+        type: double,
+        default_value: 0.0,
+        description: "Specifies the weight of the end effector, e.g mass * 9.81."
+      }
+
+  admittance:
+    selected_axes:
+      {
+        type: bool_array,
+        description: "Specifies whether the axes x, y, z, rx, ry, and rz should be included in the admittance calculation.",
+        validation: {
+          fixed_size<>: 6
+        }
+      }
+    mass: {
+      type: double_array,
+      description: "Specifies the mass values for x, y, z, rx, ry, and rz used in the admittance calculation.",
+      validation: {
+        fixed_size<>: 6,
+        element_bounds<>: [ 0.0001, 1000000.0 ]
+      }
+    }
+    damping_ratio: {
+      type: double_array,
+      description: "Specifies damping ratio values for x, y, z, rx, ry, and rz used in the admittance calculation.
+      The damping ratio is defined as: zeta = D / (2 * sqrt( M * S )).",
+      validation: {
+        fixed_size<>: 6
+      }
+    }
+    stiffness: {
+      type: double_array,
+      description: "Specifies the stiffness values for x, y, z, rx, ry, and rz used in the admittance calculation.",
+      validation: {
+        fixed_size<>: 6,
+        element_bounds<>: [ 0.0, 100000000.0 ]
+      }
+    }
+    joint_damping: {
+      type: double,
+      description: "Specifies the joint damping applied used in the admittance calculation.",
+      default_value: 5,
+      validation: {
+        gt_eq: [ 0.0 ]
+      }
+    }
+
+  # general settings
+  enable_parameter_update_without_reactivation: {
+    type: bool,
+    default_value: true,
+    description: "If enabled, the parameters will be dynamically updated while the controller is running."
+  }

@@ -1,0 +1,8 @@
+<library path="bicycle_steering_controller">
+  <class name="bicycle_steering_controller/BicycleSteeringController"
+         type="bicycle_steering_controller::BicycleSteeringController" base_class_type="controller_interface::ChainableControllerInterface">
+  <description>
+    Steering controller for Bicycle kinematics with one traction and one steering joint.
+  </description>
+  </class>
+</library>

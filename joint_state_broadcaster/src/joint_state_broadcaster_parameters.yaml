@@ -1,0 +1,48 @@
+joint_state_broadcaster:
+  use_local_topics: {
+    type: bool,
+    default_value: false,
+    description: "Defining if ``joint_states`` and ``dynamic_joint_states`` messages should be published into local namespace, e.g., ``/my_state_broadcaster/joint_states``."
+  }
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Parameter to support broadcasting of only specific joints and interfaces.
+    It has to be used in combination with the ``interfaces`` parameter.
+    If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
+    published.
+    Joint state broadcaster asks for access to all defined interfaces on all defined joints."
+  }
+  extra_joints: {
+    type: string_array,
+    default_value: [],
+    description: "Names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0."
+  }
+  interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "Parameter to support broadcasting of only specific joints and interfaces.
+    It has to be used in combination with the ``joints`` parameter.
+    If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
+    published."
+  }
+  map_interface_to_joint_state:
+    position: {
+      type: string,
+      default_value: "position",
+    }
+    velocity: {
+      type: string,
+      default_value: "velocity",
+    }
+    effort: {
+      type: string,
+      default_value: "effort",
+    }
+  use_urdf_to_filter: {
+    type: bool,
+    default_value: true,
+    description: "Uses the robot_description to filter the ``joint_states`` topic.
+    If true, the broadcaster will publish the data of the joints present in the URDF alone.
+    If false, the broadcaster will publish the data of any interface that has type ``position``, ``velocity``, or ``effort``."
+  }

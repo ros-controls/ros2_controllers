@@ -1,0 +1,7 @@
+<library path="joint_trajectory_controller">
+  <class name="joint_trajectory_controller/JointTrajectoryController" type="joint_trajectory_controller::JointTrajectoryController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The joint trajectory controller executes joint-space trajectories on a set of joints
+  </description>
+  </class>
+</library>

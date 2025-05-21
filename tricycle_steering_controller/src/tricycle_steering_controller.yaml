@@ -1,0 +1,58 @@
+tricycle_steering_controller:
+  wheel_track:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "(deprecated) Axle track, use 'traction_track_width' instead",
+      read_only: false,
+    }
+  traction_track_width:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Axle track",
+      read_only: false,
+      # TODO(anyone): activate validation if wheel_track is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Distance between front and rear wheels. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
+    }
+
+  traction_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Traction wheels radius.",
+      read_only: false,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
+  front_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: Use 'traction_wheels_radius'",
+      read_only: false,
+    }
+
+  rear_wheels_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: Use 'traction_wheels_radius'",
+      read_only: false,
+    }

@@ -1,0 +1,39 @@
+bicycle_steering_controller:
+  wheelbase:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Distance between front and rear wheel. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      read_only: false,
+      validation: {
+        gt<>: [0.0]
+      }
+    }
+
+  traction_wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "Traction wheel radius.",
+      read_only: false,
+      # TODO(anyone): activate validation if front/rear wheel radius is removed
+      # validation: {
+      #   gt<>: [0.0]
+      # }
+    }
+
+  front_wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: Use 'traction_wheel_radius'",
+      read_only: true,
+    }
+
+  rear_wheel_radius:
+    {
+      type: double,
+      default_value: 0.0,
+      description: "DEPRECATED: Use 'traction_wheel_radius'",
+      read_only: true,
+    }

@@ -1,0 +1,7 @@
+<library path="effort_controllers">
+  <class name="effort_controllers/JointGroupEffortController" type="effort_controllers::JointGroupEffortController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      The joint effort controller commands a group of joints through the effort interface
+    </description>
+  </class>
+</library>
