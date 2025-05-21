@@ -36,9 +36,16 @@ target_include_directories(parallel_gripper_action_controller PUBLIC
   $<INSTALL_INTERFACE:include/parallel_gripper_action_controller>
 )
 target_link_libraries(parallel_gripper_action_controller PUBLIC
-        parallel_gripper_action_controller_parameters
-)
-ament_target_dependencies(parallel_gripper_action_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      parallel_gripper_action_controller_parameters
+                      control_toolbox::control_toolbox
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_action::rclcpp_action
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(controller_interface ros_control_plugins.xml)
 
@@ -50,9 +57,9 @@ if(BUILD_TESTING)
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_parallel_gripper_action_controllers test/test_load_parallel_gripper_action_controller.cpp)
   target_include_directories(test_load_parallel_gripper_action_controllers PRIVATE include)
-  ament_target_dependencies(test_load_parallel_gripper_action_controllers
-    controller_manager
-    ros2_control_test_assets
+  target_link_libraries(test_load_parallel_gripper_action_controllers
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_parallel_gripper_controller

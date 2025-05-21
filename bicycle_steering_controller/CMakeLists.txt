@@ -40,8 +40,15 @@ target_include_directories(bicycle_steering_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(bicycle_steering_controller PUBLIC
-  bicycle_steering_controller_parameters)
-ament_target_dependencies(bicycle_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      bicycle_steering_controller_parameters
+                      steering_controllers_library::steering_controllers_library
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${std_srvs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface bicycle_steering_controller.xml)
@@ -54,10 +61,10 @@ if(BUILD_TESTING)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_bicycle_steering_controller test/test_load_bicycle_steering_controller.cpp)
-  ament_target_dependencies(test_load_bicycle_steering_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_bicycle_steering_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(
@@ -65,22 +72,12 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/bicycle_steering_controller_params.yaml)
   target_include_directories(test_bicycle_steering_controller PRIVATE include)
   target_link_libraries(test_bicycle_steering_controller bicycle_steering_controller)
-  ament_target_dependencies(
-    test_bicycle_steering_controller
-    controller_interface
-    hardware_interface
-  )
 
   add_rostest_with_parameters_gmock(
     test_bicycle_steering_controller_preceding test/test_bicycle_steering_controller_preceding.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/bicycle_steering_controller_preceding_params.yaml)
   target_include_directories(test_bicycle_steering_controller_preceding PRIVATE include)
   target_link_libraries(test_bicycle_steering_controller_preceding bicycle_steering_controller)
-  ament_target_dependencies(
-    test_bicycle_steering_controller_preceding
-    controller_interface
-    hardware_interface
-  )
 endif()
 
 install(
