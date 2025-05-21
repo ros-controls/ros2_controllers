@@ -14,15 +14,11 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   std_srvs
+  industrial_robot_motion_interfaces
 )
 
 find_package(ament_cmake REQUIRED)
 find_package(generate_parameter_library REQUIRED)
-find_package(ament_cmake_gmock REQUIRED)
-find_package(controller_manager REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(ros2_control_test_assets REQUIRED)
-find_package(industrial_robot_motion_interfaces REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
@@ -42,7 +38,6 @@ target_include_directories(motion_primitives_forward_controller PUBLIC
 target_link_libraries(motion_primitives_forward_controller motion_primitives_forward_controller_parameters)
 ament_target_dependencies(motion_primitives_forward_controller
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-  industrial_robot_motion_interfaces
 )
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")
 
@@ -51,7 +46,7 @@ pluginlib_export_plugin_description_file(
 
 install(
   TARGETS
-  motion_primitives_forward_controller
+    motion_primitives_forward_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -63,6 +58,11 @@ install(
 )
 
 if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(hardware_interface REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
   ament_add_gmock(
     test_load_motion_primitives_forward_controller
     test/test_load_motion_primitives_forward_controller.cpp
