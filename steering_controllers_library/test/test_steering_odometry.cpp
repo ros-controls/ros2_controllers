@@ -300,6 +300,23 @@ TEST(TestSteeringOdometry, tricycle_IK_linear)
   EXPECT_EQ(cmd1[0], 0.0);  // no steering
 }
 
+TEST(TestSteeringOdometry, tricycle_single_IK_linear)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(1);
+
+  odom.update_open_loop(1., 0., 1.);
+  auto cmd = odom.get_commands(1., 0., true);
+  auto cmd0 = std::get<0>(cmd);  // vel
+  ASSERT_THAT(cmd0.size(), 1);
+  EXPECT_GT(cmd0[0], 0.0);       // linear
+  auto cmd1 = std::get<1>(cmd);  // steer
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_EQ(cmd1[0], 0.0);  // no steering
+}
+
 TEST(TestSteeringOdometry, tricycle_IK_left)
 {
   steering_odometry::SteeringOdometry odom(1);
