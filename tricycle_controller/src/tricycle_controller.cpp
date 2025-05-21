@@ -52,6 +52,9 @@ TricycleController::TricycleController() : controller_interface::ControllerInter
 
 CallbackReturn TricycleController::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "[Deprecated]: the `TricycleController` is replaced by 'TricycleSteeringController'");
   try
   {
     // Create the parameter listener and get the parameters
