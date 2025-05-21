@@ -74,7 +74,7 @@ PidController::PidController() : controller_interface::ChainableControllerInterf
 
 controller_interface::CallbackReturn PidController::on_init()
 {
-  control_mode_.initRT(feedforward_mode_type::OFF);
+  feedforward_mode_enabled_.initRT(false);
 
   try
   {
@@ -96,6 +96,8 @@ void PidController::update_parameters()
     return;
   }
   params_ = param_listener_->get_params();
+
+  feedforward_mode_enabled_.writeFromNonRT(params_.enable_feedforward);
 }
 
 controller_interface::CallbackReturn PidController::configure_parameters()
@@ -230,6 +232,7 @@ controller_interface::CallbackReturn PidController::on_configure(
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
   }
+
   std::shared_ptr<ControllerMeasuredStateMsg> measured_state_msg =
     std::make_shared<ControllerMeasuredStateMsg>();
   reset_controller_measured_state_msg(measured_state_msg, reference_and_state_dof_names_);
@@ -243,14 +246,13 @@ controller_interface::CallbackReturn PidController::on_configure(
       const std::shared_ptr<ControllerModeSrvType::Request> request,
       std::shared_ptr<ControllerModeSrvType::Response> response)
   {
-    if (request->data)
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-    }
-    else
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-    }
+    feedforward_mode_enabled_.writeFromNonRT(request->data);
+
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "This service will be deprecated in favour of setting the ``feedforward_gain`` parameter to "
+      "a non-zero value.");
+
     response->success = true;
   };
 
@@ -425,11 +427,7 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
   return state_interfaces;
 }
 
-bool PidController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool PidController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn PidController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
@@ -514,7 +512,7 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (*(control_mode_.readFromRT()) == feedforward_mode_type::ON)
+      if (*(feedforward_mode_enabled_.readFromRT()))
       {
         // two interfaces
         if (reference_interfaces_.size() == 2 * dof_)

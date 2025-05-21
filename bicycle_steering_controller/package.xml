@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>bicycle_steering_controller</name>
-  <version>4.24.0</version>
+  <version>5.0.0</version>
   <description>Steering controller with bicycle kinematics. Rear fixed wheel is powering the vehicle and front wheel is steering.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

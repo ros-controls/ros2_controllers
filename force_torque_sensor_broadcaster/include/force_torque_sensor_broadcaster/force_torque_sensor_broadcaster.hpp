@@ -69,6 +69,7 @@ public:
 
 protected:
   void apply_sensor_offset(const Params & params, geometry_msgs::msg::WrenchStamped & msg);
+  void apply_sensor_multiplier(const Params & params, geometry_msgs::msg::WrenchStamped & msg);
 
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;

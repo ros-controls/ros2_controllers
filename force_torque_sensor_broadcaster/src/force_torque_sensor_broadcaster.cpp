@@ -241,6 +241,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
   wrench_raw_.header.stamp = time;
   force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
   this->apply_sensor_offset(params_, wrench_raw_);
+  this->apply_sensor_multiplier(params_, wrench_raw_);
 
   if (realtime_raw_publisher_ && realtime_raw_publisher_->trylock())
   {
@@ -390,6 +391,17 @@ void ForceTorqueSensorBroadcaster::apply_sensor_offset(
   msg.wrench.torque.x += params.offset.torque.x;
   msg.wrench.torque.y += params.offset.torque.y;
   msg.wrench.torque.z += params.offset.torque.z;
+}
+
+void ForceTorqueSensorBroadcaster::apply_sensor_multiplier(
+  const Params & params, geometry_msgs::msg::WrenchStamped & msg)
+{
+  msg.wrench.force.x *= params.multiplier.force.x;
+  msg.wrench.force.y *= params.multiplier.force.y;
+  msg.wrench.force.z *= params.multiplier.force.z;
+  msg.wrench.torque.x *= params.multiplier.torque.x;
+  msg.wrench.torque.y *= params.multiplier.torque.y;
+  msg.wrench.torque.z *= params.multiplier.torque.z;
 }
 }  // namespace force_torque_sensor_broadcaster
 
