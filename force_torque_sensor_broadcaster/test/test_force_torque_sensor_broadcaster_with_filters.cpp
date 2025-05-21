@@ -111,9 +111,19 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterLP_Configure_Upda
   wrench_in.header.frame_id = "world";
   wrench_in.wrench.force.x = 1.0;
 
-  // update passed
+  // update and init with initial value
   EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
-  // udpdate twice because currently the IIR has a zero output at first iteration
+  ASSERT_EQ(wrench_out.wrench.force.x, wrench_in.wrench.force.x);
+  ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y);
+  ASSERT_EQ(wrench_out.wrench.force.z, wrench_in.wrench.force.z);
+  ASSERT_EQ(wrench_out.wrench.torque.x, wrench_in.wrench.torque.x);
+  ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y);
+  ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
+
+  // update with different value
+  wrench_in.wrench.force.x = 10.0;
+  // update twice because currently the IIR has the same output at first iteration
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
   EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
 
   // test if the correct low-pass filter was loaded
@@ -125,13 +135,14 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterLP_Configure_Upda
   a1 = exp(
     -1.0 / sampling_freq * (2.0 * M_PI * damping_freq) / (pow(10.0, damping_intensity / -10.0)));
   b1 = 1.0 - a1;
-  // expect change
-  ASSERT_EQ(wrench_out.wrench.force.x, b1 * wrench_in.wrench.force.x);
+  // expect no change
   ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y);
   ASSERT_EQ(wrench_out.wrench.force.z, wrench_in.wrench.force.z);
   ASSERT_EQ(wrench_out.wrench.torque.x, wrench_in.wrench.torque.x);
   ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y);
   ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
+  // expect change
+  ASSERT_EQ(wrench_out.wrench.force.x, a1 * 1.0 + b1 * wrench_in.wrench.force.x);
 }
 
 TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterGC_Configure_Update)
@@ -165,11 +176,10 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, SingleFilterGC_Configure_Upda
   // with no tf different with world, sensor frame is world frame, calculation is simplified
   double grav_force_z = gravity_acc * mass;
   double grav_torque_x = cog_y * grav_force_z;
+
   // expect change
-  geometry_msgs::msg::WrenchStamped in, out;
-  in.header.frame_id = "world";
-  in.wrench.force.x = 1.0;
-  in.wrench.torque.x = 10.0;
+  wrench_in.wrench.torque.x = 10.0;
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
 
   ASSERT_EQ(wrench_out.wrench.force.x, wrench_in.wrench.force.x);
   ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y);
@@ -220,29 +230,33 @@ TEST_F(ForceTorqueSensorBroadcasterWithFilterTest, ChainedFilterLPGC_Configure_U
   double grav_force_z = gravity_acc * mass;
   double grav_torque_x = cog_y * grav_force_z;
 
-  geometry_msgs::msg::WrenchStamped in, out;
-  in.header.frame_id = "world";
-  in.wrench.force.x = 1.0;
-  in.wrench.torque.x = 10.0;
+  // expect no change from wrench_in
+  ASSERT_EQ(wrench_out.wrench.force.x, wrench_in.wrench.force.x);
+  ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y);
+  ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y);
+  ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z);
   // expect change
-  ASSERT_EQ(wrench_out.wrench.force.x, 0.0);
-  ASSERT_EQ(wrench_out.wrench.force.y, 0.0);
-  EXPECT_NEAR(wrench_out.wrench.force.z, 0.0 + grav_force_z, COMMON_THRESHOLD);
-  EXPECT_NEAR(wrench_out.wrench.torque.x, 0.0 + grav_torque_x, COMMON_THRESHOLD);
-  ASSERT_EQ(wrench_out.wrench.torque.y, 0.0);
-  ASSERT_EQ(wrench_out.wrench.torque.z, 0.0);
+  EXPECT_NEAR(wrench_out.wrench.force.z, wrench_in.wrench.force.z + grav_force_z, COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    wrench_out.wrench.torque.x, wrench_in.wrench.torque.x + grav_torque_x, COMMON_THRESHOLD);
 
-  // udpdate twice because currently the IIR has a zero output at first iteration
+  // update
+  wrench_in.wrench.force.x = 1.0;
+  wrench_in.wrench.torque.x = 10.0;
+  // update twice because currently the IIR has the same output at first iteration
+  EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
   EXPECT_TRUE(fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out));
 
-  ASSERT_EQ(wrench_out.wrench.force.x, b1 * wrench_in.wrench.force.x);
-  ASSERT_EQ(wrench_out.wrench.force.y, b1 * wrench_in.wrench.force.y);
+  ASSERT_EQ(wrench_out.wrench.force.x, a1 * 1.0 + b1 * wrench_in.wrench.force.x);
+  ASSERT_EQ(wrench_out.wrench.force.y, a1 * 0.0 + b1 * wrench_in.wrench.force.y);
   EXPECT_NEAR(
-    wrench_out.wrench.force.z, b1 * wrench_in.wrench.force.z + grav_force_z, COMMON_THRESHOLD);
+    wrench_out.wrench.force.z, a1 * 0.0 + b1 * wrench_in.wrench.force.z + grav_force_z,
+    COMMON_THRESHOLD);
   EXPECT_NEAR(
-    wrench_out.wrench.torque.x, b1 * wrench_in.wrench.torque.x + grav_torque_x, COMMON_THRESHOLD);
-  ASSERT_EQ(wrench_out.wrench.torque.y, b1 * wrench_in.wrench.torque.y);
-  ASSERT_EQ(wrench_out.wrench.torque.z, b1 * wrench_in.wrench.torque.z);
+    wrench_out.wrench.torque.x, a1 * 0.0 + b1 * wrench_in.wrench.torque.x + grav_torque_x,
+    COMMON_THRESHOLD);
+  ASSERT_EQ(wrench_out.wrench.torque.y, a1 * 0.0 + b1 * wrench_in.wrench.torque.y);
+  ASSERT_EQ(wrench_out.wrench.torque.z, a1 * 0.0 + b1 * wrench_in.wrench.torque.z);
 }
 
 int main(int argc, char ** argv)
