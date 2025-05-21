@@ -224,6 +224,11 @@ void SteeringOdometry::set_odometry_type(const unsigned int type)
   config_type_ = static_cast<int>(type);
 }
 
+void SteeringOdometry::set_tricycle_config(const size_t nr_traction_wheels)
+{
+  tricycle_nr_traction_wheels_ = nr_traction_wheels;
+}
+
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
   // phi can be nan if both v_bx and omega_bz are zero
@@ -238,21 +243,19 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   // desired wheel speed and steering angle of the middle of traction and steering axis
   double Ws, phi, phi_IK = steer_pos_;
 
-#if 0
-  if (v_bx == 0 && omega_bz != 0)
+  // calculate steering angle
+  if (
+    config_type_ == TRICYCLE_CONFIG && get_tricycle_config() == 1 && is_close_to_zero(v_bx) &&
+    !is_close_to_zero(omega_bz))
   {
-    // TODO(anyone) this would be only possible if traction is on the steering axis
+    // turning on the spot
     phi = omega_bz > 0 ? M_PI_2 : -M_PI_2;
-    Ws = abs(omega_bz) * wheelbase_ / wheel_radius_;
   }
   else
   {
-    // TODO(anyone) this would be valid only if traction is on the steering axis
-    Ws = v_bx / (wheel_radius_ * std::cos(phi_IK));  // using the measured steering angle
+    phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
   }
-#endif
-  // steering angle
-  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
+  // steering angle for inverse kinematics
   if (open_loop)
   {
     phi_IK = phi;
@@ -293,18 +296,35 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   {
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
-    // double-traction axle
-    if (is_close_to_zero(phi_IK))
+
+    if (get_tricycle_config() == 1)
     {
-      // avoid division by zero
-      traction_commands = {Ws, Ws};
+      // if traction is on the steering axis
+      if (is_close_to_zero(v_bx) && !is_close_to_zero(omega_bz))
+      {
+        Ws = abs(omega_bz) * wheel_base_ / wheel_radius_;
+      }
+      else
+      {
+        Ws /= std::cos(phi_IK);
+      }
+      traction_commands = {Ws};
     }
     else
     {
-      const double turning_radius = wheel_base_ / std::tan(phi_IK);
-      const double Wr = Ws * (turning_radius + wheel_track_traction_ * 0.5) / turning_radius;
-      const double Wl = Ws * (turning_radius - wheel_track_traction_ * 0.5) / turning_radius;
-      traction_commands = {Wr, Wl};
+      // double-traction axle
+      if (is_close_to_zero(phi_IK))
+      {
+        // avoid division by zero
+        traction_commands = {Ws, Ws};
+      }
+      else
+      {
+        const double turning_radius = wheel_base_ / std::tan(phi_IK);
+        const double Wr = Ws * (turning_radius + wheel_track_traction_ * 0.5) / turning_radius;
+        const double Wl = Ws * (turning_radius - wheel_track_traction_ * 0.5) / turning_radius;
+        traction_commands = {Wr, Wl};
+      }
     }
     // simple steering
     steering_commands = {phi};
