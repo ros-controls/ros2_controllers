@@ -197,9 +197,35 @@ controller_interface::return_type TricycleController::update(
   limiter_traction_.limit(
     Ws_write, last_command.speed, second_to_last_command.speed, period.seconds());
 
-  limiter_steering_.limit(
-    alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
-    period.seconds());
+  // Calculate linear velocity in m/s
+  double linear_velocity = std::abs(Ws_read * params_.wheel_radius);
+
+  // Update stationary timer
+  if (linear_velocity < low_speed_threshold_) {
+    stationary_timer_ += period.seconds();
+  } else {
+    stationary_timer_ = 0.0;
+  }
+
+  // Choose appropriate steering limiter based on conditions
+  if (stationary_timer_ >= stationary_time_threshold_) {
+    // Use stationary limiter when at low speed for extended time
+    limiter_steering_stationary_.limit(
+      alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
+      period.seconds());
+    RCLCPP_INFO(get_node()->get_logger(), "Using stationary steering limiter");
+  } else if (linear_velocity < low_speed_threshold_) {
+    // Use low speed limiter when speed is below threshold
+    limiter_steering_low_speed_.limit(
+      alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
+      period.seconds());
+    RCLCPP_INFO(get_node()->get_logger(), "Using low speed steering limiter");
+  } else {
+    // Use standard limiter for normal operation
+    limiter_steering_.limit(
+      alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
+      period.seconds());
+  }
 
   previous_commands_.pop();
   AckermannDrive ackermann_command;
@@ -243,6 +269,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   params_.publish_ackermann_command =
     get_node()->get_parameter("publish_ackermann_command").as_bool();
   exact_mode_threshold_ = get_node()->get_parameter("exact_mode_threshold").as_double();
+  low_speed_threshold_ = get_node()->get_parameter("low_speed_threshold").as_double();
+  stationary_time_threshold_ = get_node()->get_parameter("stationary_time_threshold").as_double();
 
   try
   {
@@ -267,6 +295,30 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
   catch (const std::invalid_argument & e)
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Error configuring steering limiter: %s", e.what());
+    return CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_steering_low_speed_ = SteeringLimiter(
+      params_.steering_low_speed.min_position, params_.steering_low_speed.max_position,
+      params_.steering_low_speed.min_velocity, params_.steering_low_speed.max_velocity,
+      params_.steering_low_speed.min_acceleration, params_.steering_low_speed.max_acceleration);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring low speed steering limiter: %s", e.what());
+    return CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_steering_stationary_ = SteeringLimiter(
+      params_.steering_stationary.min_position, params_.steering_stationary.max_position,
+      params_.steering_stationary.min_velocity, params_.steering_stationary.max_velocity,
+      params_.steering_stationary.min_acceleration, params_.steering_stationary.max_acceleration);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring stationary steering limiter: %s", e.what());
     return CallbackReturn::ERROR;
   }
 
@@ -459,6 +511,9 @@ bool TricycleController::reset()
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
+
+  // Reset stationary timer
+  stationary_timer_ = 0.0;
 
   received_velocity_msg_ptr_.set(nullptr);
   return true;
