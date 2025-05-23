@@ -213,13 +213,11 @@ controller_interface::return_type TricycleController::update(
     limiter_steering_stationary_.limit(
       alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
       period.seconds());
-    RCLCPP_INFO(get_node()->get_logger(), "Using stationary steering limiter");
   } else if (current_linear_speed < low_speed_threshold_) {
     // Use low speed limiter when speed is below threshold
     limiter_steering_low_speed_.limit(
       alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
       period.seconds());
-    RCLCPP_INFO(get_node()->get_logger(), "Using low speed steering limiter");
   } else {
     // Use standard limiter for normal operation
     limiter_steering_.limit(
