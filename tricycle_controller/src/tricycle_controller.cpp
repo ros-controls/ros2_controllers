@@ -197,11 +197,11 @@ controller_interface::return_type TricycleController::update(
   limiter_traction_.limit(
     Ws_write, last_command.speed, second_to_last_command.speed, period.seconds());
 
-  // Calculate linear velocity in m/s
-  double linear_velocity = std::abs(Ws_read * params_.wheel_radius);
+  // Use measured linear speed from odometry instead of traction wheel speed
+  double current_linear_speed = std::abs(odometry_.getLinear());
 
   // Update stationary timer
-  if (linear_velocity < low_speed_threshold_) {
+  if (current_linear_speed < low_speed_threshold_) {
     stationary_timer_ += period.seconds();
   } else {
     stationary_timer_ = 0.0;
@@ -214,7 +214,7 @@ controller_interface::return_type TricycleController::update(
       alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
       period.seconds());
     RCLCPP_INFO(get_node()->get_logger(), "Using stationary steering limiter");
-  } else if (linear_velocity < low_speed_threshold_) {
+  } else if (current_linear_speed < low_speed_threshold_) {
     // Use low speed limiter when speed is below threshold
     limiter_steering_low_speed_.limit(
       alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
@@ -290,7 +290,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     limiter_steering_ = SteeringLimiter(
       params_.steering.min_position, params_.steering.max_position, params_.steering.min_velocity,
       params_.steering.max_velocity, params_.steering.min_acceleration,
-      params_.steering.max_acceleration);
+      params_.steering.max_acceleration, params_.steering.min_deceleration,
+      params_.steering.max_deceleration);
   }
   catch (const std::invalid_argument & e)
   {
@@ -302,7 +303,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     limiter_steering_low_speed_ = SteeringLimiter(
       params_.steering_low_speed.min_position, params_.steering_low_speed.max_position,
       params_.steering_low_speed.min_velocity, params_.steering_low_speed.max_velocity,
-      params_.steering_low_speed.min_acceleration, params_.steering_low_speed.max_acceleration);
+      params_.steering_low_speed.min_acceleration, params_.steering_low_speed.max_acceleration,
+      params_.steering_low_speed.min_deceleration, params_.steering_low_speed.max_deceleration);
   }
   catch (const std::invalid_argument & e)
   {
@@ -314,7 +316,8 @@ CallbackReturn TricycleController::on_configure(const rclcpp_lifecycle::State & 
     limiter_steering_stationary_ = SteeringLimiter(
       params_.steering_stationary.min_position, params_.steering_stationary.max_position,
       params_.steering_stationary.min_velocity, params_.steering_stationary.max_velocity,
-      params_.steering_stationary.min_acceleration, params_.steering_stationary.max_acceleration);
+      params_.steering_stationary.min_acceleration, params_.steering_stationary.max_acceleration,
+      params_.steering_stationary.min_deceleration, params_.steering_stationary.max_deceleration);
   }
   catch (const std::invalid_argument & e)
   {

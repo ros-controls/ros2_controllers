@@ -153,6 +153,14 @@ tricycle_controller:
       type: double,
       default_value: .NAN,
     }
+    max_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
   steering_low_speed:
     # Limits to use when traction speed is below threshold
     max_position: {
@@ -179,6 +187,14 @@ tricycle_controller:
       type: double,
       default_value: .NAN,
     }
+    max_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
   steering_stationary:
     # Limits to use when robot has been at low speed for extended time
     max_position: {
@@ -202,6 +218,14 @@ tricycle_controller:
       default_value: .NAN,
     }
     min_acceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    max_deceleration: {
+      type: double,
+      default_value: .NAN,
+    }
+    min_deceleration: {
       type: double,
       default_value: .NAN,
     }
