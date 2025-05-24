@@ -43,9 +43,20 @@ target_include_directories(joint_trajectory_controller PUBLIC
   $<INSTALL_INTERFACE:include/joint_trajectory_controller>
 )
 target_link_libraries(joint_trajectory_controller PUBLIC
-  joint_trajectory_controller_parameters
-)
-ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      joint_trajectory_controller_parameters
+                      control_toolbox::control_toolbox
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      rsl::rsl
+                      tl_expected::tl_expected
+                      urdf::urdf
+                      angles::angles
+                      ${trajectory_msgs_TARGETS}
+                      ${control_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(controller_interface joint_trajectory_plugin.xml)
 
@@ -56,12 +67,12 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_link_libraries(test_trajectory joint_trajectory_controller)
-  ament_target_dependencies(test_trajectory ros2_control_test_assets)
+  target_link_libraries(test_trajectory ros2_control_test_assets::ros2_control_test_assets)
   target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_tolerances test/test_tolerances.cpp)
   target_link_libraries(test_tolerances joint_trajectory_controller)
-  ament_target_dependencies(test_tolerances ros2_control_test_assets)
+  target_link_libraries(test_tolerances ros2_control_test_assets::ros2_control_test_assets)
   target_compile_definitions(test_tolerances PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_trajectory_controller
@@ -70,7 +81,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
   )
-  ament_target_dependencies(test_trajectory_controller ros2_control_test_assets)
+  target_link_libraries(test_trajectory_controller ros2_control_test_assets::ros2_control_test_assets)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
@@ -79,12 +90,8 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_load_joint_trajectory_controller
     joint_trajectory_controller
-  )
-  ament_target_dependencies(test_load_joint_trajectory_controller
-    controller_manager
-    control_toolbox
-    realtime_tools
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_trajectory_actions
@@ -93,8 +100,7 @@ if(BUILD_TESTING)
   set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
-  )
-  ament_target_dependencies(test_trajectory_actions ros2_control_test_assets)
+    ros2_control_test_assets::ros2_control_test_assets)
 endif()
 
 
