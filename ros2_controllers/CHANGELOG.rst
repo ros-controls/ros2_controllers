@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.0.0 (2025-05-17)
 ------------------
 * Remove deprecated gripper_controller (`#1652 <https://github.com/ros-controls/ros2_controllers/issues/1652>`_)
