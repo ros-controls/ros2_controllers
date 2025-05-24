@@ -39,7 +39,7 @@ concurrency:
 
 jobs:
   coverage_jazzy:
-    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-build-coverage.yml@master
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-build-coverage.yml@coverage/sequential
     secrets: inherit
     with:
       ros_distro: jazzy
