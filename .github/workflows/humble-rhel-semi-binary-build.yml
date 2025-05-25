@@ -1,4 +1,4 @@
-name: RHEL Humble Binary Build
+name: Humble - RHEL Semi-Binary Build
 on:
   workflow_dispatch:
   pull_request:
@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
-  humble_rhel_binary:
+  rhel_semi_binary_build:
     name: Humble RHEL binary build
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
     with:
