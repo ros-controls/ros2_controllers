@@ -37,7 +37,7 @@ on:
       - '**.xml'
   schedule:
     # Run every morning to detect flakiness and broken dependencies
-    - cron: '33 1 * * *'
+    - cron: '33 1 * * MON-FRI'
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on master branch

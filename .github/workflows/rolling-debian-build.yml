@@ -1,4 +1,4 @@
-name: Debian Rolling Source Build
+name: Rolling - Debian Semi-Binary Build
 on:
   workflow_dispatch:
   pull_request:
@@ -18,7 +18,7 @@ on:
       - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 1 * * *'
+    - cron: '03 1 * * MON-FRI'
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on master branch
@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
-  rolling_debian:
+  debian_semi_binary_build:
     name: Rolling debian build
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-debian-build.yml@master
     strategy:
