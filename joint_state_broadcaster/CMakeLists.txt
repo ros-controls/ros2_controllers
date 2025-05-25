@@ -12,7 +12,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   pluginlib
   rclcpp_lifecycle
-  rcutils
   realtime_tools
   sensor_msgs
   urdf
@@ -45,7 +44,6 @@ target_link_libraries(joint_state_broadcaster PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       urdf::urdf
-                      rcutils::rcutils
                       ${sensor_msgs_TARGETS}
                       ${control_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
