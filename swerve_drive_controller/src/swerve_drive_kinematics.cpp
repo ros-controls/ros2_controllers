@@ -1,4 +1,4 @@
-// Copyright 2025 (your name or organization)
+// Copyright 2025 ros2_control development team
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -31,9 +31,6 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
 
   for (std::size_t i = 0; i < 4; i++) {
     const auto & [wx, wy] = wheel_positions_[i];
-
-    // double vx = linear_velocity_x + angular_velocity_z * wy * ((i<2) ? 1:-1);
-    // double vy = linear_velocity_y + angular_velocity_z * wx * ((i%2 == 0) ? 1 : -1);
 
     double vx = linear_velocity_x - angular_velocity_z * wy;
     double vy = linear_velocity_y + angular_velocity_z * wx;

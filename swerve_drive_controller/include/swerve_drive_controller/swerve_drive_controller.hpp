@@ -1,4 +1,4 @@
-// Copyright 2025 (your name or organization)
+// Copyright 2025 ros2_control development team
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -56,7 +56,7 @@ public:
 private:
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity_;
   std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback_;
-  std::string name;
+  std::string name_;
 };
 
 class Axle
@@ -73,7 +73,7 @@ public:
 private:
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> position_;
   std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback_;
-  std::string name;
+  std::string name_;
 };
 
 class SwerveController : public controller_interface::ControllerInterface

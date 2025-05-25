@@ -1,4 +1,4 @@
-// Copyright 2025 (your name or organization)
+// Copyright 2025 ros2_control development team
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -49,7 +49,7 @@ using lifecycle_msgs::msg::State;
 Wheel::Wheel(
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity,
   std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback, std::string name)
-: velocity_(velocity), feedback_(feedback), name(std::move(name))
+: velocity_(velocity), feedback_(feedback), name_(std::move(name))
 {
 }
 
@@ -60,7 +60,7 @@ double Wheel::get_feedback() {return Wheel::feedback_.get().get_optional().value
 Axle::Axle(
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> position,
   std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback, std::string name)
-: position_(position), feedback_(feedback), name(std::move(name))
+: position_(position), feedback_(feedback), name_(std::move(name))
 {
 }
 
@@ -68,12 +68,12 @@ void Axle::set_position(double position) {position_.get().set_value(position);}
 
 double Axle::get_feedback() {return Axle::feedback_.get().get_optional().value();}
 
-std::array<std::pair<double, double>, 4> wheel_positions_ = {
-  std::make_pair(-0.1, 0.175),   // front left
-  std::make_pair(0.1, 0.175),    // front right
-  std::make_pair(-0.1, -0.175),  // rear left
-  std::make_pair(0.1, -0.175)    // rear right
-};
+std::array<std::pair<double, double>, 4> wheel_positions_ = {{
+  {-0.1, 0.175},     // front left
+  {0.1, 0.175},      // front right
+  {-0.1, -0.175},    // rear left
+  {0.1, -0.175}      // rear right
+}};
 
 SwerveController::SwerveController()
 : controller_interface::ControllerInterface(), swerveDriveKinematics_(wheel_positions_)
@@ -107,7 +107,8 @@ CallbackReturn SwerveController::on_init()
     auto_declare<double>("chassis_width", wheel_params_.y_offset);
     auto_declare<double>("wheel_radius", wheel_params_.radius);
     auto_declare<double>("center_of_rotation", wheel_params_.center_of_rotation);
-    auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
+    // auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
+    auto_declare<double>("cmd_vel_timeout", static_cast<double>(cmd_vel_timeout_.count()) / 1000.0);
     auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
     auto_declare<std::string>("cmd_vel_topic", cmd_vel_topic_);
     auto_declare<std::string>("odom", odometry_topic_);
@@ -470,9 +471,9 @@ controller_interface::return_type SwerveController::update(
     {wheel_command_[2], rear_left_velocity_threshold_, "rear_left_wheel"},
     {wheel_command_[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
 
-  for (const auto & [command, threshold, label] : wheel_data) {
-    if (command.drive_velocity > threshold) {
-      command.drive_velocity = threshold;
+  for (const auto & [wheel_command, threshold, label] : wheel_data) {
+    if (wheel_command.drive_velocity > threshold) {
+      wheel_command.drive_velocity = threshold;
     }
   }
 
@@ -526,10 +527,10 @@ controller_interface::return_type SwerveController::update(
   swerve_drive_controller::OdometryState odometry_;
 
   if (open_loop_) {
-    std::array<double, 4> velocity_array = {
-      front_left_velocity, front_right_velocity, rear_left_velocity, rear_right_velocity};
-    std::array<double, 4> steering_angles = {
-      front_left_angle, front_right_angle, rear_left_angle, rear_right_angle};
+    std::array<double, 4> velocity_array = {{
+      front_left_velocity, front_right_velocity, rear_left_velocity, rear_right_velocity}};
+    std::array<double, 4> steering_angles = {{
+      front_left_angle, front_right_angle, rear_left_angle, rear_right_angle}};
     odometry_ =
       swerveDriveKinematics_.update_odometry(velocity_array, steering_angles, update_dt.seconds());
   } else {
@@ -543,12 +544,12 @@ controller_interface::return_type SwerveController::update(
     double rear_left_wheel_velocity = rear_left_wheel_handle_->get_feedback();
     double rear_right_wheel_velocity = rear_right_wheel_handle_->get_feedback();
 
-    std::array<double, 4> velocity_feedback_array = {
+    std::array<double, 4> velocity_feedback_array = {{
       front_left_wheel_velocity, front_right_wheel_velocity, rear_left_wheel_velocity,
-      rear_right_wheel_velocity};
-    std::array<double, 4> steering_angles = {
+      rear_right_wheel_velocity}};
+    std::array<double, 4> steering_angles = {{
       front_left_wheel_angle, front_right_wheel_angle, rear_left_wheel_angle,
-      rear_right_wheel_angle};
+      rear_right_wheel_angle}};
 
     odometry_ = swerveDriveKinematics_.update_odometry(
       velocity_feedback_array, steering_angles, update_dt.seconds());
@@ -557,16 +558,12 @@ controller_interface::return_type SwerveController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.theta);
 
-  bool should_publish = false;
-
   try {
     if (previous_publish_timestamp_ + publish_period_ < time) {
       previous_publish_timestamp_ += publish_period_;
-      should_publish = true;
     }
   } catch (const std::runtime_error &) {
     previous_publish_timestamp_ = time;
-    should_publish = true;
   }
 
   if (realtime_odometry_publisher_ && realtime_odometry_publisher_->trylock()) {
