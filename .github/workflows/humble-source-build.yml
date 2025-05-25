@@ -17,7 +17,7 @@ on:
       - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 4 * * *'
+    - cron: '03 3 * * MON-FRI'
 
 jobs:
   source:
