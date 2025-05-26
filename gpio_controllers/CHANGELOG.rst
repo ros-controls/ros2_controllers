@@ -2,8 +2,8 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.0.2 (2025-05-26)
+------------------
 * Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)
 * Contributors: Christoph Fröhlich
 
