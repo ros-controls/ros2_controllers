@@ -32,7 +32,6 @@ target_link_libraries(gpio_controllers PUBLIC
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
-                      rcutils::rcutils
                       realtime_tools::realtime_tools
                       ${control_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
