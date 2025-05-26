@@ -136,6 +136,13 @@ protected:
   // speed limiters
   TractionLimiter limiter_traction_;
   SteeringLimiter limiter_steering_;
+  SteeringLimiter limiter_steering_low_speed_;
+  SteeringLimiter limiter_steering_stationary_;
+
+  // Low speed threshold and timer
+  double low_speed_threshold_ = 0.1;  // m/s
+  double stationary_time_threshold_ = 20.0;  // seconds
+  double stationary_timer_ = 0.0;  // seconds
 
   bool use_exact_mode_ = false;
   double exact_mode_threshold_ = M_PI / 6;

@@ -34,10 +34,13 @@ public:
    * \param [in] max_velocity Maximum velocity [m/s] or [rad/s]
    * \param [in] min_acceleration Minimum acceleration [m/s^2] or [rad/s^2]
    * \param [in] max_acceleration Maximum acceleration [m/s^2] or [rad/s^2]
+   * \param [in] min_deceleration Minimum deceleration [m/s^2] or [rad/s^2]
+   * \param [in] max_deceleration Maximum deceleration [m/s^2] or [rad/s^2]
    */
   SteeringLimiter(
     double min_position = NAN, double max_position = NAN, double min_velocity = NAN,
-    double max_velocity = NAN, double min_acceleration = NAN, double max_acceleration = NAN);
+    double max_velocity = NAN, double min_acceleration = NAN, double max_acceleration = NAN,
+    double min_deceleration = NAN, double max_deceleration = NAN);
 
   /**
    * \brief Limit the position, velocity and acceleration
@@ -87,6 +90,10 @@ private:
   // Acceleration limits:
   double min_acceleration_;
   double max_acceleration_;
+
+  // Deceleration limits:
+  double min_deceleration_;
+  double max_deceleration_;
 };
 
 }  // namespace tricycle_controller

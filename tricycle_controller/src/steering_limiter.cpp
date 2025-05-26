@@ -26,13 +26,15 @@ namespace tricycle_controller
 {
 SteeringLimiter::SteeringLimiter(
   double min_position, double max_position, double min_velocity, double max_velocity,
-  double min_acceleration, double max_acceleration)
+  double min_acceleration, double max_acceleration, double min_deceleration, double max_deceleration)
 : min_position_(min_position),
   max_position_(max_position),
   min_velocity_(min_velocity),
   max_velocity_(max_velocity),
   min_acceleration_(min_acceleration),
-  max_acceleration_(max_acceleration)
+  max_acceleration_(max_acceleration),
+  min_deceleration_(min_deceleration),
+  max_deceleration_(max_deceleration)
 {
   if (!std::isnan(min_position_) && std::isnan(max_position_)) max_position_ = -min_position_;
   if (!std::isnan(max_position_) && std::isnan(min_position_)) min_position_ = -max_position_;
@@ -43,6 +45,9 @@ SteeringLimiter::SteeringLimiter(
 
   if (!std::isnan(min_acceleration_) && std::isnan(max_acceleration_)) max_acceleration_ = 1000.0;
   if (!std::isnan(max_acceleration_) && std::isnan(min_acceleration_)) min_acceleration_ = 0.0;
+
+  if (!std::isnan(min_deceleration_) && std::isnan(max_deceleration_)) max_deceleration_ = 1000.0;
+  if (!std::isnan(max_deceleration_) && std::isnan(min_deceleration_)) min_deceleration_ = 0.0;
 
   const std::string error =
     "The positive limit will be applied to both directions. Setting different limits for positive "
@@ -57,6 +62,11 @@ SteeringLimiter::SteeringLimiter(
   if (min_acceleration_ < 0 || max_acceleration_ < 0)
   {
     throw std::invalid_argument("Acceleration cannot be negative." + error);
+  }
+
+  if (min_deceleration_ < 0 || max_deceleration_ < 0)
+  {
+    throw std::invalid_argument("Deceleration cannot be negative." + error);
   }
 }
 
@@ -103,8 +113,31 @@ double SteeringLimiter::limit_acceleration(double & p, double p0, double p1, dou
 
   const double dt2 = 2. * dt * dt;
 
-  const double da_min = min_acceleration_ * dt2;
-  const double da_max = max_acceleration_ * dt2;
+  double da_min;
+  double da_max;
+  
+  // Determine if we're accelerating or decelerating based on velocity magnitude change
+  if (std::fabs(dv) >= std::fabs(dp0))
+  {
+    // Accelerating (increasing speed)
+    da_min = min_acceleration_ * dt2;
+    da_max = max_acceleration_ * dt2;
+  }
+  else
+  {
+    // Decelerating (decreasing speed) - use deceleration limits if available
+    if (!std::isnan(min_deceleration_) && !std::isnan(max_deceleration_))
+    {
+      da_min = min_deceleration_ * dt2;
+      da_max = max_deceleration_ * dt2;
+    }
+    else
+    {
+      // Fall back to acceleration limits if deceleration limits not set
+      da_min = min_acceleration_ * dt2;
+      da_max = max_acceleration_ * dt2;
+    }
+  }
 
   double da = std::clamp(std::fabs(dv - dp0), da_min, da_max);
   da *= (dv - dp0 >= 0 ? 1 : -1);
