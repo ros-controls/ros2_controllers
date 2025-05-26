@@ -12,7 +12,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   pluginlib
   rclcpp_lifecycle
-  rcutils
   realtime_tools
   sensor_msgs
   urdf
@@ -38,14 +37,12 @@ target_include_directories(joint_state_broadcaster PUBLIC
 )
 target_link_libraries(joint_state_broadcaster PUBLIC
                       joint_state_broadcaster_parameters
-                      controller_manager::controller_manager
                       controller_interface::controller_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       urdf::urdf
-                      rcutils::rcutils
                       ${sensor_msgs_TARGETS}
                       ${control_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
@@ -63,6 +60,9 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_load_joint_state_broadcaster
     joint_state_broadcaster
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    rclcpp::rclcpp
     ros2_control_test_assets::ros2_control_test_assets)
 
   ament_add_gmock(test_joint_state_broadcaster
