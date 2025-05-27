@@ -171,7 +171,8 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   // current state update
-  state_current_.time_from_start.set__sec(0);
+  state_current_.time_from_start.sec = 0;
+  state_current_.time_from_start.nanosec = 0;
   read_state_from_state_interfaces(state_current_);
 
   // currently carrying out a trajectory
@@ -183,7 +184,7 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!current_trajectory_->is_sampled_already())
     {
       first_sample = true;
-      if (params_.interpolate_from_desired_state || params_.open_loop_control)
+      if (params_.interpolate_from_desired_state)
       {
         if (std::abs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
         {
@@ -697,16 +698,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 {
   auto logger = get_node()->get_logger();
 
-  // START DEPRECATE
-  if (params_.open_loop_control)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] 'open_loop_control' parameter is deprecated. Instead, set the feedback gains "
-      "to zero and use 'interpolate_from_desired_state' parameter");
-  }
-  // END DEPRECATE
-
   // update the dynamic map parameters
   param_listener_->refresh_dynamic_parameters();
 
@@ -787,8 +778,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // if there is only velocity or if there is effort command interface
   // then use also PID adapter
   use_closed_loop_pid_adapter_ =
-    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1 &&
-     !params_.open_loop_control) ||
+    (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
   tmp_command_.resize(dof_, 0.0);
@@ -1022,8 +1012,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   resize_joint_trajectory_point(state, dof_);
   // read from cmd joints only if all joints have command interface
   // otherwise it leaves the entries of joints without command interface NaN.
-  // if no open_loop control, state_current_ is then used for `set_point_before_trajectory_msg` and
-  // future trajectory sampling will always give NaN for these joints
+  // if no interpolate_from_desired_state, state_current_ is then used for
+  // `set_point_before_trajectory_msg` and future trajectory sampling will always give NaN for these
+  // joints
   if (
     params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_ &&
     read_state_from_command_interfaces(state))

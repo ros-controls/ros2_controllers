@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(range_sensor_broadcaster)
 
-# Default to C++17
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
 find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
@@ -42,10 +36,15 @@ target_include_directories(range_sensor_broadcaster
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(range_sensor_broadcaster ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_link_libraries(range_sensor_broadcaster
-  range_sensor_broadcaster_parameters
-)
+target_link_libraries(range_sensor_broadcaster PUBLIC
+                      range_sensor_broadcaster_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${sensor_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface range_sensor_broadcaster.xml)
@@ -61,11 +60,9 @@ if(BUILD_TESTING)
   target_include_directories(test_load_range_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_range_sensor_broadcaster
     range_sensor_broadcaster
-  )
-  ament_target_dependencies(test_load_range_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_range_sensor_broadcaster
@@ -74,9 +71,6 @@ if(BUILD_TESTING)
   target_include_directories(test_range_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_range_sensor_broadcaster
     range_sensor_broadcaster
-  )
-  ament_target_dependencies(test_range_sensor_broadcaster
-    hardware_interface
   )
 endif()
 
