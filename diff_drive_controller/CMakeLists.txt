@@ -48,8 +48,19 @@ target_include_directories(diff_drive_controller PUBLIC
 target_link_libraries(diff_drive_controller
   PUBLIC
     diff_drive_controller_parameters
-    control_toolbox::rate_limiter_parameters)
-ament_target_dependencies(diff_drive_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+    control_toolbox::rate_limiter_parameters
+    control_toolbox::control_toolbox
+    controller_interface::controller_interface
+    hardware_interface::hardware_interface
+    pluginlib::pluginlib
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    rcpputils::rcpputils
+    realtime_tools::realtime_tools
+    tf2::tf2
+    ${tf2_msgs_TARGETS}
+    ${geometry_msgs_TARGETS}
+    ${nav_msgs_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)
@@ -63,22 +74,12 @@ if(BUILD_TESTING)
   target_link_libraries(test_diff_drive_controller
     diff_drive_controller
   )
-  ament_target_dependencies(test_diff_drive_controller
-    geometry_msgs
-    hardware_interface
-    nav_msgs
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    tf2
-    tf2_msgs
-  )
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_diff_drive_controller test/test_load_diff_drive_controller.cpp)
-  ament_target_dependencies(test_load_diff_drive_controller
-    controller_manager
-    ros2_control_test_assets
+  target_link_libraries(test_load_diff_drive_controller
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 
