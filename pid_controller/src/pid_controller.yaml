@@ -98,14 +98,12 @@ pid_controller:
         type: string,
         default_value: "none",
         description: "Specifies the anti-windup strategy. Options: 'back_calculation',
-        'conditioning_technique', 'conditional_integration', or 'none'. Note that the
-        'back_calculation' and 'conditioning_technique' strategies use the tracking_time_constant
-        parameter to tune the anti-windup behavior. When a strategy other than 'none' is selected,
-        it will override the controller's default anti-windup behavior.",
+        'conditional_integration', or 'none'. Note that the 'back_calculation' strategy use the
+        tracking_time_constant parameter to tune the anti-windup behavior. When a strategy other
+        than 'none' is selected, it will override the controller's default anti-windup behavior.",
         validation: {
           subset_of<>: [[
             "back_calculation",
-            "conditioning_technique",
             "conditional_integration",
             "none"
           ]]
@@ -114,9 +112,8 @@ pid_controller:
       tracking_time_constant: {
         type: double,
         default_value: 0.0,
-        description: "Specifies the tracking time constant for the 'back_calculation'
-        and 'conditioning_technique' strategies. If set to 0.0 when one of these
-        strategies is selected, a recommended default value will be applied."
+        description: "Specifies the tracking time constant for the 'back_calculation' strategy. If
+        set to 0.0 when this strategy is selected, a recommended default value will be applied."
       }
       feedforward_gain: {
         type: double,
