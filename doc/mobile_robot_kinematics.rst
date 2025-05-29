@@ -130,7 +130,7 @@ The below explains the kinematics of omnidirectional drive robots using four swe
 * :math:`w` is the track width (distance between left and right wheels).
 * Red arrows on wheel :math:`i` signify the direction of the wheel's velocity :math:`v_i`.
 
-Each swerve module :math:`i` (for :math:`i = 0, 1, 2, 3`, typically front-left, front-right, back-left, back-right) is located at :math:`(l_{i,x}, l_{i,y})` relative to the center, typically:
+Each swerve module :math:`i`, for :math:`i = 0, 1, 2, 3` (typically front-left, front-right, back-left, back-right) is located at :math:`(l_{i,x}, l_{i,y})` relative to the center, typically:
 
 * Front-left: :math:`(l/2, w/2)`
 * Front-right: :math:`(l/2, -w/2)`
