@@ -185,7 +185,7 @@ The chassis velocities are calculated as:
 
 **Odometry**
 
-The `SwerveDriveKinematics` class updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in the global frame using the computed chassis velocities. The global velocities are:
+Odometry updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in the global frame using the computed chassis velocities. The global velocities are:
 
 .. math::
 
