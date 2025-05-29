@@ -139,7 +139,7 @@ Each swerve module :math:`i`, for :math:`i = 0, 1, 2, 3` (typically front-left, 
 
 **Inverse Kinematics**
 
-The necessary wheel velocities and steering angles to achieve a desired body twist are computed by the `SwerveDriveKinematics` class in the `swerve_drive_controller` package. For each module :math:`i` at position :math:`(l_{i,x}, l_{i,y})`, the velocity vector is:
+For each module :math:`i` at position :math:`(l_{i,x}, l_{i,y})`, the velocity vector is:
 
 .. math::
 
