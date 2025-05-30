@@ -102,7 +102,7 @@ pid_controller:
         tracking_time_constant parameter to tune the anti-windup behavior. When a strategy other
         than 'none' is selected, it will override the controller's default anti-windup behavior.",
         validation: {
-          subset_of<>: [[
+          one_of<>: [[
             "back_calculation",
             "conditional_integration",
             "none"
