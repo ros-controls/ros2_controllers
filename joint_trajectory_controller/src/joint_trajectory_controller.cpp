@@ -357,7 +357,6 @@ controller_interface::return_type JointTrajectoryController::update(
           // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
           rt_has_pending_goal_ = false;
-          ;
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
@@ -377,7 +376,6 @@ controller_interface::return_type JointTrajectoryController::update(
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
             rt_has_pending_goal_ = false;
-            ;
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
@@ -397,7 +395,6 @@ controller_interface::return_type JointTrajectoryController::update(
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
             rt_has_pending_goal_ = false;
-            ;
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
@@ -1062,7 +1059,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   if (active_goal)
   {
     rt_has_pending_goal_ = false;
-    ;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
@@ -1220,7 +1216,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
 
     // Mark the current goal as canceled
     rt_has_pending_goal_ = false;
-    ;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
