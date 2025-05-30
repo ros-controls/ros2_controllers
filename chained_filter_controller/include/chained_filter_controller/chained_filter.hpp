@@ -15,37 +15,37 @@
 namespace chained_filter_controller
 {
 
-  class ChainedFilter : public controller_interface::ChainableControllerInterface
-  {
-    public: 
-      controller_interface::CallbackReturn on_init() override;
+class ChainedFilter : public controller_interface::ChainableControllerInterface
+{
+public:
+  controller_interface::CallbackReturn on_init() override;
 
-      controller_interface::InterfaceConfiguration command_interface_configuration() const override;
-  
-      controller_interface::InterfaceConfiguration state_interface_configuration() const override;
-  
-      controller_interface::CallbackReturn on_configure(
-      const rclcpp_lifecycle::State & previous_state) override;
-  
-      controller_interface::CallbackReturn on_activate(
-      const rclcpp_lifecycle::State & previous_state) override;
-  
-      controller_interface::return_type update_and_write_commands(
-      const rclcpp::Time & time, const rclcpp::Duration & period) override;
-  
-      rclcpp::NodeOptions define_custom_node_options() const override;
-    
-    protected:
-      std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-      controller_interface::return_type update_reference_from_subscribers(
-          const rclcpp::Time & time, const rclcpp::Duration & period) override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-      std::shared_ptr<chained_filter::ParamListener> param_listener_;
-      chained_filter::Params params_;
-      std::unique_ptr<filters::FilterChain<double>> filter_;
+  controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
-      double output_state_value_;
-  };
-} // namespace chained_filter_controller
+  controller_interface::CallbackReturn on_activate(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  controller_interface::return_type update_and_write_commands(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  rclcpp::NodeOptions define_custom_node_options() const override;
+
+protected:
+  std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+
+  controller_interface::return_type update_reference_from_subscribers(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  std::shared_ptr<chained_filter::ParamListener> param_listener_;
+  chained_filter::Params params_;
+  std::unique_ptr<filters::FilterChain<double>> filter_;
+
+  double output_state_value_;
+};
+}  // namespace chained_filter_controller
 #endif

@@ -2,10 +2,8 @@
 
 #include "chained_filter_controller/chained_filter.hpp"
 
-
-
-#include <limits>
 #include <rclcpp/version.h>
+#include <limits>
 #include <pluginlib/class_list_macros.hpp>
 
 using namespace chained_filter;
@@ -37,18 +35,15 @@ controller_interface::InterfaceConfiguration ChainedFilter::command_interface_co
 controller_interface::InterfaceConfiguration ChainedFilter::state_interface_configuration() const
 {
   return {
-    controller_interface::interface_configuration_type::INDIVIDUAL,
-    {params_.input_interface}};
+    controller_interface::interface_configuration_type::INDIVIDUAL, {params_.input_interface}};
 }
 
-controller_interface::CallbackReturn ChainedFilter::on_configure(
-  const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_lifecycle::State &)
 {
   params_ = param_listener_->get_params();
 
   if (!filter_->configure(
-        "filter_chain",
-        get_node()->get_node_logging_interface(),
+        "filter_chain", get_node()->get_node_logging_interface(),
         get_node()->get_node_parameters_interface()))
   {
     RCLCPP_ERROR(
@@ -60,8 +55,7 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn ChainedFilter::on_activate(
-  const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn ChainedFilter::on_activate(const rclcpp_lifecycle::State &)
 {
   output_state_value_ = std::numeric_limits<double>::quiet_NaN();
   return controller_interface::CallbackReturn::SUCCESS;
@@ -82,9 +76,8 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
 
 std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_interfaces()
 {
-  return {
-    hardware_interface::StateInterface(
-      get_node()->get_name(), params_.output_interface, &output_state_value_)};
+  return {hardware_interface::StateInterface(
+    get_node()->get_name(), params_.output_interface, &output_state_value_)};
 }
 
 controller_interface::return_type ChainedFilter::update_reference_from_subscribers(
@@ -103,5 +96,4 @@ rclcpp::NodeOptions ChainedFilter::define_custom_node_options() const
 }  // namespace chained_filter_controller
 
 PLUGINLIB_EXPORT_CLASS(
-  chained_filter_controller::ChainedFilter,
-  controller_interface::ChainableControllerInterface)
+  chained_filter_controller::ChainedFilter, controller_interface::ChainableControllerInterface)

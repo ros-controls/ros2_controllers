@@ -23,19 +23,21 @@ generate_parameter_library(
   config/chained_filter_parameters.yaml
 )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+#include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 # Library definition
 add_library(${PROJECT_NAME} SHARED
   src/chained_filter.cpp
-  ${chained_filter_parameters_INTERFACE_SOURCES}
+  #${chained_filter_parameters_INTERFACE_SOURCES}
 )
+
+target_link_libraries(${PROJECT_NAME} chained_filter_parameters)
 
 # Include paths
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  ${chained_filter_parameters_INCLUDE_DIRS}
+  #${chained_filter_parameters_INCLUDE_DIRS}
 )
 
 # Dependencies
@@ -76,6 +78,7 @@ install(
 
 install(
   TARGETS ${PROJECT_NAME}
+  chained_filter_parameters
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
