@@ -131,7 +131,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
   reset_controller_reference_msg(msg, get_node());
-  input_ref_.writeFromNonRT(msg);
+  input_ref_.set([msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                 { stored_value = msg; });
 
   try
   {
@@ -231,7 +232,8 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
   // Check the timeout condition
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
   {
-    input_ref_.writeFromNonRT(msg);
+    input_ref_.set([msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                   { stored_value = msg; });
   }
   else
   {
@@ -241,7 +243,10 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
 
-    reset_controller_reference_msg(msg, get_node());
+    std::shared_ptr<ControllerReferenceMsg> emtpy_msg = std::make_shared<ControllerReferenceMsg>();
+    reset_controller_reference_msg(emtpy_msg, get_node());
+    input_ref_.set([emtpy_msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                   { stored_value = emtpy_msg; });
   }
 }
 
@@ -304,7 +309,10 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command
-  reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
+  std::shared_ptr<ControllerReferenceMsg> emtpy_msg = std::make_shared<ControllerReferenceMsg>();
+  reset_controller_reference_msg(emtpy_msg, get_node());
+  input_ref_.try_set([emtpy_msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                     { stored_value = emtpy_msg; });
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -333,7 +341,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  auto current_ref = *(input_ref_.readFromRT());
+  std::shared_ptr<ControllerReferenceMsg> current_ref;
+  if (!input_ref_.try_get([&](std::shared_ptr<ControllerReferenceMsg> value)
+                          { current_ref = value; }))
+  {
+    // reference_interfaces_ will remain unchanged
+    return controller_interface::return_type::OK;
+  }
   const auto age_of_last_command = time - (current_ref)->header.stamp;
 
   // send message only if there is no timeout
@@ -352,6 +366,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
         current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
         current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
         current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+        input_ref_.try_set([current_ref](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                           { stored_value = current_ref; });
       }
     }
   }
@@ -368,6 +385,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
       current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
       current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+      input_ref_.try_set([current_ref](std::shared_ptr<ControllerReferenceMsg> & stored_value)
+                         { stored_value = current_ref; });
     }
   }
 
