@@ -31,6 +31,10 @@ Controllers for Wheeled Mobile Robots
    Mecanum Drive Controllers <../mecanum_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
+<<<<<<< HEAD
+=======
+   Swerve Drive Controller <../swerve_drive_controller/doc/userdoc.rst>
+>>>>>>> 04f23250 (Added Swerve Drive In mobile_robot_kinematics.rst and fixed CMakeLists.txt of swerve_drive_controller package)
 
 Controllers for Manipulators and Other Robots
 *********************************************
