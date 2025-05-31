@@ -55,6 +55,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+    // Read new velocity and acceleration tolerances
+    velocity_tolerance_ = get_node()->get_parameter("constraints.velocity_tolerance").as_double();
+    acceleration_tolerance_ =
+      get_node()->get_parameter("constraints.acceleration_tolerance").as_double();
   }
   catch (const std::exception & e)
   {
