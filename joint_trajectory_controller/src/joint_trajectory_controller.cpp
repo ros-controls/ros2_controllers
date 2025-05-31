@@ -171,9 +171,7 @@ controller_interface::return_type JointTrajectoryController::update(
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
-  if (
-    current_external_msg != *new_external_msg &&
-    (*(rt_has_pending_goal_.readFromRT()) && !active_goal) == false)
+  if (current_external_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -242,7 +240,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
       if (
-        !before_last_point && *(rt_is_holding_.readFromRT()) == false && cmd_timeout_ > 0.0 &&
+        !before_last_point && !rt_is_holding_ && cmd_timeout_ > 0.0 &&
         time_difference > cmd_timeout_)
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
@@ -260,7 +258,7 @@ controller_interface::return_type JointTrajectoryController::update(
         // is the last point
         // print output per default, goal will be aborted afterwards
         if (
-          (before_last_point || first_sample) && *(rt_is_holding_.readFromRT()) == false &&
+          (before_last_point || first_sample) && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
             state_error_, index, active_tol->state_tolerance[index], true /* show_errors */))
         {
@@ -268,7 +266,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         // past the final point, check that we end up inside goal tolerance
         if (
-          !before_last_point && *(rt_is_holding_.readFromRT()) == false &&
+          !before_last_point && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
             state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
         {
@@ -355,7 +353,7 @@ controller_interface::return_type JointTrajectoryController::update(
           // TODO(matthew-reynolds): Need a lock-free write here
           // See https://github.com/ros-controls/ros2_controllers/issues/168
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
-          rt_has_pending_goal_.writeFromNonRT(false);
+          rt_has_pending_goal_ = false;
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
@@ -374,7 +372,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
-            rt_has_pending_goal_.writeFromNonRT(false);
+            rt_has_pending_goal_ = false;
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
@@ -393,7 +391,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // TODO(matthew-reynolds): Need a lock-free write here
             // See https://github.com/ros-controls/ros2_controllers/issues/168
             rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
-            rt_has_pending_goal_.writeFromNonRT(false);
+            rt_has_pending_goal_ = false;
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
@@ -402,7 +400,7 @@ controller_interface::return_type JointTrajectoryController::update(
           }
         }
       }
-      else if (tolerance_violated_while_moving && *(rt_has_pending_goal_.readFromRT()) == false)
+      else if (tolerance_violated_while_moving && !rt_has_pending_goal_)
       {
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
@@ -410,8 +408,7 @@ controller_interface::return_type JointTrajectoryController::update(
         traj_msg_external_point_ptr_.reset();
         traj_msg_external_point_ptr_.initRT(set_hold_position());
       }
-      else if (
-        !before_last_point && !within_goal_time && *(rt_has_pending_goal_.readFromRT()) == false)
+      else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
@@ -1014,7 +1011,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
-  rt_is_holding_.writeFromNonRT(true);
+  rt_is_holding_ = true;
 
   // parse timeout parameter
   if (params_.cmd_timeout > 0.0)
@@ -1046,7 +1043,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
-    rt_has_pending_goal_.writeFromNonRT(false);
+    rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
@@ -1217,7 +1214,7 @@ void JointTrajectoryController::topic_callback(
   if (subscriber_is_active_)
   {
     add_new_trajectory_msg(msg);
-    rt_is_holding_.writeFromNonRT(false);
+    rt_is_holding_ = false;
   }
 };
 
@@ -1256,7 +1253,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       get_node()->get_logger(), "Canceling active action goal because cancel callback received.");
 
     // Mark the current goal as canceled
-    rt_has_pending_goal_.writeFromNonRT(false);
+    rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
@@ -1271,7 +1268,7 @@ void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   // mark a pending goal
-  rt_has_pending_goal_.writeFromNonRT(true);
+  rt_has_pending_goal_ = true;
 
   // Update new trajectory
   {
@@ -1280,7 +1277,7 @@ void JointTrajectoryController::goal_accepted_callback(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
-    rt_is_holding_.writeFromNonRT(false);
+    rt_is_holding_ = false;
   }
 
   // Update the active goal
@@ -1593,7 +1590,7 @@ JointTrajectoryController::set_hold_position()
   hold_position_msg_ptr_->points[0].positions = state_current_.positions;
 
   // set flag, otherwise tolerances will be checked with holding position too
-  rt_is_holding_.writeFromNonRT(true);
+  rt_is_holding_ = true;
 
   return hold_position_msg_ptr_;
 }
@@ -1607,7 +1604,7 @@ JointTrajectoryController::set_success_trajectory_point()
   hold_position_msg_ptr_->points[0].time_from_start = rclcpp::Duration(0, 0);
 
   // set flag, otherwise tolerances will be checked with success_trajectory_point too
-  rt_is_holding_.writeFromNonRT(true);
+  rt_is_holding_ = true;
 
   return hold_position_msg_ptr_;
 }
