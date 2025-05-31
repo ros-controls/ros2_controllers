@@ -174,13 +174,21 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   }
   else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
   {
-    if (params_.traction_joints_names.size() != 2)
+    switch (params_.traction_joints_names.size())
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Tricycle configuration requires exactly two traction joints, but %zu were provided",
-        params_.traction_joints_names.size());
-      return controller_interface::CallbackReturn::ERROR;
+      case 1:
+        odometry_.set_tricycle_config(1);
+        set_interface_numbers(2, 2, nr_ref_itfs_);
+        break;
+      case 2:
+        odometry_.set_tricycle_config(2);
+        break;
+      default:
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Tricycle configuration requires exactly two traction joints, but %zu were provided",
+          params_.traction_joints_names.size());
+        return controller_interface::CallbackReturn::ERROR;
     }
   }
   else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
@@ -248,13 +256,14 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     }
     else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
     {
-      if (params_.traction_joints_state_names.size() != 2)
+      if (params_.traction_joints_state_names.size() != odometry_.get_tricycle_config())
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Tricycle configuration requires exactly two traction joints, but %zu state interface "
+          "Current tricycle configuration requires exactly %zu traction joints, but %zu state "
+          "interface "
           "names were provided",
-          params_.traction_joints_state_names.size());
+          odometry_.get_tricycle_config(), params_.traction_joints_state_names.size());
         return controller_interface::CallbackReturn::ERROR;
       }
     }
