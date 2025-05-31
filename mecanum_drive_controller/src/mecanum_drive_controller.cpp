@@ -33,16 +33,15 @@ using ControllerReferenceMsg =
 
 // called from RT control loop
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerReferenceMsg> & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+  ControllerReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg->header.stamp = node->now();
-  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  msg.header.stamp = node->now();
+  msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 
 }  // namespace
@@ -129,10 +128,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg;
   reset_controller_reference_msg(msg, get_node());
-  input_ref_.set([msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                 { stored_value = msg; });
+  input_ref_.set(msg);
 
   try
   {
@@ -232,8 +230,7 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
   // Check the timeout condition
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
   {
-    input_ref_.set([msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                   { stored_value = msg; });
+    input_ref_.set(*msg);
   }
   else
   {
@@ -243,10 +240,9 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
 
-    std::shared_ptr<ControllerReferenceMsg> emtpy_msg = std::make_shared<ControllerReferenceMsg>();
+    ControllerReferenceMsg emtpy_msg;
     reset_controller_reference_msg(emtpy_msg, get_node());
-    input_ref_.set([emtpy_msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                   { stored_value = emtpy_msg; });
+    input_ref_.set(emtpy_msg);
   }
 }
 
@@ -308,11 +304,11 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Set default value in command
-  std::shared_ptr<ControllerReferenceMsg> emtpy_msg = std::make_shared<ControllerReferenceMsg>();
+  // Try to set default value in command.
+  // If this fails, then another command will be received soon anyways.
+  ControllerReferenceMsg emtpy_msg;
   reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set([emtpy_msg](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                     { stored_value = emtpy_msg; });
+  input_ref_.try_set(emtpy_msg);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -341,53 +337,51 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  std::shared_ptr<ControllerReferenceMsg> current_ref;
-  if (!input_ref_.try_get([&](std::shared_ptr<ControllerReferenceMsg> value)
-                          { current_ref = value; }))
+  auto current_ref_op = input_ref_.try_get();
+  if (!current_ref_op.has_value())
   {
     // reference_interfaces_ will remain unchanged
     return controller_interface::return_type::OK;
   }
-  const auto age_of_last_command = time - (current_ref)->header.stamp;
+  auto current_ref = current_ref_op.value();
+  const auto age_of_last_command = time - current_ref.header.stamp;
 
-  // send message only if there is no timeout
+  // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     if (
-      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
-      !std::isnan(current_ref->twist.angular.z))
+      !std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.linear.y) &&
+      !std::isnan(current_ref.twist.angular.z))
     {
-      reference_interfaces_[0] = current_ref->twist.linear.x;
-      reference_interfaces_[1] = current_ref->twist.linear.y;
-      reference_interfaces_[2] = current_ref->twist.angular.z;
+      reference_interfaces_[0] = current_ref.twist.linear.x;
+      reference_interfaces_[1] = current_ref.twist.linear.y;
+      reference_interfaces_[2] = current_ref.twist.angular.z;
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+        current_ref.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+        current_ref.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+        current_ref.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 
-        input_ref_.try_set([current_ref](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                           { stored_value = current_ref; });
+        input_ref_.try_set(current_ref);
       }
     }
   }
   else
   {
     if (
-      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
-      !std::isnan(current_ref->twist.angular.z))
+      !std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.linear.y) &&
+      !std::isnan(current_ref.twist.angular.z))
     {
       reference_interfaces_[0] = 0.0;
       reference_interfaces_[1] = 0.0;
       reference_interfaces_[2] = 0.0;
 
-      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+      current_ref.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+      current_ref.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 
-      input_ref_.try_set([current_ref](std::shared_ptr<ControllerReferenceMsg> & stored_value)
-                         { stored_value = current_ref; });
+      input_ref_.try_set(current_ref);
     }
   }
 

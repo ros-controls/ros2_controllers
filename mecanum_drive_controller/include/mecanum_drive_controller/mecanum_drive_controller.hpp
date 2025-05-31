@@ -110,7 +110,7 @@ protected:
   std::vector<std::string> state_joint_names_;
 
   // the RT Box containing the command message
-  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeThreadSafeBox<ControllerReferenceMsg> input_ref_;
   // the reference timeout value from parameters
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
