@@ -14,16 +14,23 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-foreach(dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
-  find_package(${dependency} REQUIRED)
-endforeach()
+find_package(controller_interface REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(realtime_tools REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 add_library(battery_state_broadcaster SHARED src/BatteryStateBroadcaster.cpp)
 target_include_directories(battery_state_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/battery_state_broadcaster>
 )
-ament_target_dependencies(battery_state_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(battery_state_broadcaster
+  PUBLIC
+    controller_interface::controller_interface
+    pluginlib::pluginlib
+    realtime_tools::realtime_tools
+    ${sensor_msgs_TARGETS}
+)
 
 pluginlib_export_plugin_description_file(controller_interface battery_state_broadcaster.xml)
 
