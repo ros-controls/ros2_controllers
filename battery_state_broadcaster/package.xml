@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>battery_state_broadcaster</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>ROS2 Control boradcaster for battery state sensors.</description>
   <maintainer email="jonas.otto@ipa.fraunhofer.de">Jonas Otto</maintainer>
   <license>MIT</license>
