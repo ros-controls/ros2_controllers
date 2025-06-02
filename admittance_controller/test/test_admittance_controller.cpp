@@ -65,7 +65,7 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3}))
     // invalid robot description.
     std::make_tuple(
-      std::string("robot_description"), rclcpp::ParameterValue(std::string("bad_robot")))
+      std::string("robot_description"), rclcpp::ParameterValue(std::string() = "bad_robot"))
     ));
 
 // Test on_init returns ERROR when a parameter is invalid
