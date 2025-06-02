@@ -111,6 +111,8 @@ protected:
 
   // the RT Box containing the command message
   realtime_tools::RealtimeThreadSafeBox<ControllerReferenceMsg> input_ref_;
+  // save the last reference in case of unable to get value from box
+  ControllerReferenceMsg last_ref_;
   // the reference timeout value from parameters
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 

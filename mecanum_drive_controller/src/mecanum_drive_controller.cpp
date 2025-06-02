@@ -338,12 +338,16 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref_op = input_ref_.try_get();
-  if (!current_ref_op.has_value())
+  ControllerReferenceMsg current_ref;
+  if (current_ref_op.has_value())
   {
-    // reference_interfaces_ will remain unchanged
-    return controller_interface::return_type::OK;
+    current_ref = last_ref_ = current_ref_op.value();
   }
-  auto current_ref = current_ref_op.value();
+  else
+  {
+    current_ref = last_ref_;
+  }
+
   const auto age_of_last_command = time - current_ref.header.stamp;
 
   // accept message only if there is no timeout
