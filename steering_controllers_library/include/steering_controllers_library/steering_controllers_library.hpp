@@ -23,8 +23,8 @@
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 
 // TODO(anyone): Replace with controller specific messages
 #include "control_msgs/msg/steering_controller_status.hpp"
@@ -83,7 +83,7 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_;
+  realtime_tools::RealtimeThreadSafeBox<ControllerTwistReferenceMsg> input_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
