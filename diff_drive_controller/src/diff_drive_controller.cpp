@@ -112,10 +112,6 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   {
     command_msg_ = current_ref_op.value();
   }
-  else
-  {
-    command_msg_;
-  }
 
   const auto age_of_last_command = time - command_msg_.header.stamp;
   // Brake if cmd_vel has timeout, override the stored command

@@ -341,10 +341,6 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
   {
     current_ref_ = current_ref_op.value();
   }
-  else
-  {
-    current_ref_;
-  }
 
   const auto age_of_last_command = time - current_ref_.header.stamp;
 

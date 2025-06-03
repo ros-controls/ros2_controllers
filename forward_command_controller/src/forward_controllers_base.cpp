@@ -142,10 +142,6 @@ controller_interface::return_type ForwardControllersBase::update(
   {
     joint_commands_ = joint_commands_op.value();
   }
-  else
-  {
-    joint_commands_;
-  }
 
   // no command received yet
   if (std::all_of(
