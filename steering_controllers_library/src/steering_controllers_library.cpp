@@ -539,17 +539,22 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref_op = input_ref_.try_get();
-  if (!current_ref_op.has_value())
+  ControllerTwistReferenceMsg current_ref;
+  if (current_ref_op.has_value())
   {
-    // reference_interfaces_ will remain unchanged
-    return controller_interface::return_type::OK;
+    current_ref = last_ref_ = current_ref_op.value();
   }
-  auto current_ref = current_ref_op.value();
+  else
+  {
+    current_ref = last_ref_;
+  }
+
   const auto age_of_last_command = time - current_ref.header.stamp;
 
   // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
+    std::cout << "NO TIMEOUT" << std::endl;
     if (!std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.linear.y))
     {
       reference_interfaces_[0] = current_ref.twist.linear.x;
@@ -566,6 +571,7 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   }
   else
   {
+    std::cout << "TIMEOUT" << std::endl;
     if (!std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.angular.z))
     {
       reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
@@ -593,6 +599,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
+    std::cout << "Update commands" << std::endl;
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
@@ -608,6 +615,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   }
   else
   {
+    std::cout << "Update commands with zero vel" << std::endl;
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
       command_interfaces_[i].set_value(0.0);

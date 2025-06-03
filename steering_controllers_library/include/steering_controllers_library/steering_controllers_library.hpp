@@ -81,11 +81,14 @@ protected:
   std::shared_ptr<steering_controllers_library::ParamListener> param_listener_;
   steering_controllers_library::Params params_;
 
-  // Command subscribers and Controller State publisher
-  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
+  // the RT Box containing the command message
   realtime_tools::RealtimeThreadSafeBox<ControllerTwistReferenceMsg> input_ref_;
+  // save the last reference in case of unable to get value from box
+  ControllerTwistReferenceMsg last_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
+  // Command subscribers and Controller State publisher
+  rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
   using ControllerStatePublisherTf = realtime_tools::RealtimePublisher<ControllerStateMsgTf>;
 
