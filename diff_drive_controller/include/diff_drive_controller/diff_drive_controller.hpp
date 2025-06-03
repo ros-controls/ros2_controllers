@@ -125,7 +125,7 @@ protected:
   // the realtime container to exchange the reference from subscriber
   realtime_tools::RealtimeThreadSafeBox<TwistStamped> received_velocity_msg_;
   // save the last reference in case of unable to get value from box
-  TwistStamped last_ref_;
+  TwistStamped command_msg_;
 
   std::queue<std::array<double, 2>> previous_two_commands_;
   // speed limiters

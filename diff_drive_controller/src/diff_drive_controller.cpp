@@ -108,27 +108,27 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   auto logger = get_node()->get_logger();
 
   auto current_ref_op = received_velocity_msg_.try_get();
-  TwistStamped command_msg;
   if (current_ref_op.has_value())
   {
-    command_msg = last_ref_ = current_ref_op.value();
+    command_msg_ = current_ref_op.value();
   }
   else
   {
-    command_msg = last_ref_;
+    command_msg_;
   }
 
-  const auto age_of_last_command = time - command_msg.header.stamp;
+  const auto age_of_last_command = time - command_msg_.header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
     reference_interfaces_[0] = 0.0;
     reference_interfaces_[1] = 0.0;
   }
-  else if (std::isfinite(command_msg.twist.linear.x) && std::isfinite(command_msg.twist.angular.z))
+  else if (
+    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg.twist.linear.x;
-    reference_interfaces_[1] = command_msg.twist.angular.z;
+    reference_interfaces_[0] = command_msg_.twist.linear.x;
+    reference_interfaces_[1] = command_msg_.twist.angular.z;
   }
   else
   {
@@ -570,15 +570,14 @@ void DiffDriveController::reset_buffers()
 
   // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
-  TwistStamped empty_msg;
-  empty_msg.header.stamp = get_node()->now();
-  empty_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  empty_msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-  received_velocity_msg_.set(empty_msg);
+  command_msg_.header.stamp = get_node()->now();
+  command_msg_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  received_velocity_msg_.set(command_msg_);
 }
 
 void DiffDriveController::halt()
