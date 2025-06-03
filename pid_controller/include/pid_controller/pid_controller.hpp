@@ -84,11 +84,11 @@ protected:
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeThreadSafeBox<ControllerReferenceMsg> input_ref_;
-  ControllerReferenceMsg last_ref_;
+  ControllerReferenceMsg current_ref_;
 
   rclcpp::Subscription<ControllerMeasuredStateMsg>::SharedPtr measured_state_subscriber_ = nullptr;
   realtime_tools::RealtimeThreadSafeBox<ControllerMeasuredStateMsg> measured_state_;
-  ControllerMeasuredStateMsg last_state_;
+  ControllerMeasuredStateMsg current_state_;
 
   rclcpp::Service<ControllerModeSrvType>::SharedPtr set_feedforward_control_service_;
   std::atomic<bool> feedforward_mode_enabled_;

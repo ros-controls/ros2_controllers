@@ -179,9 +179,8 @@ controller_interface::CallbackReturn PidController::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&PidController::reference_callback, this, std::placeholders::_1));
 
-  ControllerReferenceMsg msg;
-  reset_controller_reference_msg(msg, reference_and_state_dof_names_);
-  input_ref_.set(msg);
+  reset_controller_reference_msg(current_ref_, reference_and_state_dof_names_);
+  input_ref_.set(current_ref_);
 
   // input state Subscriber and callback
   if (params_.use_external_measured_states)
@@ -435,16 +434,15 @@ controller_interface::CallbackReturn PidController::on_activate(
   auto input_ref_op = input_ref_.try_get();
   if (input_ref_op.has_value())
   {
-    auto input_ref = input_ref_op.value();
-    reset_controller_reference_msg(input_ref, reference_and_state_dof_names_);
-    input_ref_.try_set(input_ref);
+    current_ref_ = input_ref_op.value();
+    reset_controller_reference_msg(current_ref_, reference_and_state_dof_names_);
+    input_ref_.try_set(current_ref_);
   }
   auto measured_state_op = measured_state_.try_get();
   if (measured_state_op.has_value())
   {
-    auto measured_state = measured_state_op.value();
-    reset_controller_measured_state_msg(measured_state, reference_and_state_dof_names_);
-    measured_state_.try_set(measured_state);
+    reset_controller_measured_state_msg(current_state_, reference_and_state_dof_names_);
+    measured_state_.try_set(current_state_);
   }
 
   reference_interfaces_.assign(
@@ -464,30 +462,25 @@ controller_interface::return_type PidController::update_reference_from_subscribe
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto current_ref_op = input_ref_.try_get();
-  ControllerReferenceMsg current_ref;
   if (current_ref_op.has_value())
   {
-    current_ref = last_ref_ = current_ref_op.value();
-  }
-  else
-  {
-    current_ref = last_ref_;
+    current_ref_ = current_ref_op.value();
   }
 
   for (size_t i = 0; i < dof_; ++i)
   {
-    if (!std::isnan(current_ref.values[i]))
+    if (!std::isnan(current_ref_.values[i]))
     {
-      reference_interfaces_[i] = current_ref.values[i];
-      if (reference_interfaces_.size() == 2 * dof_ && !std::isnan(current_ref.values_dot[i]))
+      reference_interfaces_[i] = current_ref_.values[i];
+      if (reference_interfaces_.size() == 2 * dof_ && !std::isnan(current_ref_.values_dot[i]))
       {
-        reference_interfaces_[dof_ + i] = current_ref.values_dot[i];
+        reference_interfaces_[dof_ + i] = current_ref_.values_dot[i];
       }
-      current_ref.values[i] = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.values[i] = std::numeric_limits<double>::quiet_NaN();
     }
   }
   // save cleared input_ref_
-  input_ref_.try_set(current_ref);
+  input_ref_.try_set(current_ref_);
   return controller_interface::return_type::OK;
 }
 
@@ -501,21 +494,16 @@ controller_interface::return_type PidController::update_and_write_commands(
   if (params_.use_external_measured_states)
   {
     auto measured_state_op = measured_state_.try_get();
-    ControllerMeasuredStateMsg measured_state;
     if (measured_state_op.has_value())
     {
-      measured_state = last_state_ = measured_state_op.value();
-    }
-    else
-    {
-      measured_state = last_state_;
+      current_state_ = measured_state_op.value();
     }
     for (size_t i = 0; i < dof_; ++i)
     {
-      measured_state_values_[i] = measured_state.values[i];
+      measured_state_values_[i] = current_state_.values[i];
       if (measured_state_values_.size() == 2 * dof_)
       {
-        measured_state_values_[dof_ + i] = measured_state.values_dot[i];
+        measured_state_values_[dof_ + i] = current_state_.values_dot[i];
       }
     }
   }
