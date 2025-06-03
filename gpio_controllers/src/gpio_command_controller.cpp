@@ -23,7 +23,7 @@
 #include "rclcpp/subscription.hpp"
 
 namespace
-{
+{  // utility
 template <typename T>
 void print_interface(const rclcpp::Logger & logger, const T & command_interfaces)
 {
@@ -31,6 +31,15 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
   {
     RCLCPP_ERROR(logger, "Got %s", interface_name.c_str());
   }
+}
+
+// called from RT control loop
+void reset_controller_reference_msg(
+  gpio_controllers::CmdType & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
+  msg.header.stamp = node->now();
+  msg.interface_groups.clear();
+  msg.interface_values.clear();
 }
 
 std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
@@ -85,7 +94,7 @@ try
   {
     gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
       "~/commands", rclcpp::SystemDefaultsQoS(),
-      [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+      [this](const CmdType::SharedPtr msg) { rt_command_.set(*msg); });
   }
 
   gpio_state_publisher_ =
@@ -137,14 +146,28 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
   }
 
   initialize_gpio_state_msg();
-  rt_command_ptr_.reset();
+  // Set default value in command (the same number as state interfaces)
+  auto rt_command_op = rt_command_.try_get();
+  if (rt_command_op.has_value())
+  {
+    auto rt_command = rt_command_op.value();
+    reset_controller_reference_msg(rt_command, get_node());
+    rt_command_.try_set(rt_command);
+  }
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  rt_command_ptr_.reset();
+  // Set default value in command (the same number as state interfaces)
+  auto rt_command_op = rt_command_.try_get();
+  if (rt_command_op.has_value())
+  {
+    auto rt_command = rt_command_op.value();
+    reset_controller_reference_msg(rt_command, get_node());
+    rt_command_.try_set(rt_command);
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -315,13 +338,22 @@ bool GpioCommandController::check_if_configured_interfaces_matches_received(
 
 controller_interface::return_type GpioCommandController::update_gpios_commands()
 {
-  auto gpio_commands_ptr = rt_command_ptr_.readFromRT();
-  if (!gpio_commands_ptr || !(*gpio_commands_ptr))
+  auto gpio_commands_op = rt_command_.try_get();
+  CmdType gpio_commands;
+  if (gpio_commands_op.has_value())
   {
+    gpio_commands = last_ref_ = gpio_commands_op.value();
+  }
+  else
+  {
+    gpio_commands = last_ref_;
+  }
+  if (gpio_commands.interface_groups.empty() || gpio_commands.interface_values.empty())
+  {
+    // no command received yet
     return controller_interface::return_type::OK;
   }
 
-  const auto gpio_commands = *(*gpio_commands_ptr);
   for (std::size_t gpio_index = 0; gpio_index < gpio_commands.interface_groups.size(); ++gpio_index)
   {
     const auto & gpio_name = gpio_commands.interface_groups[gpio_index];
