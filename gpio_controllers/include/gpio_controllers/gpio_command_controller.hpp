@@ -96,7 +96,7 @@ protected:
   // the realtime container to exchange the reference from subscriber
   realtime_tools::RealtimeThreadSafeBox<CmdType> rt_command_;
   // save the last reference in case of unable to get value from box
-  CmdType last_ref_;
+  CmdType gpio_commands_;
 
   std::shared_ptr<rclcpp::Publisher<StateType>> gpio_state_publisher_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_{};
