@@ -107,27 +107,28 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
 {
   auto logger = get_node()->get_logger();
 
-  const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
-
-  if (command_msg_ptr == nullptr)
+  auto current_ref_op = received_velocity_msg_.try_get();
+  TwistStamped command_msg;
+  if (current_ref_op.has_value())
   {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return controller_interface::return_type::ERROR;
+    command_msg = last_ref_ = current_ref_op.value();
+  }
+  else
+  {
+    command_msg = last_ref_;
   }
 
-  const auto age_of_last_command = time - command_msg_ptr->header.stamp;
+  const auto age_of_last_command = time - command_msg.header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
     reference_interfaces_[0] = 0.0;
     reference_interfaces_[1] = 0.0;
   }
-  else if (
-    std::isfinite(command_msg_ptr->twist.linear.x) &&
-    std::isfinite(command_msg_ptr->twist.angular.z))
+  else if (std::isfinite(command_msg.twist.linear.x) && std::isfinite(command_msg.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
-    reference_interfaces_[1] = command_msg_ptr->twist.angular.z;
+    reference_interfaces_[0] = command_msg.twist.linear.x;
+    reference_interfaces_[1] = command_msg.twist.angular.z;
   }
   else
   {
@@ -396,7 +397,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0) ||
         current_time_diff < cmd_vel_timeout_)
       {
-        received_velocity_msg_ptr_.writeFromNonRT(msg);
+        received_velocity_msg_.set(*msg);
       }
       else
       {
@@ -567,18 +568,17 @@ void DiffDriveController::reset_buffers()
   previous_two_commands_.push({{0.0, 0.0}});
   previous_two_commands_.push({{0.0, 0.0}});
 
-  // Fill RealtimeBuffer with NaNs so it will contain a known value
+  // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
-  received_velocity_msg_ptr_.reset();
-  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
-  empty_msg_ptr->header.stamp = get_node()->now();
-  empty_msg_ptr->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
+  TwistStamped empty_msg;
+  empty_msg.header.stamp = get_node()->now();
+  empty_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  empty_msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  empty_msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  empty_msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  empty_msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  empty_msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  received_velocity_msg_.set(empty_msg);
 }
 
 void DiffDriveController::halt()
