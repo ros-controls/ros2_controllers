@@ -89,7 +89,7 @@ protected:
   // the realtime container to exchange the reference from subscriber
   realtime_tools::RealtimeThreadSafeBox<CmdType> rt_command_;
   // save the last reference in case of unable to get value from box
-  CmdType last_ref_;
+  CmdType joint_commands_;
 
   rclcpp::Subscription<CmdType>::SharedPtr joints_command_subscriber_;
 };

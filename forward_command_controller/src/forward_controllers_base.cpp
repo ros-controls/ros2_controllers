@@ -117,9 +117,8 @@ controller_interface::CallbackReturn ForwardControllersBase::on_activate(
   // reset command buffer if a command came through callback when controller was inactive
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
-  CmdType empty_msg;
-  reset_controller_reference_msg(empty_msg);
-  rt_command_.try_set(empty_msg);
+  reset_controller_reference_msg(joint_commands_);
+  rt_command_.try_set(joint_commands_);
 
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -129,9 +128,8 @@ controller_interface::CallbackReturn ForwardControllersBase::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Try to set default value in command.
-  CmdType empty_msg;
-  reset_controller_reference_msg(empty_msg);
-  rt_command_.try_set(empty_msg);
+  reset_controller_reference_msg(joint_commands_);
+  rt_command_.try_set(joint_commands_);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -140,36 +138,35 @@ controller_interface::return_type ForwardControllersBase::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   auto joint_commands_op = rt_command_.try_get();
-  CmdType joint_commands;
   if (joint_commands_op.has_value())
   {
-    joint_commands = last_ref_ = joint_commands_op.value();
+    joint_commands_ = joint_commands_op.value();
   }
   else
   {
-    joint_commands = last_ref_;
+    joint_commands_;
   }
 
   // no command received yet
   if (std::all_of(
-        joint_commands.data.cbegin(), joint_commands.data.cend(),
+        joint_commands_.data.cbegin(), joint_commands_.data.cend(),
         [](const auto & value) { return std::isnan(value); }))
   {
     return controller_interface::return_type::OK;
   }
 
-  if (joint_commands.data.size() != command_interfaces_.size())
+  if (joint_commands_.data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *(get_node()->get_clock()), 1000,
-      "command size (%zu) does not match number of interfaces (%zu)", joint_commands.data.size(),
+      "command size (%zu) does not match number of interfaces (%zu)", joint_commands_.data.size(),
       command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
 
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value(joint_commands.data[index]);
+    command_interfaces_[index].set_value(joint_commands_.data[index]);
   }
 
   return controller_interface::return_type::OK;
