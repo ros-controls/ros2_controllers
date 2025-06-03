@@ -53,15 +53,15 @@ using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceM
 
 // called from RT control loop
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerCommandMsg> & msg, const std::vector<std::string> & dof_names)
+  ControllerCommandMsg & msg, const std::vector<std::string> & dof_names)
 {
-  msg->dof_names = dof_names;
-  msg->values.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
-  msg->values_dot.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+  msg.dof_names = dof_names;
+  msg.values.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+  msg.values_dot.resize(dof_names.size(), std::numeric_limits<double>::quiet_NaN());
 }
 
 void reset_controller_measured_state_msg(
-  const std::shared_ptr<ControllerCommandMsg> & msg, const std::vector<std::string> & dof_names)
+  ControllerCommandMsg & msg, const std::vector<std::string> & dof_names)
 {
   reset_controller_reference_msg(msg, dof_names);
 }
@@ -74,7 +74,7 @@ PidController::PidController() : controller_interface::ChainableControllerInterf
 
 controller_interface::CallbackReturn PidController::on_init()
 {
-  feedforward_mode_enabled_.initRT(false);
+  feedforward_mode_enabled_ = false;
 
   try
   {
@@ -97,7 +97,7 @@ void PidController::update_parameters()
   }
   params_ = param_listener_->get_params();
 
-  feedforward_mode_enabled_.writeFromNonRT(params_.enable_feedforward);
+  feedforward_mode_enabled_ = params_.enable_feedforward;
 }
 
 controller_interface::CallbackReturn PidController::configure_parameters()
@@ -179,9 +179,9 @@ controller_interface::CallbackReturn PidController::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&PidController::reference_callback, this, std::placeholders::_1));
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg;
   reset_controller_reference_msg(msg, reference_and_state_dof_names_);
-  input_ref_.writeFromNonRT(msg);
+  input_ref_.set(msg);
 
   // input state Subscriber and callback
   if (params_.use_external_measured_states)
@@ -227,16 +227,15 @@ controller_interface::CallbackReturn PidController::on_configure(
         }
       }
       // TODO(destogl): Sort the input values based on joint and interface names
-      measured_state_.writeFromNonRT(state_msg);
+      measured_state_.set(*state_msg);
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
   }
 
-  std::shared_ptr<ControllerMeasuredStateMsg> measured_state_msg =
-    std::make_shared<ControllerMeasuredStateMsg>();
+  ControllerMeasuredStateMsg measured_state_msg;
   reset_controller_measured_state_msg(measured_state_msg, reference_and_state_dof_names_);
-  measured_state_.writeFromNonRT(measured_state_msg);
+  measured_state_.set(measured_state_msg);
 
   measured_state_values_.resize(
     dof_ * params_.reference_and_state_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
@@ -246,7 +245,7 @@ controller_interface::CallbackReturn PidController::on_configure(
       const std::shared_ptr<ControllerModeSrvType::Request> request,
       std::shared_ptr<ControllerModeSrvType::Response> response)
   {
-    feedforward_mode_enabled_.writeFromNonRT(request->data);
+    feedforward_mode_enabled_ = request->data;
 
     RCLCPP_WARN(
       get_node()->get_logger(),
@@ -297,7 +296,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
       "Assuming that value have order as defined state DoFs");
     auto ref_msg = msg;
     ref_msg->dof_names = reference_and_state_dof_names_;
-    input_ref_.writeFromNonRT(ref_msg);
+    input_ref_.set(*ref_msg);
   }
   else if (
     msg->dof_names.size() == reference_and_state_dof_names_.size() &&
@@ -306,7 +305,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
     auto ref_msg = msg;  // simple initialization
 
     // sort values in the ref_msg
-    reset_controller_reference_msg(msg, reference_and_state_dof_names_);
+    reset_controller_reference_msg(*msg, reference_and_state_dof_names_);
 
     bool all_found = true;
     for (size_t i = 0; i < msg->dof_names.size(); ++i)
@@ -329,7 +328,7 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
 
     if (all_found)
     {
-      input_ref_.writeFromNonRT(ref_msg);
+      input_ref_.set(*ref_msg);
     }
   }
   else
@@ -433,9 +432,20 @@ controller_interface::CallbackReturn PidController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command (the same number as state interfaces)
-  reset_controller_reference_msg(*(input_ref_.readFromRT()), reference_and_state_dof_names_);
-  reset_controller_measured_state_msg(
-    *(measured_state_.readFromRT()), reference_and_state_dof_names_);
+  auto input_ref_op = input_ref_.try_get();
+  if (input_ref_op.has_value())
+  {
+    auto input_ref = input_ref_op.value();
+    reset_controller_reference_msg(input_ref, reference_and_state_dof_names_);
+    input_ref_.try_set(input_ref);
+  }
+  auto measured_state_op = measured_state_.try_get();
+  if (measured_state_op.has_value())
+  {
+    auto measured_state = measured_state_op.value();
+    reset_controller_measured_state_msg(measured_state, reference_and_state_dof_names_);
+    measured_state_.try_set(measured_state);
+  }
 
   reference_interfaces_.assign(
     reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
@@ -453,21 +463,31 @@ controller_interface::CallbackReturn PidController::on_activate(
 controller_interface::return_type PidController::update_reference_from_subscribers(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  auto current_ref = input_ref_.readFromRT();
+  auto current_ref_op = input_ref_.try_get();
+  ControllerReferenceMsg current_ref;
+  if (current_ref_op.has_value())
+  {
+    current_ref = last_ref_ = current_ref_op.value();
+  }
+  else
+  {
+    current_ref = last_ref_;
+  }
 
   for (size_t i = 0; i < dof_; ++i)
   {
-    if (!std::isnan((*current_ref)->values[i]))
+    if (!std::isnan(current_ref.values[i]))
     {
-      reference_interfaces_[i] = (*current_ref)->values[i];
-      if (reference_interfaces_.size() == 2 * dof_ && !std::isnan((*current_ref)->values_dot[i]))
+      reference_interfaces_[i] = current_ref.values[i];
+      if (reference_interfaces_.size() == 2 * dof_ && !std::isnan(current_ref.values_dot[i]))
       {
-        reference_interfaces_[dof_ + i] = (*current_ref)->values_dot[i];
+        reference_interfaces_[dof_ + i] = current_ref.values_dot[i];
       }
-
-      (*current_ref)->values[i] = std::numeric_limits<double>::quiet_NaN();
+      current_ref.values[i] = std::numeric_limits<double>::quiet_NaN();
     }
   }
+  // save cleared input_ref_
+  input_ref_.try_set(current_ref);
   return controller_interface::return_type::OK;
 }
 
@@ -480,13 +500,22 @@ controller_interface::return_type PidController::update_and_write_commands(
   // Update feedback either from external measured state or from state interfaces
   if (params_.use_external_measured_states)
   {
-    const auto measured_state = *(measured_state_.readFromRT());
+    auto measured_state_op = measured_state_.try_get();
+    ControllerMeasuredStateMsg measured_state;
+    if (measured_state_op.has_value())
+    {
+      measured_state = last_state_ = measured_state_op.value();
+    }
+    else
+    {
+      measured_state = last_state_;
+    }
     for (size_t i = 0; i < dof_; ++i)
     {
-      measured_state_values_[i] = measured_state->values[i];
+      measured_state_values_[i] = measured_state.values[i];
       if (measured_state_values_.size() == 2 * dof_)
       {
-        measured_state_values_[dof_ + i] = measured_state->values_dot[i];
+        measured_state_values_[dof_ + i] = measured_state.values_dot[i];
       }
     }
   }
@@ -512,7 +541,7 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (*(feedforward_mode_enabled_.readFromRT()))
+      if (feedforward_mode_enabled_)
       {
         // two interfaces
         if (reference_interfaces_.size() == 2 * dof_)
