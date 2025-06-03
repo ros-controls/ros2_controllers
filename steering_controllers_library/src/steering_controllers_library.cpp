@@ -332,9 +332,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
 
-  ControllerTwistReferenceMsg msg;
-  reset_controller_reference_msg(msg, get_node());
-  input_ref_.set(msg);
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 
   try
   {
@@ -518,9 +517,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 {
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
-  ControllerTwistReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set(emtpy_msg);
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.try_set(current_ref_);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -539,48 +537,43 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref_op = input_ref_.try_get();
-  ControllerTwistReferenceMsg current_ref;
   if (current_ref_op.has_value())
   {
-    current_ref = last_ref_ = current_ref_op.value();
-  }
-  else
-  {
-    current_ref = last_ref_;
+    current_ref_ = current_ref_op.value();
   }
 
-  const auto age_of_last_command = time - current_ref.header.stamp;
+  const auto age_of_last_command = time - current_ref_.header.stamp;
 
   // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     std::cout << "NO TIMEOUT" << std::endl;
-    if (!std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.linear.y))
+    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y))
     {
-      reference_interfaces_[0] = current_ref.twist.linear.x;
-      reference_interfaces_[1] = current_ref.twist.angular.z;
+      reference_interfaces_[0] = current_ref_.twist.linear.x;
+      reference_interfaces_[1] = current_ref_.twist.angular.z;
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
-        current_ref.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+        current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+        current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 
-        input_ref_.try_set(current_ref);
+        input_ref_.try_set(current_ref_);
       }
     }
   }
   else
   {
     std::cout << "TIMEOUT" << std::endl;
-    if (!std::isnan(current_ref.twist.linear.x) && !std::isnan(current_ref.twist.angular.z))
+    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.angular.z))
     {
       reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
       reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
 
-      current_ref.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-      current_ref.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 
-      input_ref_.try_set(current_ref);
+      input_ref_.try_set(current_ref_);
     }
   }
 

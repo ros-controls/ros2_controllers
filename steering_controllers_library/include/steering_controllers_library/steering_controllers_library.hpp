@@ -84,7 +84,7 @@ protected:
   // the RT Box containing the command message
   realtime_tools::RealtimeThreadSafeBox<ControllerTwistReferenceMsg> input_ref_;
   // save the last reference in case of unable to get value from box
-  ControllerTwistReferenceMsg last_ref_;
+  ControllerTwistReferenceMsg current_ref_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   // Command subscribers and Controller State publisher
