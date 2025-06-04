@@ -10,7 +10,7 @@ repositories:
   control_msgs:
     type: git
     url: https://github.com/ros-controls/control_msgs.git
-    version: master
+    version: update/steering
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
