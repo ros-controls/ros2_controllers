@@ -21,6 +21,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2
   tf2_msgs
   tf2_geometry_msgs
+  ackermann_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -55,6 +56,7 @@ target_link_libraries(steering_controllers_library PUBLIC
                       realtime_tools::realtime_tools
                       tf2::tf2
                       tf2_geometry_msgs::tf2_geometry_msgs
+                      ${ackermann_msgs_TARGETS}
                       ${tf2_msgs_TARGETS}
                       ${geometry_msgs_TARGETS}
                       ${control_msgs_TARGETS}
@@ -72,9 +74,14 @@ if(BUILD_TESTING)
   target_include_directories(test_steering_controllers_library PRIVATE include)
   target_link_libraries(test_steering_controllers_library steering_controllers_library)
 
+  add_rostest_with_parameters_gmock(
+    test_steering_controllers_library_ackermann test/test_steering_controllers_library_ackermann.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_ackermann_params.yaml)
+  target_include_directories(test_steering_controllers_library_ackermann PRIVATE include)
+  target_link_libraries(test_steering_controllers_library_ackermann steering_controllers_library)
+
   ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
   target_link_libraries(test_steering_odometry steering_controllers_library)
-
 endif()
 
 install(
