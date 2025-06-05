@@ -131,14 +131,14 @@ TEST_F(PidControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
-  EXPECT_EQ((*msg)->values.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->values)
+  auto msg = controller_->input_ref_.get();
+  EXPECT_EQ(msg.values.size(), dof_names_.size());
+  for (const auto & cmd : msg.values)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-  EXPECT_EQ((*msg)->values_dot.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->values_dot)
+  EXPECT_EQ(msg.values_dot.size(), dof_names_.size());
+  for (const auto & cmd : msg.values_dot)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
@@ -203,21 +203,21 @@ TEST_F(PidControllerTest, test_feedforward_mode_service)
   executor.add_node(service_caller_node_->get_node_base_interface());
 
   // initially set to OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // should stay false
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // set to true
   ASSERT_NO_THROW(call_service(true, executor));
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, true);
 
   // set back to false
   ASSERT_NO_THROW(call_service(false, executor));
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 }
 
 TEST_F(PidControllerTest, test_feedforward_mode_parameter)
@@ -227,44 +227,44 @@ TEST_F(PidControllerTest, test_feedforward_mode_parameter)
   // Check updating mode during on_configure
 
   // initially set to OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // Reconfigure after setting parameter to true
   ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, true);
   ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
 
   // initially set to ON
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, true);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // Check updating mode during update_and_write_commands
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // Switch to ON
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, true);
 
   // Switch to OFF
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 }
 
 /**
@@ -283,8 +283,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, false);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -294,8 +294,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
 
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
+    EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
     EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
   }
 
@@ -303,13 +303,13 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, false);
   EXPECT_EQ(
     controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
   }
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
@@ -337,8 +337,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, false);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -346,13 +346,13 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
 
   controller_->set_reference(dof_command_values_);
 
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  controller_->feedforward_mode_enabled_ = true;
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, true);
 
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
+    EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
     EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
   }
 
@@ -360,13 +360,13 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, true);
   EXPECT_EQ(
     controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
 
     // check the command value:
     // ref = 101.101, state = 1.1, ds = 0.01
@@ -400,7 +400,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
   // feedforward mode is off as default, use this for convenience
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  EXPECT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // update reference interface which will be used for calculation
   const double ref_interface_value = 5.0;
@@ -612,8 +612,8 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // turn on feedforward
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  controller_->feedforward_mode_enabled_ = true;
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, true);
 
   // send a message to update reference interface
   controller_->set_reference({target_value});
@@ -671,7 +671,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // feedforward by default is OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
+  ASSERT_EQ(controller_->feedforward_mode_enabled_, false);
 
   // send a message to update reference interface
   controller_->set_reference({target_value});

@@ -445,7 +445,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0, 1.0}),
                          createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::ERROR);
@@ -467,7 +467,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"},
     {createInterfaceValue({"dig.1", "dig.2"}, {0.0}), createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::ERROR);
@@ -489,7 +489,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
                          createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
@@ -513,7 +513,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio2", "gpio1"}, {createInterfaceValue({"ana.1"}, {30.0}),
                          createInterfaceValue({"dig.2", "dig.1"}, {1.0, 0.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
@@ -536,8 +536,7 @@ TEST_F(
 
   const auto command =
     createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0})});
-
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
@@ -561,8 +560,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio3"}, {createInterfaceValue({"dig.3", "dig.4"}, {20.0, 25.0}),
                          createInterfaceValue({"ana.1"}, {21.0})});
-
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
   ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands.at(0));

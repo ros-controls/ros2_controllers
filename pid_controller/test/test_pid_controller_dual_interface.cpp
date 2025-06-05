@@ -78,8 +78,7 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // turn on feedforward
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
+  controller_->feedforward_mode_enabled_ = true;
 
   // set up the reference interface,
   controller_->reference_interfaces_ = {
