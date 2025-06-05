@@ -617,7 +617,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     controller_state_publisher_->msg_.header.stamp = time;
     controller_state_publisher_->msg_.traction_wheels_position.clear();
     controller_state_publisher_->msg_.traction_wheels_velocity.clear();
-    controller_state_publisher_->msg_.linear_velocity_command.clear();
+    controller_state_publisher_->msg_.traction_command.clear();
     controller_state_publisher_->msg_.steer_positions.clear();
     controller_state_publisher_->msg_.steering_angle_command.clear();
 
@@ -636,7 +636,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
           state_interfaces_[i].get_value());
       }
-      controller_state_publisher_->msg_.linear_velocity_command.push_back(
+      controller_state_publisher_->msg_.traction_command.push_back(
         command_interfaces_[i].get_value());
     }
 
