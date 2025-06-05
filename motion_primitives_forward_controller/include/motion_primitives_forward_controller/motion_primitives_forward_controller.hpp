@@ -29,8 +29,9 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
+#include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
-#include "std_msgs/msg/int8.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace motion_primitives_forward_controller
 {
@@ -63,32 +64,33 @@ public:
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-  using ControllerStateMsg = std_msgs::msg::Int8;
-
 protected:
   std::shared_ptr<motion_primitives_forward_controller::ParamListener> param_listener_;
   motion_primitives_forward_controller::Params params_;
 
-  rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
+  using MotionPrimitiveMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+  std::queue<std::shared_ptr<MotionPrimitiveMsg>> moprim_queue_;
 
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
+  rclcpp_action::Server<ExecuteMotion>::SharedPtr action_server_;
+  rclcpp_action::GoalResponse goal_received_callback(
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecuteMotion::Goal> goal);
+  rclcpp_action::CancelResponse goal_cancelled_callback(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
+  void goal_accepted_callback(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
+  void execute_goal(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
 
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr s_publisher_;
-  std::unique_ptr<ControllerStatePublisher> state_publisher_;
-
-  std::queue<std::shared_ptr<ControllerReferenceMsg>> msg_queue_;
-
-private:
-  void reference_callback(const std::shared_ptr<ControllerReferenceMsg> msg);
   void reset_command_interfaces();
   bool set_command_interfaces();
-  void reset_controller_reference_msg(std::shared_ptr<ControllerReferenceMsg> & msg);
 
   size_t queue_size_ = 0;
   std::mutex command_mutex_;
   bool print_error_once_ = true;
   bool robot_stopped_ = false;
+  bool was_executing_ = false;
+  uint8_t execution_status_;
 };
 
 }  // namespace motion_primitives_forward_controller

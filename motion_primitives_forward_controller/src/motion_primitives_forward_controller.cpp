@@ -97,21 +97,17 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // topics QoS
-  auto subscribers_qos = rclcpp::SystemDefaultsQoS();
-  subscribers_qos.keep_last(1);
-  subscribers_qos.best_effort();
-
-  // Reference Subscriber
-  ref_subscriber_ = get_node()->create_subscription<ControllerReferenceMsg>(
-    "~/reference", subscribers_qos,
-    std::bind(&MotionPrimitivesForwardController::reference_callback, this, std::placeholders::_1));
-  RCLCPP_INFO(
-    get_node()->get_logger(), "Subscribed to reference topic: %s",
-    ref_subscriber_->get_topic_name());
-
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg);
+  action_server_ = rclcpp_action::create_server<ExecuteMotion>(
+    get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
+    get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
+    std::string(get_node()->get_name()) + "/motion_sequence",
+    std::bind(
+      &MotionPrimitivesForwardController::goal_received_callback, this, std::placeholders::_1,
+      std::placeholders::_2),
+    std::bind(
+      &MotionPrimitivesForwardController::goal_cancelled_callback, this, std::placeholders::_1),
+    std::bind(
+      &MotionPrimitivesForwardController::goal_accepted_callback, this, std::placeholders::_1));
 
   queue_size_ = params_.queue_size;
   if (queue_size_ == 0)
@@ -120,115 +116,8 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  try
-  {
-    // State publisher
-    s_publisher_ =
-      get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
-    state_publisher_ = std::make_unique<ControllerStatePublisher>(s_publisher_);
-  }
-  catch (const std::exception & e)
-  {
-    fprintf(
-      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
-      e.what());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
-}
-
-// Function gets called when a new message is received
-void MotionPrimitivesForwardController::reference_callback(
-  const std::shared_ptr<ControllerReferenceMsg> msg)
-{
-  // Check if the type is one of the allowed motion types
-  switch (msg->type)
-  {
-    case MotionType::STOP_MOTION:
-    {
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: STOP_MOTION");
-      reset_command_interfaces();
-      robot_stopped_ = true;
-      std::lock_guard<std::mutex> guard(command_mutex_);
-      (void)command_interfaces_[0].set_value(
-        static_cast<double>(msg->type));  // send stop command immediately to the hw-interface
-      while (!msg_queue_.empty())
-      {  // clear the queue
-        msg_queue_.pop();
-      }
-      return;
-    }
-
-    case MotionType::RESET_STOP:
-    {
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: RESET_STOP");
-      reset_command_interfaces();
-      std::lock_guard<std::mutex> guard(command_mutex_);
-      (void)command_interfaces_[0].set_value(
-        static_cast<double>(msg->type));  // send reset stop command immediately to the hw-interface
-      robot_stopped_ = false;
-      return;
-    }
-
-    case MotionType::LINEAR_JOINT:
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_JOINT (PTP)");
-      if (msg->joint_positions.empty())
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Received LINEAR_JOINT motion type without joint positions");
-        return;
-      }
-      break;
-
-    case MotionType::LINEAR_CARTESIAN:
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: LINEAR_CARTESIAN (LIN)");
-      if (msg->poses.empty())
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Received LINEAR_CARTESIAN motion type without poses");
-        return;
-      }
-      break;
-
-    case MotionType::CIRCULAR_CARTESIAN:
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: CIRCULAR_CARTESIAN (CIRC)");
-      if (msg->poses.size() != 2)
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Received CIRCULAR_CARTESIAN motion type without two poses");
-        return;
-      }
-      break;
-
-    case MotionType::MOTION_SEQUENCE_START:
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: MOTION_SEQUENCE_START");
-      break;
-
-    case MotionType::MOTION_SEQUENCE_END:
-      RCLCPP_INFO(get_node()->get_logger(), "Received motion type: MOTION_SEQUENCE_END");
-      break;
-
-    default:
-      RCLCPP_ERROR(get_node()->get_logger(), "Received unknown motion type: %u", msg->type);
-      return;
-  }
-
-  if(!robot_stopped_)
-  {
-    if (msg_queue_.size() >= queue_size_)
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "Queue size exceeded. Can't add new motion primitive.");
-      return;
-    }
-    msg_queue_.push(msg);
-  }
-  else
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Robot is stopped. Discarding the new command.");
-    return;
-  }
 }
 
 controller_interface::InterfaceConfiguration
@@ -290,9 +179,9 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       get_node()->get_logger(), "State interface 0 (execution_state) returned no value.");
     return controller_interface::return_type::ERROR;
   }
-  uint8_t execution_status = static_cast<int8_t>(std::round(opt_value_execution.value()));
+  execution_status_ = static_cast<int8_t>(std::round(opt_value_execution.value()));
 
-  switch (execution_status)
+  switch (execution_status_)
   {
     case ExecutionState::IDLE:
       // RCLCPP_INFO(get_node()->get_logger(), "Execution state: IDLE");
@@ -300,6 +189,10 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       break;
     case ExecutionState::EXECUTING:
       // RCLCPP_INFO(get_node()->get_logger(), "Execution state: EXECUTING");
+      if (!was_executing_)
+      {
+        was_executing_ = true;
+      }
       print_error_once_ = true;
       break;
 
@@ -307,7 +200,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       // RCLCPP_INFO(get_node()->get_logger(), "Execution state: SUCCESS");
       print_error_once_ = true;
       break;
-    
+
     case ExecutionState::STOPPED:
       // RCLCPP_INFO(get_node()->get_logger(), "Execution state: STOPPED");
       print_error_once_ = true;
@@ -323,14 +216,9 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     default:
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Error: Unknown execution status: %d", execution_status);
+        get_node()->get_logger(), "Error: Unknown execution status: %d", execution_status_);
       return controller_interface::return_type::ERROR;
   }
-
-  // publish the execution_status
-  state_publisher_->lock();
-  state_publisher_->msg_.data = execution_status;
-  state_publisher_->unlockAndPublish();
 
   auto opt_value_ready = state_interfaces_[1].get_optional();
   if (!opt_value_ready.has_value())
@@ -341,7 +229,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   }
   uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(opt_value_ready.value()));
 
-  if (!msg_queue_.empty())  // check if new command is available
+  if (!moprim_queue_.empty())  // check if new command is available
   {
     switch (ready_for_new_primitive)
     {
@@ -385,32 +273,32 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 {
   std::lock_guard<std::mutex> guard(command_mutex_);
   // Get the oldest message from the queue
-  std::shared_ptr<ControllerReferenceMsg> current_ref = msg_queue_.front();
-  msg_queue_.pop();
+  std::shared_ptr<MotionPrimitiveMsg> current_moprim = moprim_queue_.front();
+  moprim_queue_.pop();
 
   // Check if the message is valid
-  if (!current_ref)
+  if (!current_moprim)
   {
     RCLCPP_WARN(get_node()->get_logger(), "No valid reference message received");
     return false;
   }
 
   // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_ref->type));
+  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim->type));
 
   // Process joint positions if available
-  if (!current_ref->joint_positions.empty())
+  if (!current_moprim->joint_positions.empty())
   {
-    for (size_t i = 0; i < current_ref->joint_positions.size(); ++i)
+    for (size_t i = 0; i < current_moprim->joint_positions.size(); ++i)
     {
-      (void)command_interfaces_[i + 1].set_value(current_ref->joint_positions[i]);  // q1 to q6
+      (void)command_interfaces_[i + 1].set_value(current_moprim->joint_positions[i]);  // q1 to q6
     }
   }
 
   // Process Cartesian poses if available
-  if (!current_ref->poses.empty())
+  if (!current_moprim->poses.empty())
   {
-    const auto & goal_pose = current_ref->poses[0].pose;               // goal pose
+    const auto & goal_pose = current_moprim->poses[0].pose;            // goal pose
     (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
     (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
     (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
@@ -420,9 +308,9 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
     // Process via poses if available (only for circular motion)
-    if (current_ref->type == MotionType::CIRCULAR_CARTESIAN && current_ref->poses.size() == 2)
+    if (current_moprim->type == MotionType::CIRCULAR_CARTESIAN && current_moprim->poses.size() == 2)
     {
-      const auto & via_pose = current_ref->poses[1].pose;               // via pose
+      const auto & via_pose = current_moprim->poses[1].pose;            // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
       (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
       (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
@@ -433,10 +321,10 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     }
   }
 
-  (void)command_interfaces_[21].set_value(current_ref->blend_radius);  // blend_radius
+  (void)command_interfaces_[21].set_value(current_moprim->blend_radius);  // blend_radius
 
   // Read additional arguments
-  for (const auto & arg : current_ref->additional_arguments)
+  for (const auto & arg : current_moprim->additional_arguments)
   {
     if (arg.argument_name == "velocity")
     {
@@ -459,32 +347,204 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
   return true;
 }
 
-// reset the controller reference message to NaN
-void MotionPrimitivesForwardController::reset_controller_reference_msg(
-  std::shared_ptr<ControllerReferenceMsg> & msg)
+rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_callback(
+  const rclcpp_action::GoalUUID &, std::shared_ptr<const ExecuteMotion::Goal> goal)
 {
-  msg->type = 0;
-  msg->blend_radius = std::numeric_limits<double>::quiet_NaN();
+  RCLCPP_INFO(get_node()->get_logger(), "Received goal request");
 
-  for (auto & arg : msg->additional_arguments)
+  const auto & primitives = goal->trajectory.motions;
+
+  if (primitives.empty())
   {
-    arg.argument_name = "";
-    arg.argument_value = std::numeric_limits<double>::quiet_NaN();
+    RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
+    return rclcpp_action::GoalResponse::REJECT;
   }
 
-  for (auto & pose : msg->poses)
+  for (size_t i = 0; i < primitives.size(); ++i)
   {
-    pose.pose.position.x = std::numeric_limits<double>::quiet_NaN();
-    pose.pose.position.y = std::numeric_limits<double>::quiet_NaN();
-    pose.pose.position.z = std::numeric_limits<double>::quiet_NaN();
+    const auto & primitive = primitives[i];
 
-    pose.pose.orientation.x = std::numeric_limits<double>::quiet_NaN();
-    pose.pose.orientation.y = std::numeric_limits<double>::quiet_NaN();
-    pose.pose.orientation.z = std::numeric_limits<double>::quiet_NaN();
-    pose.pose.orientation.w = std::numeric_limits<double>::quiet_NaN();
+    switch (primitive.type)
+    {
+      case MotionType::LINEAR_JOINT:
+        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
+        if (primitive.joint_positions.empty())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+        break;
+
+      case MotionType::LINEAR_CARTESIAN:
+        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
+        if (primitive.poses.empty())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Primitive %zu invalid: LINEAR_CARTESIAN requires at least one pose.", i);
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+        break;
+
+      case MotionType::CIRCULAR_CARTESIAN:
+        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: CIRCULAR_CARTESIAN (CIRC)", i);
+        if (primitive.poses.size() != 2)
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(),
+            "Primitive %zu invalid: CIRCULAR_CARTESIAN requires exactly two poses.", i);
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+        break;
+
+      default:
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Primitive %zu invalid: unknown motion type %u.", i,
+          primitive.type);
+        return rclcpp_action::GoalResponse::REJECT;
+    }
   }
+
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
+rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_callback(
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>>)
+{
+  RCLCPP_INFO(get_node()->get_logger(), "Canceling goal");
+
+  std::lock_guard<std::mutex> guard(command_mutex_);
+  reset_command_interfaces();
+  robot_stopped_ = true;
+  // send stop command immediately to the hw-interface
+  (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
+  while (!moprim_queue_.empty())
+  {  // clear the queue
+    moprim_queue_.pop();
+  }
+
+  RCLCPP_INFO(get_node()->get_logger(), "Waiting for Robot to stop...");
+  while (execution_status_ != ExecutionState::STOPPED)
+  {
+    // Small sleep to prevent busy waiting
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  reset_command_interfaces();
+  // send reset stop command to the hw-interface
+  (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
+  robot_stopped_ = false;
+
+  RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void MotionPrimitivesForwardController::goal_accepted_callback(
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
+{
+  std::thread{std::bind(&MotionPrimitivesForwardController::execute_goal, this, goal_handle)}
+    .detach();
+}
+
+void MotionPrimitivesForwardController::execute_goal(
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
+{
+  const auto & goal = goal_handle->get_goal();
+
+  if (robot_stopped_)
+  {
+    RCLCPP_WARN(get_node()->get_logger(), "Robot is stopped. Discarding the new command.");
+    return;
+  }
+
+  const auto & primitives = goal->trajectory.motions;
+
+  if (primitives.empty())
+  {
+    RCLCPP_WARN(get_node()->get_logger(), "Received goal with no motion primitives. Ignoring.");
+    return;
+  }
+
+  size_t required_queue_space = primitives.size();
+  // add sequence markers only if there are multiple primitives
+  bool add_sequence_wrappers = primitives.size() > 1;
+  if (add_sequence_wrappers)
+  {
+    required_queue_space += 2;  // start + end
+  }
+
+  // Check if queue has enough space
+  if (moprim_queue_.size() + required_queue_space > queue_size_)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Received more motion primitives than queue can store. "
+      "Current queue size: %zu, required space: %zu. "
+      "Please increase the queue size in the controller parameters.",
+      moprim_queue_.size(), required_queue_space);
+    return;
+  }
+
+  // Add sequence start marker
+  if (add_sequence_wrappers)
+  {
+    std::shared_ptr<MotionPrimitiveMsg> start_marker = std::make_shared<MotionPrimitiveMsg>();
+    start_marker->type = MotionType::MOTION_SEQUENCE_START;
+    moprim_queue_.push(start_marker);
+  }
+
+  // Add motion primitives to the queue
+  for (const auto & primitive : primitives)
+  {
+    moprim_queue_.push(std::make_shared<MotionPrimitiveMsg>(primitive));
+  }
+
+  // Add sequence end marker
+  if (add_sequence_wrappers)
+  {
+    std::shared_ptr<MotionPrimitiveMsg> end_marker = std::make_shared<MotionPrimitiveMsg>();
+    end_marker->type = MotionType::MOTION_SEQUENCE_END;
+    moprim_queue_.push(end_marker);
+  }
+
+  RCLCPP_INFO(
+    get_node()->get_logger(), "Accepted goal with %zu motion primitives%s.", primitives.size(),
+    add_sequence_wrappers ? " (wrapped in sequence markers)" : "");
+
+  ExecuteMotion::Result result;
+  rclcpp::Rate rate(50);
+  while (rclcpp::ok())
+  {
+    auto execution_status = static_cast<uint8_t>(std::round(state_interfaces_[0].get_value()));
+    if (execution_status == ExecutionState::SUCCESS && was_executing_)
+    {
+      RCLCPP_INFO(get_node()->get_logger(), "Execution completed successfully.");
+      result.error_code = ExecuteMotion::Result::SUCCESSFUL;
+      result.error_string = "Trajectory executed successfully";
+      was_executing_ = false;
+      break;
+    }
+    else if (execution_status == ExecutionState::ERROR)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Execution failed with an error.");
+      result.error_code = ExecuteMotion::Result::FAILED;
+      result.error_string = "Trajectory execution failed";
+      break;
+    }
+    else if (execution_status == ExecutionState::STOPPED)
+    {
+      RCLCPP_INFO(get_node()->get_logger(), "Execution stopped.");
+      result.error_code = ExecuteMotion::Result::CANCELED;
+      result.error_string = "Trajectory execution stopped";
+      break;
+    }
+    rate.sleep();
+  }
+
+  goal_handle->succeed(std::make_shared<ExecuteMotion::Result>(result));
+}
 }  // namespace motion_primitives_forward_controller
 
 #include "pluginlib/class_list_macros.hpp"
