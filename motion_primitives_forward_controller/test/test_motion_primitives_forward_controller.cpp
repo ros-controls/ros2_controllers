@@ -77,8 +77,8 @@ TEST_F(MotionPrimitivesForwardControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message queue is reset
-  auto msg_queue = controller_->msg_queue_;
-  ASSERT_TRUE(msg_queue.empty());
+  auto moprim_queue_ = controller_->moprim_queue_;
+  ASSERT_TRUE(moprim_queue_.empty());
 }
 
 TEST_F(MotionPrimitivesForwardControllerTest, update_success)
@@ -123,7 +123,7 @@ TEST_F(MotionPrimitivesForwardControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-TEST_F(MotionPrimitivesForwardControllerTest, publish_status_success)
+TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
 {
   SetUpController();
 
@@ -134,32 +134,16 @@ TEST_F(MotionPrimitivesForwardControllerTest, publish_status_success)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  ControllerStateMsg msg;
-  subscribe_and_get_messages(msg);
+  send_single_motion_sequence_goal();  // filling with default values from the function
 
-  ASSERT_EQ(msg.data, ExecutionState::IDLE);
-}
-
-TEST_F(MotionPrimitivesForwardControllerTest, receive_message_and_publish_updated_status)
-{
-  SetUpController();
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  ControllerStateMsg msg;
-  subscribe_and_get_messages(msg);
-
-  ASSERT_EQ(msg.data, ExecutionState::IDLE);
-
-  publish_commands();
-  controller_->wait_for_commands(executor);
+  // Wait for the command value to be set
+  // This is necessary because the action server might take some time to process the goal
+  auto start = std::chrono::steady_clock::now();
+  while (std::isnan(command_values_[1]) &&
+         (std::chrono::steady_clock::now() - start) < std::chrono::seconds(5))
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -176,10 +160,6 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_message_and_publish_update
   EXPECT_EQ(command_values_[22], 0.7);  // velocity
   EXPECT_EQ(command_values_[23], 1.0);  // acceleration
   EXPECT_EQ(command_values_[24], 2.0);  // move time
-
-  subscribe_and_get_messages(msg);
-
-  ASSERT_EQ(msg.data, ExecutionState::IDLE);
 }
 
 int main(int argc, char ** argv)

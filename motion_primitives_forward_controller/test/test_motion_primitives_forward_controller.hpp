@@ -18,9 +18,12 @@
 #define TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <chrono>
+#include <future>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -34,16 +37,18 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 
+#include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
 #include "motion_primitives_forward_controller/execution_state.hpp"
 #include "motion_primitives_forward_controller/motion_type.hpp"
 #include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
-#include "std_msgs/msg/int8.hpp"
 
-using ControllerReferenceMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-using ControllerStateMsg = std_msgs::msg::Int8;
+using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
 
 namespace
 {
@@ -58,7 +63,7 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
-  FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_single_action_goal);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -67,62 +72,55 @@ public:
     return motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(
       previous_state);
   }
-
-  /**
-   * @brief wait_for_command blocks until a new ControllerReferenceMsg is received.
-   * Requires that the executor is not spinned elsewhere between the
-   *  message publication and the call to this function.
-   */
-  void wait_for_command(
-    rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    auto until = get_node()->get_clock()->now() + timeout;
-    while (get_node()->get_clock()->now() < until)
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-    }
-  }
-
-  void wait_for_commands(
-    rclcpp::Executor & executor,
-    const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
-  {
-    return wait_for_command(executor, timeout);
-  }
 };
-
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
 class MotionPrimitivesForwardControllerFixture : public ::testing::Test
 {
 public:
-  static void SetUpTestCase() {}
-
-  void SetUp()
+  void SetUp() override
   {
-    // initialize controller
     controller_ = std::make_unique<CtrlType>();
+    ASSERT_EQ(
+      controller_->init(
+        "test_motion_primitives_forward_controller", "", 0, "",
+        controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
-    command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_motion_primitives_forward_controller/reference", rclcpp::SystemDefaultsQoS());
+    node_ = std::make_shared<rclcpp::Node>("test_node");
+
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_);
+    executor_->add_node(controller_->get_node()->get_node_base_interface());
+
+    executor_thread_ = std::thread([this]() { executor_->spin(); });
+
+    action_client_ = rclcpp_action::create_client<ExecuteMotion>(
+      node_->get_node_base_interface(), node_->get_node_graph_interface(),
+      node_->get_node_logging_interface(), node_->get_node_waitables_interface(),
+      "/test_motion_primitives_forward_controller/motion_sequence");
   }
 
-  static void TearDownTestCase() {}
-
-  void TearDown() { controller_.reset(nullptr); }
+  void TearDown() override
+  {
+    executor_->cancel();
+    if (executor_thread_.joinable())
+    {
+      executor_thread_.join();
+    }
+    controller_.reset();
+    node_.reset();
+    executor_.reset();
+  }
 
 protected:
   void SetUpController(
     const std::string controller_name = "test_motion_primitives_forward_controller")
   {
-    ASSERT_EQ(
-      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
-      controller_interface::return_type::OK);
-
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+
+    command_itfs_.clear();
     command_itfs_.reserve(command_values_.size());
     command_ifs.reserve(command_values_.size());
 
@@ -134,7 +132,7 @@ protected:
       command_ifs.emplace_back(command_itfs_.back());
     }
 
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+    state_itfs_.clear();
     state_itfs_.reserve(state_values_.size());
     state_ifs.reserve(state_values_.size());
 
@@ -149,88 +147,50 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  void subscribe_and_get_messages(ControllerStateMsg & msg)
-  {
-    // create a new subscriber
-    rclcpp::Node test_subscription_node("test_subscription_node");
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr) {};
-    auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_motion_primitives_forward_controller/state", 10, subs_callback);
-
-    // call update to publish the test value
-    ASSERT_EQ(
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
-
-    // call update to publish the test value
-    // since update doesn't guarantee a published message, republish until received
-    int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-    rclcpp::WaitSet wait_set;          // block used to wait on message
-    wait_set.add_subscription(subscription);
-    while (max_sub_check_loop_count--)
-    {
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-      // check if message has been received
-      if (wait_set.wait(std::chrono::milliseconds(2)).kind() == rclcpp::WaitResultKind::Ready)
-      {
-        break;
-      }
-    }
-    ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-                                              "controller/broadcaster update loop";
-
-    // take message from subscription
-    rclcpp::MessageInfo msg_info;
-    ASSERT_TRUE(subscription->take(msg, msg_info));
-  }
-
-  void publish_commands(
+  void send_single_motion_sequence_goal(
     const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
     double velocity = 0.7, double acceleration = 1.0, double move_time = 2.0,
     double blend_radius = 3.0)
   {
-    std::cout << "Publishing command message ..." << std::endl;
-    auto wait_for_topic = [&](const auto topic_name)
+    std::cout << "Send motion sequence goal..." << std::endl;
+
+    if (!action_client_->wait_for_action_server(std::chrono::seconds(5)))
     {
-      size_t wait_count = 0;
-      while (command_publisher_node_->count_subscribers(topic_name) == 0)
-      {
-        if (wait_count >= 5)
-        {
-          auto error_msg =
-            std::string("publishing to ") + topic_name + " but no node subscribes to it";
-          throw std::runtime_error(error_msg);
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        ++wait_count;
-      }
-      std::cout << "Found subscriber for topic: " << topic_name << std::endl;
-    };
+      throw std::runtime_error("Action server not available");
+    }
 
-    auto topic_name = command_publisher_->get_topic_name();
-    std::cout << "Waiting for subscriber on topic: " << topic_name << std::endl;
-    wait_for_topic(topic_name);
+    auto goal_msg = ExecuteMotion::Goal();
+    MotionPrimitive primitive;
+    primitive.type = MotionType::LINEAR_JOINT;
+    primitive.joint_positions = joint_positions;
+    primitive.blend_radius = blend_radius;
 
-    ControllerReferenceMsg msg;
+    primitive.additional_arguments.resize(3);
+    primitive.additional_arguments[0].argument_name = "velocity";
+    primitive.additional_arguments[0].argument_value = velocity;
+    primitive.additional_arguments[1].argument_name = "acceleration";
+    primitive.additional_arguments[1].argument_value = acceleration;
+    primitive.additional_arguments[2].argument_name = "move_time";
+    primitive.additional_arguments[2].argument_value = move_time;
 
-    // TODO(mathias31415): Add other tests for other motion types
-    msg.type = MotionType::LINEAR_JOINT;
-    msg.joint_positions = joint_positions;
-    msg.blend_radius = blend_radius;
+    goal_msg.trajectory.motions.push_back(primitive);
 
-    msg.additional_arguments.resize(3);
-    msg.additional_arguments[0].argument_name = "velocity";
-    msg.additional_arguments[0].argument_value = velocity;
-    msg.additional_arguments[1].argument_name = "acceleration";
-    msg.additional_arguments[1].argument_value = acceleration;
-    msg.additional_arguments[2].argument_name = "move_time";
-    msg.additional_arguments[2].argument_value = move_time;
+    auto goal_future = action_client_->async_send_goal(goal_msg);
 
-    command_publisher_->publish(msg);
+    if (goal_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+    {
+      throw std::runtime_error("Failed to send goal (future timeout)");
+    }
+
+    auto goal_handle = goal_future.get();
+    if (!goal_handle)
+    {
+      throw std::runtime_error("Goal was rejected by the action server");
+    }
+
+    std::cout << "Goal accepted by the action server." << std::endl;
   }
 
-protected:
-  // Controller-related parameters
   std::vector<std::string> command_interface_names_ = {
     "motion_type", "q1",           "q2",         "q3",           "q4",
     "q5",          "q6",           "pos_x",      "pos_y",        "pos_z",
@@ -250,11 +210,11 @@ protected:
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
-  // Test related parameters
   std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
-  rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
-  rclcpp::Node::SharedPtr service_caller_node_;
+  rclcpp_action::Client<ExecuteMotion>::SharedPtr action_client_;
+  rclcpp::Node::SharedPtr node_;
+  std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
+  std::thread executor_thread_;
 };
 
 #endif  // TEST_MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
