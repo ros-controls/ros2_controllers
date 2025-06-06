@@ -16,24 +16,7 @@ bicycle_steering_controller:
       default_value: 0.0,
       description: "Traction wheel radius.",
       read_only: false,
-      # TODO(anyone): activate validation if front/rear wheel radius is removed
-      # validation: {
-      #   gt<>: [0.0]
-      # }
-    }
-
-  front_wheel_radius:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "DEPRECATED: Use 'traction_wheel_radius'",
-      read_only: true,
-    }
-
-  rear_wheel_radius:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "DEPRECATED: Use 'traction_wheel_radius'",
-      read_only: true,
+      validation: {
+        gt<>: [0.0]
+      }
     }
