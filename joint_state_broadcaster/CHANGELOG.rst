@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix JSB+GPIO CMakeLists and dependencies (backport `#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_) (`#1707 <https://github.com/ros-controls/ros2_controllers/issues/1707>`_)
+* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
+* Contributors: mergify[bot]
+
 4.25.0 (2025-05-17)
 -------------------
 

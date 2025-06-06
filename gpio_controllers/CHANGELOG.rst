@@ -2,6 +2,13 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing github_url to rst files (backport `#1717 <https://github.com/ros-controls/ros2_controllers/issues/1717>`_) (`#1719 <https://github.com/ros-controls/ros2_controllers/issues/1719>`_)
+* Fix JSB+GPIO CMakeLists and dependencies (backport `#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_) (`#1707 <https://github.com/ros-controls/ros2_controllers/issues/1707>`_)
+* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
+* Contributors: mergify[bot]
+
 4.25.0 (2025-05-17)
 -------------------
 
