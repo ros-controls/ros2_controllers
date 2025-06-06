@@ -76,12 +76,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
       semantic_components::ForceTorqueSensor(params_.sensor_name));
-
-    // TODO(juliaj): remove the logging after resolving
-    // https://github.com/ros-controls/ros2_controllers/issues/1574
-    RCLCPP_INFO(
-      get_node()->get_logger(), "Initialized force_torque_sensor with sensor name %s",
-      params_.sensor_name.c_str());
   }
   else
   {
@@ -91,14 +85,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       semantic_components::ForceTorqueSensor(
         force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
         torque_names.z));
-
-    // TODO(juliaj): remove the logging after resolving
-    // https://github.com/ros-controls/ros2_controllers/issues/1574
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "Initialized force_torque_sensor with interface names %s, %s, %s, %s, %s, %s",
-      force_names.x.c_str(), force_names.y.c_str(), force_names.z.c_str(), torque_names.x.c_str(),
-      torque_names.y.c_str(), torque_names.z.c_str());
   }
 
   try
@@ -116,19 +102,11 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // TODO(juliaj): remove the logging after resolving
-  // https://github.com/ros-controls/ros2_controllers/issues/1574
-  RCLCPP_INFO(get_node()->get_logger(), "Locking realtime publisher");
   realtime_publisher_->lock();
-  RCLCPP_INFO(get_node()->get_logger(), "Locked realtime publisher");
-
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-
-  RCLCPP_INFO(get_node()->get_logger(), "Unlocking realtime publisher");
   realtime_publisher_->unlock();
-  RCLCPP_INFO(get_node()->get_logger(), "Unlocked realtime publisher");
 
-  RCLCPP_INFO(get_node()->get_logger(), "Configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
