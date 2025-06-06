@@ -2,8 +2,8 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.26.0 (2025-06-06)
+-------------------
 * Remove CMAKE_CXX_STANDARD (backport `#1704 <https://github.com/ros-controls/ros2_controllers/issues/1704>`_) (`#1706 <https://github.com/ros-controls/ros2_controllers/issues/1706>`_)
 * Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
 * Contributors: mergify[bot]
