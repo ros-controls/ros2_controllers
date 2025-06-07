@@ -2,6 +2,11 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing github_url to rst files (backport `#1717 <https://github.com/ros-controls/ros2_controllers/issues/1717>`_) (`#1718 <https://github.com/ros-controls/ros2_controllers/issues/1718>`_)
+* Contributors: mergify[bot]
+
 2.46.0 (2025-05-17)
 -------------------
 * Simplify `on_set_chained_mode` avoiding cpplint warnings (backport `#1564 <https://github.com/ros-controls/ros2_controllers/issues/1564>`_) (`#1687 <https://github.com/ros-controls/ros2_controllers/issues/1687>`_)
