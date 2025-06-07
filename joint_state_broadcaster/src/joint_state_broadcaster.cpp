@@ -181,6 +181,14 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   joint_state_msg.velocity.reserve(max_joints_size);
   joint_state_msg.effort.reserve(max_joints_size);
 
+  frame_id_ = params_.frame_id;
+  if (frame_id_.empty())
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Frame ID is not set.");
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -313,6 +321,7 @@ void JointStateBroadcaster::init_joint_state_msg()
 
   // default initialization for joint state message
   auto & joint_state_msg = realtime_joint_state_publisher_->msg_;
+  joint_state_msg.header.frame_id = frame_id_;
   joint_state_msg.name = joint_names_;
   joint_state_msg.position.resize(num_joints, kUninitializedValue);
   joint_state_msg.velocity.resize(num_joints, kUninitializedValue);
@@ -346,6 +355,7 @@ void JointStateBroadcaster::init_joint_state_msg()
 void JointStateBroadcaster::init_dynamic_joint_state_msg()
 {
   auto & dynamic_joint_state_msg = realtime_dynamic_joint_state_publisher_->msg_;
+  dynamic_joint_state_msg.header.frame_id = frame_id_;
   dynamic_joint_state_msg.joint_names.clear();
   dynamic_joint_state_msg.interface_values.clear();
   for (const auto & name_ifv : name_if_value_mapping_)
