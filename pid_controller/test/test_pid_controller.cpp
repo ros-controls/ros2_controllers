@@ -346,6 +346,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
 
   controller_->set_reference(dof_command_values_);
 
+  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
   controller_->feedforward_mode_enabled_ = true;
   EXPECT_EQ(controller_->feedforward_mode_enabled_, true);
 
@@ -586,6 +587,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
+  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check on interfaces & pid gain parameters
