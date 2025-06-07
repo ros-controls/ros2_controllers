@@ -184,9 +184,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   frame_id_ = params_.frame_id;
   if (frame_id_.empty())
   {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Frame ID is not set.");
+    RCLCPP_WARN(get_node()->get_logger(), "Frame ID is not set.");
   }
 
   return CallbackReturn::SUCCESS;
