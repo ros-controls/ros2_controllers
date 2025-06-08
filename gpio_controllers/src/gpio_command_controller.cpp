@@ -359,7 +359,7 @@ void GpioCommandController::apply_command(
     if (!command_interfaces_map_.at(full_command_interface_name).get().set_value(command_value))
     {
       RCLCPP_WARN(
-        get_node()->get_logger(), "Error while setting command for interface '%s' with value '%f'.",
+        get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
         full_command_interface_name.c_str(), command_value);
     }
   }
