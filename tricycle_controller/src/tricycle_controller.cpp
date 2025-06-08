@@ -226,7 +226,7 @@ controller_interface::return_type TricycleController::update(
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "Error while setting velocity command for traction joint to value: '%f'.", Ws_write);
+      "Unable to set the velocity command for traction joint to value: '%f'.", Ws_write);
   }
   if (!steering_joint_[0].position_command.get().set_value(alpha_write))
   {
