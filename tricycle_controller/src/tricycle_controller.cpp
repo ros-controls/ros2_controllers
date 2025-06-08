@@ -232,7 +232,7 @@ controller_interface::return_type TricycleController::update(
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "Error while setting position command for steering joint to value: '%f'.", alpha_write);
+      "Unable to set the position command for steering joint to value: '%f'.", alpha_write);
   }
   return controller_interface::return_type::OK;
 }
