@@ -88,7 +88,7 @@ controller_interface::return_type GripperActionController::update(
     !speed_interface_->get().set_value(command_struct_rt_.max_velocity_))
   {
     RCLCPP_WARN(
-      logger, "Error while setting speed command to: %f", command_struct_rt_.max_velocity_);
+      logger, "Unable to set the speed command to: %f", command_struct_rt_.max_velocity_);
 
     return controller_interface::return_type::OK;
   }
