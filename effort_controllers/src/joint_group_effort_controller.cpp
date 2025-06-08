@@ -60,9 +60,9 @@ controller_interface::CallbackReturn JointGroupEffortController::on_deactivate(
   {
     if (!command_interface.set_value(0.0))
     {
-      RCLCPP_WARN(get_node()->get_logger(), "Error while setting command interface value to 0.0");
+      RCLCPP_ERROR(get_node()->get_logger(), "Unable to set command interface value to 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
     }
-    return controller_interface::CallbackReturn::SUCCESS;
   }
 
   return ret;
