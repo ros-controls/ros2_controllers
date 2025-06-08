@@ -148,8 +148,6 @@ controller_interface::return_type ForwardControllersBase::update(
         data[index]);
       return controller_interface::return_type::OK;
     }
-
-    return controller_interface::return_type::OK;
   }
 
   return controller_interface::return_type::OK;
