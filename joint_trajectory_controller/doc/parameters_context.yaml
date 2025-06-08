@@ -2,22 +2,33 @@ constraints:
     Default values for tolerances if no explicit values are set in the ``JointTrajectory`` message.
 
 gains: |
-  The parameters are used to configure the PID loop for the ``velocity`` or ``effort`` only command interface.
+  The parameters are used to configure PID loops for the ``velocity`` or ``effort``-only command interfaces. This structure contains the controller gains for every joint with following the control laws
 
-  If ``velocity`` is the only command interface, PID controllers are used for every joint.
-  This structure contains the controller gains for every joint with the control law
+  * If ``velocity`` is the only command interface:    
 
-  .. math:: u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
+    .. math::
+    
+      u = k_{ff} v_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+    with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+    the controller period :math:`dt`, and the ``velocity`` manipulated variable (control variable) :math:`u`, respectively.
   the controller period :math:`dt`, and the ``velocity`` manipulated variable (control variable) :math:`u`, respectively.
 
-  If ``effort`` is the only command interface, PID controllers are used for every joint. Following control law is applied:
+  * If ``effort`` is the only command interface:
 
-  .. math:: u = (k_{ff} v_d + effort_d) + k_p e + k_i \sum e dt + k_d (v_d - v)
+    .. math::
+    
+      u = k_{ff} v_d + \delta_d + k_p e + k_i \sum e dt + k_d (v_d - v)
 
-  with the desired velocity :math:`v_d`, the desired effort :math:`effort_d` if it is provided in the trajectory or 0 if not, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
-  the controller period :math:`dt`, and the ``effort`` manipulated variable (control variable) :math:`u`, respectively.
+    with the desired velocity :math:`v_d`, the desired effort :math:`\delta_d` if provided in the trajectory (or 0 otherwise), the measured velocity :math:`v`, the position error :math:`e` (definition see below),
+    the controller period :math:`dt`, and the ``effort`` manipulated variable (control variable) :math:`u`, respectively.
+
+  If the joint is of continuous type, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`,
+  i.e., the shortest rotation to the target position is the desired motion.
+  Otherwise  :math:`e = s_d - s` is used, with the desired position :math:`s_d` and the measured
+  position :math:`s` from the state interface.
+
+  If you want to turn off the PIDs (open loop control), set the feedback gains to zero and an appropriate feed-forward gain :math:`k_{ff}`
 
   If the joint is of continuous type, the position error :math:`e = normalize(s_d - s)` is normalized between :math:`-\pi, \pi`,
   i.e., the shortest rotation to the target position is the desired motion.
