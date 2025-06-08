@@ -65,7 +65,7 @@ controller_interface::return_type GripperActionController::update(
 
   if (!current_position_op.has_value() || !current_velocity_op.has_value())
   {
-    RCLCPP_DEBUG(logger, "Unable to retrieve data of current position or current velocity");
+    RCLCPP_WARN(logger, "Unable to retrieve data of current position or current velocity");
     return controller_interface::return_type::OK;
   }
 
