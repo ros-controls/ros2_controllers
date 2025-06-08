@@ -458,13 +458,13 @@ void TricycleController::halt()
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "Error while setting velocity command for traction joint to value 0.0");
+      "Unable to set the velocity command for traction joint to value 0.0");
   }
   if (!steering_joint_[0].position_command.get().set_value(0.0))
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "Error while setting position command for steering joint to value 0.0");
+      "Unable to set the position command for steering joint to value 0.0");
   }
 }
 
