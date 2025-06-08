@@ -61,7 +61,7 @@ controller_interface::CallbackReturn JointGroupVelocityController::on_deactivate
   {
     if (!command_interface.set_value(0.0))
     {
-      RCLCPP_WARN(get_node()->get_logger(), "Error while setting command interface to value 0.0");
+      RCLCPP_WARN(get_node()->get_logger(), "Unable to set the command interface to value 0.0");
       return controller_interface::CallbackReturn::SUCCESS;
     }
   }
