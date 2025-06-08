@@ -1367,19 +1367,23 @@ void JointTrajectoryController::fill_partial_goal(
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          const auto position_command_value_op =
-            joint_command_interface_[0][index].get().get_optional();
-          if (!position_command_value_op.has_value())
-          {
-            RCLCPP_DEBUG(
-              get_node()->get_logger(),
-              "Unable to retrieve position command value of joint at index %zu", index);
-          }
           if (has_position_command_interface_)
           {
-            // copy last command if cmd interface exists
-            it.positions.push_back(position_command_value_op.has_value());
+            const auto position_command_value_op =
+              joint_command_interface_[0][index].get().get_optional();
+
+            if (!position_command_value_op.has_value())
+            {
+              RCLCPP_DEBUG(
+                get_node()->get_logger(),
+                "Unable to retrieve position command value of joint at index %zu", index);
+            }
+            else if (!std::isnan(position_command_value_op.value()))
+            {
+              it.positions.push_back(position_command_value_op.value());
+            }
           }
+
           else if (has_position_state_interface_)
           {
             // copy current state if state interface exists
@@ -1391,7 +1395,10 @@ void JointTrajectoryController::fill_partial_goal(
                 get_node()->get_logger(),
                 "Unable to retrieve position state value of joint at index %zu", index);
             }
-            it.positions.push_back(position_state_value_op.value());
+            else if (!std::isnan(position_state_value_op.value()))
+            {
+              it.positions.push_back(position_state_value_op.value());
+            }
           }
         }
         if (!it.velocities.empty())
