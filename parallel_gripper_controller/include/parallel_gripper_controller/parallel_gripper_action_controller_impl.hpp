@@ -97,7 +97,7 @@ controller_interface::return_type GripperActionController::update(
     !effort_interface_->get().set_value(command_struct_rt_.max_effort_))
   {
     RCLCPP_WARN(
-      logger, "Error while setting effort command to: %f", command_struct_rt_.max_effort_);
+      logger, "Unable to set the effort command to: %f", command_struct_rt_.max_effort_);
     return controller_interface::return_type::OK;
   }
 
