@@ -389,7 +389,7 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
   if (
     !wheel_front_left_state_vel_op.has_value() || !wheel_front_right_state_vel_op.has_value() ||
-    !wheel_rear_right_state_vel_op.has_value() || !wheel_front_left_state_vel_op.has_value())
+    !wheel_rear_right_state_vel_op.has_value() || !wheel_rear_left_state_vel_op.has_value())
   {
     RCLCPP_DEBUG(
       get_node()->get_logger(),
