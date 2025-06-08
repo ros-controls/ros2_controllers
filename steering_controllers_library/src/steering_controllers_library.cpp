@@ -678,7 +678,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       auto linear_velocity_command_interface_op = command_interfaces_[i].get_optional();
       if (!linear_velocity_command_interface_op.has_value())
       {
-        RCLCPP_DEBUG(
+        RCLCPP_WARN(
           logger, "Unable to retrieve linear velocity command for traction wheel %zu", i);
         return controller_interface::return_type::OK;
       }
