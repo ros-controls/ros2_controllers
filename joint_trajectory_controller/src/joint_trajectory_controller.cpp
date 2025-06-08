@@ -1108,7 +1108,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
         return controller_interface::CallbackReturn::SUCCESS;
       }
       if (!joint_command_interface_[0][index].get().set_value(joint_position_value_op.value()))
-        ;
       {
         RCLCPP_WARN(
           logger, "Unable to set the joint position to value: %f",
