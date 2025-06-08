@@ -694,7 +694,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         command_interfaces_[number_of_traction_wheels + i].get_optional();
       if (!state_interface_value_op.has_value() || !command_interface_value_op.has_value())
       {
-        RCLCPP_DEBUG(
+        RCLCPP_WARN(
           logger, "Unable to retrieve %s for steering wheel %zu",
           !state_interface_value_op.has_value() ? "state interface value"
                                                 : "command interface value",
