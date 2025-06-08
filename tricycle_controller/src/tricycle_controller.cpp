@@ -115,7 +115,7 @@ controller_interface::return_type TricycleController::update(
 
   if (!Ws_read_op.has_value() || !alpha_read_op.has_value())
   {
-    RCLCPP_DEBUG(
+    RCLCPP_WARN(
       get_node()->get_logger(),
       "Unable to retrieve the data of traction joint velocity or steering joint position");
     return controller_interface::return_type::OK;
