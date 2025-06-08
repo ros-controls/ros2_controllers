@@ -1111,7 +1111,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
         ;
       {
         RCLCPP_WARN(
-          logger, "Error while setting joint position to value %f",
+          logger, "Unable to set the joint position to value: %f",
           joint_position_value_op.value());
         return controller_interface::CallbackReturn::SUCCESS;
       }
