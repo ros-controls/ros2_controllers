@@ -1104,7 +1104,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
       const auto joint_position_value_op = joint_command_interface_[0][index].get().get_optional();
       if (!joint_position_value_op.has_value())
       {
-        RCLCPP_DEBUG(logger, "Unable to retrieve joint position value");
+        RCLCPP_WARN(logger, "Unable to retrieve joint position value");
         return controller_interface::CallbackReturn::SUCCESS;
       }
       if (!joint_command_interface_[0][index].get().set_value(joint_position_value_op.value()))
