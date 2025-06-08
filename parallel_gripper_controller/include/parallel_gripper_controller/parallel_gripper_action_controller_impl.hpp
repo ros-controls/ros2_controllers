@@ -79,7 +79,7 @@ controller_interface::return_type GripperActionController::update(
   if (!joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_))
   {
     RCLCPP_WARN(
-      logger, "Error while setting joint position command to: %f",
+      logger, "Unable to set the joint position command to: %f",
       command_struct_rt_.position_cmd_);
     return controller_interface::return_type::OK;
   }
