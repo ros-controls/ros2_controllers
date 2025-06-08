@@ -144,7 +144,7 @@ controller_interface::return_type ForwardControllersBase::update(
     if (!command_interfaces_[index].set_value(data[index]))
     {
       RCLCPP_WARN(
-        logger, "Error while setting command interface value at index %zu: value = %f", index,
+        logger, "Unable to set the command interface value at index %zu: value = %f", index,
         data[index]);
       return controller_interface::return_type::OK;
     }
