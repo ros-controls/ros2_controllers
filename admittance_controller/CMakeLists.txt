@@ -57,6 +57,7 @@ target_link_libraries(admittance_controller PUBLIC
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       angles::angles
+                      filters::filter_chain
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       tf2::tf2
