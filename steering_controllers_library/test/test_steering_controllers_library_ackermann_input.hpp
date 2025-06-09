@@ -303,11 +303,13 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  std::vector<std::string> traction_wheels_names_ = {"rear_right_wheel_joint", "rear_left_wheel_joint"};
+  std::vector<std::string> traction_wheels_names_ = {
+    "rear_right_wheel_joint", "rear_left_wheel_joint"};
   std::vector<std::string> steering_wheels_names_ = {
     "front_right_steering_joint", "front_left_steering_joint"};
   std::vector<std::string> joint_names_ = {
-    traction_wheels_names_[0], traction_wheels_names_[1], steering_wheels_names_[0], steering_wheels_names_[1]};
+    traction_wheels_names_[0], traction_wheels_names_[1], steering_wheels_names_[0],
+    steering_wheels_names_[1]};
 
   std::vector<std::string> rear_wheels_preceeding_names_ = {
     "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};

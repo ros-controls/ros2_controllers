@@ -129,6 +129,16 @@ public:
   size_t get_rear_right_wheel_index() { return WheelIndex::REAR_RIGHT; }
 
   size_t get_rear_left_wheel_index() { return WheelIndex::REAR_LEFT; }
+
+  /**
+   * @brief Used to get the odometry message to verify its contents
+   *
+   * @return Copy of odometry msg from rt_odom_state_publisher_ object
+   */
+  nav_msgs::msg::Odometry get_rt_odom_state_publisher_msg()
+  {
+    return rt_odom_state_publisher_->msg_;
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -161,12 +171,14 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_mecanum_drive_controller")
+  void SetUpController(
+    const std::string controller_name = "test_mecanum_drive_controller",
+    const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
   {
     const auto urdf = "";
-    const auto ns = "";
+
     ASSERT_EQ(
-      controller_->init(controller_name, urdf, 0, ns, controller_->define_custom_node_options()),
+      controller_->init(controller_name, urdf, 0, ns, node_options),
       controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;

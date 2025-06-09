@@ -58,5 +58,5 @@ The order of the joints in the message can determined by 3 different parameter s
 
     If any of the combinations of the defined ``joints`` parameter and ``interfaces`` parameter are not in the available state interfaces, the controller will fail to activate.
 
-..note::
+.. note::
     If the ``extra_joints`` parameter is set, the joints in the ``extra_joints`` parameter are appended to the end of the joint names in the message.
