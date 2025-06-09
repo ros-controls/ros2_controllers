@@ -1,4 +1,4 @@
-name: RHEL Rolling Semi-Binary Build
+name: Rolling - RHEL Semi-Binary Build
 on:
   workflow_dispatch:
   pull_request:
@@ -14,10 +14,11 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
+      - 'ros2_controllers.kilted.repos'
       - '**.xml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
-    - cron: '03 1 * * *'
+    - cron: '03 1 * * MON-FRI'
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on master branch
@@ -25,10 +26,14 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, '/refs/heads') }}
 
 jobs:
-  rolling_rhel:
+  rhel_semi_binary_build:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-rhel-binary-build.yml@master
+    strategy:
+      fail-fast: false
+      matrix:
+        ROS_DISTRO: [kilted, rolling]
     with:
-      ros_distro: rolling
-      upstream_workspace: ros2_controllers.rolling.repos
+      ros_distro: ${{ matrix.ROS_DISTRO }}
+      upstream_workspace: ros2_controllers.${{ matrix.ROS_DISTRO }}.repos
       ref_for_scheduled_build: master
       skip_packages: rqt_joint_trajectory_controller

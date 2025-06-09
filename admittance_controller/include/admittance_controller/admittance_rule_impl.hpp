@@ -110,9 +110,6 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
 
-  // reset transforms and rotations
-  admittance_transforms_ = AdmittanceTransforms();
-
   // reset forces
   wrench_base_.setZero();
 
@@ -143,27 +140,6 @@ void AdmittanceRule::apply_parameters_update()
   }
 }
 
-bool AdmittanceRule::get_all_transforms(
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-  const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state)
-{
-  // get reference transforms
-  bool success = kinematics_->calculate_link_transform(
-    reference_joint_state.positions, parameters_.ft_sensor.frame.id,
-    admittance_transforms_.ref_base_ft_);
-
-  // get transforms at current configuration
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.ft_sensor.frame.id, admittance_transforms_.base_ft_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.kinematics.tip, admittance_transforms_.base_tip_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.control.frame.id,
-    admittance_transforms_.base_control_);
-
-  return success;
-}
-
 // Update from reference joint states
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -171,6 +147,7 @@ controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
+  // duration & live-parameter refresh
   const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
@@ -178,7 +155,24 @@ controller_interface::return_type AdmittanceRule::update(
     apply_parameters_update();
   }
 
-  bool success = get_all_transforms(current_joint_state, reference_joint_state);
+  bool success = true;
+
+  // Reusable transform variable
+  Eigen::Isometry3d tf;
+
+  // --- FT sensor frame to base frame (translation + rotation) ---
+  success &= kinematics_->calculate_link_transform(
+    reference_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
+  admittance_state_.ref_trans_base_ft = tf;
+
+  // --- control/base frame to base frame (rotation only) ---
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.control.frame.id, tf);
+  admittance_state_.rot_base_control = tf.rotation();
+
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
+  const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
 
   // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
   if (!process_wrench_measurements(measured_wrench))
@@ -196,26 +190,24 @@ controller_interface::return_type AdmittanceRule::update(
 
   // Rotate (and not transform) to the base frame, explanation lower
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
-    admittance_transforms_.base_ft_.rotation() * wrench_filtered_ft_.block<3, 1>(0, 0);
+    rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(0, 0);
   admittance_state_.wrench_base.block<3, 1>(3, 0) =
-    admittance_transforms_.base_ft_.rotation() * wrench_filtered_ft_.block<3, 1>(3, 0);
+    rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(3, 0);
 
-  // Compute admittance control law
+  // populate current joint positions in the state
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
-  admittance_state_.rot_base_control = admittance_transforms_.base_control_.rotation();
-  admittance_state_.ref_trans_base_ft = admittance_transforms_.ref_base_ft_;
-  admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
-  success &= calculate_admittance_rule(admittance_state_, dt);
 
-  // if a failure occurred during any kinematics interface calls, return an error and don't
-  // modify the desired reference
+  admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
+
+  // compute admittance dynamics
+  success &= calculate_admittance_rule(admittance_state_, dt);
   if (!success)
   {
     desired_joint_state = reference_joint_state;
     return controller_interface::return_type::ERROR;
   }
 
-  // update joint desired joint state
+  // Update final desired_joint_state using the computed transforms
   for (size_t i = 0; i < num_joints_; ++i)
   {
     auto idx = static_cast<Eigen::Index>(i);

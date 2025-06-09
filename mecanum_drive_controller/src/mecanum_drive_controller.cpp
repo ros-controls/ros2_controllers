@@ -22,7 +22,7 @@
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "tf2/transform_datatypes.h"
+#include "tf2/transform_datatypes.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace
@@ -148,10 +148,31 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // Append the tf prefix if there is one
+  std::string tf_prefix = "";
+  if (params_.tf_frame_prefix_enable)
+  {
+    tf_prefix = params_.tf_frame_prefix != "" ? params_.tf_frame_prefix
+                                              : std::string(get_node()->get_namespace());
+
+    // Make sure prefix does not start with '/' and always ends with '/'
+    if (tf_prefix.back() != '/')
+    {
+      tf_prefix = tf_prefix + "/";
+    }
+    if (tf_prefix.front() == '/')
+    {
+      tf_prefix.erase(0, 1);
+    }
+  }
+
+  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const auto base_frame_id = tf_prefix + params_.base_frame_id;
+
   rt_odom_state_publisher_->lock();
   rt_odom_state_publisher_->msg_.header.stamp = get_node()->now();
-  rt_odom_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
+  rt_odom_state_publisher_->msg_.header.frame_id = odom_frame_id;
+  rt_odom_state_publisher_->msg_.child_frame_id = base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
   auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
@@ -182,8 +203,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   rt_tf_odom_state_publisher_->lock();
   rt_tf_odom_state_publisher_->msg_.transforms.resize(1);
   rt_tf_odom_state_publisher_->msg_.transforms[0].header.stamp = get_node()->now();
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = params_.odom_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = params_.base_frame_id;
+  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = odom_frame_id;
+  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = base_frame_id;
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
@@ -207,7 +228,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
-  controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
+  controller_state_publisher_->msg_.header.frame_id = odom_frame_id;
   controller_state_publisher_->unlock();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
@@ -298,11 +319,7 @@ MecanumDriveController::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool MecanumDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)

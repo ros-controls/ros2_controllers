@@ -48,10 +48,26 @@ target_include_directories(admittance_controller PUBLIC
   $<INSTALL_INTERFACE:include/admittance_controller>
 )
 target_link_libraries(admittance_controller PUBLIC
-  admittance_controller_parameters
-  Eigen3::Eigen
-)
-ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      admittance_controller_parameters
+                      Eigen3::Eigen
+                      control_toolbox::control_toolbox
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      kinematics_interface::kinematics_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      angles::angles
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      tf2::tf2
+                      tf2_eigen::tf2_eigen
+                      tf2_geometry_msgs::tf2_geometry_msgs
+                      tf2_kdl::tf2_kdl
+                      tf2_ros::tf2_ros
+                      ${geometry_msgs_TARGETS}
+                      ${trajectory_msgs_TARGETS}
+                      ${control_msgs_TARGETS}
+                      ${tf2_geometry_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
@@ -66,10 +82,10 @@ if(BUILD_TESTING)
   # test loading admittance controller
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_admittance_controller test/test_load_admittance_controller.cpp)
-  ament_target_dependencies(test_load_admittance_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_admittance_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   # test admittance controller function
@@ -77,13 +93,9 @@ if(BUILD_TESTING)
     test/test_admittance_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_params.yaml
   )
-  target_link_libraries(test_admittance_controller admittance_controller)
-  ament_target_dependencies(test_admittance_controller
-    control_msgs
-    controller_interface
-    hardware_interface
-    ros2_control_test_assets
-  )
+  target_link_libraries(test_admittance_controller
+    admittance_controller
+    ros2_control_test_assets::ros2_control_test_assets)
 endif()
 
 install(

@@ -34,21 +34,6 @@
 
 namespace admittance_controller
 {
-struct AdmittanceTransforms
-{
-  // transformation from force torque sensor frame to base link frame at reference joint angles
-  Eigen::Isometry3d ref_base_ft_;
-  // transformation from force torque sensor frame to base link frame at reference + admittance
-  // offset joint angles
-  Eigen::Isometry3d base_ft_;
-  // transformation from control frame to base link frame at reference + admittance offset joint
-  // angles
-  Eigen::Isometry3d base_control_;
-  // transformation from end effector frame to base link frame at reference + admittance offset
-  // joint angles
-  Eigen::Isometry3d base_tip_;
-};
-
 struct AdmittanceState
 {
   explicit AdmittanceState(size_t num_joints)
@@ -109,18 +94,6 @@ public:
   controller_interface::return_type reset(const size_t num_joints);
 
   /**
-   * Calculate all transforms needed for admittance control using the loader kinematics plugin. If
-   * the transform does not exist in the kinematics model, then TF will be used for lookup. The
-   * return value is true if all transformation are calculated without an error
-   * \param[in] current_joint_state current joint state of the robot
-   * \param[in] reference_joint_state input joint state reference
-   * \param[out] success true if no calls to the kinematics interface fail
-   */
-  bool get_all_transforms(
-    const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-    const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state);
-
-  /**
    * Updates parameter_ struct if any parameters have changed since last update. Parameter dependent
    * Eigen field members (end_effector_weight_, cog_pos_, mass_, mass_inv_ stiffness, selected_axes,
    * damping_) are also updated
@@ -130,6 +103,10 @@ public:
   /**
    * Calculate 'desired joint states' based on the 'measured force', 'reference joint state', and
    * 'current_joint_state'.
+   *
+   * All transforms (e.g., world to base, sensor to base, CoG to base) are now computed
+   * directly in this function and stored in `admittance_state_`, removing the
+   * need for an intermediate transform struct.
    *
    * \param[in] current_joint_state current joint state of the robot
    * \param[in] measured_wrench most recent measured wrench from force torque sensor
@@ -202,9 +179,6 @@ protected:
 
   // admittance controllers internal state
   AdmittanceState admittance_state_{0};
-
-  // transforms needed for admittance update
-  AdmittanceTransforms admittance_transforms_;
 
   // ROS
   control_msgs::msg::AdmittanceControllerState state_message_;
