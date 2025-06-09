@@ -592,6 +592,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         RCLCPP_WARN(
           logger, "Failed to set traction command %.3f for interface '%s' (index %zu).", value,
           command_interfaces_[i].get_name().c_str(), i);
+
+        return controller_interface::return_type::OK;
       }
     }
     for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
@@ -603,6 +605,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         RCLCPP_WARN(
           logger, "Failed to set steering command %.3f for interface '%s' (index %zu).", value,
           command_interfaces_[i].get_name().c_str(), i);
+
+        return controller_interface::return_type::OK;
       }
     }
   }
@@ -678,8 +682,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       auto linear_velocity_command_interface_op = command_interfaces_[i].get_optional();
       if (!linear_velocity_command_interface_op.has_value())
       {
-        RCLCPP_WARN(
-          logger, "Unable to retrieve linear velocity command for traction wheel %zu", i);
+        RCLCPP_WARN(logger, "Unable to retrieve linear velocity command for traction wheel %zu", i);
         return controller_interface::return_type::OK;
       }
       controller_state_publisher_->msg_.linear_velocity_command.push_back(
