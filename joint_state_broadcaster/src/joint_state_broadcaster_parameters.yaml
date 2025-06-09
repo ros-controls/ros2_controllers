@@ -42,6 +42,5 @@ joint_state_broadcaster:
   frame_id: {
     type: string,
     default_value: "base_link",
-    read_only: true,
     description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
   }
