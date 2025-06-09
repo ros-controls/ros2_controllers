@@ -531,6 +531,23 @@ controller_interface::return_type PidController::update_and_write_commands(
       }
 
       double error = reference_interfaces_[i] - measured_state_values_[i];
+
+      const auto zero_threshold = params_.gains.dof_names_map[params_.dof_names[i]].zero_threshold;
+      if (std::abs(reference_interfaces_[i]) < zero_threshold && std::abs(error) < zero_threshold)
+      {
+        reset_pid_time_ += period.seconds();
+        if (
+          reset_pid_time_ >
+          params_.gains.dof_names_map[params_.dof_names[i]].zero_threshold_duration)
+        {
+          pids_[i]->reset();
+        }
+      }
+      else
+      {
+        reset_pid_time_ = 0.0;
+      }
+
       if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
       {
         // for continuous angles the error is normalized between -pi<error<pi
