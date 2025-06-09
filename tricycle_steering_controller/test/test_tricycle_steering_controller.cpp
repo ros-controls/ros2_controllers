@@ -39,7 +39,7 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->params_.position_feedback, position_feedback_);
   ASSERT_EQ(controller_->tricycle_params_.wheelbase, wheelbase_);
   ASSERT_EQ(controller_->tricycle_params_.traction_wheels_radius, traction_wheels_radius_);
-  ASSERT_EQ(controller_->tricycle_params_.wheel_track, wheel_track_);
+  ASSERT_EQ(controller_->tricycle_params_.traction_track_width, traction_track_width_);
 }
 
 TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
@@ -235,8 +235,8 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_RIGHT_WHEEL], 1.1);
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_LEFT_WHEEL], 3.3);
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 1.1);
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 3.3);
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands();
@@ -261,9 +261,9 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    msg.linear_velocity_command[STATE_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+    msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    msg.linear_velocity_command[STATE_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+    msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 
