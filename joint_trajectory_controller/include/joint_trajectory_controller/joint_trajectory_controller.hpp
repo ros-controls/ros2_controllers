@@ -155,7 +155,7 @@ protected:
   // True if holding position or repeating last trajectory point in case of success
   std::atomic<bool> rt_is_holding_{false};
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
-  bool subscriber_is_active_ = false;
+  std::atomic<bool> subscriber_is_active_{false};
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
 
