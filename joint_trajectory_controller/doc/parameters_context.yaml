@@ -12,7 +12,6 @@ gains: |
 
     with the desired velocity :math:`v_d`, the measured velocity :math:`v`, the position error :math:`e` (definition see below),
     the controller period :math:`dt`, and the ``velocity`` manipulated variable (control variable) :math:`u`, respectively.
-  the controller period :math:`dt`, and the ``velocity`` manipulated variable (control variable) :math:`u`, respectively.
 
   * If ``effort`` is the only command interface:
 
