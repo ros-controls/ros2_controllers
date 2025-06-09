@@ -28,11 +28,11 @@
 #include "realtime_tools/realtime_publisher.hpp"
 
 // TODO(anyone): Replace with controller specific messages
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 
 #include "steering_controllers_library/steering_controllers_library_parameters.hpp"
 #include "steering_controllers_library/steering_odometry.hpp"

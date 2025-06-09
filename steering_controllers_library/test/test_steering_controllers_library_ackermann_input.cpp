@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "test_steering_controllers_library_ackermann.hpp"
+#include "test_steering_controllers_library_ackermann_input.hpp"
 
 class SteeringControllersLibraryTest
 : public SteeringControllersLibraryFixture<TestableSteeringControllersLibrary>
@@ -36,16 +36,16 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
-    rear_wheels_names_[0] + "/" + traction_interface_name_);
+    traction_wheels_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
-    rear_wheels_names_[1] + "/" + traction_interface_name_);
+    traction_wheels_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_RIGHT_WHEEL],
-    front_wheels_names_[0] + "/" + steering_interface_name_);
+    steering_wheels_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_LEFT_WHEEL],
-    front_wheels_names_[1] + "/" + steering_interface_name_);
+    steering_wheels_names_[1] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();

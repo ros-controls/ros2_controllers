@@ -136,10 +136,10 @@ public:
    * \param v_bx  Linear velocity   [m/s]
    * \param omega_bz Angular velocity [rad/s]
    * \param dt      time difference to last call
-   * \param twist_input If true, the input is twist, otherwise it is steering angle
+   * \param use_twist_input If true, the input is twist, otherwise it is steering angle
    */
   void update_open_loop(
-    const double v_bx, const double omega_bz, const double dt, const bool twist_input = true);
+    const double v_bx, const double omega_bz, const double dt, const bool use_twist_input = true);
 
   /**
    * \brief Set odometry type
@@ -208,13 +208,14 @@ public:
    * \param omega_bz Desired angular velocity of the robot around x_z-axis
    * \param open_loop If false, the IK will be calculated using measured steering angle
    * \param reduce_wheel_speed_until_steering_reached Reduce wheel speed until the steering angle
-   * \param twist_input If true, the input is twist, otherwise it is steering angle
+   * \param use_twist_input If true, the input is twist, otherwise it is steering angle
    * has been reached
    * \return Tuple of velocity commands and steering commands
    */
   std::tuple<std::vector<double>, std::vector<double>> get_commands(
     const double v_bx, const double omega_bz, const bool open_loop = true,
-    const bool reduce_wheel_speed_until_steering_reached = false, const bool twist_input = true);
+    const bool reduce_wheel_speed_until_steering_reached = false,
+    const bool use_twist_input = true);
 
   /**
    *  \brief Reset poses, heading, and accumulators

@@ -344,7 +344,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
 
-  if (params_.twist_input)
+  if (params_.use_twist_input)
   {
     ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
       "~/reference", subscribers_qos,
@@ -565,8 +565,8 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   reference_interfaces.push_back(
     hardware_interface::CommandInterface(
       get_node()->get_name() + std::string("/angular"),
-      (params_.twist_input ? hardware_interface::HW_IF_VELOCITY
-                           : hardware_interface::HW_IF_POSITION),
+      (params_.use_twist_input ? hardware_interface::HW_IF_VELOCITY
+                               : hardware_interface::HW_IF_POSITION),
       &reference_interfaces_[1]));
 
   return reference_interfaces;
@@ -578,7 +578,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set default value in command
-  if (params_.twist_input)
+  if (params_.use_twist_input)
   {
     reset_controller_reference_msg(*(input_ref_twist_.readFromRT()), get_node());
   }
@@ -603,7 +603,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  if (params_.twist_input)
+  if (params_.use_twist_input)
   {
     auto current_ref = *(input_ref_twist_.readFromRT());
     if (!std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.angular.z))
@@ -638,8 +638,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
     const auto age_of_last_command =
-      params_.twist_input ? time - (*(input_ref_twist_.readFromRT()))->header.stamp
-                          : time - (*(input_ref_ackermann_.readFromRT()))->header.stamp;
+      params_.use_twist_input ? time - (*(input_ref_twist_.readFromRT()))->header.stamp
+                              : time - (*(input_ref_ackermann_.readFromRT()))->header.stamp;
 
     const auto timeout =
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
@@ -650,7 +650,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
-      params_.reduce_wheel_speed_until_steering_reached, params_.twist_input);
+      params_.reduce_wheel_speed_until_steering_reached, params_.use_twist_input);
 
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
