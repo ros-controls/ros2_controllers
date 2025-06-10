@@ -30,9 +30,9 @@ This means that the joints can have one or more command interfaces, where the fo
 
 * For command interfaces ``position``, the desired positions are simply forwarded to the joints,
 * For command interfaces ``acceleration``, desired accelerations are simply forwarded to the joints.
-* For ``velocity`` (``effort``) command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` (``effort``) commands through a PID loop if it is configured (:ref:`parameters`).
-* For ``effort`` command interface (without ``position`` command interface), if the trajectory contains effort, this will be added to the PID commands as a feed forward effort.
-* For ``position, effort`` command interface, if the trajectory contains effort, this will be passed directly to the ``effort`` interface (PID won't be used) while the positions will be passed to the ``position`` interface.
+* For ``velocity`` command interfaces, the position+velocity trajectory following error is mapped to ``velocity`` commands through a PID loop if it is configured (:ref:`parameters`).
+* For ``effort`` command interface (without ``position`` command interface), the position+velocity trajectory following error is mapped to ``effort`` commands through a PID loop if it is configured (:ref:`parameters`). In addition, it adds trajectory's effort as feedforward effort to the PID output.
+* For ``position, effort`` command interface, PID loop is not used. If the trajectory contains effort, its value will be passed directly to the ``effort`` interface while the desired positions will be forwarded to the ``position`` interface. This could be useful for manipulation tasks where you need to add that extra force to maintain contact.
 
 This leads to the following allowed combinations of command and state interfaces:
 
