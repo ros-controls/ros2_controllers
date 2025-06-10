@@ -662,7 +662,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         {
           RCLCPP_DEBUG(
             logger, "Unable to retrieve position feedback data for traction wheel %zu", i);
-          return controller_interface::return_type::OK;
         }
         controller_state_publisher_->msg_.traction_wheels_position.push_back(
           position_state_interface_op.value());
@@ -674,7 +673,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         {
           RCLCPP_DEBUG(
             logger, "Unable to retrieve velocity feedback data for traction wheel %zu", i);
-          return controller_interface::return_type::OK;
         }
         controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
           velocity_state_interface_op.value());
@@ -682,8 +680,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       auto linear_velocity_command_interface_op = command_interfaces_[i].get_optional();
       if (!linear_velocity_command_interface_op.has_value())
       {
-        RCLCPP_WARN(logger, "Unable to retrieve linear velocity command for traction wheel %zu", i);
-        return controller_interface::return_type::OK;
+        RCLCPP_DEBUG(
+          logger, "Unable to retrieve linear velocity command for traction wheel %zu", i);
       }
       controller_state_publisher_->msg_.linear_velocity_command.push_back(
         linear_velocity_command_interface_op.value());
@@ -697,13 +695,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         command_interfaces_[number_of_traction_wheels + i].get_optional();
       if (!state_interface_value_op.has_value() || !command_interface_value_op.has_value())
       {
-        RCLCPP_WARN(
+        RCLCPP_DEBUG(
           logger, "Unable to retrieve %s for steering wheel %zu",
           !state_interface_value_op.has_value() ? "state interface value"
                                                 : "command interface value",
           i);
-
-        return controller_interface::return_type::OK;
       }
       controller_state_publisher_->msg_.steer_positions.push_back(state_interface_value_op.value());
       controller_state_publisher_->msg_.steering_angle_command.push_back(
