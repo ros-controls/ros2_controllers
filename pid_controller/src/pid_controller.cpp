@@ -472,10 +472,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   {
     for (size_t i = 0; i < measured_state_values_.size(); ++i)
     {
-      const auto measured_state = state_interfaces_[i].get_optional();
-      measured_state_values_[i] = measured_state.has_value()
-                                    ? measured_state.value()
-                                    : std::numeric_limits<double>::quiet_NaN();
+      measured_state_values_[i] = state_interfaces_[i].get_value();
     }
   }
 
@@ -577,11 +574,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       state_publisher_->msg_.dof_states[i].time_step = period.seconds();
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
-
-      const auto cmd_interface = command_interfaces_[i].get_optional();
-      state_publisher_->msg_.dof_states[i].output = cmd_interface.has_value()
-                                                      ? cmd_interface.value()
-                                                      : std::numeric_limits<double>::quiet_NaN();
+      state_publisher_->msg_.dof_states[i].output = command_interfaces_[i].get_value();
     }
     state_publisher_->unlockAndPublish();
   }
