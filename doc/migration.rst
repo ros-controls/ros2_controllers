@@ -11,3 +11,7 @@ The ``effort_controllers/GripperActionController`` and ``position_controllers/Gr
 diff_drive_controller
 *****************************
 * Parameters ``has_velocity_limits``, ``has_acceleration_limits``, and ``has_jerk_limits`` are removed. Instead, set the respective limits to ``.NAN``. (`#1653 <https://github.com/ros-controls/ros2_controllers/pull/1653>`_).
+
+pid_controller
+*****************************
+* Parameters ``enable_feedforward`` and service ``set_feedforward_control`` are removed. Instead, set the feedforward_gain to zero or a non-zero value. (`#1553 <https://github.com/ros-controls/ros2_controllers/pull/1553>`_).
