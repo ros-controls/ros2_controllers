@@ -616,7 +616,6 @@ controller_interface::return_type PidController::update_and_write_commands(
         RCLCPP_DEBUG(
           get_node()->get_logger(), "Unable to retrieve the command interface value for %s",
           command_interfaces_[i].get_name().c_str());
-        return controller_interface::return_type::OK;
       }
 
       state_publisher_->msg_.dof_states[i].output = command_interface_value_op.value();
