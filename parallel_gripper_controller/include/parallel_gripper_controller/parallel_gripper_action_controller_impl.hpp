@@ -79,16 +79,14 @@ controller_interface::return_type GripperActionController::update(
   if (!joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_))
   {
     RCLCPP_WARN(
-      logger, "Unable to set the joint position command to: %f",
-      command_struct_rt_.position_cmd_);
+      logger, "Unable to set the joint position command to: %f", command_struct_rt_.position_cmd_);
     return controller_interface::return_type::OK;
   }
   if (
     speed_interface_.has_value() &&
     !speed_interface_->get().set_value(command_struct_rt_.max_velocity_))
   {
-    RCLCPP_WARN(
-      logger, "Unable to set the speed command to: %f", command_struct_rt_.max_velocity_);
+    RCLCPP_WARN(logger, "Unable to set the speed command to: %f", command_struct_rt_.max_velocity_);
 
     return controller_interface::return_type::OK;
   }
@@ -96,8 +94,7 @@ controller_interface::return_type GripperActionController::update(
     effort_interface_.has_value() &&
     !effort_interface_->get().set_value(command_struct_rt_.max_effort_))
   {
-    RCLCPP_WARN(
-      logger, "Unable to set the effort command to: %f", command_struct_rt_.max_effort_);
+    RCLCPP_WARN(logger, "Unable to set the effort command to: %f", command_struct_rt_.max_effort_);
     return controller_interface::return_type::OK;
   }
 
