@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JTC] [Doc] Update PID documentation for effort related command interface support (`#1748 <https://github.com/ros-controls/ros2_controllers/issues/1748>`_)
+* JTC: Use std::atomic<bool> (`#1720 <https://github.com/ros-controls/ros2_controllers/issues/1720>`_)
+* Reset both sec and nanosec in time_from_start (`#1709 <https://github.com/ros-controls/ros2_controllers/issues/1709>`_)
+* Contributors: Arnav Kapoor, Christoph Fröhlich, Julia Jia
+
 5.0.2 (2025-05-26)
 ------------------
 

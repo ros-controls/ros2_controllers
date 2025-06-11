@@ -2,6 +2,9 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.0.2 (2025-05-26)
 ------------------
 * Remove CMAKE_CXX_STANDARD (`#1704 <https://github.com/ros-controls/ros2_controllers/issues/1704>`_)

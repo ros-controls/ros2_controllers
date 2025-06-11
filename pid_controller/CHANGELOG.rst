@@ -2,6 +2,13 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove deprecated feedforward parameter+service (`#1753 <https://github.com/ros-controls/ros2_controllers/issues/1753>`_)
+  Co-authored-by: pascalau <pascalau>
+* Set enable_feedforward parameter in the respective tests (`#1743 <https://github.com/ros-controls/ros2_controllers/issues/1743>`_)
+* Contributors: Pascal Auf der Maur, Sai Kishor Kothakota
+
 5.0.2 (2025-05-26)
 ------------------
 
