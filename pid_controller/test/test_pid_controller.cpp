@@ -194,97 +194,22 @@ TEST_F(PidControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-TEST_F(PidControllerTest, test_feedforward_mode_service)
-{
-  SetUpController();
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
-
-  // initially set to OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  // should stay false
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-
-  // set to true
-  ASSERT_NO_THROW(call_service(true, executor));
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-
-  // set back to false
-  ASSERT_NO_THROW(call_service(false, executor));
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-}
-
-TEST_F(PidControllerTest, test_feedforward_mode_parameter)
-{
-  SetUpController();
-
-  // Check updating mode during on_configure
-
-  // initially set to OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-
-  // Reconfigure after setting parameter to true
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
-
-  // initially set to ON
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-
-  // Check updating mode during update_and_write_commands
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-
-  // Switch to ON
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-
-  // Switch to OFF
-  EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-}
-
 /**
- * @brief Check the update logic in non chained mode with feedforward OFF
+ * @brief Check the update logic in non chained mode with feedforward gain is 0
  *
  */
 
-TEST_F(PidControllerTest, test_update_logic_feedforward_off)
+TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
 {
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -303,65 +228,6 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  EXPECT_EQ(
-    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-  }
-  // check the command value
-  // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  const double expected_command_value = 30102.30102;
-
-  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
-  EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
-}
-
-/**
- * @brief Check the update logic in non chained mode with feedforward ON and feedforward gain is 0
- *
- */
-
-TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward_gain)
-{
-  SetUpController();
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  for (const auto & interface : controller_->reference_interfaces_)
-  {
-    EXPECT_TRUE(std::isnan(interface));
-  }
-
-  controller_->set_reference(dof_command_values_);
-
-  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-
-  for (size_t i = 0; i < dof_command_values_.size(); ++i)
-  {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
-  }
-
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
   EXPECT_EQ(
     controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
@@ -393,7 +259,6 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   // set chain mode to true
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -401,7 +266,6 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
   // feedforward mode is off as default, use this for convenience
-  EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
   // update reference interface which will be used for calculation
   const double ref_interface_value = 5.0;
@@ -445,7 +309,6 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -472,7 +335,6 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
   SetUpController("test_pid_controller_angle_wraparound_on");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   controller_->set_chained_mode(true);
@@ -576,9 +438,9 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
 }
 
 /**
- * @brief check chained pid controller with feedforward and gain as non-zero, single interface
+ * @brief check chained pid controller with feedforward gain as non-zero, single interface
  */
-TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
+TEST_F(PidControllerTest, test_update_chained_non_zero_feedforward_gain)
 {
   // state interface value is 1.1 as defined in test fixture
   // with p gain 0.5, the command value should be 0.5 * (5.0 - 1.1) = 1.95
@@ -587,7 +449,6 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
-  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check on interfaces & pid gain parameters
@@ -605,17 +466,12 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   // setup executor
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   controller_->set_chained_mode(true);
 
   // activate controller
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
-
-  // turn on feedforward
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
 
   // send a message to update reference interface
   controller_->set_reference({target_value});
@@ -634,26 +490,35 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
 }
 
 /**
- * @brief check chained pid controller with feedforward OFF and gain as non-zero, single interface
+ * @brief check chained pid controller with feedforward gain changed during runtime
  */
-TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
+TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
 {
   // state interface value is 1.1 as defined in test fixture
   // given target value 5.0
   // with p gain 0.5, the command value should be 0.5 * (5.0 - 1.1) = 1.95
-  // with feedforward off, the command value should be still 1.95 even though feedforward gain
-  // is 1.0
-  const double target_value = 5.0;
-  const double expected_command_value = 1.95;
+  // with feedforward gain 1.0, the command value should be 1.95 + 1.0 * 5.0 = 6.95
+
+  constexpr double target_value = 5.0;
+  constexpr double first_expected_command_value = 1.95;
+  constexpr double second_expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
+
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_TRUE(controller_->get_node()
+                  ->set_parameter(rclcpp::Parameter("gains." + dof_name + ".feedforward_gain", 0.0))
+                  .successful);
+  }
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
   {
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 0.5);
-    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 1.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
   }
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
   EXPECT_THAT(
@@ -664,16 +529,12 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   // setup executor
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   controller_->set_chained_mode(true);
 
   // activate controller
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
-
-  // feedforward by default is OFF
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
   // send a message to update reference interface
   controller_->set_reference({target_value});
@@ -688,7 +549,29 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), first_expected_command_value);
+
+  // turn on feedforward gain
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_TRUE(controller_->get_node()
+                  ->set_parameter(rclcpp::Parameter("gains." + dof_name + ".feedforward_gain", 1.0))
+                  .successful);
+  }
+
+  // run update
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check on result from update
+  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), second_expected_command_value);
+
+  // Check updated parameters
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 1.0);
+  }
 }
 
 /**
@@ -701,7 +584,6 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   SetUpController("test_save_i_term_off");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   controller_->set_chained_mode(false);
@@ -751,7 +633,6 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   SetUpController("test_save_i_term_on");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(service_caller_node_->get_node_base_interface());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   for (const auto & dof_name : dof_names_)
