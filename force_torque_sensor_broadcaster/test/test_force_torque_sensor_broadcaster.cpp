@@ -40,13 +40,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
-void ForceTorqueSensorBroadcasterTest::TearDownTestCase()
-{
-  // Ensure all nodes are properly shutdown
-  rclcpp::shutdown();
-  // Add a small delay to allow proper cleanup
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
+void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}
 
 void ForceTorqueSensorBroadcasterTest::SetUp()
 {
@@ -54,29 +48,7 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
 }
 
-void ForceTorqueSensorBroadcasterTest::TearDown()
-{
-  // Reset the broadcaster with proper cleanup
-  if (fts_broadcaster_)
-  {
-    if (
-      fts_broadcaster_->get_lifecycle_state().id() !=
-      lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED)
-    {
-      if (
-        fts_broadcaster_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-      {
-        ASSERT_EQ(fts_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-      }
-      // Clean up the broadcaster
-      ASSERT_EQ(fts_broadcaster_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
-    }
-    fts_broadcaster_.reset(nullptr);
-  }
-  // Add a small delay between tests
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-}
+void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster()
 {
@@ -212,9 +184,11 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
+  RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "Setting up frame_id");
   // set the 'frame_id'
   fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
+  RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "Calling on_configure");
   // configure passed
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
@@ -365,6 +339,76 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
     ASSERT_EQ(
       exported_state_interfaces[i]->get_value(),
       sensor_values_[i] + (i < 3 ? force_offsets[i] : torque_offsets[i - 3]));
+  }
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Multipliers)
+{
+  SetUpFTSBroadcaster();
+
+  // some non‐trivial multipliers
+  std::array<double, 3> force_multipliers = {{2.0, 0.5, -1.0}};
+  std::array<double, 3> torque_multipliers = {{-2.0, 3.0, 0.0}};
+
+  // Set the required params
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  // Set all multiplier parameters
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.force.x", force_multipliers[0]});
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.force.y", force_multipliers[1]});
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.force.z", force_multipliers[2]});
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.torque.x", torque_multipliers[0]});
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.torque.y", torque_multipliers[1]});
+  fts_broadcaster_->get_node()->set_parameter({"multiplier.torque.z", torque_multipliers[2]});
+
+  // Configure & activate
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // Publish & grab the message
+  geometry_msgs::msg::WrenchStamped wrench_msg;
+  subscribe_and_get_message(wrench_msg);
+
+  // Check header
+  ASSERT_EQ(wrench_msg.header.frame_id, frame_id_);
+
+  // Check that each field was scaled accordingly
+  ASSERT_EQ(wrench_msg.wrench.force.x, sensor_values_[0] * force_multipliers[0]);
+  ASSERT_EQ(wrench_msg.wrench.force.y, sensor_values_[1] * force_multipliers[1]);
+  ASSERT_EQ(wrench_msg.wrench.force.z, sensor_values_[2] * force_multipliers[2]);
+  ASSERT_EQ(wrench_msg.wrench.torque.x, sensor_values_[3] * torque_multipliers[0]);
+  ASSERT_EQ(wrench_msg.wrench.torque.y, sensor_values_[4] * torque_multipliers[1]);
+  ASSERT_EQ(wrench_msg.wrench.torque.z, sensor_values_[5] * torque_multipliers[2]);
+
+  // the exported state interfaces reflect the same scaled values
+  const auto exported_state_interfaces = fts_broadcaster_->export_state_interfaces();
+  ASSERT_EQ(exported_state_interfaces.size(), 6u);
+
+  const std::string controller_name = fts_broadcaster_->get_node()->get_name();
+  ASSERT_EQ(
+    exported_state_interfaces[0]->get_name(), controller_name + "/" + sensor_name_ + "/force.x");
+  ASSERT_EQ(
+    exported_state_interfaces[1]->get_name(), controller_name + "/" + sensor_name_ + "/force.y");
+  ASSERT_EQ(
+    exported_state_interfaces[2]->get_name(), controller_name + "/" + sensor_name_ + "/force.z");
+  ASSERT_EQ(
+    exported_state_interfaces[3]->get_name(), controller_name + "/" + sensor_name_ + "/torque.x");
+  ASSERT_EQ(
+    exported_state_interfaces[4]->get_name(), controller_name + "/" + sensor_name_ + "/torque.y");
+  ASSERT_EQ(
+    exported_state_interfaces[5]->get_name(), controller_name + "/" + sensor_name_ + "/torque.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "force.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "force.y");
+  ASSERT_EQ(exported_state_interfaces[2]->get_interface_name(), "force.z");
+  ASSERT_EQ(exported_state_interfaces[3]->get_interface_name(), "torque.x");
+  ASSERT_EQ(exported_state_interfaces[4]->get_interface_name(), "torque.y");
+  ASSERT_EQ(exported_state_interfaces[5]->get_interface_name(), "torque.z");
+  for (size_t i = 0; i < 6; ++i)
+  {
+    ASSERT_EQ(
+      exported_state_interfaces[i]->get_value(),
+      sensor_values_[i] * (i < 3 ? force_multipliers[i] : torque_multipliers[i - 3]));
   }
 }
 

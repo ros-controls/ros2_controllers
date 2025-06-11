@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(gpio_controllers)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-  -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
-  -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -31,17 +25,17 @@ add_library(gpio_controllers
   src/gpio_command_controller.cpp
 )
 target_include_directories(gpio_controllers PRIVATE include)
-target_link_libraries(gpio_controllers PUBLIC gpio_command_controller_parameters)
-ament_target_dependencies(gpio_controllers PUBLIC
-  builtin_interfaces
-  controller_interface
-  hardware_interface
-  pluginlib
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-  control_msgs
-)
+target_link_libraries(gpio_controllers PUBLIC
+                      gpio_command_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
+                      ${builtin_interfaces_TARGETS})
+
 pluginlib_export_plugin_description_file(controller_interface gpio_controllers_plugin.xml)
 
 install(
@@ -69,10 +63,10 @@ if(BUILD_TESTING)
   )
 
   target_include_directories(test_load_gpio_command_controller PRIVATE include)
-  ament_target_dependencies(test_load_gpio_command_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_gpio_command_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(
@@ -82,15 +76,7 @@ if(BUILD_TESTING)
   target_include_directories(test_gpio_command_controller PRIVATE include)
   target_link_libraries(test_gpio_command_controller
     gpio_controllers
-  )
-  ament_target_dependencies(test_gpio_command_controller
-    controller_interface
-    hardware_interface
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    ros2_control_test_assets
-    control_msgs
+    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 

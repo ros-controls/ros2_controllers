@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(tricycle_steering_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -46,8 +40,15 @@ target_include_directories(tricycle_steering_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(tricycle_steering_controller PUBLIC
-  tricycle_steering_controller_parameters)
-ament_target_dependencies(tricycle_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      tricycle_steering_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      steering_controllers_library::steering_controllers_library
+                      ${std_srvs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface tricycle_steering_controller.xml)
@@ -60,10 +61,10 @@ if(BUILD_TESTING)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_tricycle_steering_controller test/test_load_tricycle_steering_controller.cpp)
-  ament_target_dependencies(test_load_tricycle_steering_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_tricycle_steering_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(
@@ -71,22 +72,12 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_params.yaml)
   target_include_directories(test_tricycle_steering_controller PRIVATE include)
   target_link_libraries(test_tricycle_steering_controller tricycle_steering_controller)
-  ament_target_dependencies(
-    test_tricycle_steering_controller
-    controller_interface
-    hardware_interface
-  )
 
   add_rostest_with_parameters_gmock(
-    test_tricycle_steering_controller_preceeding test/test_tricycle_steering_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_preceeding_params.yaml)
-  target_include_directories(test_tricycle_steering_controller_preceeding PRIVATE include)
-  target_link_libraries(test_tricycle_steering_controller_preceeding tricycle_steering_controller)
-  ament_target_dependencies(
-    test_tricycle_steering_controller_preceeding
-    controller_interface
-    hardware_interface
-  )
+    test_tricycle_steering_controller_preceding test/test_tricycle_steering_controller_preceding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_preceding_params.yaml)
+  target_include_directories(test_tricycle_steering_controller_preceding PRIVATE include)
+  target_link_libraries(test_tricycle_steering_controller_preceding tricycle_steering_controller)
 endif()
 
 install(

@@ -1,9 +1,9 @@
 tricycle_steering_controller:
-  wheel_track:
+  traction_track_width:
     {
       type: double,
       default_value: 0.0,
-      description: "Wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      description: "Axle track",
       read_only: false,
       validation: {
         gt<>: [0.0]
@@ -21,22 +21,11 @@ tricycle_steering_controller:
       }
     }
 
-  front_wheels_radius:
+  traction_wheels_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Front wheels radius.",
-      read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
-    }
-
-  rear_wheels_radius:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "Rear wheels radius.",
+      description: "Traction wheels radius.",
       read_only: false,
       validation: {
         gt<>: [0.0]

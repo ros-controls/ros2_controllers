@@ -2,6 +2,37 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.1.0 (2025-06-11)
+------------------
+* Fix DiffDrive claiming state when open_loop is set (`#1731 <https://github.com/ros-controls/ros2_controllers/issues/1731>`_)
+* Contributors: mergify[bot]
+
+5.0.2 (2025-05-26)
+------------------
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+* Simplify `on_set_chained_mode` implementations avoiding cpplint warnings (`#1564 <https://github.com/ros-controls/ros2_controllers/issues/1564>`_)
+* Cleanup deprecations in diff_drive_controller (`#1653 <https://github.com/ros-controls/ros2_controllers/issues/1653>`_)
+* Deprecating tf2 C Headers (`#1325 <https://github.com/ros-controls/ros2_controllers/issues/1325>`_)
+* Contributors: Bhagyesh Agresar, Christoph Fröhlich, Lucas Wendland
+
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
 4.22.0 (2025-03-17)
 -------------------
 * Use the custom validators directly from control_toolbox (`#1504 <https://github.com/ros-controls/ros2_controllers/issues/1504>`_)

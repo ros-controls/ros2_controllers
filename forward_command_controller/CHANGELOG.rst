@@ -2,6 +2,30 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.1.0 (2025-06-11)
+------------------
+
+5.0.2 (2025-05-26)
+------------------
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich
+
 4.22.0 (2025-03-17)
 -------------------
 * [ForwardCommandController] Fix the duplicate command interface types when reconfiguring the controller (`#1568 <https://github.com/ros-controls/ros2_controllers/issues/1568>`_)

@@ -51,7 +51,6 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
-   Gripper Controller <../gripper_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
    Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
@@ -74,7 +73,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
    Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
-
+   GPS Sensor Broadcaster <../gps_sensor_broadcaster/doc/userdoc.rst>
 
 Common Controller Parameters
 ****************************

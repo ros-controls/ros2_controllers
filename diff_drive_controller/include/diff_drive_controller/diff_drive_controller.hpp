@@ -83,7 +83,7 @@ protected:
 
   struct WheelHandle
   {
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback;
+    std::optional<std::reference_wrapper<const hardware_interface::LoanedStateInterface>> feedback;
     std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity;
   };
 

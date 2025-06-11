@@ -63,8 +63,6 @@ private:
   std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>
     realtime_publisher_;
 
-  std::optional<rclcpp::Duration> tf_publish_period_;
-  rclcpp::Time tf_last_publish_time_{0, 0, RCL_CLOCK_UNINITIALIZED};
   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr tf_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_tf_publisher_;

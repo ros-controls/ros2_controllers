@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(ackermann_steering_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format  -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -46,8 +40,15 @@ target_include_directories(ackermann_steering_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(ackermann_steering_controller PUBLIC
-  ackermann_steering_controller_parameters)
-ament_target_dependencies(ackermann_steering_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      ackermann_steering_controller_parameters
+                      steering_controllers_library::steering_controllers_library
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${std_srvs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface ackermann_steering_controller.xml)
@@ -61,10 +62,10 @@ if(BUILD_TESTING)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_ackermann_steering_controller test/test_load_ackermann_steering_controller.cpp)
-  ament_target_dependencies(test_load_ackermann_steering_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_ackermann_steering_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_ackermann_steering_controller
@@ -73,22 +74,12 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_ackermann_steering_controller PRIVATE include)
   target_link_libraries(test_ackermann_steering_controller ackermann_steering_controller)
-  ament_target_dependencies(
-    test_ackermann_steering_controller
-    controller_interface
-    hardware_interface
-  )
 
   add_rostest_with_parameters_gmock(
-    test_ackermann_steering_controller_preceeding test/test_ackermann_steering_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_preceeding_params.yaml)
-  target_include_directories(test_ackermann_steering_controller_preceeding PRIVATE include)
-  target_link_libraries(test_ackermann_steering_controller_preceeding ackermann_steering_controller)
-  ament_target_dependencies(
-    test_ackermann_steering_controller_preceeding
-    controller_interface
-    hardware_interface
-  )
+    test_ackermann_steering_controller_preceding test/test_ackermann_steering_controller_preceding.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/ackermann_steering_controller_preceding_params.yaml)
+  target_include_directories(test_ackermann_steering_controller_preceding PRIVATE include)
+  target_link_libraries(test_ackermann_steering_controller_preceding ackermann_steering_controller)
 endif()
 
 install(

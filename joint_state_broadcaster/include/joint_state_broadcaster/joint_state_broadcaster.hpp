@@ -86,6 +86,7 @@ public:
 
 protected:
   bool init_joint_data();
+  void init_auxiliary_data();
   void init_joint_state_msg();
   void init_dynamic_joint_state_msg();
   bool use_all_available_interfaces() const;
@@ -95,6 +96,8 @@ protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
+
+  std::string frame_id_;
 
   //  For the JointState message,
   //  we store the name of joints with compatible interfaces
@@ -113,6 +116,24 @@ protected:
 
   urdf::Model model_;
   bool is_model_loaded_ = false;
+
+  std::vector<double *> mapped_values_;
+
+  struct JointStateData
+  {
+    JointStateData(const double & position, const double & velocity, const double & effort)
+    : position_(position), velocity_(velocity), effort_(effort)
+    {
+    }
+
+    const double & position_;
+    const double & velocity_;
+    const double & effort_;
+  };
+
+  std::vector<JointStateData> joint_states_data_;
+
+  std::vector<std::vector<const double *>> dynamic_joint_states_data_;
 };
 
 }  // namespace joint_state_broadcaster

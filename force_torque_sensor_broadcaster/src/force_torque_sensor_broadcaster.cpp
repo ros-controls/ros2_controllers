@@ -106,7 +106,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   realtime_publisher_->msg_.header.frame_id = params_.frame_id;
   realtime_publisher_->unlock();
 
-  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
+  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -153,6 +153,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
     realtime_publisher_->msg_.header.stamp = time;
     force_torque_sensor_->get_values_as_message(realtime_publisher_->msg_.wrench);
     this->apply_sensor_offset(params_, realtime_publisher_->msg_);
+    this->apply_sensor_multiplier(params_, realtime_publisher_->msg_);
     realtime_publisher_->unlockAndPublish();
   }
 
@@ -198,33 +199,39 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
   }
   if (!force_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[0], &realtime_publisher_->msg_.wrench.force.x));
   }
   if (!force_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[1], &realtime_publisher_->msg_.wrench.force.y));
   }
   if (!force_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, force_names[2], &realtime_publisher_->msg_.wrench.force.z));
   }
   if (!torque_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[0], &realtime_publisher_->msg_.wrench.torque.x));
   }
   if (!torque_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[1], &realtime_publisher_->msg_.wrench.torque.y));
   }
   if (!torque_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(hardware_interface::StateInterface(
-      export_prefix, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
+    exported_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        export_prefix, torque_names[2], &realtime_publisher_->msg_.wrench.torque.z));
   }
   return exported_state_interfaces;
 }
@@ -238,6 +245,17 @@ void ForceTorqueSensorBroadcaster::apply_sensor_offset(
   msg.wrench.torque.x += params.offset.torque.x;
   msg.wrench.torque.y += params.offset.torque.y;
   msg.wrench.torque.z += params.offset.torque.z;
+}
+
+void ForceTorqueSensorBroadcaster::apply_sensor_multiplier(
+  const Params & params, geometry_msgs::msg::WrenchStamped & msg)
+{
+  msg.wrench.force.x *= params.multiplier.force.x;
+  msg.wrench.force.y *= params.multiplier.force.y;
+  msg.wrench.force.z *= params.multiplier.force.z;
+  msg.wrench.torque.x *= params.multiplier.torque.x;
+  msg.wrench.torque.y *= params.multiplier.torque.y;
+  msg.wrench.torque.z *= params.multiplier.torque.z;
 }
 }  // namespace force_torque_sensor_broadcaster
 

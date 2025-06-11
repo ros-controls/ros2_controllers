@@ -2,19 +2,13 @@ steering_controllers_library:
   reference_timeout: {
     type: double,
     default_value: 1.0,
-    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behaviour if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
+    description: "Timeout for controller references after which they will be reset. This is especially useful for controllers that can cause unwanted and dangerous behavior if reference is not reset, e.g., velocity controllers. If value is 0 the reference is reset after each run.",
   }
 
-  front_steering: {
-    type: bool,
-    default_value: true,
-    description: "Is the steering on the front of the robot?",
-    read_only: true,
-  }
-
-  rear_wheels_names: {
+  traction_joints_names: {
     type: string_array,
-    description: "Names of rear wheel joints.",
+    description: "Names of traction wheel joints. For kinematic configurations with two traction joints, the expected order is: right joint, left joint.",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
@@ -23,9 +17,10 @@ steering_controllers_library:
     }
   }
 
-  front_wheels_names: {
+  steering_joints_names: {
     type: string_array,
-    description: "Names of front wheel joints.",
+    description: "Names of steering joints. For kinematic configurations with two steering joints, the expected order is: right joint, left joint. The orientation of the steering axes is expected as such: When positive steering position value is commanded, then the robot should turn in positive direction of the z-axis of the vehicle (see REP-103).",
+    default_value: [],
     read_only: true,
     validation: {
       size_lt<>: [5],
@@ -34,9 +29,9 @@ steering_controllers_library:
     }
   }
 
-  rear_wheels_state_names: {
+  traction_joints_state_names: {
     type: string_array,
-    description: "(Optional) Names of rear wheel joints to read states from. If not set joint names from 'rear_wheels_names' will be used.",
+    description: "(Optional) Names of tractions joints to read states from. If not set joint names from 'traction_joints_names' will be used.",
     default_value: [],
     read_only: true,
     validation: {
@@ -45,9 +40,9 @@ steering_controllers_library:
     }
   }
 
-  front_wheels_state_names: {
+  steering_joints_state_names: {
     type: string_array,
-    description: "(Optional) Names of front wheel joints to read states from. If not set joint names from 'front_wheels_names' will be used.",
+    description: "(Optional) Names of steering joints to read states from. If not set joint names from 'steering_joints_names' will be used.",
     default_value: [],
     read_only: true,
     validation: {

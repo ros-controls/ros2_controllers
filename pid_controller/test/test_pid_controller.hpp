@@ -53,16 +53,14 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(PidControllerTest, activate_success);
   FRIEND_TEST(PidControllerTest, reactivate_success);
-  FRIEND_TEST(PidControllerTest, test_feedforward_mode_service);
-  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_off);
-  FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, test_update_logic_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, test_update_chained_non_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, test_update_chained_changing_feedforward_gain);
   FRIEND_TEST(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update);
   FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_off);
   FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_on);
   FRIEND_TEST(PidControllerTest, subscribe_and_get_messages_success);
   FRIEND_TEST(PidControllerTest, receive_message_and_publish_updated_status);
-  FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_with_gain);
-  FRIEND_TEST(PidControllerTest, test_update_chained_feedforward_off_with_gain);
   FRIEND_TEST(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface);
   FRIEND_TEST(PidControllerTest, test_save_i_term_on);
   FRIEND_TEST(PidControllerTest, test_save_i_term_off);
@@ -142,10 +140,6 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
       "/test_pid_controller/reference", rclcpp::SystemDefaultsQoS());
-
-    service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
-    feedforward_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
-      "/test_pid_controller/set_feedforward_control");
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -165,8 +159,9 @@ protected:
 
     for (size_t i = 0; i < dof_names_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        dof_names_[i], command_interface_, &dof_command_values_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          dof_names_[i], command_interface_, &dof_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -259,25 +254,6 @@ protected:
     command_publisher_->publish(msg);
   }
 
-  std::shared_ptr<ControllerModeSrvType::Response> call_service(
-    const bool feedforward, rclcpp::Executor & executor)
-  {
-    auto request = std::make_shared<ControllerModeSrvType::Request>();
-    request->data = feedforward;
-
-    bool wait_for_service_ret =
-      feedforward_service_client_->wait_for_service(std::chrono::milliseconds(500));
-    EXPECT_TRUE(wait_for_service_ret);
-    if (!wait_for_service_ret)
-    {
-      throw std::runtime_error("Service is not available!");
-    }
-    auto result = feedforward_service_client_->async_send_request(request);
-    EXPECT_EQ(executor.spin_until_future_complete(result), rclcpp::FutureReturnCode::SUCCESS);
-
-    return result.get();
-  }
-
 protected:
   // TODO(anyone): adjust the members as needed
 
@@ -296,8 +272,6 @@ protected:
   std::unique_ptr<TestablePidController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerCommandMsg>::SharedPtr command_publisher_;
-  rclcpp::Node::SharedPtr service_caller_node_;
-  rclcpp::Client<ControllerModeSrvType>::SharedPtr feedforward_service_client_;
 };
 
 #endif  // TEST_PID_CONTROLLER_HPP_

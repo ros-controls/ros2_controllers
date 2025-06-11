@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(steering_controllers_library)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
@@ -27,7 +21,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2
   tf2_msgs
   tf2_geometry_msgs
-  ackermann_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -53,8 +46,20 @@ target_include_directories(steering_controllers_library PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/steering_controllers_library>")
 target_link_libraries(steering_controllers_library PUBLIC
-  steering_controllers_library_parameters)
-ament_target_dependencies(steering_controllers_library PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      steering_controllers_library_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      tf2::tf2
+                      tf2_geometry_msgs::tf2_geometry_msgs
+                      ${tf2_msgs_TARGETS}
+                      ${geometry_msgs_TARGETS}
+                      ${control_msgs_TARGETS}
+                      ${nav_msgs_TARGETS}
+                      ${std_srvs_TARGETS})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -66,11 +71,7 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_params.yaml)
   target_include_directories(test_steering_controllers_library PRIVATE include)
   target_link_libraries(test_steering_controllers_library steering_controllers_library)
-  ament_target_dependencies(
-    test_steering_controllers_library
-    controller_interface
-    hardware_interface
-  )
+
   ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
   target_link_libraries(test_steering_odometry steering_controllers_library)
 

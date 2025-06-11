@@ -175,6 +175,15 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
+  void assignResourcesNoFeedback()
+  {
+    std::vector<LoanedCommandInterface> command_ifs;
+    command_ifs.emplace_back(left_wheel_vel_cmd_);
+    command_ifs.emplace_back(right_wheel_vel_cmd_);
+
+    controller_->assign_interfaces(std::move(command_ifs), {});
+  }
+
   controller_interface::return_type InitController(
     const std::vector<std::string> left_wheel_joints_init = left_wheel_names,
     const std::vector<std::string> right_wheel_joints_init = right_wheel_names,
@@ -257,6 +266,26 @@ TEST_F(
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+}
+
+TEST_F(
+  TestDiffDriveController,
+  command_and_state_interface_configuration_succeeds_when_wheels_and_open_loop_are_specified)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
+    controller_interface::return_type::OK);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(0));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
@@ -458,6 +487,19 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_vel_resources_assigned)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
+TEST_F(TestDiffDriveController, activate_succeeds_with_open_loop_assigned)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
+    controller_interface::return_type::OK);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  assignResourcesNoFeedback();
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
 TEST_F(TestDiffDriveController, test_speed_limiter)
 {
   // If you send a linear velocity command without acceleration limits,
@@ -487,7 +529,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -690,6 +732,34 @@ TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_2)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
+TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_1)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
+    controller_interface::return_type::OK);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  assignResourcesPosFeedback();
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
+TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_2)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
+    controller_interface::return_type::OK);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  assignResourcesVelFeedback();
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
 TEST_F(TestDiffDriveController, cleanup)
 {
   ASSERT_EQ(
@@ -700,7 +770,7 @@ TEST_F(TestDiffDriveController, cleanup)
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -753,7 +823,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   assignResourcesPosFeedback();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
@@ -795,7 +865,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value());
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -821,7 +891,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(false));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -892,7 +962,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -917,7 +987,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(true));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -971,7 +1041,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  state = controller_->get_node()->configure();
+  state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
@@ -1021,7 +1091,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 
@@ -1119,7 +1189,7 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
+  auto state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   assignResourcesPosFeedback();
 

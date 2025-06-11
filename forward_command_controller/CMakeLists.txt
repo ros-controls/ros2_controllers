@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(forward_command_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -48,10 +42,15 @@ target_include_directories(forward_command_controller PUBLIC
   $<INSTALL_INTERFACE:include/forward_command_controller>
 )
 target_link_libraries(forward_command_controller PUBLIC
-  forward_command_controller_parameters
-  multi_interface_forward_command_controller_parameters
-)
-ament_target_dependencies(forward_command_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      forward_command_controller_parameters
+                      multi_interface_forward_command_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${std_msgs_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface forward_command_plugin.xml)
 
 if(BUILD_TESTING)
@@ -64,11 +63,8 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_load_forward_command_controller
     forward_command_controller
-  )
-  ament_target_dependencies(test_load_forward_command_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_forward_command_controller
@@ -83,11 +79,8 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_load_multi_interface_forward_command_controller
     forward_command_controller
-  )
-  ament_target_dependencies(test_load_multi_interface_forward_command_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_multi_interface_forward_command_controller

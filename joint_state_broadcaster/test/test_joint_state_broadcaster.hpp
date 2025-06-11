@@ -109,7 +109,10 @@ protected:
   hardware_interface::StateInterface joint_X_custom_state{
     joint_names_[0], custom_interface_name_, &custom_joint_value_};
 
+  std::vector<hardware_interface::StateInterface> test_interfaces_;
+
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
+  std::string frame_id_ = "base_link";
 };
 
 #endif  // TEST_JOINT_STATE_BROADCASTER_HPP_

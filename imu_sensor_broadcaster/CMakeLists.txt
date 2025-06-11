@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(imu_sensor_broadcaster)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror=conversion -Werror=unused-but-set-variable
-                      -Werror=return-type -Werror=shadow -Werror=format -Werror=range-loop-construct
-                      -Werror=missing-braces)
-endif()
-
-# using this instead of visibility macros
-# S1 from https://github.com/ros-controls/ros2_controllers/issues/1053
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
@@ -41,9 +35,14 @@ target_include_directories(imu_sensor_broadcaster PUBLIC
   $<INSTALL_INTERFACE:include/imu_sensor_broadcaster>
 )
 target_link_libraries(imu_sensor_broadcaster PUBLIC
-  imu_sensor_broadcaster_parameters
-)
-ament_target_dependencies(imu_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      imu_sensor_broadcaster_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${sensor_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)
@@ -59,11 +58,8 @@ if(BUILD_TESTING)
   target_include_directories(test_load_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_imu_sensor_broadcaster
     imu_sensor_broadcaster
-  )
-  ament_target_dependencies(test_load_imu_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_imu_sensor_broadcaster
@@ -72,9 +68,6 @@ if(BUILD_TESTING)
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
     imu_sensor_broadcaster
-  )
-  ament_target_dependencies(test_imu_sensor_broadcaster
-    hardware_interface
   )
 endif()
 

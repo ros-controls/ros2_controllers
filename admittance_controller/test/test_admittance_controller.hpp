@@ -177,8 +177,9 @@ protected:
 
     for (auto i = 0u; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(hardware_interface::CommandInterface(
-        joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
+      command_itfs_.emplace_back(
+        hardware_interface::CommandInterface(
+          joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
     }
 
@@ -192,8 +193,9 @@ protected:
 
     for (auto i = 0u; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 
@@ -202,8 +204,9 @@ protected:
 
     for (auto i = 0u; i < fts_state_names_.size(); ++i)
     {
-      state_itfs_.emplace_back(hardware_interface::StateInterface(
-        ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
+      state_itfs_.emplace_back(
+        hardware_interface::StateInterface(
+          ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
     }
 

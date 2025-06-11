@@ -30,20 +30,11 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 {
   tricycle_params_ = tricycle_param_listener_->get_params();
 
-  const double front_wheels_radius = tricycle_params_.front_wheels_radius;
-  const double rear_wheels_radius = tricycle_params_.rear_wheels_radius;
-  const double wheel_track = tricycle_params_.wheel_track;
+  const double traction_wheels_radius = tricycle_params_.traction_wheels_radius;
+  const double traction_track_width = tricycle_params_.traction_track_width;
   const double wheelbase = tricycle_params_.wheelbase;
 
-  if (params_.front_steering)
-  {
-    odometry_.set_wheel_params(rear_wheels_radius, wheelbase, wheel_track);
-  }
-  else
-  {
-    odometry_.set_wheel_params(front_wheels_radius, wheelbase, wheel_track);
-  }
-
+  odometry_.set_wheel_params(traction_wheels_radius, wheelbase, traction_track_width);
   odometry_.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
