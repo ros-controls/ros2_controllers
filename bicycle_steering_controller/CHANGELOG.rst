@@ -2,8 +2,8 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.1.0 (2025-06-11)
+------------------
 * Remove deprecated parameters from steering_controllers_library (`#1684 <https://github.com/ros-controls/ros2_controllers/issues/1684>`_)
 * Fix steering_controllers_library docs and msg field (`#1733 <https://github.com/ros-controls/ros2_controllers/issues/1733>`_)
 * Contributors: Christoph Fröhlich
