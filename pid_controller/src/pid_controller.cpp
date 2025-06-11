@@ -74,8 +74,6 @@ PidController::PidController() : controller_interface::ChainableControllerInterf
 
 controller_interface::CallbackReturn PidController::on_init()
 {
-  feedforward_mode_enabled_ = false;
-
   try
   {
     param_listener_ = std::make_shared<pid_controller::ParamListener>(get_node());
@@ -96,8 +94,6 @@ void PidController::update_parameters()
     return;
   }
   params_ = param_listener_->get_params();
-
-  feedforward_mode_enabled_ = params_.enable_feedforward;
 }
 
 controller_interface::CallbackReturn PidController::configure_parameters()
@@ -238,24 +234,6 @@ controller_interface::CallbackReturn PidController::on_configure(
 
   measured_state_values_.resize(
     dof_ * params_.reference_and_state_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
-
-  auto set_feedforward_control_callback =
-    [&](
-      const std::shared_ptr<ControllerModeSrvType::Request> request,
-      std::shared_ptr<ControllerModeSrvType::Response> response)
-  {
-    feedforward_mode_enabled_ = request->data;
-
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "This service will be deprecated in favour of setting the ``feedforward_gain`` parameter to "
-      "a non-zero value.");
-
-    response->success = true;
-  };
-
-  set_feedforward_control_service_ = get_node()->create_service<ControllerModeSrvType>(
-    "~/set_feedforward_control", set_feedforward_control_callback, qos_services);
 
   try
   {
@@ -529,22 +507,19 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (feedforward_mode_enabled_)
+      if (reference_interfaces_.size() == 2 * dof_)
       {
         // two interfaces
-        if (reference_interfaces_.size() == 2 * dof_)
+        if (std::isfinite(reference_interfaces_[dof_ + i]))
         {
-          if (std::isfinite(reference_interfaces_[dof_ + i]))
-          {
-            tmp_command = reference_interfaces_[dof_ + i] *
-                          params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
-          }
-        }
-        else  // one interface
-        {
-          tmp_command = reference_interfaces_[i] *
+          tmp_command = reference_interfaces_[dof_ + i] *
                         params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
         }
+      }
+      else  // one interface
+      {
+        tmp_command = reference_interfaces_[i] *
+                      params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
       }
 
       double error = reference_interfaces_[i] - measured_state_values_[i];

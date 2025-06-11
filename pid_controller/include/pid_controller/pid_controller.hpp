@@ -78,8 +78,6 @@ protected:
 
   using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
   std::vector<PidPtr> pids_;
-  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
-  std::vector<double> feedforward_gain_;
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
@@ -89,9 +87,6 @@ protected:
   rclcpp::Subscription<ControllerMeasuredStateMsg>::SharedPtr measured_state_subscriber_ = nullptr;
   realtime_tools::RealtimeThreadSafeBox<ControllerMeasuredStateMsg> measured_state_;
   ControllerMeasuredStateMsg current_state_;
-
-  rclcpp::Service<ControllerModeSrvType>::SharedPtr set_feedforward_control_service_;
-  std::atomic<bool> feedforward_mode_enabled_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
 
