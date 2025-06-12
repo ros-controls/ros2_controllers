@@ -193,7 +193,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   try
   {
     // State publisher
-    controller_s_publisher_ = get_node()->create_publisher<AckermannControllerState>(
+    controller_s_publisher_ = get_node()->create_publisher<SteeringControllerStateMsg>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
@@ -379,11 +379,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool SteeringControllersLibrary::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool SteeringControllersLibrary::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)

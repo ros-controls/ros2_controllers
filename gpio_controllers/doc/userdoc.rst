@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/gpio_controllers/doc/userdoc.rst
+
 .. _gpio_controllers_userdoc:
 
 gpio_controllers

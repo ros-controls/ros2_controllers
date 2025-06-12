@@ -2,6 +2,15 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.47.0 (2025-06-07)
+-------------------
+
+2.46.0 (2025-05-17)
+-------------------
+
+2.45.0 (2025-04-27)
+-------------------
+
 2.44.0 (2025-04-10)
 -------------------
 * Bump version of pre-commit hooks (backport `#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_) (`#1620 <https://github.com/ros-controls/ros2_controllers/issues/1620>`_)
