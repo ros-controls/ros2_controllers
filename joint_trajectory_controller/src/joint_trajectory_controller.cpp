@@ -880,8 +880,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   state_publisher_->msg_.reference.velocities.resize(dof_);
   state_publisher_->msg_.reference.accelerations.resize(dof_);
   state_publisher_->msg_.feedback.positions.resize(dof_);
-  state_publisher_->msg_.reference.time_from_start = desired_state.time_from_start;
-  state_publisher_->msg_.feedback.time_from_start = desired_state.time_from_start;
   state_publisher_->msg_.error.positions.resize(dof_);
   if (has_velocity_state_interface_)
   {
