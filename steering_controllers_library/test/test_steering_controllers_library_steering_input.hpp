@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
-#define TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_
+#define TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_
 
 #include <gmock/gmock.h>
 
@@ -33,12 +33,10 @@
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
-using ControllerTwistReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 using ControllerSteeringReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerSteeringReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
+// NOTE: Testing steering_controllers_library for Steering vehicle configuration only
 
 // name constants for state interfaces
 static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
@@ -57,8 +55,10 @@ static constexpr size_t NR_CMD_ITFS = 4;
 static constexpr size_t NR_REF_ITFS = 2;
 
 static constexpr double WHEELBASE_ = 3.24644;
-static constexpr double WHEELS_TRACK_ = 2.12321;
-static constexpr double WHEELS_RADIUS_ = 0.45;
+static constexpr double FRONT_WHEEL_TRACK_ = 2.12321;
+static constexpr double REAR_WHEEL_TRACK_ = 1.76868;
+static constexpr double FRONT_WHEELS_RADIUS_ = 0.45;
+static constexpr double REAR_WHEELS_RADIUS_ = 0.45;
 
 namespace
 {
@@ -68,11 +68,12 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 // namespace
 
 // subclassing and friending so we can access member variables
-class TestableSteeringControllersLibrary
+class TestableSteeringControllersSteeringInputLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
-  FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibrarySteeringInputTest, check_exported_interfaces);
+  FRIEND_TEST(
+    SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -89,7 +90,7 @@ public:
   }
 
   /**
-   * @brief wait_for_command blocks until a new ControllerTwistReferenceMsg is received.
+   * @brief wait_for_command blocks until a new ControllerSteeringReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
    */
@@ -113,26 +114,26 @@ public:
   }
 
   // implementing methods which are declared virtual in the steering_controllers_library.hpp
-  void initialize_implementation_parameter_listener() override
+  void initialize_implementation_parameter_listener()
   {
     param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
   }
 
-  controller_interface::CallbackReturn configure_odometry() override
+  controller_interface::CallbackReturn configure_odometry()
   {
     set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
-    odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
+    odometry_.set_wheel_params(FRONT_WHEELS_RADIUS_, WHEELBASE_, REAR_WHEEL_TRACK_);
     odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
 
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) override { return true; }
+  bool update_odometry(const rclcpp::Duration & /*period*/) { return true; }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class SteeringControllersLibraryFixture : public ::testing::Test
+class SteeringControllersSteeringInputLibraryFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase() {}
@@ -143,8 +144,8 @@ public:
     controller_ = std::make_unique<CtrlType>();
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerTwistReferenceMsg>(
-      "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerSteeringReferenceMsg>(
+      "/test_steering_controllers_steering_input_library/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() {}
@@ -152,7 +153,8 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_library")
+  void SetUpController(
+    const std::string controller_name = "test_steering_controllers_steering_input_library")
   {
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
@@ -179,7 +181,7 @@ protected:
 
     command_itfs_.emplace_back(
       hardware_interface::CommandInterface(
-        traction_joints_names_[1], traction_interface_name_,
+        traction_joints_names_[1], steering_interface_name_,
         &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
@@ -233,7 +235,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_steering_controllers_library/controller_state", 10, subs_callback);
+      "/test_steering_controllers_steering_input_library/controller_state", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node.get_node_base_interface());
 
@@ -268,7 +270,8 @@ protected:
     msg = *received_msg;
   }
 
-  void publish_commands(const double linear = 0.1, const double angular = 0.2)
+  void publish_commands(
+    const float linear = static_cast<float>(0.1), const float angular = static_cast<float>(0.2))
   {
     auto wait_for_topic = [&](const auto topic_name)
     {
@@ -288,9 +291,9 @@ protected:
 
     wait_for_topic(command_publisher_->get_topic_name());
 
-    ControllerTwistReferenceMsg msg;
-    msg.twist.linear.x = linear;
-    msg.twist.angular.z = angular;
+    ControllerSteeringReferenceMsg msg;
+    msg.linear_velocity = linear;
+    msg.steering_angle = angular;
 
     command_publisher_->publish(msg);
   }
@@ -298,6 +301,7 @@ protected:
 protected:
   // Controller-related parameters
   double reference_timeout_ = 2.0;
+  bool front_steering_ = true;
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
@@ -314,6 +318,12 @@ protected:
   std::vector<std::string> steering_joints_preceding_names_ = {
     "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
 
+  double wheelbase_ = 3.24644;
+  double front_wheel_track_ = 2.12321;
+  double rear_wheel_track_ = 1.76868;
+  double front_wheels_radius_ = 0.45;
+  double rear_wheels_radius_ = 0.45;
+
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
   std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
 
@@ -321,7 +331,7 @@ protected:
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
-  std::string preceding_prefix_ = "pid_controller";
+  std::string preceeding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
@@ -329,7 +339,7 @@ protected:
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerTwistReferenceMsg>::SharedPtr command_publisher_;
+  rclcpp::Publisher<ControllerSteeringReferenceMsg>::SharedPtr command_publisher_;
 };
 
-#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_
