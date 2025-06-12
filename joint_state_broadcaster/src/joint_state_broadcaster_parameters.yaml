@@ -46,3 +46,8 @@ joint_state_broadcaster:
     If true, the broadcaster will publish the data of the joints present in the URDF alone.
     If false, the broadcaster will publish the data of any interface that has type ``position``, ``velocity``, or ``effort``."
   }
+  frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
+  }
