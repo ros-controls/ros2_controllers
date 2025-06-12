@@ -397,6 +397,27 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
 }
+TEST_F(TrajectoryControllerTest, time_from_start_populated)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {});
+  subscribeToState(executor);
+
+  // schedule a single waypoint at 100ms:
+  builtin_interfaces::msg::Duration tfs; tfs.sec = 0; tfs.nanosec = 100000000;
+  publish(tfs, {INITIAL_POS_JOINTS}, rclcpp::Time(0));
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+  // give the publish timer one more spin
+  executor.spin_some();
+
+  auto state = getState();
+  ASSERT_TRUE(state);
+  EXPECT_EQ(state->feedback.time_from_start.sec,  0u);
+  EXPECT_EQ(state->feedback.time_from_start.nanosec, 100000000u);
+}
+
 
 /**
  * @brief check if dynamic parameters are updated
