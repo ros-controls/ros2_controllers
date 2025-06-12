@@ -344,7 +344,7 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
   return controller_interface::return_type::OK;
 }
 
-void GpioCommandController::apply_command(
+bool GpioCommandController::apply_command(
   const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index) const
 {
   const auto full_command_interface_name =
@@ -361,6 +361,7 @@ void GpioCommandController::apply_command(
       RCLCPP_WARN(
         get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
         full_command_interface_name.c_str(), command_value);
+      return true;
     }
   }
   catch (const std::exception & e)
@@ -368,7 +369,10 @@ void GpioCommandController::apply_command(
     fprintf(
       stderr, "Exception thrown during applying command stage of %s with message: %s \n",
       full_command_interface_name.c_str(), e.what());
+    return true;
   }
+
+  return true;
 }
 
 void GpioCommandController::update_gpios_states()
