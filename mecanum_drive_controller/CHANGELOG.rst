@@ -2,6 +2,12 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.1.0 (2025-06-11)
+------------------
+* Add tf_frame_prefix parameters to mecanum_drive_controller (`#1680 <https://github.com/ros-controls/ros2_controllers/issues/1680>`_)
+* Add missing github_url to rst files (`#1717 <https://github.com/ros-controls/ros2_controllers/issues/1717>`_)
+* Contributors: Christoph Fröhlich, Dawid Kmak
+
 5.0.2 (2025-05-26)
 ------------------
 
