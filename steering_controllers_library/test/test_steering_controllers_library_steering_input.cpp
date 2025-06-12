@@ -37,16 +37,16 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, check_exported_interfaces)
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_RIGHT_WHEEL],
-    traction_wheels_names_[0] + "/" + traction_interface_name_);
+    traction_joints_names_[0] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
-    traction_wheels_names_[1] + "/" + traction_interface_name_);
+    traction_joints_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_RIGHT_WHEEL],
-    steering_wheels_names_[0] + "/" + steering_interface_name_);
+    steering_joints_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(
     cmd_if_conf.names[CMD_STEER_LEFT_WHEEL],
-    steering_wheels_names_[1] + "/" + steering_interface_name_);
+    steering_joints_names_[1] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   auto state_if_conf = controller_->state_interface_configuration();

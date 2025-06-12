@@ -6,6 +6,7 @@ steering_controllers_library
 =============================
 
 .. _steering_controller_status_msg: https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/SteeringControllerStatus.msg
+.. _steering_controller_command_msg: https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/SteeringControllerCommand.msg
 .. _odometry_msg: https://github.com/ros2/common_interfaces/blob/{DISTRO}/nav_msgs/msg/Odometry.msg
 .. _twist_msg: https://github.com/ros2/common_interfaces/blob/{DISTRO}/geometry_msgs/msg/TwistStamped.msg
 .. _tf_msg: https://github.com/ros2/geometry2/blob/{DISTRO}/tf2_msgs/msg/TFMessage.msg
@@ -21,7 +22,7 @@ For an introduction to mobile robot kinematics and the nomenclature used here, s
 Execution logic of the controller
 ----------------------------------
 
-The controller uses velocity input, i.e., stamped `twist messages <twist_msg_>`_ where linear ``x`` and angular ``z`` components are used if ``twist_input == true``. If ``twist_input == false``, the controller uses `ackermann drive messages <ackermann_drive_stamped_msg_>`_ where linear ``speed`` and angular ``steering_angle`` components are used.
+The controller uses velocity input, i.e., stamped `twist messages <twist_msg_>`_ where linear ``x`` and angular ``z`` components are used if ``twist_input == true``. If ``twist_input == false``, the controller uses `control_msgs/msg/SteeringControllerStatus <steering_controller_status_msg_>`_ where linear ``speed`` and angular ``steering_angle`` components are used.
 Values in other components are ignored.
 
 In the chain mode the controller provides two reference interfaces, one for linear velocity and one for steering angle position.
@@ -85,7 +86,7 @@ Subscribers
 Used when controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is activated (``twist_input == true``):
 - ``<controller_name>/reference``  [`geometry_msgs/msg/TwistStamped <twist_msg_>`_]
 When the controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is not activated (``twist_input == false``):
-- ``<controller_name>/reference``  [`ackermann_msgs/msg/AckermannDriveStamped <ackermann_drive_stamped_msg_>`_]
+- ``<controller_name>/reference``  [`control_msgs/msg/SteeringControllerCommand <steering_controller_command_msg_>`_]
 
 Publishers
 ,,,,,,,,,,,
