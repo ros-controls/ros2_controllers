@@ -72,7 +72,8 @@ class TestableSteeringControllersSteeringInputLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
   FRIEND_TEST(SteeringControllersLibrarySteeringInputTest, check_exported_interfaces);
-  FRIEND_TEST(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for_ref_timeout);
+  FRIEND_TEST(
+    SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -152,7 +153,8 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_steering_input_library")
+  void SetUpController(
+    const std::string controller_name = "test_steering_controllers_steering_input_library")
   {
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),

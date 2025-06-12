@@ -21,7 +21,8 @@
 #include "test_steering_controllers_library_steering_input.hpp"
 
 class SteeringControllersLibrarySteeringInputTest
-: public SteeringControllersSteeringInputLibraryFixture<TestableSteeringControllersSteeringInputLibrary>
+: public SteeringControllersSteeringInputLibraryFixture<
+    TestableSteeringControllersSteeringInputLibrary>
 {
 };
 
@@ -137,8 +138,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   ASSERT_EQ(
     (*(controller_->input_ref_steering_.readFromNonRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle,
-    TEST_STEERING_ANGLE);
+    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle, TEST_STEERING_ANGLE);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -181,8 +181,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   ASSERT_EQ(
     (*(controller_->input_ref_steering_.readFromNonRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle,
-    TEST_STEERING_ANGLE);
+    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle, TEST_STEERING_ANGLE);
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
