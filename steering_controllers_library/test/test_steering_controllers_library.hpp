@@ -35,8 +35,8 @@ using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
 using ControllerTwistReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
-using ControllerAckermannReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
+using ControllerSteeringReferenceMsg =
+  steering_controllers_library::SteeringControllersLibrary::ControllerSteeringReferenceMsg;
 
 // NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
 

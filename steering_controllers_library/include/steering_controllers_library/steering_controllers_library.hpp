@@ -28,7 +28,7 @@
 #include "realtime_tools/realtime_publisher.hpp"
 
 // TODO(anyone): Replace with controller specific messages
-#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "control_msgs/msg/steering_controller_command.hpp"
 #include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -72,7 +72,7 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   using ControllerTwistReferenceMsg = geometry_msgs::msg::TwistStamped;
-  using ControllerAckermannReferenceMsg = ackermann_msgs::msg::AckermannDriveStamped;
+  using ControllerSteeringReferenceMsg = control_msgs::msg::SteeringControllerCommand;
   using ControllerStateMsgOdom = nav_msgs::msg::Odometry;
   using ControllerStateMsgTf = tf2_msgs::msg::TFMessage;
   using SteeringControllerStateMsg = control_msgs::msg::SteeringControllerStatus;
@@ -86,11 +86,11 @@ protected:
 
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerTwistReferenceMsg>::SharedPtr ref_subscriber_twist_ = nullptr;
-  rclcpp::Subscription<ControllerAckermannReferenceMsg>::SharedPtr ref_subscriber_ackermann_ =
+  rclcpp::Subscription<ControllerSteeringReferenceMsg>::SharedPtr ref_subscriber_steering_ =
     nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerTwistReferenceMsg>> input_ref_twist_;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerAckermannReferenceMsg>>
-    input_ref_ackermann_;
+  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerSteeringReferenceMsg>>
+    input_ref_steering_;
   rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);  // 0ms
 
   using ControllerStatePublisherOdom = realtime_tools::RealtimePublisher<ControllerStateMsgOdom>;
@@ -133,7 +133,7 @@ protected:
 private:
   // callback for topic interface
   void reference_callback_twist(const std::shared_ptr<ControllerTwistReferenceMsg> msg);
-  void reference_callback_ackermann(const std::shared_ptr<ControllerAckermannReferenceMsg> msg);
+  void reference_callback_steering(const std::shared_ptr<ControllerSteeringReferenceMsg> msg);
 };
 
 }  // namespace steering_controllers_library

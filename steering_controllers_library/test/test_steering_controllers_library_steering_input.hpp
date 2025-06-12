@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
-#define TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
+#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_
+#define TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_
 
 #include <gmock/gmock.h>
 
@@ -33,10 +33,10 @@
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
-using ControllerAckermannReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
+using ControllerSteeringReferenceMsg =
+  steering_controllers_library::SteeringControllersLibrary::ControllerSteeringReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
+// NOTE: Testing steering_controllers_library for Steering vehicle configuration only
 
 // name constants for state interfaces
 static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
@@ -68,11 +68,11 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 // namespace
 
 // subclassing and friending so we can access member variables
-class TestableSteeringControllersLibrary
+class TestableSteeringControllersSteeringInputLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
-  FRIEND_TEST(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibrarySteeringInputTest, check_exported_interfaces);
+  FRIEND_TEST(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -89,7 +89,7 @@ public:
   }
 
   /**
-   * @brief wait_for_command blocks until a new ControllerAckermannReferenceMsg is received.
+   * @brief wait_for_command blocks until a new ControllerSteeringReferenceMsg is received.
    * Requires that the executor is not spinned elsewhere between the
    *  message publication and the call to this function.
    */
@@ -132,7 +132,7 @@ public:
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class SteeringControllersLibraryFixture : public ::testing::Test
+class SteeringControllersSteeringInputLibraryFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase() {}
@@ -143,8 +143,8 @@ public:
     controller_ = std::make_unique<CtrlType>();
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerAckermannReferenceMsg>(
-      "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerSteeringReferenceMsg>(
+      "/test_steering_controllers_steering_input_library/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() {}
@@ -152,7 +152,7 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_library")
+  void SetUpController(const std::string controller_name = "test_steering_controllers_steering_input_library")
   {
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
@@ -233,7 +233,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_steering_controllers_library/controller_state", 10, subs_callback);
+      "/test_steering_controllers_steering_input_library/controller_state", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node.get_node_base_interface());
 
@@ -289,9 +289,9 @@ protected:
 
     wait_for_topic(command_publisher_->get_topic_name());
 
-    ControllerAckermannReferenceMsg msg;
-    msg.drive.speed = linear;
-    msg.drive.steering_angle = angular;
+    ControllerSteeringReferenceMsg msg;
+    msg.linear_velocity = linear;
+    msg.steering_angle = angular;
 
     command_publisher_->publish(msg);
   }
@@ -340,7 +340,7 @@ protected:
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
-  rclcpp::Publisher<ControllerAckermannReferenceMsg>::SharedPtr command_publisher_;
+  rclcpp::Publisher<ControllerSteeringReferenceMsg>::SharedPtr command_publisher_;
 };
 
-#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_ACKERMANN_HPP_
+#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_STEERING_INPUT_HPP_

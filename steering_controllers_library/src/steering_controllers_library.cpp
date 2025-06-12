@@ -28,8 +28,8 @@ namespace
 
 using ControllerTwistReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
-using ControllerAckermannReferenceMsg =
-  steering_controllers_library::SteeringControllersLibrary::ControllerAckermannReferenceMsg;
+using ControllerSteeringReferenceMsg =
+  steering_controllers_library::SteeringControllersLibrary::ControllerSteeringReferenceMsg;
 
 // called from RT control loop
 void reset_controller_reference_msg(
@@ -46,15 +46,12 @@ void reset_controller_reference_msg(
 }
 
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerAckermannReferenceMsg> & msg,
+  const std::shared_ptr<ControllerSteeringReferenceMsg> & msg,
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
   msg->header.stamp = node->now();
-  msg->drive.speed = std::numeric_limits<double>::quiet_NaN();
-  msg->drive.acceleration = std::numeric_limits<double>::quiet_NaN();
-  msg->drive.jerk = std::numeric_limits<double>::quiet_NaN();
-  msg->drive.steering_angle = std::numeric_limits<double>::quiet_NaN();
-  msg->drive.steering_angle_velocity = std::numeric_limits<double>::quiet_NaN();
+  msg->linear_velocity = std::numeric_limits<double>::quiet_NaN();
+  msg->steering_angle = std::numeric_limits<double>::quiet_NaN();
 }
 
 }  // namespace
@@ -128,7 +125,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Ackermann configuration requires exactly two traction joints, but %zu were provided",
+        "Steering configuration requires exactly two traction joints, but %zu were provided",
         params_.traction_joints_names.size());
       return controller_interface::CallbackReturn::ERROR;
     }
@@ -162,7 +159,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Ackermann configuration requires exactly two steering joints, but %zu were provided",
+        "Steering configuration requires exactly two steering joints, but %zu were provided",
         params_.steering_joints_names.size());
       return controller_interface::CallbackReturn::ERROR;
     }
@@ -203,7 +200,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Ackermann configuration requires exactly two traction joints, but %zu state interface "
+          "Steering configuration requires exactly two traction joints, but %zu state interface "
           "names were provided",
           params_.traction_joints_state_names.size());
         return controller_interface::CallbackReturn::ERROR;
@@ -248,7 +245,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Ackermann configuration requires exactly two steering joints, but %zu state interface "
+          "Steering configuration requires exactly two steering joints, but %zu state interface "
           "names were provided",
           params_.steering_joints_state_names.size());
         return controller_interface::CallbackReturn::ERROR;
@@ -282,14 +279,14 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   }
   else
   {
-    ref_subscriber_ackermann_ = get_node()->create_subscription<ControllerAckermannReferenceMsg>(
+    ref_subscriber_steering_ = get_node()->create_subscription<ControllerSteeringReferenceMsg>(
       "~/reference", subscribers_qos,
       std::bind(
-        &SteeringControllersLibrary::reference_callback_ackermann, this, std::placeholders::_1));
-    std::shared_ptr<ControllerAckermannReferenceMsg> msg =
-      std::make_shared<ControllerAckermannReferenceMsg>();
+        &SteeringControllersLibrary::reference_callback_steering, this, std::placeholders::_1));
+    std::shared_ptr<ControllerSteeringReferenceMsg> msg =
+      std::make_shared<ControllerSteeringReferenceMsg>();
     reset_controller_reference_msg(msg, get_node());
-    input_ref_ackermann_.writeFromNonRT(msg);
+    input_ref_steering_.writeFromNonRT(msg);
   }
 
   try
@@ -400,8 +397,8 @@ void SteeringControllersLibrary::reference_callback_twist(
   }
 }
 
-void SteeringControllersLibrary::reference_callback_ackermann(
-  const std::shared_ptr<ControllerAckermannReferenceMsg> msg)
+void SteeringControllersLibrary::reference_callback_steering(
+  const std::shared_ptr<ControllerSteeringReferenceMsg> msg)
 {
   // if no timestamp provided use current time for command timestamp
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
@@ -415,7 +412,7 @@ void SteeringControllersLibrary::reference_callback_ackermann(
 
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
   {
-    input_ref_ackermann_.writeFromNonRT(msg);
+    input_ref_steering_.writeFromNonRT(msg);
   }
   else
   {
@@ -509,7 +506,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   }
   else
   {
-    reset_controller_reference_msg(*(input_ref_ackermann_.readFromRT()), get_node());
+    reset_controller_reference_msg(*(input_ref_steering_.readFromRT()), get_node());
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -539,11 +536,11 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   }
   else
   {
-    auto current_ref = *(input_ref_ackermann_.readFromRT());
-    if (!std::isnan(current_ref->drive.speed) && !std::isnan(current_ref->drive.steering_angle))
+    auto current_ref = *(input_ref_steering_.readFromRT());
+    if (!std::isnan(current_ref->linear_velocity) && !std::isnan(current_ref->steering_angle))
     {
-      reference_interfaces_[0] = current_ref->drive.speed;
-      reference_interfaces_[1] = current_ref->drive.steering_angle;
+      reference_interfaces_[0] = current_ref->linear_velocity;
+      reference_interfaces_[1] = current_ref->steering_angle;
     }
   }
 
@@ -562,9 +559,9 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    const auto age_of_last_command =
-      params_.use_twist_input ? time - (*(input_ref_twist_.readFromRT()))->header.stamp
-                              : time - (*(input_ref_ackermann_.readFromRT()))->header.stamp;
+    const auto age_of_last_command = params_.use_twist_input
+                                       ? time - (*(input_ref_twist_.readFromRT()))->header.stamp
+                                       : time - (*(input_ref_steering_.readFromRT()))->header.stamp;
 
     const auto timeout =
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);

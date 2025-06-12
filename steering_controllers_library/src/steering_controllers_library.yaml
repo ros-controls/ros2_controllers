@@ -118,6 +118,6 @@ steering_controllers_library:
   use_twist_input: {
     type: bool,
     default_value: true,
-    description: "Choose whether a TwistStamped or a AckermannDriveStamped message is used as input.",
+    description: "Choose whether a TwistStamped or a SteeringControllerCommand message is used as input.",
     read_only: true,
   }
