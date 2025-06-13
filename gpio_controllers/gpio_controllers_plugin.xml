@@ -5,3 +5,12 @@
   </description>
   </class>
 </library>
+
+<library path="gpio_tool_controllers">
+  <class name="gpio_tool_controller/GpioToolController" type="gpio_tool_controller::GpioToolController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The gpio tool controllers enables control of the tools that are controlled using GPIOs. For example, pneumatic grippers, lifts, etc. It enables management of multiple engaged state, e.g., if gripper is closed with or without an object.
+    The controller can be also be used in the simple form where certian states of a device are set through GPIOs, e.g., manual and automatic mode.
+  </description>
+  </class>
+</library>

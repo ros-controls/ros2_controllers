@@ -16,6 +16,10 @@ Description of controller's interfaces
 - ``dynamic_interfaces`` [``control_msgs::msg::DynamicInterfaceValues``]: Publishes all command and state interface of the IOs and sensors of gripper.
 
 
+When preemting acitons make sure that those are defined fully in the controller's parameter.
+This means that you shoul make sure that the actuators for *engage* are disabled when *disengage* is called and vice versa.
+Otherwise it can happen that two actuators acting "against each other" are turned on at the same time which can lead to unexpected behavior and even damage of the tool.
+
 Parameters
 ,,,,,,,,,,,
 
