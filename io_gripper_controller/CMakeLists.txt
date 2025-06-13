@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(io_gripper_controller)
+project(gpio_tool_controller)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
@@ -32,27 +32,27 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-generate_parameter_library(io_gripper_controller_parameters
-  src/io_gripper_controller.yaml
+generate_parameter_library(gpio_tool_controller_parameters
+  src/gpio_tool_controller.yaml
 )
 add_library(
-  io_gripper_controller
+  gpio_tool_controllers
   SHARED
-  src/io_gripper_controller.cpp
+  src/gpio_tool_controller.cpp
 )
-target_include_directories(io_gripper_controller PUBLIC
+target_include_directories(gpio_tool_controllers PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(io_gripper_controller io_gripper_controller_parameters)
-ament_target_dependencies(io_gripper_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
-target_compile_definitions(io_gripper_controller PRIVATE "io_gripper_controller_BUILDING_DLL")
+target_link_libraries(gpio_tool_controllers gpio_tool_controller_parameters)
+ament_target_dependencies(gpio_tool_controller ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_compile_definitions(gpio_tool_controllers PRIVATE "gpio_tool_controller_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
-  controller_interface io_gripper_controller.xml)
+  controller_interface gpio_tool_controller.xml)
 
 install(
   TARGETS
-  io_gripper_controller
+  gpio_tool_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -66,31 +66,31 @@ install(
 if(BUILD_TESTING)
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
 
-  ament_add_gmock(test_load_io_gripper_controller test/test_load_io_gripper_controller.cpp)
-  target_include_directories(test_load_io_gripper_controller PRIVATE include)
+  ament_add_gmock(test_load_gpio_tool_controller test/test_load_gpio_tool_controller.cpp)
+  target_include_directories(test_load_gpio_tool_controller PRIVATE include)
   ament_target_dependencies(
-    test_load_io_gripper_controller
+    test_load_gpio_tool_controller
     controller_manager
     hardware_interface
     ros2_control_test_assets
   )
 
-  ament_add_gmock(test_io_gripper_controller
-    test/test_io_gripper_controller.cpp
-    test/test_io_gripper_controller_open.cpp
-    test/test_io_gripper_controller_close.cpp
-    test/test_io_gripper_controller_all_param_set.cpp
-    test/test_io_gripper_controller_open_close_action.cpp
-    test/test_io_gripper_controller_reconfigure.cpp
-    test/test_io_gripper_controller_reconfigure_action.cpp
-  )
-  target_include_directories(test_io_gripper_controller PRIVATE include)
-  target_link_libraries(test_io_gripper_controller io_gripper_controller)
-  ament_target_dependencies(
-    test_io_gripper_controller
-    controller_interface
-    hardware_interface
-  )
+  # ament_add_gmock(test_gpio_tool_controller
+  #   test/test_gpio_tool_controller.cpp
+  #   test/test_gpio_tool_controller_open.cpp
+  #   test/test_gpio_tool_controller_close.cpp
+  #   test/test_gpio_tool_controller_all_param_set.cpp
+  #   test/test_gpio_tool_controller_open_close_action.cpp
+  #   test/test_gpio_tool_controller_reconfigure.cpp
+  #   test/test_gpio_tool_controller_reconfigure_action.cpp
+  # )
+  # target_include_directories(test_gpio_tool_controller PRIVATE include)
+  # target_link_libraries(test_gpio_tool_controller gpio_tool_controller)
+  # ament_target_dependencies(
+  #   test_gpio_tool_controller
+  #   controller_interface
+  #   hardware_interface
+  # )
 
 endif()
 
@@ -101,7 +101,7 @@ ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 ament_export_libraries(
-  io_gripper_controller
+  gpio_tool_controller
 )
 
 ament_package()

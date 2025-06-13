@@ -1,0 +1,82 @@
+test_io_gripper_controller:
+  ros__parameters:
+    use_action: true
+    timeout: 5.0
+    tollerance: 0.00001  # binary data on the interfaces therefore small tollerance
+    engaged_joints: [gripper_clamp_jaw]
+
+    disengaged:
+      name: 'open'
+      joint_states: [0.0]
+      set_before_command:
+        interfaces: [Release_Break_valve, Release_Something]
+        values: [1.0, 0.0]
+      set_before_state:
+        interfaces: [Break_Engaged]
+        values: [0.0]
+      command:
+        interfaces: [Open_valve, Close_valve]
+        values: [1.0, 0.0]
+      state:
+        interfaces: [Opened_signal, Closed_signal]
+        values: [1.0, 0.0]
+      set_after_command:
+        interfaces: [Release_Break_valve, Release_Something]
+        values: [0.0, 1.0]
+      set_after_state:
+        interfaces: [Break_Engaged]
+        values: [1.0]
+
+    possible_engaged_states: ['close_empty', 'close_full']
+
+    engaged:
+      set_before_command:
+        interfaces: [Release_Break_valve, Release_Something]
+        low: [1.0, 0.0]
+      set_before_state:
+        interfaces: [Break_Engaged]
+        values: [0.0]
+      command:
+        interfaces: [Close_valve, Open_valve]
+        values: [1.0, 0.0]
+      states:
+        close_empty:
+          joint_states: [0.16]
+          interfaces: [Closed_signal, Part_Grasped_signal]
+          values: [1.0, 0.0]
+          set_after_command_interfaces: [Release_Something, Release_Break_valve]
+          set_after_command_values: [1.0, 0.0]
+          set_after_state_interfaces: [Break_Engaged]
+          set_after_state_values: [1.0]
+        close_full:
+          joint_states: [0.08]
+          interfaces: [Closed_signal, Part_Grasped_signal]
+          values: [0.0, 1.0]
+          set_after_command_interfaces: [Release_Something, Release_Break_valve]
+          set_after_command_values: [1.0, 0.0]
+          set_after_state_interfaces: [Break_Engaged]
+          set_after_state_values: [1.0]
+
+    configurations: ["narrow_objects", "wide_objects"]
+    configuration_joints: [gripper_distance_joint]
+
+    configuration_setup:
+      narrow_objects:
+        joint_states: [0.1]
+        command_interfaces: [Narrow_Configuration_Cmd, Wide_Configuration_Cmd]
+        command_values: [1.0, 0.0]
+        state_interfaces: [Narrow_Configuraiton_Signal, Wide_Configuration_Signal]
+        state_values: [1.0, 0.0]
+      wide_objects:
+        joint_states: [0.2]
+        command_interfaces: [Narrow_Configuration_Cmd, Wide_Configuration_Cmd]
+        command_values: [0.0, 1.0]
+        state_interfaces: [Narrow_Configuraiton_Signal, Wide_Configuration_Signal]
+        state_values: [0.0, 1.0]
+
+    tool_specific_sensors: ["part_sensor_top", "part_sensor"]
+    sensors_interfaces:
+      part_sensor_top:
+        interface: "Part_Sensor_Top_signal"
+      part_sensor:
+        interface: "Part_Grasped_signal"
