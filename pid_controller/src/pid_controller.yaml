@@ -60,26 +60,20 @@ pid_controller:
         default_value: 0.0,
         description: "Derivative gain for PID"
       }
-      saturation: {
-        type: bool,
-        default_value: false,
-        description: "Enables output saturation. When true, the controller output is
-        clamped between u_clamp_max and u_clamp_min."
-      }
       u_clamp_max: {
         type: double,
-        default_value: 0.0,
+        default_value: .inf,
         description: "Upper output clamp."
       }
       u_clamp_min: {
         type: double,
-        default_value: 0.0,
+        default_value: -.inf,
         description: "Lower output clamp."
       }
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Anti-windup functionality. When set to true, limits
+        description: "[Deprecated, see antiwindup_strategy] Anti-windup functionality. When set to true, limits
         the integral error to prevent windup; otherwise, constrains the
         integral contribution to the control output. i_clamp_max and
         i_clamp_min are applied in both scenarios."
@@ -87,12 +81,12 @@ pid_controller:
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
       }
       antiwindup_strategy: {
         type: string,
