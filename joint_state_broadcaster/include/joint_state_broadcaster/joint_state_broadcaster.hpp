@@ -97,6 +97,8 @@ protected:
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
+  std::string frame_id_;
+
   //  For the JointState message,
   //  we store the name of joints with compatible interfaces
   std::vector<std::string> joint_names_;
