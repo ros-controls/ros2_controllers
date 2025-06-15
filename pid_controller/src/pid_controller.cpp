@@ -74,8 +74,6 @@ PidController::PidController() : controller_interface::ChainableControllerInterf
 
 controller_interface::CallbackReturn PidController::on_init()
 {
-  control_mode_.initRT(feedforward_mode_type::OFF);
-
   try
   {
     param_listener_ = std::make_shared<pid_controller::ParamListener>(get_node());
@@ -230,6 +228,7 @@ controller_interface::CallbackReturn PidController::on_configure(
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
   }
+
   std::shared_ptr<ControllerMeasuredStateMsg> measured_state_msg =
     std::make_shared<ControllerMeasuredStateMsg>();
   reset_controller_measured_state_msg(measured_state_msg, reference_and_state_dof_names_);
@@ -237,25 +236,6 @@ controller_interface::CallbackReturn PidController::on_configure(
 
   measured_state_values_.resize(
     dof_ * params_.reference_and_state_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
-
-  auto set_feedforward_control_callback =
-    [&](
-      const std::shared_ptr<ControllerModeSrvType::Request> request,
-      std::shared_ptr<ControllerModeSrvType::Response> response)
-  {
-    if (request->data)
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::ON);
-    }
-    else
-    {
-      control_mode_.writeFromNonRT(feedforward_mode_type::OFF);
-    }
-    response->success = true;
-  };
-
-  set_feedforward_control_service_ = get_node()->create_service<ControllerModeSrvType>(
-    "~/set_feedforward_control", set_feedforward_control_callback, qos_services);
 
   try
   {
@@ -425,11 +405,7 @@ std::vector<hardware_interface::StateInterface> PidController::on_export_state_i
   return state_interfaces;
 }
 
-bool PidController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool PidController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn PidController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
@@ -514,22 +490,19 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(reference_interfaces_[i]) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (*(control_mode_.readFromRT()) == feedforward_mode_type::ON)
+      // two interfaces
+      if (reference_interfaces_.size() == 2 * dof_)
       {
-        // two interfaces
-        if (reference_interfaces_.size() == 2 * dof_)
+        if (std::isfinite(reference_interfaces_[dof_ + i]))
         {
-          if (std::isfinite(reference_interfaces_[dof_ + i]))
-          {
-            tmp_command = reference_interfaces_[dof_ + i] *
-                          params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
-          }
-        }
-        else  // one interface
-        {
-          tmp_command = reference_interfaces_[i] *
+          tmp_command = reference_interfaces_[dof_ + i] *
                         params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
         }
+      }
+      else  // one interface
+      {
+        tmp_command = reference_interfaces_[i] *
+                      params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
       }
 
       double error = reference_interfaces_[i] - measured_state_values_[i];

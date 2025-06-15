@@ -82,81 +82,6 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  // TODO(anyone): Remove deprecated parameters
-  // START OF DEPRECATED
-  if (!params_.front_steering)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_steering'. Instead, set 'traction_joints_names' or "
-      "'steering_joints_names'");
-  }
-
-  if (params_.front_wheels_names.size() > 0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheels_names', set 'traction_joints_names' or "
-      "'steering_joints_names' instead");
-    if (params_.front_steering)
-    {
-      params_.steering_joints_names = params_.front_wheels_names;
-    }
-    else
-    {
-      params_.traction_joints_names = params_.front_wheels_names;
-    }
-  }
-
-  if (params_.rear_wheels_names.size() > 0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheels_names', set 'traction_joints_names' or "
-      "'steering_joints_names' instead");
-    if (params_.front_steering)
-    {
-      params_.traction_joints_names = params_.rear_wheels_names;
-    }
-    else
-    {
-      params_.steering_joints_names = params_.rear_wheels_names;
-    }
-  }
-
-  if (params_.front_wheels_state_names.size() > 0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheels_state_names', set 'traction_joints_state_names' or "
-      "'steering_joints_state_names' instead");
-    if (params_.front_steering)
-    {
-      params_.steering_joints_state_names = params_.front_wheels_state_names;
-    }
-    else
-    {
-      params_.traction_joints_state_names = params_.front_wheels_state_names;
-    }
-  }
-
-  if (params_.rear_wheels_state_names.size() > 0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheels_state_names', set 'traction_joints_state_names' or "
-      "'steering_joints_state_names' instead");
-    if (params_.front_steering)
-    {
-      params_.traction_joints_state_names = params_.rear_wheels_state_names;
-    }
-    else
-    {
-      params_.steering_joints_state_names = params_.rear_wheels_state_names;
-    }
-  }
-  // END OF DEPRECATED
-
   // call method from implementations, sets odometry type
   configure_odometry();
 
@@ -397,7 +322,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   try
   {
     // State publisher
-    controller_s_publisher_ = get_node()->create_publisher<AckermannControllerState>(
+    controller_s_publisher_ = get_node()->create_publisher<SteeringControllerStateMsg>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
@@ -513,11 +438,7 @@ SteeringControllersLibrary::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool SteeringControllersLibrary::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool SteeringControllersLibrary::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
@@ -621,7 +542,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     controller_state_publisher_->msg_.header.stamp = time;
     controller_state_publisher_->msg_.traction_wheels_position.clear();
     controller_state_publisher_->msg_.traction_wheels_velocity.clear();
-    controller_state_publisher_->msg_.linear_velocity_command.clear();
+    controller_state_publisher_->msg_.traction_command.clear();
     controller_state_publisher_->msg_.steer_positions.clear();
     controller_state_publisher_->msg_.steering_angle_command.clear();
 
@@ -640,7 +561,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
           state_interfaces_[i].get_value());
       }
-      controller_state_publisher_->msg_.linear_velocity_command.push_back(
+      controller_state_publisher_->msg_.traction_command.push_back(
         command_interfaces_[i].get_value());
     }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_state_broadcaster</name>
-  <version>4.23.0</version>
+  <version>5.1.0</version>
   <description>Broadcaster to publish joint state</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -30,7 +30,6 @@
   <depend>pluginlib</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>rclcpp</depend>
-  <depend>rcutils</depend>
   <depend>realtime_tools</depend>
   <depend>sensor_msgs</depend>
   <depend>urdf</depend>

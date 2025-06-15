@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>steering_controllers_library</name>
-  <version>4.23.0</version>
+  <version>5.1.0</version>
   <description>Package for steering robot configurations including odometry and interfaces.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -40,7 +40,6 @@
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
-  <depend>ackermann_msgs</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
