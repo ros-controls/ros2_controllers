@@ -71,3 +71,15 @@ test_save_i_term_on:
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, i_clamp_max: 5.0, i_clamp_min: -5.0, save_i_term: true}
+
+test_zero_threshold:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    gains:
+      joint1: {p: 1.0, i: 2.0, d: 3.0, i_clamp_max: 5.0, i_clamp_min: -5.0, save_i_term: false, zero_threshold: 0.1, zero_threshold_duration: 0.01}

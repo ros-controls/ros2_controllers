@@ -94,3 +94,17 @@ pid_controller:
         default_value: true,
         description: "Indicating if integral term is retained after re-activation"
       }
+      zero_threshold: {
+        type: double,
+        default_value: 0.0,
+        description: "If the output is below this threshold for a duration specified by
+        zero_threshold_duration, the PID will be reset. If set to 0.0, this functionality is
+        disabled. To reset integral term, set the save_i_term parameter to false."
+      }
+      zero_threshold_duration: {
+        type: double,
+        default_value: 0.5,
+        description: "Duration in seconds for which the output must be below the zero_threshold
+        before the PID will be reset. This is used to prevent the PID from resetting when the
+        output is only briefly below the threshold."
+      }
