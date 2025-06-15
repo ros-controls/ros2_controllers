@@ -22,7 +22,7 @@ Topics
 ,,,,,,,,,,,,,,,,,,
 
 ~/commands (input topic) [std_msgs::msg::Float64MultiArray]
-  Joints' velocity commands
+  Joints' velocity commands (in radians/second)
 
 
 Parameters
