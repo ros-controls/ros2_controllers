@@ -147,12 +147,12 @@ joint_trajectory_controller:
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
       }
       antiwindup_strategy: {
         type: string,
