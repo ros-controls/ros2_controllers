@@ -159,8 +159,7 @@ joint_trajectory_controller:
         default_value: "legacy",
         description: "Specifies the anti-windup strategy. Options: 'back_calculation',
         'conditional_integration', 'legacy' or 'none'. Note that the 'back_calculation' strategy use the
-        tracking_time_constant parameter to tune the anti-windup behavior. When a strategy other
-        than 'none' is selected, it will override the controller's default anti-windup behavior.",
+        tracking_time_constant parameter to tune the anti-windup behavior.",
         validation: {
           one_of<>: [[
             "back_calculation",
