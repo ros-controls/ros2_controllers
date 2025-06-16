@@ -109,6 +109,11 @@ pid_controller:
         description: "Specifies the tracking time constant for the 'back_calculation' strategy. If
         set to 0.0 when this strategy is selected, a recommended default value will be applied."
       }
+      error_deadband: {
+        type: double,
+        default_value: 1.e-16,
+        description: "Is used to stop integration when the error is within the given range."
+      }
       feedforward_gain: {
         type: double,
         default_value: 0.0,
