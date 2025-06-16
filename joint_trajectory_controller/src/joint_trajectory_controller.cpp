@@ -1667,6 +1667,7 @@ void JointTrajectoryController::update_pids()
     antiwindup_strat.set_type(gains.antiwindup_strategy);
     antiwindup_strat.i_max = gains.i_clamp;
     antiwindup_strat.i_min = -gains.i_clamp;
+    antiwindup_strat.error_deadband = gains.error_deadband;
     antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
     if (pids_[i])
     {
