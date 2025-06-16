@@ -90,15 +90,16 @@ pid_controller:
       }
       antiwindup_strategy: {
         type: string,
-        default_value: "none",
+        default_value: "legacy",
         description: "Specifies the anti-windup strategy. Options: 'back_calculation',
-        'conditional_integration', or 'none'. Note that the 'back_calculation' strategy use the
+        'conditional_integration', 'legacy' or 'none'. Note that the 'back_calculation' strategy use the
         tracking_time_constant parameter to tune the anti-windup behavior. When a strategy other
         than 'none' is selected, it will override the controller's default anti-windup behavior.",
         validation: {
           one_of<>: [[
             "back_calculation",
             "conditional_integration",
+            "legacy",
             "none"
           ]]
         }
