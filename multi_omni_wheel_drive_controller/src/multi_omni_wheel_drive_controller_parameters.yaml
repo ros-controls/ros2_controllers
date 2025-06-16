@@ -3,24 +3,28 @@ multi_omni_wheel_drive_controller:
     {
       type: double,
       description: "Angular offset (radians) of the first wheel from the positive direction of the x-axis of the robot.",
+      read_only: true,
     }
   wheel_names:
     {
       type: string_array,
       description: "Names of the wheels' joints, given in an anti-clockwise order starting from the wheel aligned with the positive direction of the x-axis of the robot / offset from it by the value specified in ``wheel_offset``.",
       validation: { not_empty<>: [] },
+      read_only: true,
     }
   robot_radius:
     {
       type: double,
       description: "Radius of the robot, distance between the center of the robot and the wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
       validation: { gt<>: [0.0] },
+      read_only: true,
     }
   wheel_radius:
     {
       type: double,
       description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower than expected.",
       validation: { gt<>: [0.0] },
+      read_only: true,
     }
   tf_frame_prefix_enable:
     {
@@ -82,10 +86,4 @@ multi_omni_wheel_drive_controller:
       type: double,
       default_value: 0.5, # seconds
       description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered stale.",
-    }
-  publish_rate:
-    {
-      type: double,
-      default_value: 50.0, # Hz
-      description: "Publishing rate (Hz) of the odometry and TF messages.",
     }

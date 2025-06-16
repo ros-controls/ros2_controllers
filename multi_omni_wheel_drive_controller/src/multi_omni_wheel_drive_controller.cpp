@@ -23,7 +23,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
-#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Quaternion.hpp"
 
 namespace
 {
@@ -66,7 +66,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
 {
   auto logger = get_node()->get_logger();
 
-  // update parameters if they have changed
+  // Update parameters if they have changed
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
@@ -122,7 +122,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
         cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0) ||
         current_time_diff < cmd_vel_timeout_)
       {
-        received_velocity_msg_ptr_.writeFromNonRT(msg);
+        received_velocity_msg_.set(*msg);
       }
       else
       {
@@ -172,9 +172,6 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
   odometry_message.header.frame_id = odom_frame_id;
   odometry_message.child_frame_id = base_frame_id;
 
-  // Limit the publication on the topics /odom and /tf
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / params_.publish_rate);
-
   // Initialize odom values zeros
   odometry_message.twist =
     geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
@@ -216,6 +213,11 @@ InterfaceConfiguration MultiOmniWheelDriveController::command_interface_configur
 
 InterfaceConfiguration MultiOmniWheelDriveController::state_interface_configuration() const
 {
+  if (params_.open_loop)
+  {
+    return {interface_configuration_type::NONE, {}};
+  }
+
   std::vector<std::string> conf_names;
   for (const auto & joint_name : params_.wheel_names)
   {
@@ -261,15 +263,13 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
 {
   auto logger = get_node()->get_logger();
 
-  const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
-
-  if (command_msg_ptr == nullptr)
+  auto current_ref_op = received_velocity_msg_.try_get();
+  if (current_ref_op.has_value())
   {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return controller_interface::return_type::ERROR;
+    command_msg_ = current_ref_op.value();
   }
 
-  const auto age_of_last_command = time - command_msg_ptr->header.stamp;
+  const auto age_of_last_command = time - command_msg_.header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
@@ -278,12 +278,11 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
     reference_interfaces_[2] = 0.0;
   }
   else if (
-    std::isfinite(command_msg_ptr->twist.linear.x) &&
-    std::isfinite(command_msg_ptr->twist.angular.z))
+    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) && std::isfinite(command_msg_.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
-    reference_interfaces_[1] = command_msg_ptr->twist.linear.y;
-    reference_interfaces_[2] = command_msg_ptr->twist.angular.z;
+    reference_interfaces_[0] = command_msg_.twist.linear.x;
+    reference_interfaces_[1] = command_msg_.twist.linear.y;
+    reference_interfaces_[2] = command_msg_.twist.angular.z;
   }
   else
   {
@@ -299,6 +298,13 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   rclcpp::Logger logger = get_node()->get_logger();
+
+  // Update parameters if they have changed
+  if (param_listener_->is_old(params_))
+  {
+    params_ = param_listener_->get_params();
+    RCLCPP_INFO(logger, "Parameters were updated");
+  }
 
   if (
     !std::isfinite(reference_interfaces_[0]) || !std::isfinite(reference_interfaces_[1]) ||
@@ -322,7 +328,7 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     {
       // Get wheel feedback
       const std::optional<double> wheel_feedback_op =
-        registered_wheel_handles_[i].feedback.get().get_optional();
+        registered_wheel_handles_[i].feedback.value().get().get_optional();
       if (!wheel_feedback_op.has_value())
       {
         RCLCPP_DEBUG(logger, "Unable to retrieve data from [%zu] wheel feedback!", i);
@@ -353,50 +359,30 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    bool should_publish = true;
-    try
-    {
-      if (time.seconds() - previous_publish_timestamp_.seconds() < publish_period_.seconds())
-      {
-        should_publish = false;
-      }
-    }
-    catch (const std::runtime_error &)
-    {
-      // Handle exceptions when the time source changes and initialize publish timestamp
-      previous_publish_timestamp_ = time;
-    }
+    nav_msgs::msg::Odometry odometry_message;
+    odometry_message.header.stamp = get_node()->now();
+    odometry_message.pose.pose.position.x = odometry_.getX();
+    odometry_message.pose.pose.position.y = odometry_.getY();
+    odometry_message.pose.pose.orientation.x = orientation.x();
+    odometry_message.pose.pose.orientation.y = orientation.y();
+    odometry_message.pose.pose.orientation.z = orientation.z();
+    odometry_message.pose.pose.orientation.w = orientation.w();
+    odometry_message.twist.twist.linear.x = odometry_.getLinearXVel();
+    odometry_message.twist.twist.linear.y = odometry_.getLinearYVel();
+    odometry_message.twist.twist.angular.z = odometry_.getAngularVel();
+    realtime_odometry_publisher_->try_publish(odometry_message);
 
-    if (should_publish)
-    {
-      if (realtime_odometry_publisher_->trylock())
-      {
-        auto & odometry_message = realtime_odometry_publisher_->msg_;
-        odometry_message.header.stamp = time;
-        odometry_message.pose.pose.position.x = odometry_.getX();
-        odometry_message.pose.pose.position.y = odometry_.getY();
-        odometry_message.pose.pose.orientation.x = orientation.x();
-        odometry_message.pose.pose.orientation.y = orientation.y();
-        odometry_message.pose.pose.orientation.z = orientation.z();
-        odometry_message.pose.pose.orientation.w = orientation.w();
-        odometry_message.twist.twist.linear.x = odometry_.getLinearXVel();
-        odometry_message.twist.twist.linear.y = odometry_.getLinearYVel();
-        odometry_message.twist.twist.angular.z = odometry_.getAngularVel();
-        realtime_odometry_publisher_->unlockAndPublish();
-      }
-      if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
-      {
-        auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-        transform.header.stamp = time;
-        transform.transform.translation.x = odometry_.getX();
-        transform.transform.translation.y = odometry_.getY();
-        transform.transform.rotation.x = orientation.x();
-        transform.transform.rotation.y = orientation.y();
-        transform.transform.rotation.z = orientation.z();
-        transform.transform.rotation.w = orientation.w();
-        realtime_odometry_transform_publisher_->unlockAndPublish();
-      }
-    }
+    tf2_msgs::msg::TFMessage transform_message;
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.stamp = get_node()->now();
+    transform.transform.translation.x = odometry_.getX();
+    transform.transform.translation.y = odometry_.getY();
+    transform.transform.rotation.x = orientation.x();
+    transform.transform.rotation.y = orientation.y();
+    transform.transform.rotation.z = orientation.z();
+    transform.transform.rotation.w = orientation.w();
+    transform_message.transforms.push_back(transform);
+    realtime_odometry_transform_publisher_->try_publish(transform_message);
   }
 
   compute_and_set_wheel_velocities();
@@ -469,21 +455,6 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wh
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
-    const auto interface_name = feedback_type();
-    const auto state_handle = std::find_if(
-      state_interfaces_.cbegin(), state_interfaces_.cend(),
-      [&wheel_name, &interface_name](const auto & interface)
-      {
-        return interface.get_prefix_name() == wheel_name &&
-               interface.get_interface_name() == interface_name;
-      });
-
-    if (state_handle == state_interfaces_.cend())
-    {
-      RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
-      return controller_interface::CallbackReturn::ERROR;
-    }
-
     const auto command_handle = std::find_if(
       command_interfaces_.begin(), command_interfaces_.end(),
       [&wheel_name](const auto & interface)
@@ -498,8 +469,29 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wh
       return controller_interface::CallbackReturn::ERROR;
     }
 
-    registered_handles.emplace_back(
-      WheelHandle{std::ref(*state_handle), std::ref(*command_handle)});
+    if (params_.open_loop)
+    {
+      registered_handles.emplace_back(WheelHandle{std::nullopt, std::ref(*command_handle)});
+    }
+    else
+    {
+      const auto interface_name = feedback_type();
+      const auto state_handle = std::find_if(
+        state_interfaces_.cbegin(), state_interfaces_.cend(),
+        [&wheel_name, &interface_name](const auto & interface)
+        {
+          return interface.get_prefix_name() == wheel_name &&
+                 interface.get_interface_name() == interface_name;
+        });
+
+      if (state_handle == state_interfaces_.cend())
+      {
+        RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+      registered_handles.emplace_back(
+        WheelHandle{std::ref(*state_handle), std::ref(*command_handle)});
+    }
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -523,25 +515,19 @@ void MultiOmniWheelDriveController::reset_buffers()
     reference_interfaces_.begin(), reference_interfaces_.end(),
     std::numeric_limits<double>::quiet_NaN());
 
-  // Fill RealtimeBuffer with NaNs so it will contain a known value
+  // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
-  received_velocity_msg_ptr_.reset();
-  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
-  empty_msg_ptr->header.stamp = get_node()->now();
-  empty_msg_ptr->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
+  command_msg_.header.stamp = get_node()->now();
+  command_msg_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  received_velocity_msg_.set(command_msg_);
 }
 
-bool MultiOmniWheelDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode (without linting type-cast error)
-  return true || chained_mode;
-}
+bool MultiOmniWheelDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface>
 MultiOmniWheelDriveController::on_export_reference_interfaces()

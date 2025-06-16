@@ -39,11 +39,20 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(${PROJECT_NAME} PUBLIC
   ${PROJECT_NAME}_parameters
   Eigen3::Eigen
+  controller_interface::controller_interface
+  hardware_interface::hardware_interface
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  realtime_tools::realtime_tools
+  tf2::tf2
+  ${geometry_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${tf2_msgs_TARGETS}
 )
-ament_target_dependencies(${PROJECT_NAME} PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 pluginlib_export_plugin_description_file(controller_interface multi_omni_wheel_drive_plugin.xml)
 
 # Install
@@ -66,30 +75,16 @@ if(BUILD_TESTING)
   ament_add_gmock(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
   target_link_libraries(test_${PROJECT_NAME}
     ${PROJECT_NAME}
-    ${PROJECT_NAME}_parameters
-    Eigen3::Eigen
-  )
-  ament_target_dependencies(test_${PROJECT_NAME}
-    geometry_msgs
-    hardware_interface
-    nav_msgs
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    tf2
-    tf2_msgs
-    Eigen3
   )
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_${PROJECT_NAME} test/test_load_${PROJECT_NAME}.cpp)
-  ament_target_dependencies(test_load_${PROJECT_NAME}
-    controller_manager
-    ros2_control_test_assets
-  )
-
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+  target_link_libraries(test_load_${PROJECT_NAME}
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
+  )
 endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
