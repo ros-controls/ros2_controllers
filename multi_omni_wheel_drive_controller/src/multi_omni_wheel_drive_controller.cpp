@@ -278,7 +278,8 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
     reference_interfaces_[2] = 0.0;
   }
   else if (
-    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) && std::isfinite(command_msg_.twist.angular.z))
+    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) &&
+    std::isfinite(command_msg_.twist.angular.z))
   {
     reference_interfaces_[0] = command_msg_.twist.linear.x;
     reference_interfaces_[1] = command_msg_.twist.linear.y;
