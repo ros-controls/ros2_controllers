@@ -163,7 +163,7 @@ The wheel velocity :math:`v_i` and steering angle :math:`\phi_i` are:
    \phi_i = \arctan2(v_{i,y}, v_{i,x})
 
 
-**Forward Kinematics**
+**Odometry**
 
 The body twist of the robot is computed from the wheel velocities :math:`v_i` and steering angles :math:`\phi_i`. Each module’s velocity components in the body frame are:
 
@@ -182,7 +182,6 @@ The chassis velocities are calculated as:
   \omega_{b,z} = \frac{\sum_{i=0}^{3} (v_{i,y} l_{i,x} - v_{i,x} l_{i,y})}{\sum_{i=0}^{3} (l_{i,x}^2 + l_{i,y}^2)}
 
 
-**Odometry**
 
 Odometry updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in the global frame using the computed chassis velocities. The global velocities are:
 
