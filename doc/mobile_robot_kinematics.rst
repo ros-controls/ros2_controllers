@@ -117,7 +117,6 @@ Swerve Drive Robots
 The below explains the kinematics of omnidirectional drive robots using four swerve modules, each with independently controlled steering and driving motors. It follows the coordinate conventions defined in `REP-103 <https://www.ros.org/reps/rep-0103.html>`__.
 
 .. image:: images/swerve_drive.svg
-   :width: 550
    :align: center
    :alt: Swerve Drive Robot
 
