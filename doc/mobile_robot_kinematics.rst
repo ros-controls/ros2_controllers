@@ -193,11 +193,6 @@ Odometry updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in th
 
    v_{y,\text{global}} = v_{b,x} \sin(\theta) + v_{b,y} \cos(\theta)
 
-The pose is updated via Euler integration over time step :math:`\Delta t`:
-
-.. math::
-
-   \dot{x} = v_{x,\text{global}}, \quad \dot{y} = v_{y,\text{global}}, \quad \dot{\theta} = \omega_{b,z}
 
 Nonholonomic Wheeled Mobile Robots
 .....................................
