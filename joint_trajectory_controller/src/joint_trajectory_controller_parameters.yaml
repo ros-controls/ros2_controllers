@@ -177,7 +177,7 @@ joint_trajectory_controller:
       }
       error_deadband: {
         type: double,
-        default_value: 1.e-16,
+        default_value: 0.0,
         description: "Is used to stop integration when the error is within the given range."
       }
   constraints:
