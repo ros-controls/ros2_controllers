@@ -1673,16 +1673,23 @@ void JointTrajectoryController::update_pids()
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     const auto & gains = params_.gains.joints_map.at(params_.joints.at(map_cmd_to_joints_[i]));
+    control_toolbox::AntiWindupStrategy antiwindup_strat;
+    antiwindup_strat.set_type(gains.antiwindup_strategy);
+    antiwindup_strat.i_max = gains.i_clamp;
+    antiwindup_strat.i_min = -gains.i_clamp;
+    antiwindup_strat.error_deadband = gains.error_deadband;
+    antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
     if (pids_[i])
     {
       // update PIDs with gains from ROS parameters
-      pids_[i]->set_gains(gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+      pids_[i]->set_gains(
+        gains.p, gains.i, gains.d, gains.u_clamp_max, gains.u_clamp_min, antiwindup_strat);
     }
     else
     {
       // Init PIDs with gains from ROS parameters
       pids_[i] = std::make_shared<control_toolbox::Pid>(
-        gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
+        gains.p, gains.i, gains.d, gains.u_clamp_max, gains.u_clamp_min, antiwindup_strat);
     }
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
   }
