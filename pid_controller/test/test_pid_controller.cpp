@@ -131,14 +131,14 @@ TEST_F(PidControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
-  EXPECT_EQ((*msg)->values.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->values)
+  auto msg = controller_->input_ref_.get();
+  EXPECT_EQ(msg.values.size(), dof_names_.size());
+  for (const auto & cmd : msg.values)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-  EXPECT_EQ((*msg)->values_dot.size(), dof_names_.size());
-  for (const auto & cmd : (*msg)->values_dot)
+  EXPECT_EQ(msg.values_dot.size(), dof_names_.size());
+  for (const auto & cmd : msg.values_dot)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
@@ -209,7 +209,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[0]));
+  EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -219,8 +219,8 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
 
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
-    EXPECT_EQ((*(controller_->input_ref_.readFromRT()))->values[i], dof_command_values_[i]);
+    EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
+    EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
     EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
   }
 
@@ -233,7 +233,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->values[i]));
+    EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
 
     // check the command value:
     // ref = 101.101, state = 1.1, ds = 0.01

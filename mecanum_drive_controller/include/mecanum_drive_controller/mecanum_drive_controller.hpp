@@ -29,8 +29,8 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
@@ -109,14 +109,15 @@ protected:
    */
   std::vector<std::string> state_joint_names_;
 
-  // Names of the references, ex: high level vel commands from MoveIt, Nav2, etc.
-  // used for preceding controller
-  std::vector<std::string> reference_names_;
+  // the RT Box containing the command message
+  realtime_tools::RealtimeThreadSafeBox<ControllerReferenceMsg> input_ref_;
+  // save the last reference in case of unable to get value from box
+  ControllerReferenceMsg current_ref_;
+  // the reference timeout value from parameters
+  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   // Command subscribers and Controller State, odom state, tf state publishers
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
-  rclcpp::Duration ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   using OdomStatePublisher = realtime_tools::RealtimePublisher<OdomStateMsg>;
   rclcpp::Publisher<OdomStateMsg>::SharedPtr odom_s_publisher_;

@@ -23,7 +23,7 @@
 #include "rclcpp/subscription.hpp"
 
 namespace
-{
+{  // utility
 template <typename T>
 void print_interface(const rclcpp::Logger & logger, const T & command_interfaces)
 {
@@ -31,6 +31,15 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
   {
     RCLCPP_ERROR(logger, "Got %s", interface_name.c_str());
   }
+}
+
+// called from RT control loop
+void reset_controller_reference_msg(
+  gpio_controllers::CmdType & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
+  msg.header.stamp = node->now();
+  msg.interface_groups.clear();
+  msg.interface_values.clear();
 }
 
 std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
@@ -85,7 +94,7 @@ try
   {
     gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
       "~/commands", rclcpp::SystemDefaultsQoS(),
-      [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+      [this](const CmdType::SharedPtr msg) { rt_command_.set(*msg); });
   }
 
   gpio_state_publisher_ =
@@ -137,14 +146,18 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
   }
 
   initialize_gpio_state_msg();
-  rt_command_ptr_.reset();
+  // Set default value in command
+  reset_controller_reference_msg(gpio_commands_, get_node());
+  rt_command_.try_set(gpio_commands_);
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  rt_command_ptr_.reset();
+  // Set default value in command
+  reset_controller_reference_msg(gpio_commands_, get_node());
+  rt_command_.try_set(gpio_commands_);
   return CallbackReturn::SUCCESS;
 }
 
@@ -315,19 +328,24 @@ bool GpioCommandController::check_if_configured_interfaces_matches_received(
 
 controller_interface::return_type GpioCommandController::update_gpios_commands()
 {
-  auto gpio_commands_ptr = rt_command_ptr_.readFromRT();
-  if (!gpio_commands_ptr || !(*gpio_commands_ptr))
+  auto gpio_commands_op = rt_command_.try_get();
+  if (gpio_commands_op.has_value())
   {
+    gpio_commands_ = gpio_commands_op.value();
+  }
+  if (gpio_commands_.interface_groups.empty() || gpio_commands_.interface_values.empty())
+  {
+    // no command received yet
     return controller_interface::return_type::OK;
   }
 
-  const auto gpio_commands = *(*gpio_commands_ptr);
-  for (std::size_t gpio_index = 0; gpio_index < gpio_commands.interface_groups.size(); ++gpio_index)
+  for (std::size_t gpio_index = 0; gpio_index < gpio_commands_.interface_groups.size();
+       ++gpio_index)
   {
-    const auto & gpio_name = gpio_commands.interface_groups[gpio_index];
+    const auto & gpio_name = gpio_commands_.interface_groups[gpio_index];
     if (
-      gpio_commands.interface_values[gpio_index].values.size() !=
-      gpio_commands.interface_values[gpio_index].interface_names.size())
+      gpio_commands_.interface_values[gpio_index].values.size() !=
+      gpio_commands_.interface_values[gpio_index].interface_names.size())
     {
       RCLCPP_ERROR(
         get_node()->get_logger(), "For gpio %s interfaces_names do not match values",
@@ -335,10 +353,10 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
       return controller_interface::return_type::ERROR;
     }
     for (std::size_t command_interface_index = 0;
-         command_interface_index < gpio_commands.interface_values[gpio_index].values.size();
+         command_interface_index < gpio_commands_.interface_values[gpio_index].values.size();
          ++command_interface_index)
     {
-      apply_command(gpio_commands, gpio_index, command_interface_index);
+      apply_command(gpio_commands_, gpio_index, command_interface_index);
     }
   }
   return controller_interface::return_type::OK;

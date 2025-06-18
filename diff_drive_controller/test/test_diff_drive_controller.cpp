@@ -45,10 +45,6 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
-  std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
-  {
-    return *(received_velocity_msg_ptr_.readFromNonRT());
-  }
 
   /**
    * @brief wait_for_twist block until a new twist is received.
