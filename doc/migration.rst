@@ -12,6 +12,7 @@ diff_drive_controller
 
 joint_trajectory_controller
 *****************************
+<<<<<<< HEAD
 
 * Parameter ``allow_nonzero_velocity_at_trajectory_end`` is now per default ``false`` (`#834 <https://github.com/ros-controls/ros2_controllers/pull/834>`_).
 * The parameter ``start_with_holding`` is removed, it now always holds the position at activation (`#839 <https://github.com/ros-controls/ros2_controllers/pull/839>`_).
@@ -30,3 +31,8 @@ steering_controllers_library
   * *bicycle_steering_controller*: Set ``traction_wheel_radius`` instead of ``front_wheel_radius``, ``rear_wheel_radius``.
   * *tricycle_steering_controller*: Set ``traction_wheels_radius`` instead of ``front_wheels_radius``, ``rear_wheels_radius``.
   * *ackermann_steering_controller*: Set ``traction_wheels_radius`` instead of ``front_wheels_radius``, ``rear_wheels_radius``, and ``traction_track_width`` (and optionally ``steering_track_width``, if it differs) instead of ``rear_wheel_track``, ``front_wheel_track``.
+=======
+* Parameters ``enable_feedforward`` and service ``set_feedforward_control`` are removed. Instead, set the feedforward_gain to zero or a non-zero value. (`#1553 <https://github.com/ros-controls/ros2_controllers/pull/1553>`_).
+* The legacy ``antiwindup`` boolean and integral clamp parameters ``i_clamp_max``/``i_clamp_min`` have
+  been deprecated in favor of the new ``antiwindup_strategy`` parameter (`#1585 <https://github.com/ros-controls/ros2_controllers/pull/1585>`__). Choose a suitable anti-windup strategy and set the parameters accordingly.
+>>>>>>> aebe6b1 (Add new members for PID controller parameters (#1585))
