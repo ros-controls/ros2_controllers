@@ -185,6 +185,7 @@ bool Trajectory::sample(
     }
   }
 
+  output_state.time_from_start = next_point.time_from_start;
   // whole animation has played out
   start_segment_itr = --end();
   end_segment_itr = end();
