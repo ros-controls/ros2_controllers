@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.27.0 (2025-06-23)
+-------------------
 * Fix atomic variables in JTC (backport `#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_) (`#1766 <https://github.com/ros-controls/ros2_controllers/issues/1766>`_)
 * Add new AntiWindup parameters to JTC (backport `#1759 <https://github.com/ros-controls/ros2_controllers/issues/1759>`_) (`#1762 <https://github.com/ros-controls/ros2_controllers/issues/1762>`_)
 * [JTC Doc] Update PID documentation for effort related command interface support (backport `#1748 <https://github.com/ros-controls/ros2_controllers/issues/1748>`_) (`#1752 <https://github.com/ros-controls/ros2_controllers/issues/1752>`_)
