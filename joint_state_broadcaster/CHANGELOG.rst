@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.1.0 (2025-06-11)
 ------------------
 * Added frame_id to Joint State Broadcaster (`#1746 <https://github.com/ros-controls/ros2_controllers/issues/1746>`_)
