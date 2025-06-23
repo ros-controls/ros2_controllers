@@ -2,6 +2,11 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.1.0 (2025-06-11)
+------------------
+* Remove deprecated parameter from pose_broadcaster (`#1685 <https://github.com/ros-controls/ros2_controllers/issues/1685>`_)
+* Contributors: Christoph Fröhlich
+
 5.0.2 (2025-05-26)
 ------------------
 
