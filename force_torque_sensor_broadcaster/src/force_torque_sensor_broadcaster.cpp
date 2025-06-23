@@ -166,10 +166,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate
 controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (param_listener_->is_old(params_))
-  {
-    params_ = param_listener_->get_params();
-  }
+  param_listener_->try_get_params(params_);
+
   if (realtime_publisher_ && realtime_publisher_->trylock())
   {
     realtime_publisher_->msg_.header.stamp = time;
