@@ -1115,7 +1115,7 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_execution_time_succe
   // the error will be whatever the command diff is.
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("open_loop_control", false),
-    rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", scaling_factor),
     rclcpp::Parameter("constraints.joint1.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint2.trajectory", state_tol),
     rclcpp::Parameter("constraints.joint3.trajectory", state_tol),
@@ -1192,7 +1192,7 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_sampling_is_correct)
 {
   double scaling_factor = GetParam();
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", scaling_factor),
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", scaling_factor),
     rclcpp::Parameter("constraints.joint1.goal", 1e-3),
     rclcpp::Parameter("constraints.joint2.goal", 1e-3),
     rclcpp::Parameter("constraints.joint3.goal", 1e-3),
