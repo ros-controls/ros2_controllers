@@ -283,9 +283,24 @@ private:
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
 
+  /**
+   * @brief Set scaling factor used for speed scaling trajectory execution
+   *
+   * If the hardware supports and has configured setting speed scaling, that will be sent to the
+   * hardware's command interface.
+   *
+   * If the hardware doesn't support a command interface for speed scaling, but a state interface
+   * for reading speed scaling, calling this function will have no effect, as the factor will be
+   * overwritten by the state interface.
+   *
+   * @param scaling_factor has to fulfil 0 <= scaling_factor <= 1.0
+   *
+   */
   bool set_scaling_factor(double scaling_factor);
+
   using SpeedScalingMsg = control_msgs::msg::SpeedScalingFactor;
   rclcpp::Subscription<SpeedScalingMsg>::SharedPtr scaling_factor_sub_;
+
   /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
    *
