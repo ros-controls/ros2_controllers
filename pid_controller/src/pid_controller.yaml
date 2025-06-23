@@ -60,10 +60,20 @@ pid_controller:
         default_value: 0.0,
         description: "Derivative gain for PID"
       }
+      u_clamp_max: {
+        type: double,
+        default_value: .inf,
+        description: "Upper output clamp."
+      }
+      u_clamp_min: {
+        type: double,
+        default_value: -.inf,
+        description: "Lower output clamp."
+      }
       antiwindup: {
         type: bool,
         default_value: false,
-        description: "Antiwindup functionality. When set to true, limits
+        description: "[Deprecated, see antiwindup_strategy] Anti-windup functionality. When set to true, limits
         the integral error to prevent windup; otherwise, constrains the
         integral contribution to the control output. i_clamp_max and
         i_clamp_min are applied in both scenarios."
@@ -71,12 +81,38 @@ pid_controller:
       i_clamp_max: {
         type: double,
         default_value: 0.0,
-        description: "Upper integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
         default_value: 0.0,
-        description: "Lower integral clamp."
+        description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
+      }
+      antiwindup_strategy: {
+        type: string,
+        default_value: "legacy",
+        description: "Specifies the anti-windup strategy. Options: 'back_calculation',
+        'conditional_integration', 'legacy' or 'none'. Note that the 'back_calculation' strategy use the
+        tracking_time_constant parameter to tune the anti-windup behavior.",
+        validation: {
+          one_of<>: [[
+            "back_calculation",
+            "conditional_integration",
+            "legacy",
+            "none"
+          ]]
+        }
+      }
+      tracking_time_constant: {
+        type: double,
+        default_value: 0.0,
+        description: "Specifies the tracking time constant for the 'back_calculation' strategy. If
+        set to 0.0 when this strategy is selected, a recommended default value will be applied."
+      }
+      error_deadband: {
+        type: double,
+        default_value: 1.e-16,
+        description: "Is used to stop integration when the error is within the given range."
       }
       feedforward_gain: {
         type: double,

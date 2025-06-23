@@ -279,8 +279,7 @@ protected:
     "pid_controller/steering_axis_joint"};
 
   double wheelbase_ = 3.24644;
-  double wheel_track_ = 1.212121;
-
+  double traction_track_width_ = 1.212121;
   double traction_wheels_radius_ = 0.45;
 
   std::array<double, 3> joint_state_values_{{0.5, 0.5, 0.0}};
