@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.2.0 (2025-06-23)
+------------------
 * Fix atomic variables in JTC (`#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_)
 * Add new AntiWindup parameters to JTC (`#1759 <https://github.com/ros-controls/ros2_controllers/issues/1759>`_)
 * Contributors: Christoph Fröhlich, Sai Kishor Kothakota
