@@ -137,7 +137,7 @@ controller_interface::return_type JointTrajectoryController::update(
 {
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
-  if (param_listener_->try_get_params(params_))
+  if (param_listener_->try_update_params(params_))
   {
     default_tolerances_ = get_segment_tolerances(logger, params_);
     // update the PID gains
