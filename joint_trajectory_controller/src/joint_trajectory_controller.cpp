@@ -148,16 +148,12 @@ controller_interface::return_type JointTrajectoryController::update(
     scaling_factor_ = scaling_state_interface_->get().get_value();
   }
 
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (scaling_command_interface_.has_value())
   {
-    if (scaling_command_interface_.has_value())
+    if (!scaling_command_interface_->get().set_value(scaling_factor_cmd_.load()))
     {
-      if (!scaling_command_interface_->get().set_value(scaling_factor_cmd_.load()))
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(),
-          "Could not set speed scaling factor through command interfaces.");
-      }
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Could not set speed scaling factor through command interfaces.");
     }
   }
 
