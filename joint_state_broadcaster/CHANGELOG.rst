@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.26.0 (2025-06-06)
 -------------------
 * Fix JSB+GPIO CMakeLists and dependencies (backport `#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_) (`#1707 <https://github.com/ros-controls/ros2_controllers/issues/1707>`_)

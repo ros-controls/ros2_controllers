@@ -2,6 +2,9 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.26.0 (2025-06-06)
 -------------------
 * Fix DiffDrive claiming state when open_loop is set (`#1730 <https://github.com/ros-controls/ros2_controllers/issues/1730>`_)

@@ -2,6 +2,12 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add new members for PID controller parameters (backport `#1585 <https://github.com/ros-controls/ros2_controllers/issues/1585>`_) (`#1769 <https://github.com/ros-controls/ros2_controllers/issues/1769>`_)
+* Set enable_feedforward parameter in the respective tests (backport `#1743 <https://github.com/ros-controls/ros2_controllers/issues/1743>`_) (`#1744 <https://github.com/ros-controls/ros2_controllers/issues/1744>`_)
+* Contributors: Victor Coutinho Vieira Santos, Sai Kishor Kothakota, Christoph Fröhlich
+
 4.26.0 (2025-06-06)
 -------------------
 * Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)

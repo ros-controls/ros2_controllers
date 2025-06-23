@@ -2,6 +2,9 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.26.0 (2025-06-06)
 -------------------
 * Fix steering_controllers_library docs (`#1734 <https://github.com/ros-controls/ros2_controllers/issues/1734>`_)
