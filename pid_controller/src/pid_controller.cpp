@@ -89,18 +89,9 @@ controller_interface::CallbackReturn PidController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void PidController::update_parameters()
-{
-  if (!param_listener_->is_old(params_))
-  {
-    return;
-  }
-  params_ = param_listener_->get_params();
-}
-
 controller_interface::CallbackReturn PidController::configure_parameters()
 {
-  update_parameters();
+  params_ = param_listener_->get_params();
 
   if (!params_.reference_and_state_dof_names.empty())
   {
