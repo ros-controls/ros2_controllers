@@ -283,7 +283,7 @@ private:
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
 
-  bool set_scaling_factor(const double scaling_factor);
+  bool set_scaling_factor(double scaling_factor);
   using SpeedScalingMsg = control_msgs::msg::SpeedScalingFactor;
   rclcpp::Subscription<SpeedScalingMsg>::SharedPtr scaling_factor_sub_;
   /**

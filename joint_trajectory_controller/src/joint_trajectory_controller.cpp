@@ -987,8 +987,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   }
   else
   {
-    RCLCPP_WARN(
+    RCLCPP_WARN_EXPRESSION(
       logger,
+      params.scaling_factor_initial_default != 1.0,
       "Speed scaling is currently only supported for position interfaces. If you want to make use "
       "of speed scaling, please only use a position interface when configuring this controller.");
     scaling_factor_ = 1.0;
@@ -1756,7 +1757,7 @@ void JointTrajectoryController::resize_joint_trajectory_point_command(
   }
 }
 
-bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
+bool JointTrajectoryController::set_scaling_factor(double scaling_factor)
 {
   if (scaling_factor < 0)
   {
@@ -1773,16 +1774,13 @@ bool JointTrajectoryController::set_scaling_factor(const double scaling_factor)
       scaling_factor);
   }
   scaling_factor_.store(scaling_factor);
-  if (params_.speed_scaling_command_interface_name.empty())
-  {
-    if (!params_.speed_scaling_state_interface_name.empty())
+  if (params_.speed_scaling_command_interface_name.empty() && !params_.speed_scaling_state_interface_name.empty())
     {
-      RCLCPP_WARN(
+      RCLCPP_WARN_ONCE(
         get_node()->get_logger(),
         "Setting the scaling factor while only one-way communication with the hardware is setup. "
         "This will likely get overwritten by the hardware again. If available, please also setup "
         "the speed_scaling_command_interface_name");
-    }
   }
   else
   {
