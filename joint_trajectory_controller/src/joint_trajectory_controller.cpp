@@ -113,9 +113,9 @@ JointTrajectoryController::command_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
-  if (!params_.speed_scaling_command_interface_name.empty())
+  if (!params_.speed_scaling.command_interface.empty())
   {
-    conf.names.push_back(params_.speed_scaling_command_interface_name);
+    conf.names.push_back(params_.speed_scaling.command_interface);
   }
   return conf;
 }
@@ -133,9 +133,9 @@ JointTrajectoryController::state_interface_configuration() const
       conf.names.push_back(joint_name + "/" + interface_type);
     }
   }
-  if (!params_.speed_scaling_state_interface_name.empty())
+  if (!params_.speed_scaling.state_interface.empty())
   {
-    conf.names.push_back(params_.speed_scaling_state_interface_name);
+    conf.names.push_back(params_.speed_scaling.state_interface);
   }
   return conf;
 }
@@ -982,23 +982,23 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/speed_scaling_input", qos,
       [&](const SpeedScalingMsg & msg) { set_scaling_factor(msg.factor); });
     RCLCPP_INFO(
-      logger, "Setting initial scaling factor to %2f", params_.scaling_factor_initial_default);
-    scaling_factor_ = params_.scaling_factor_initial_default;
+      logger, "Setting initial scaling factor to %2f",
+      params_.speed_scaling.initial_scaling_factor);
+    scaling_factor_ = params_.speed_scaling.initial_scaling_factor;
   }
   else
   {
     RCLCPP_WARN_EXPRESSION(
-      logger,
-      params.scaling_factor_initial_default != 1.0,
+      logger, params_.speed_scaling.initial_scaling_factor != 1.0,
       "Speed scaling is currently only supported for position interfaces. If you want to make use "
       "of speed scaling, please only use a position interface when configuring this controller.");
     scaling_factor_ = 1.0;
   }
-  if (!params_.speed_scaling_state_interface_name.empty())
+  if (!params_.speed_scaling.state_interface.empty())
   {
     RCLCPP_INFO(
       logger, "Using scaling state from the hardware from interface %s.",
-      params_.speed_scaling_state_interface_name.c_str());
+      params_.speed_scaling.state_interface.c_str());
   }
   else
   {
@@ -1033,11 +1033,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   default_tolerances_ = get_segment_tolerances(logger, params_);
 
   // Set scaling interfaces
-  if (!params_.speed_scaling_state_interface_name.empty())
+  if (!params_.speed_scaling.state_interface.empty())
   {
     auto it = std::find_if(
       state_interfaces_.begin(), state_interfaces_.end(), [&](auto & interface)
-      { return (interface.get_name() == params_.speed_scaling_state_interface_name); });
+      { return (interface.get_name() == params_.speed_scaling.state_interface); });
     if (it != state_interfaces_.end())
     {
       scaling_state_interface_ = *it;
@@ -1046,15 +1046,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     {
       RCLCPP_ERROR(
         logger, "Did not find speed scaling interface '%s' in state interfaces.",
-        params_.speed_scaling_state_interface_name.c_str());
+        params_.speed_scaling.state_interface.c_str());
       return CallbackReturn::ERROR;
     }
   }
-  if (!params_.speed_scaling_command_interface_name.empty())
+  if (!params_.speed_scaling.command_interface.empty())
   {
     auto it = std::find_if(
       command_interfaces_.begin(), command_interfaces_.end(), [&](auto & interface)
-      { return (interface.get_name() == params_.speed_scaling_command_interface_name); });
+      { return (interface.get_name() == params_.speed_scaling.command_interface); });
     if (it != command_interfaces_.end())
     {
       scaling_command_interface_ = *it;
@@ -1063,7 +1063,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     {
       RCLCPP_ERROR(
         logger, "Did not find speed scaling interface '%s' in command interfaces.",
-        params_.speed_scaling_command_interface_name.c_str());
+        params_.speed_scaling.command_interface.c_str());
       return CallbackReturn::ERROR;
     }
   }
@@ -1774,13 +1774,15 @@ bool JointTrajectoryController::set_scaling_factor(double scaling_factor)
       scaling_factor);
   }
   scaling_factor_.store(scaling_factor);
-  if (params_.speed_scaling_command_interface_name.empty() && !params_.speed_scaling_state_interface_name.empty())
-    {
-      RCLCPP_WARN_ONCE(
-        get_node()->get_logger(),
-        "Setting the scaling factor while only one-way communication with the hardware is setup. "
-        "This will likely get overwritten by the hardware again. If available, please also setup "
-        "the speed_scaling_command_interface_name");
+  if (
+    params_.speed_scaling.command_interface.empty() &&
+    !params_.speed_scaling.state_interface.empty())
+  {
+    RCLCPP_WARN_ONCE(
+      get_node()->get_logger(),
+      "Setting the scaling factor while only one-way communication with the hardware is setup. "
+      "This will likely get overwritten by the hardware again. If available, please also setup "
+      "the speed_scaling_command_interface_name");
   }
   else
   {

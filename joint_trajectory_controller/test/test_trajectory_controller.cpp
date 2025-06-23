@@ -2697,7 +2697,7 @@ TEST_F(TrajectoryControllerTest, scaling_factor_from_param)
   double initial_factor = 0.123;
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
+    rclcpp::Parameter("speed_scaling/initial_scaling_factor", initial_factor),
   };
   SetUpAndActivateTrajectoryController(executor, params);
   subscribeToState(executor);
@@ -2714,8 +2714,8 @@ TEST_F(
   double initial_factor = 0.123;
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
-    rclcpp::Parameter("speed_scaling_state_interface_name", "idontexist"),
+    rclcpp::Parameter("speed_scaling/initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling/state_interface", "idontexist"),
   };
   SetUpTrajectoryController(executor, params);
 
@@ -2732,8 +2732,8 @@ TEST_F(
   double initial_factor = 0.123;
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
-    rclcpp::Parameter("speed_scaling_command_interface_name", "idontexist"),
+    rclcpp::Parameter("speed_scaling/initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling/command_interface", "idontexist"),
   };
   SetUpTrajectoryController(executor, params);
 
@@ -2749,8 +2749,8 @@ TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)
   double initial_factor = 0.123;
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
-    rclcpp::Parameter("speed_scaling_state_interface_name", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling/initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling/state_interface", "speed_scaling/speed_scaling_factor"),
   };
   SetUpAndActivateTrajectoryController(executor, params);
 
@@ -2783,10 +2783,9 @@ TEST_F(TrajectoryControllerTest, scaling_command_interface_sets_value)
   double initial_factor = 0.123;
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("scaling_factor_initial_default", initial_factor),
-    rclcpp::Parameter("speed_scaling_state_interface_name", "speed_scaling/speed_scaling_factor"),
-    rclcpp::Parameter(
-      "speed_scaling_command_interface_name", "speed_scaling/target_speed_fraction_cmd"),
+    rclcpp::Parameter("speed_scaling/initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling/state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling/command_interface", "speed_scaling/target_speed_fraction_cmd"),
   };
   SetUpAndActivateTrajectoryController(executor, params);
 
@@ -2819,9 +2818,8 @@ TEST_F(TrajectoryControllerTest, activate_with_scaling_interfaces)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("speed_scaling_state_interface_name", "speed_scaling/speed_scaling_factor"),
-    rclcpp::Parameter(
-      "speed_scaling_command_interface_name", "speed_scaling/target_speed_fraction_cmd"),
+    rclcpp::Parameter("speed_scaling/state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling/command_interface", "speed_scaling/target_speed_fraction_cmd"),
   };
   SetUpTrajectoryController(executor, params);
 
