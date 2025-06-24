@@ -1,3 +1,5 @@
+.. _jtc_speed_scaling:
+
 Speed scaling
 =============
 
