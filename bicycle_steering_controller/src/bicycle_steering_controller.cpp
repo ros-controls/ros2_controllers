@@ -31,25 +31,6 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 {
   bicycle_params_ = bicycle_param_listener_->get_params();
 
-  // TODO(anyone): Remove deprecated parameters
-  // START OF DEPRECATED
-  if (bicycle_params_.front_wheel_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheel_radius' instead");
-    bicycle_params_.traction_wheel_radius = bicycle_params_.front_wheel_radius;
-  }
-
-  if (bicycle_params_.rear_wheel_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheel_radius' instead");
-    bicycle_params_.traction_wheel_radius = bicycle_params_.rear_wheel_radius;
-  }
-  // END OF DEPRECATED
-
   const double wheelbase = bicycle_params_.wheelbase;
   const double traction_wheel_radius = bicycle_params_.traction_wheel_radius;
 
