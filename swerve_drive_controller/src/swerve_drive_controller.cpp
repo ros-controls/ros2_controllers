@@ -471,9 +471,9 @@ controller_interface::return_type SwerveController::update(
     {wheel_command[2], rear_left_velocity_threshold_, "rear_left_wheel"},
     {wheel_command[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
 
-  for (const auto & [wheel_command, threshold, label] : wheel_data) {
-    if (wheel_command.drive_velocity > threshold) {
-      wheel_command.drive_velocity = threshold;
+  for (const auto & [wheel_command_, threshold, label] : wheel_data) {
+    if (wheel_command_.drive_velocity > threshold) {
+      wheel_command_.drive_velocity = threshold;
     }
   }
 
@@ -649,7 +649,7 @@ void SwerveController::halt()
 
 
 template<typename T>
-std::shared_ptr<T> get_interface_object(
+std::unique_ptr<T> get_interface_object(
     std::vector<hardware_interface::LoanedCommandInterface>& command_interfaces,
     const std::vector<hardware_interface::LoanedStateInterface>& state_interfaces,
     const std::string& name,
@@ -692,10 +692,10 @@ std::shared_ptr<T> get_interface_object(
     return nullptr;
   }
   static_assert(!std::is_const_v<std::remove_reference_t<decltype(*command_handle)>>, "Command handle is const!");
-  return std::make_shared<T>(std::ref(*command_handle), std::ref(*state_handle), name);
+  return std::make_unique<T>(std::ref(*command_handle), std::ref(*state_handle), name);
 }
 
-std::shared_ptr<Wheel> SwerveController::get_wheel(const std::string & wheel_name)
+std::unique_ptr<Wheel> SwerveController::get_wheel(const std::string & wheel_name)
 {
   return get_interface_object<Wheel>(
     command_interfaces_, state_interfaces_, wheel_name, "/velocity", HW_IF_VELOCITY);
