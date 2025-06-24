@@ -535,7 +535,9 @@ controller_interface::return_type PidController::update_and_write_commands(
       double error = reference_interfaces_[i] - measured_state_values_[i];
 
       const auto zero_threshold = params_.gains.dof_names_map[params_.dof_names[i]].zero_threshold;
-      if (std::abs(reference_interfaces_[i]) < zero_threshold && std::abs(error) < zero_threshold)
+      if (
+        !is_zero(zero_threshold) && std::abs(reference_interfaces_[i]) < zero_threshold &&
+        std::abs(error) < zero_threshold)
       {
         reset_pid_time_ += period.seconds();
         if (

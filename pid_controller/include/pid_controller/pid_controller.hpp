@@ -18,6 +18,7 @@
 #ifndef PID_CONTROLLER__PID_CONTROLLER_HPP_
 #define PID_CONTROLLER__PID_CONTROLLER_HPP_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -113,6 +114,12 @@ protected:
   // internal methods
   void update_parameters();
   controller_interface::CallbackReturn configure_parameters();
+
+  template <typename T>
+  inline bool is_zero(T value, T tolerance = std::numeric_limits<T>::epsilon())
+  {
+    return std::abs(value) <= tolerance;
+  }
 
 private:
   // callback for topic interface
