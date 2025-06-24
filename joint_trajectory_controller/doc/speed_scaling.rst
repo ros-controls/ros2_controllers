@@ -21,13 +21,17 @@ This scaling method is intended for robots that provide a scaling feature direct
 teach pendant and / or through a safety feature. One example of such robots are the `Universal
 Robots manipulators <https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver>`_.
 
+The hardware interface needs to report the speed scaling through a state interface so it can be
+read by the controller. Optionally, a command interface for setting the speed scaling value on the
+hardware can be provided (if applicable) in order to set speed scaling through a ROS topic.
+
 For the scope of this documentation a user-defined scaling and a safety-limited scaling will be
 treated the same resulting in a "hardware scaling factor".
 
 In this setup, the hardware will treat the command sent from the ROS controller (e.g. Reach joint
 configuration :math:`{\theta}` within :math:`{\Delta_t}` seconds.). This effectively means that the
 robot will only make half of the way towards the target configuration when a scaling factor of 0.5
-is given (neglectling acceleration and deceleration influcences during this time period).
+is given (neglecting acceleration and deceleration influences during this time period).
 
 The following plot shows trajectory execution (for one joint) with a hardware-scaled execution and
 a controller that is **not** aware of speed scaling:
