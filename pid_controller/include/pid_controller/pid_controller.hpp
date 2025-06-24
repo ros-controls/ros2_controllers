@@ -18,6 +18,7 @@
 #ifndef PID_CONTROLLER__PID_CONTROLLER_HPP_
 #define PID_CONTROLLER__PID_CONTROLLER_HPP_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -78,6 +79,8 @@ protected:
   using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
   std::vector<PidPtr> pids_;
 
+  double reset_pid_time_;
+
   // Command subscribers and Controller State publisher
   rclcpp::Subscription<ControllerReferenceMsg>::SharedPtr ref_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<ControllerReferenceMsg>> input_ref_;
@@ -100,6 +103,12 @@ protected:
   // internal methods
   void update_parameters();
   controller_interface::CallbackReturn configure_parameters();
+
+  template <typename T>
+  inline bool is_zero(T value, T tolerance = std::numeric_limits<T>::epsilon())
+  {
+    return std::abs(value) <= tolerance;
+  }
 
 private:
   // callback for topic interface
