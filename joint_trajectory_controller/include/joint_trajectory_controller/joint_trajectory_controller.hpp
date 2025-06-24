@@ -294,7 +294,10 @@ private:
    * for reading speed scaling, calling this function will have no effect, as the factor will be
    * overwritten by the state interface.
    *
-   * @param scaling_factor has to fulfil 0 <= scaling_factor <= 1.0
+   * @param scaling_factor has to be >= 0
+   *
+   * @return True if the value was valid and set, false if the value is < 0
+   * interval
    *
    */
   bool set_scaling_factor(double scaling_factor);
