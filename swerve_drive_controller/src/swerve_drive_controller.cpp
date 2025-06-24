@@ -462,14 +462,14 @@ controller_interface::return_type SwerveController::update(
   double y_offset = wheel_params_.y_offset;
   double radius = wheel_params_.radius;
 
-  auto wheel_command_ =
+  auto wheel_command =
     swerveDriveKinematics_.compute_wheel_commands(linear_x_cmd, linear_y_cmd, angular_cmd);
 
   std::vector<std::tuple<WheelCommand &, double, std::string>> wheel_data = {
-    {wheel_command_[0], front_left_velocity_threshold_, "front_left_wheel"},
-    {wheel_command_[1], front_right_velocity_threshold_, "front_right_wheel"},
-    {wheel_command_[2], rear_left_velocity_threshold_, "rear_left_wheel"},
-    {wheel_command_[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
+    {wheel_command[0], front_left_velocity_threshold_, "front_left_wheel"},
+    {wheel_command[1], front_right_velocity_threshold_, "front_right_wheel"},
+    {wheel_command[2], rear_left_velocity_threshold_, "rear_left_wheel"},
+    {wheel_command[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
 
   for (const auto & [wheel_command, threshold, label] : wheel_data) {
     if (wheel_command.drive_velocity > threshold) {
@@ -477,49 +477,42 @@ controller_interface::return_type SwerveController::update(
     }
   }
 
-  const double front_left_velocity = wheel_command_[0].drive_velocity;
-  const double front_left_angle = wheel_command_[0].steering_angle;
+  const double front_left_velocity = wheel_command[0].drive_velocity;
+  const double front_left_angle = wheel_command[0].steering_angle;
 
-  const double front_right_velocity = wheel_command_[1].drive_velocity;
-  const double front_right_angle = wheel_command_[1].steering_angle;
+  const double front_right_velocity = wheel_command[1].drive_velocity;
+  const double front_right_angle = wheel_command[1].steering_angle;
 
-  const double rear_left_velocity = wheel_command_[2].drive_velocity;
-  const double rear_left_angle = wheel_command_[2].steering_angle;
+  const double rear_left_velocity = wheel_command[2].drive_velocity;
+  const double rear_left_angle = wheel_command[2].steering_angle;
 
-  const double rear_right_velocity = wheel_command_[3].drive_velocity;
-  const double rear_right_angle = wheel_command_[3].steering_angle;
+  const double rear_right_velocity = wheel_command[3].drive_velocity;
+  const double rear_right_angle = wheel_command[3].steering_angle;
 
-  try {
-    if (front_left_axle_handle_ != nullptr && front_left_wheel_handle_ != nullptr) {
-      front_left_axle_handle_->set_position(front_left_angle);
-      front_left_wheel_handle_->set_velocity(front_left_velocity);
-    } else {
-      RCLCPP_ERROR(logger, "Front Left Axle Handle or Wheel Handle is NULLPTR");
-    }
-
-    if (front_right_axle_handle_ != nullptr && front_right_wheel_handle_ != nullptr) {
-      front_right_axle_handle_->set_position(front_right_angle);
-      front_right_wheel_handle_->set_velocity(front_right_velocity);
-    } else {
-      RCLCPP_ERROR(logger, "Front Right Axle Handle or Wheel Handle is NULLPTR");
-    }
-
-    if (rear_left_axle_handle_ != nullptr && rear_left_wheel_handle_ != nullptr) {
-      rear_left_axle_handle_->set_position(rear_left_angle);
-      rear_left_wheel_handle_->set_velocity(rear_left_velocity);
-    } else {
-      RCLCPP_ERROR(logger, "Rear Left Axle or Wheel Handle is NULLPTR");
-    }
-
-    if (rear_right_axle_handle_ != nullptr && rear_right_wheel_handle_ != nullptr) {
-      rear_right_axle_handle_->set_position(rear_right_angle);
-      rear_right_wheel_handle_->set_velocity(rear_right_velocity);
-    } else {
-      RCLCPP_ERROR(logger, "Rear Right Axle or Wheel Handle is NULLPTR");
-    }
-  } catch (std::exception & e) {
-    RCLCPP_INFO(logger, "Got Exception: %s", e.what());
+  if(front_left_axle_handle_ == nullptr || front_left_wheel_handle_ == nullptr){
+    throw std::runtime_error("Front Left Axle or Wheel handle is nullptr");
   }
+  front_left_axle_handle_->set_position(front_left_angle);
+  front_left_wheel_handle_->set_velocity(front_left_velocity);
+
+  if (front_right_axle_handle_ == nullptr || front_right_wheel_handle_ == nullptr) {
+    throw std::runtime_error("Front Right Axle or Wheel handle is nullptr");
+  }
+  front_right_axle_handle_->set_position(front_right_angle);
+  front_right_wheel_handle_->set_velocity(front_right_velocity);
+
+  if (rear_left_axle_handle_ == nullptr || rear_left_wheel_handle_ == nullptr) {
+    throw std::runtime_error("Rear Left Axle or Wheel handle is nullptr");
+  }
+  rear_left_axle_handle_->set_position(rear_left_angle);
+  rear_left_wheel_handle_->set_velocity(rear_left_velocity);
+
+  if (rear_right_axle_handle_ == nullptr || rear_right_wheel_handle_ == nullptr) {
+    throw std::runtime_error("Rear Right Axle or Wheel handle is nullptr");
+  }
+  rear_right_axle_handle_->set_position(rear_right_angle);
+  rear_right_wheel_handle_->set_velocity(rear_right_velocity);
+
 
   const auto update_dt = current_time - previous_update_timestamp_;
   previous_update_timestamp_ = current_time;
@@ -708,7 +701,7 @@ std::shared_ptr<Wheel> SwerveController::get_wheel(const std::string & wheel_nam
     command_interfaces_, state_interfaces_, wheel_name, "/velocity", HW_IF_VELOCITY);
 }
 
-std::shared_ptr<Axle> SwerveController::get_axle(const std::string & axle_name)
+std::unique_ptr<Axle> SwerveController::get_axle(const std::string & axle_name)
 {
   return get_interface_object<Axle>(
     command_interfaces_, state_interfaces_, axle_name, "/position", HW_IF_POSITION);

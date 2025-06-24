@@ -106,19 +106,19 @@ public:
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
-  std::shared_ptr<Wheel> get_wheel(const std::string & wheel_name);
-  std::shared_ptr<Axle> get_axle(const std::string & axle_name);
+  std::unique_ptr<Wheel> get_wheel(const std::string & wheel_name);
+  std::unique_ptr<Axle> get_axle(const std::string & axle_name);
 
-  // Handles for three wheels and their axles
-  std::shared_ptr<Wheel> front_left_wheel_handle_;
-  std::shared_ptr<Wheel> front_right_wheel_handle_;
-  std::shared_ptr<Wheel> rear_left_wheel_handle_;
-  std::shared_ptr<Wheel> rear_right_wheel_handle_;
+  // Handles for four wheels and their axles
+  std::unique_ptr<Wheel> front_left_wheel_handle_;
+  std::unique_ptr<Wheel> front_right_wheel_handle_;
+  std::unique_ptr<Wheel> rear_left_wheel_handle_;
+  std::unique_ptr<Wheel> rear_right_wheel_handle_;
 
-  std::shared_ptr<Axle> front_left_axle_handle_;
-  std::shared_ptr<Axle> front_right_axle_handle_;
-  std::shared_ptr<Axle> rear_left_axle_handle_;
-  std::shared_ptr<Axle> rear_right_axle_handle_;
+  std::unique_ptr<Axle> front_left_axle_handle_;
+  std::unique_ptr<Axle> front_right_axle_handle_;
+  std::unique_ptr<Axle> rear_left_axle_handle_;
+  std::unique_ptr<Axle> rear_right_axle_handle_;
 
   // Joint names for wheels and axles
   std::string front_left_wheel_joint_name_;

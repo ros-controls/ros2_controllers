@@ -69,14 +69,6 @@ OdometryState SwerveDriveKinematics::update_odometry(
       wheel_positions_[i].second * wheel_positions_[i].second);
   }
   double wz_robot = wz_sum / wz_denominator;
-  // double wz_robot = wz_sum / 4.0;
-
-  // double wz_robot = wz_sum / (wheel_positions_[0].first * wheel_positions_[0].first +
-  //                    wheel_positions_[1].first * wheel_positions_[1].first +
-  //                    wheel_positions_[2].first * wheel_positions_[2].first +
-  //                    wheel_positions_[0].second * wheel_positions_[0].second +
-  //                    wheel_positions_[1].second * wheel_positions_[1].second +
-  //                    wheel_positions_[2].second * wheel_positions_[2].second);
 
   // Transform velocities to global frame
   double cos_theta = std::cos(odometry_.theta);
