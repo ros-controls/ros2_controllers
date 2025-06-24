@@ -654,83 +654,66 @@ void SwerveController::halt()
   rear_right_axle_handle_->set_position(0.0);
 }
 
-std::shared_ptr<Wheel> SwerveController::get_wheel(const std::string & wheel_name)
+
+template<typename T>
+std::shared_ptr<T> get_interface_object(
+    std::vector<hardware_interface::LoanedCommandInterface>& command_interfaces,
+    const std::vector<hardware_interface::LoanedStateInterface>& state_interfaces,
+    const std::string& name,
+    const std::string& interface_suffix,
+    const std::string& hw_if_type)
 {
-  // auto logger = get_node()->get_logger();
   auto logger = rclcpp::get_logger("SwerveController");
 
-  if (wheel_name.empty()) {
-    RCLCPP_ERROR(logger, "Wheel joint name not given. Make sure all joints are specified.");
+  if (name.empty()) {
+    RCLCPP_ERROR(logger, "Joint name not given. Make sure all joints are specified.");
     return nullptr;
   }
-  const auto command_handle = std::find_if(
-    command_interfaces_.begin(), command_interfaces_.end(),
-    [&wheel_name](const auto & interface)
+
+  const std::string expected_interface_name = name + interface_suffix;
+
+  auto command_handle = std::find_if(
+    command_interfaces.begin(), command_interfaces.end(),
+    [&expected_interface_name, &hw_if_type](const auto & interface)
     {
-      return interface.get_name() == (wheel_name + "/velocity") &&
-             interface.get_interface_name() == HW_IF_VELOCITY;
+      return interface.get_name() == expected_interface_name &&
+             interface.get_interface_name() == hw_if_type;
     });
 
-  if (command_handle == command_interfaces_.end()) {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Unable to obtain joint command handle for %s", wheel_name.c_str());
+  if (command_handle == command_interfaces.end()) {
+    RCLCPP_ERROR(logger, "Unable to find command interface for: %s", name.c_str());
+    RCLCPP_ERROR(logger, "Expected interface name: %s", expected_interface_name.c_str());
     return nullptr;
   }
 
   const auto state_handle = std::find_if(
-    state_interfaces_.begin(), state_interfaces_.end(),
-    [&wheel_name](const auto & interface)
+    state_interfaces.begin(), state_interfaces.end(),
+    [&expected_interface_name, &hw_if_type](const auto & interface)
     {
-      return interface.get_name() == (wheel_name + "/velocity") &&
-             interface.get_interface_name() == HW_IF_VELOCITY;
+      return interface.get_name() == expected_interface_name &&
+             interface.get_interface_name() == hw_if_type;
     });
 
-  if (state_handle == state_interfaces_.end()) {
-    RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
+  if (state_handle == state_interfaces.end()) {
+    RCLCPP_ERROR(logger, "Unable to find the state interface for: %s", name.c_str());
     return nullptr;
   }
+  static_assert(!std::is_const_v<std::remove_reference_t<decltype(*command_handle)>>, "Command handle is const!");
+  return std::make_shared<T>(std::ref(*command_handle), std::ref(*state_handle), name);
+}
 
-  return std::make_shared<Wheel>(std::ref(*command_handle), std::ref(*state_handle), wheel_name);
+std::shared_ptr<Wheel> SwerveController::get_wheel(const std::string & wheel_name)
+{
+  return get_interface_object<Wheel>(
+    command_interfaces_, state_interfaces_, wheel_name, "/velocity", HW_IF_VELOCITY);
 }
 
 std::shared_ptr<Axle> SwerveController::get_axle(const std::string & axle_name)
 {
-  // auto logger = get_node()->get_logger();
-  auto logger = rclcpp::get_logger("SwerveController");
-  if (axle_name.empty()) {
-    RCLCPP_ERROR(logger, "Wheel joint name not given. Make sure all joints are specified.");
-    return nullptr;
-  }
-
-  // Get Command Handle for joint
-  const auto command_handle = std::find_if(
-    command_interfaces_.begin(), command_interfaces_.end(),
-    [&axle_name](const auto & interface)
-    {
-      return interface.get_name() == (axle_name + "/position") &&
-             interface.get_interface_name() == HW_IF_POSITION;
-    });
-
-  if (command_handle == command_interfaces_.end()) {
-    RCLCPP_ERROR(logger, "Unable to find command interface for axle: %s", axle_name.c_str());
-    RCLCPP_ERROR(logger, "Expected interface name: %s/position", axle_name.c_str());
-    return nullptr;
-  }
-
-  const auto state_handle = std::find_if(
-    state_interfaces_.begin(), state_interfaces_.end(),
-    [&axle_name](const auto & interface)
-    {
-      return interface.get_name() == (axle_name + "/position") &&
-             interface.get_interface_name() == HW_IF_POSITION;
-    });
-
-  if (state_handle == state_interfaces_.end()) {
-    RCLCPP_ERROR(logger, "Unable to find the state interface for axle: %s", axle_name.c_str());
-    return nullptr;
-  }
-  return std::make_shared<Axle>(std::ref(*command_handle), std::ref(*state_handle), axle_name);
+  return get_interface_object<Axle>(
+    command_interfaces_, state_interfaces_, axle_name, "/position", HW_IF_POSITION);
 }
+
 
 }  // namespace swerve_drive_controller
 
