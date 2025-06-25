@@ -111,9 +111,9 @@ TEST_F(JointGroupEffortControllerTest, CommandSuccessTest)
   ASSERT_EQ(joint_3_cmd_.get_value(), 3.1);
 
   // send command
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0, 30.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0, 30.0};
+  controller_->rt_command_.set(command);
 
   // update successful, command received
   ASSERT_EQ(
@@ -133,9 +133,9 @@ TEST_F(JointGroupEffortControllerTest, WrongCommandCheckTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // send command with wrong number of joints
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0};
+  controller_->rt_command_.set(command);
 
   // update failed, command size does not match number of joints
   ASSERT_EQ(

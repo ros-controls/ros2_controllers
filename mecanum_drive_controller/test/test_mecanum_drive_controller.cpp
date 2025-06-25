@@ -286,10 +286,9 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_activated_expect_reference
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
-  EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
-
-  ASSERT_TRUE(std::isnan((*msg)->twist.angular.z));
+  auto msg = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(msg.twist.linear.x));
+  ASSERT_TRUE(std::isnan(msg.twist.angular.z));
 }
 
 TEST_F(MecanumDriveControllerTest, when_controller_active_and_update_called_expect_success)
@@ -407,11 +406,11 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = *(controller_->input_ref_.readFromNonRT());
-  auto old_timestamp = reference->header.stamp;
-  EXPECT_TRUE(std::isnan(reference->twist.linear.x));
-  EXPECT_TRUE(std::isnan(reference->twist.linear.y));
-  EXPECT_TRUE(std::isnan(reference->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  auto old_timestamp = reference.header.stamp;
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -420,10 +419,10 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
   controller_->wait_for_commands(executor);
-  ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
+  ASSERT_EQ(old_timestamp, reference.header.stamp);
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 }
 
 // when time stamp is zero expect that time stamp is set to current time stamp
@@ -438,11 +437,11 @@ TEST_F(
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = controller_->input_ref_.readFromNonRT();
-  auto old_timestamp = (*reference)->header.stamp;
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  auto old_timestamp = reference.header.stamp;
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -450,13 +449,15 @@ TEST_F(
   publish_commands(rclcpp::Time(0));
 
   controller_->wait_for_commands(executor);
-  ASSERT_EQ(old_timestamp.sec, (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
-  EXPECT_NE((*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec, 0.0);
+  reference = controller_->input_ref_.get();
+
+  ASSERT_EQ(old_timestamp.sec, reference.header.stamp.sec);
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
+  EXPECT_NE(reference.header.stamp.sec, 0.0);
 }
 
 // when the reference_msg has valid timestamp then the timeout check in reference_callback()
@@ -471,9 +472,9 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = controller_->input_ref_.readFromNonRT();
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -481,11 +482,12 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   publish_commands(controller_->get_node()->now());
 
   controller_->wait_for_commands(executor);
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+  reference = controller_->input_ref_.get();
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
 }
 
 // when not in chainable mode and ref_msg_timedout expect
@@ -514,23 +516,24 @@ TEST_F(
   // set command statically
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg, msg_2;
 
-  msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
-                      rclcpp::Duration::from_seconds(0.1);
-  msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg);
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg.header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
+                     rclcpp::Duration::from_seconds(0.1);
+  msg.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg);
+
+  auto reference = controller_->input_ref_.get();
+  const auto age_of_last_command = controller_->get_node()->now() - reference.header.stamp;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -546,21 +549,21 @@ TEST_F(
     EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
   }
 
-  std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
-  msg_2->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
-  msg_2->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg_2->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg_2->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg_2);
-  const auto age_of_last_command_2 =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg_2.header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
+  msg_2.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg_2.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg_2.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg_2);
+
+  reference = controller_->input_ref_.get();
+  const auto age_of_last_command_2 = controller_->get_node()->now() - reference.header.stamp;
 
   // age_of_last_command_2 < ref_timeout_
   ASSERT_TRUE(age_of_last_command_2 <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -574,7 +577,7 @@ TEST_F(
   //  joint_command_values_[controller_->get_rear_left_wheel_index()] = 1.0 / 0.5 * (1.5 - 0.0 - 1 *
   //  0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -661,21 +664,22 @@ TEST_F(
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg;
 
-  msg->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.0);
-  msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg);
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg.header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.0);
+  msg.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg);
+  auto reference = controller_->input_ref_.get();
+
+  const auto age_of_last_command = controller_->get_node()->now() - reference.header.stamp;
 
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -689,7 +693,8 @@ TEST_F(
   // velocity_in_center_frame_angular_z_);
   //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
-  ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  reference = controller_->input_ref_.get();
+  ASSERT_TRUE(std::isnan(reference.twist.linear.x));
 }
 
 TEST_F(
@@ -702,9 +707,10 @@ TEST_F(
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   // reference_callback() is called implicitly when publish_commands() is called.
@@ -713,13 +719,14 @@ TEST_F(
   publish_commands(controller_->get_node()->now());
 
   controller_->wait_for_commands(executor);
+  reference = controller_->input_ref_.get();
 
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.linear.y));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
 }
 
 TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
