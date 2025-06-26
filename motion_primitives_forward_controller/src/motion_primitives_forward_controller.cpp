@@ -26,23 +26,6 @@
 #include "motion_primitives_forward_controller/motion_type.hpp"
 #include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
 
-namespace
-{  // utility
-
-// TODO(destogl): remove this when merged upstream
-// Changed services history QoS to keep all so we don't lose any client service calls
-static constexpr rmw_qos_profile_t rmw_qos_profile_services_hist_keep_all = {
-  RMW_QOS_POLICY_HISTORY_KEEP_ALL,
-  1,  // message queue depth
-  RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-  RMW_QOS_POLICY_DURABILITY_VOLATILE,
-  RMW_QOS_DEADLINE_DEFAULT,
-  RMW_QOS_LIFESPAN_DEFAULT,
-  RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
-  RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
-  false};
-}  // namespace
-
 namespace motion_primitives_forward_controller
 {
 MotionPrimitivesForwardController::MotionPrimitivesForwardController()
