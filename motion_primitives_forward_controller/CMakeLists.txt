@@ -33,12 +33,22 @@ add_library(
   src/motion_primitives_forward_controller.cpp
 )
 target_include_directories(motion_primitives_forward_controller PUBLIC
-  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(motion_primitives_forward_controller motion_primitives_forward_controller_parameters)
-ament_target_dependencies(motion_primitives_forward_controller
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
+target_link_libraries(motion_primitives_forward_controller PUBLIC
+                      motion_primitives_forward_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
+                      ${std_srvs_TARGETS}
+                      ${industrial_robot_motion_interfaces_TARGETS}
+)
+
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")
 
 pluginlib_export_plugin_description_file(
@@ -67,14 +77,10 @@ if(BUILD_TESTING)
     test_load_motion_primitives_forward_controller
     test/test_load_motion_primitives_forward_controller.cpp
   )
-  target_include_directories(
-    test_load_motion_primitives_forward_controller PRIVATE include
-  )
-  ament_target_dependencies(
-    test_load_motion_primitives_forward_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_motion_primitives_forward_controller
+    motion_primitives_forward_controller
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(
@@ -82,16 +88,11 @@ if(BUILD_TESTING)
     test/test_motion_primitives_forward_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_params.yaml
   )
-  target_include_directories(
-    test_motion_primitives_forward_controller PRIVATE include
-  )
-  target_link_libraries(
-    test_motion_primitives_forward_controller motion_primitives_forward_controller
-  )
-  ament_target_dependencies(
-    test_motion_primitives_forward_controller
-    controller_interface
-    hardware_interface
+  target_link_libraries(test_motion_primitives_forward_controller
+    motion_primitives_forward_controller
+    controller_interface::controller_interface
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(
@@ -99,16 +100,11 @@ if(BUILD_TESTING)
     test/test_motion_primitives_forward_controller_preceeding.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml
   )
-  target_include_directories(
-    test_motion_primitives_forward_controller_preceeding PRIVATE include
-  )
-  target_link_libraries(
-    test_motion_primitives_forward_controller_preceeding motion_primitives_forward_controller
-  )
-  ament_target_dependencies(
-    test_motion_primitives_forward_controller_preceeding
-    controller_interface
-    hardware_interface
+  target_link_libraries(test_motion_primitives_forward_controller_preceeding
+    motion_primitives_forward_controller
+    controller_interface::controller_interface
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 
