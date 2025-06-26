@@ -43,9 +43,6 @@
 
 #include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
-#include "motion_primitives_forward_controller/execution_state.hpp"
-#include "motion_primitives_forward_controller/motion_type.hpp"
-#include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
 
 using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
 using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
@@ -161,7 +158,8 @@ protected:
 
     auto goal_msg = ExecuteMotion::Goal();
     MotionPrimitive primitive;
-    primitive.type = MotionType::LINEAR_JOINT;
+    primitive.type =
+      static_cast<uint8_t>(motion_primitives_forward_controller::MotionType::LINEAR_JOINT);
     primitive.joint_positions = joint_positions;
     primitive.blend_radius = blend_radius;
 
@@ -201,7 +199,9 @@ protected:
   std::vector<std::string> state_interface_names_ = {"execution_status", "ready_for_new_primitive"};
 
   std::string interface_namespace_ = "motion_primitive";
-  std::array<double, 2> state_values_ = {ExecutionState::IDLE, ReadyForNewPrimitive::READY};
+  std::array<double, 2> state_values_ = {
+    static_cast<uint8_t>(motion_primitives_forward_controller::ExecutionState::IDLE),
+    static_cast<uint8_t>(motion_primitives_forward_controller::ReadyForNewPrimitive::READY)};
   std::array<double, 25> command_values_ = {
     101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
     101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,

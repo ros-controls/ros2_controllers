@@ -15,16 +15,11 @@
 // Authors: Mathias Fuhrer
 
 #include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
-
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "controller_interface/helpers.hpp"
-#include "motion_primitives_forward_controller/execution_state.hpp"
-#include "motion_primitives_forward_controller/motion_type.hpp"
-#include "motion_primitives_forward_controller/ready_for_new_primitive.hpp"
 
 namespace motion_primitives_forward_controller
 {
@@ -162,8 +157,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       get_node()->get_logger(), "State interface 0 (execution_state) returned no value.");
     return controller_interface::return_type::ERROR;
   }
-  execution_status_ = static_cast<int8_t>(std::round(opt_value_execution.value()));
-
+  execution_status_ =
+    static_cast<ExecutionState>(static_cast<uint8_t>(std::round(opt_value_execution.value())));
   switch (execution_status_)
   {
     case ExecutionState::IDLE:
@@ -199,7 +194,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     default:
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Error: Unknown execution status: %d", execution_status_);
+        get_node()->get_logger(), "Error: Unknown execution status: %d",
+        static_cast<uint8_t>(execution_status_));
       return controller_interface::return_type::ERROR;
   }
 
@@ -210,11 +206,12 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       get_node()->get_logger(), "State interface 1 (ready_for_new_primitive) returned no value.");
     return controller_interface::return_type::ERROR;
   }
-  uint8_t ready_for_new_primitive = static_cast<int8_t>(std::round(opt_value_ready.value()));
+  ready_for_new_primitive_ =
+    static_cast<ReadyForNewPrimitive>(static_cast<uint8_t>(std::round(opt_value_ready.value())));
 
   if (!moprim_queue_.empty())  // check if new command is available
   {
-    switch (ready_for_new_primitive)
+    switch (ready_for_new_primitive_)
     {
       case ReadyForNewPrimitive::NOT_READY:
       {
@@ -232,7 +229,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       default:
         RCLCPP_ERROR(
           get_node()->get_logger(), "Error: Unknown state for ready_for_new_primitive: %d",
-          ready_for_new_primitive);
+          static_cast<uint8_t>(ready_for_new_primitive_));
         return controller_interface::return_type::ERROR;
     }
   }
@@ -291,7 +288,9 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
     // Process via poses if available (only for circular motion)
-    if (current_moprim->type == MotionType::CIRCULAR_CARTESIAN && current_moprim->poses.size() == 2)
+    if (
+      current_moprim->type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
+      current_moprim->poses.size() == 2)
     {
       const auto & via_pose = current_moprim->poses[1].pose;            // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
@@ -347,7 +346,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
   {
     const auto & primitive = primitives[i];
 
-    switch (primitive.type)
+    switch (static_cast<MotionType>(primitive.type))
     {
       case MotionType::LINEAR_JOINT:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
@@ -474,7 +473,7 @@ void MotionPrimitivesForwardController::execute_goal(
   if (add_sequence_wrappers)
   {
     std::shared_ptr<MotionPrimitiveMsg> start_marker = std::make_shared<MotionPrimitiveMsg>();
-    start_marker->type = MotionType::MOTION_SEQUENCE_START;
+    start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
     moprim_queue_.push(start_marker);
   }
 
@@ -488,7 +487,7 @@ void MotionPrimitivesForwardController::execute_goal(
   if (add_sequence_wrappers)
   {
     std::shared_ptr<MotionPrimitiveMsg> end_marker = std::make_shared<MotionPrimitiveMsg>();
-    end_marker->type = MotionType::MOTION_SEQUENCE_END;
+    end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
     moprim_queue_.push(end_marker);
   }
 
@@ -500,7 +499,8 @@ void MotionPrimitivesForwardController::execute_goal(
   rclcpp::Rate rate(50);
   while (rclcpp::ok())
   {
-    auto execution_status = static_cast<uint8_t>(std::round(state_interfaces_[0].get_value()));
+    ExecutionState execution_status = static_cast<ExecutionState>(
+      static_cast<uint8_t>(std::round(state_interfaces_[0].get_value())));
     if (execution_status == ExecutionState::SUCCESS && was_executing_)
     {
       RCLCPP_INFO(get_node()->get_logger(), "Execution completed successfully.");

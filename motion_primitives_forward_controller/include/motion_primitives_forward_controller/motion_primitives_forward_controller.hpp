@@ -35,6 +35,33 @@
 
 namespace motion_primitives_forward_controller
 {
+enum class ExecutionState : uint8_t
+{
+  IDLE = 0,
+  EXECUTING = 1,
+  SUCCESS = 2,
+  ERROR = 3,
+  STOPPED = 4
+};
+
+enum class MotionType : uint8_t
+{
+  LINEAR_JOINT = 10,
+  LINEAR_CARTESIAN = 50,
+  CIRCULAR_CARTESIAN = 51,
+
+  STOP_MOTION = 66,
+  RESET_STOP = 67,
+
+  MOTION_SEQUENCE_START = 100,
+  MOTION_SEQUENCE_END = 101
+};
+
+enum class ReadyForNewPrimitive : uint8_t
+{
+  NOT_READY = 0,
+  READY = 1
+};
 
 class MotionPrimitivesForwardController : public controller_interface::ControllerInterface
 {
@@ -85,7 +112,8 @@ protected:
   bool print_error_once_ = true;
   bool robot_stopped_ = false;
   bool was_executing_ = false;
-  uint8_t execution_status_;
+  ExecutionState execution_status_;
+  ReadyForNewPrimitive ready_for_new_primitive_;
 };
 
 }  // namespace motion_primitives_forward_controller

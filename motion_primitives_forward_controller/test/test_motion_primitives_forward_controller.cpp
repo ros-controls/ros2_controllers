@@ -146,8 +146,11 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(command_values_[0], MotionType::LINEAR_JOINT);  // motion type
-  EXPECT_EQ(command_values_[1], 0.1);                       // q1 - q6
+  EXPECT_EQ(
+    command_values_[0],
+    static_cast<uint8_t>(
+      motion_primitives_forward_controller::MotionType::LINEAR_JOINT));  // motion type
+  EXPECT_EQ(command_values_[1], 0.1);                                    // q1 - q6
   EXPECT_EQ(command_values_[2], 0.2);
   EXPECT_EQ(command_values_[3], 0.3);
   EXPECT_EQ(command_values_[4], 0.4);
