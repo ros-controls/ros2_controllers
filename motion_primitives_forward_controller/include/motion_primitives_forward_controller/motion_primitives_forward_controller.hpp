@@ -35,11 +35,6 @@
 
 namespace motion_primitives_forward_controller
 {
-// name constants for state interfaces
-static constexpr size_t STATE_MY_ITFS = 0;
-
-// name constants for command interfaces
-static constexpr size_t CMD_MY_ITFS = 0;
 
 class MotionPrimitivesForwardController : public controller_interface::ControllerInterface
 {

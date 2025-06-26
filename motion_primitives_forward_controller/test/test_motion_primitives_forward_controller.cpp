@@ -23,9 +23,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "test_motion_primitives_forward_controller.hpp"
 
-using motion_primitives_forward_controller::CMD_MY_ITFS;
-using motion_primitives_forward_controller::STATE_MY_ITFS;
-
 class MotionPrimitivesForwardControllerTest
 : public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>
 {
@@ -110,12 +107,12 @@ TEST_F(MotionPrimitivesForwardControllerTest, reactivate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto val_opt = controller_->command_interfaces_[CMD_MY_ITFS].get_optional();
+  auto val_opt = controller_->command_interfaces_[0].get_optional();
   ASSERT_TRUE(std::isnan(val_opt.value()));
 
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  val_opt = controller_->command_interfaces_[CMD_MY_ITFS].get_optional();
+  val_opt = controller_->command_interfaces_[0].get_optional();
   ASSERT_TRUE(std::isnan(val_opt.value()));
 
   ASSERT_EQ(

@@ -29,6 +29,7 @@ For this setup, the [motion primitives mode of the `Universal_Robots_ROS2_Driver
 
 
 # TODOs/ improvements
+- Use references for command and state interfaces to improve code readability and less error-prone.
 - Extend the tests
    - Test for a sequence of multiple primitives
    - Test for canceling movement

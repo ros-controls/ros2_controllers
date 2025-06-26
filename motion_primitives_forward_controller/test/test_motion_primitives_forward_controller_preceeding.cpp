@@ -22,9 +22,6 @@
 #include <utility>
 #include <vector>
 
-using motion_primitives_forward_controller::CMD_MY_ITFS;
-using motion_primitives_forward_controller::STATE_MY_ITFS;
-
 class MotionPrimitivesForwardControllerTest
 : public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>
 {
