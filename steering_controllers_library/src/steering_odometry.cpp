@@ -176,11 +176,7 @@ bool SteeringOdometry::update_from_velocity(
 
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
-<<<<<<< HEAD
-  const double angular_velocity = steer_pos_ * linear_velocity / wheelbase_;
-=======
-  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheel_base_;
->>>>>>> 2800f21 (Fix SteeringOdometry calculation error (#1777))
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
