@@ -120,10 +120,8 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
 
 void AdmittanceRule::apply_parameters_update()
 {
-  if (parameter_handler_->is_old(parameters_))
-  {
-    parameters_ = parameter_handler_->get_params();
-  }
+  parameter_handler_->try_get_params(parameters_);
+
   // update param values
   end_effector_weight_[2] = -parameters_.gravity_compensation.CoG.force;
   vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_pos_);
