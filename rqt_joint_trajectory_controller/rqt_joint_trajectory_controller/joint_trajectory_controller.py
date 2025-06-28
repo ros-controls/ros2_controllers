@@ -29,7 +29,11 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .utils import ControllerLister, ControllerManagerLister
 from .double_editor import DoubleEditor
-from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
+from .joint_limits_urdf import (
+    get_joint_limits,
+    subscribe_to_robot_description,
+    unsubscribe_to_robot_description,
+)
 from .update_combo import update_combo
 
 # TODO:
@@ -170,19 +174,28 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.timeout.connect(self._update_jtc_list)
         self._update_jtc_list_timer.start()
 
-        # subscriptions
-        subscribe_to_robot_description(self._node)
+        # Timer for running controller updates
+        self._update_robot_description_list_timer = QTimer(self)
+        self._update_robot_description_list_timer.setInterval(int(1.0 / self._ctrlrs_update_freq))
+        self._update_robot_description_list_timer.timeout.connect(
+            self._update_robot_description_list
+        )
+        self._update_robot_description_list_timer.start()
 
         # Signal connections
         w = self._widget
         w.enable_button.toggled.connect(self._on_jtc_enabled)
         w.jtc_combo.currentIndexChanged[str].connect(self._on_jtc_change)
         w.cm_combo.currentIndexChanged[str].connect(self._on_cm_change)
+        w.robot_description_combo.currentIndexChanged[str].connect(
+            self._on_robot_description_change
+        )
 
         self._cmd_pub = None  # Controller command publisher
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
+        self._list_robot_descriptions = None
 
     def shutdown_plugin(self):
         self._update_cmd_timer.stop()
@@ -256,6 +269,18 @@ class JointTrajectoryController(Plugin):
         # Update widget
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
+    def _update_robot_description_list(self):
+        if not self._list_robot_descriptions:
+            self._widget.robot_description_combo.clear()
+        self._list_robot_descriptions = []
+
+        topics_with_types = self._node.get_topic_names_and_types()
+        for topic_with_type in topics_with_types:
+            if "std_msgs/msg/String" in topic_with_type[1]:
+                self._list_robot_descriptions.append(topic_with_type[0])
+
+        update_combo(self._widget.robot_description_combo, sorted(self._list_robot_descriptions))
+
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
@@ -275,6 +300,13 @@ class JointTrajectoryController(Plugin):
             self._update_jtc_list()
         else:
             self._list_controllers = None
+
+    def _on_robot_description_change(self, robot_description):
+        unsubscribe_to_robot_description(self._node)
+
+        subscribe_to_robot_description(self._node, robot_description)
+        self._widget.jtc_combo.clear()
+        self._update_jtc_list()
 
     def _on_jtc_change(self, jtc_name):
         self._unload_jtc()
