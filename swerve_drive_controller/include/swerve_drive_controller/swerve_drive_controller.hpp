@@ -39,8 +39,15 @@
 namespace swerve_drive_controller
 {
 
+enum class WheelAxleIndex : std::size_t
+{
+  FRONT_LEFT = 0,
+  FRONT_RIGHT = 1,
+  REAR_LEFT = 2,
+  REAR_RIGHT = 3
+};
+
 using CallbackReturn = controller_interface::CallbackReturn;
-// using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class Wheel
 {
@@ -110,15 +117,8 @@ protected:
   std::unique_ptr<Axle> get_axle(const std::string & axle_name);
 
   // Handles for four wheels and their axles
-  std::unique_ptr<Wheel> front_left_wheel_handle_;
-  std::unique_ptr<Wheel> front_right_wheel_handle_;
-  std::unique_ptr<Wheel> rear_left_wheel_handle_;
-  std::unique_ptr<Wheel> rear_right_wheel_handle_;
-
-  std::unique_ptr<Axle> front_left_axle_handle_;
-  std::unique_ptr<Axle> front_right_axle_handle_;
-  std::unique_ptr<Axle> rear_left_axle_handle_;
-  std::unique_ptr<Axle> rear_right_axle_handle_;
+  std::vector<std::unique_ptr<Wheel>> wheel_handles_;
+  std::vector<std::unique_ptr<Axle>> axle_handles_;
 
   // Joint names for wheels and axles
   std::string front_left_wheel_joint_name_;
@@ -130,6 +130,9 @@ protected:
   std::string front_right_axle_joint_name_;
   std::string rear_left_axle_joint_name_;
   std::string rear_right_axle_joint_name_;
+
+  std::array<std::string, 4> wheel_joint_names{};
+  std::array<std::string, 4> axle_joint_names{};
 
   std::string cmd_vel_topic_;
   std::string odometry_topic_;
