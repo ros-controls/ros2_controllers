@@ -109,6 +109,9 @@ protected:
 
   std::mutex command_mutex_;
   bool print_error_once_ = true;
+  // cancel requested by the action server
+  std::atomic<bool> cancel_requested_ = false;
+  // robot stop command sent to the hardware interface
   std::atomic<bool> robot_stop_requested_ = false;
   bool was_executing_ = false;
   ExecutionState execution_status_;

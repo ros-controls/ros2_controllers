@@ -142,6 +142,20 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
 controller_interface::return_type MotionPrimitivesForwardController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  if (cancel_requested_)
+  {
+    RCLCPP_INFO(get_node()->get_logger(), "Cancel requested, stopping execution.");
+    cancel_requested_ = false;
+    reset_command_interfaces();
+    // send stop command immediately to the hw-interface
+    (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
+    while (!moprim_queue_.empty())
+    {  // clear the queue
+      moprim_queue_.pop();
+    }
+    robot_stop_requested_ = true;
+  }
+
   // read the status from the state interface
   auto opt_value_execution = state_interfaces_[0].get_optional();
   if (!opt_value_execution.has_value())
@@ -171,6 +185,15 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     case ExecutionState::STOPPED:
       print_error_once_ = true;
+      if (robot_stop_requested_)
+      {
+        // If the robot was stopped by a stop command, reset the command interfaces
+        // to allow new motion primitives to be sent.
+        reset_command_interfaces();
+        (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
+        robot_stop_requested_ = false;
+        RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
+      }
       break;
 
     case ExecutionState::ERROR:
@@ -384,31 +407,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
 rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>>)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Canceling goal");
-
-  std::lock_guard<std::mutex> guard(command_mutex_);
-  reset_command_interfaces();
-  robot_stop_requested_ = true;
-  // send stop command immediately to the hw-interface
-  (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
-  while (!moprim_queue_.empty())
-  {  // clear the queue
-    moprim_queue_.pop();
-  }
-
-  RCLCPP_INFO(get_node()->get_logger(), "Waiting for Robot to stop...");
-  while (execution_status_ != ExecutionState::STOPPED)
-  {
-    // Small sleep to prevent busy waiting
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-
-  reset_command_interfaces();
-  // send reset stop command to the hw-interface
-  (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
-  robot_stop_requested_ = false;
-
-  RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
+  cancel_requested_ = true;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
