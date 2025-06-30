@@ -25,7 +25,6 @@ endforeach()
 
 generate_parameter_library(motion_primitives_forward_controller_parameters
   src/motion_primitives_forward_controller.yaml
-  include/motion_primitives_forward_controller/validate_motion_primitives_forward_controller_parameters.hpp
 )
 add_library(
   motion_primitives_forward_controller
