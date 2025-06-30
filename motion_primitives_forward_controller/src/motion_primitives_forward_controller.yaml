@@ -1,10 +1,4 @@
 motion_primitives_forward_controller:
-  name: {
-    type: string,
-    default_value: "",
-    description: "Name for <name>/<state/ command interface>",
-    read_only: true,
-  }
   command_interfaces: {
     type: string_array,
     default_value: [],

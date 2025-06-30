@@ -53,13 +53,6 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
 
   params_ = param_listener_->get_params();
 
-  // Check if the name is not empty
-  if (params_.name.empty())
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error: A name must be provided!");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // Check if there are exactly 25 command interfaces
   if (params_.command_interfaces.size() != 25)
   {  // motion_type + 6 joints + 2*7 positions + blend_radius + velocity + acceleration + move_time
@@ -102,7 +95,7 @@ MotionPrimitivesForwardController::command_interface_configuration() const
   // Iterate over all command interfaces from the config yaml file
   for (const auto & interface_name : params_.command_interfaces)
   {
-    command_interfaces_config.names.push_back(params_.name + "/" + interface_name);
+    command_interfaces_config.names.push_back("motion_primitive/" + interface_name);
   }
   return command_interfaces_config;
 }
@@ -118,7 +111,7 @@ MotionPrimitivesForwardController::state_interface_configuration() const
   // Iterate over all state interfaces from the config yaml file
   for (const auto & interface_name : params_.state_interfaces)
   {
-    state_interfaces_config.names.push_back(params_.name + "/" + interface_name);
+    state_interfaces_config.names.push_back("motion_primitive/" + interface_name);
   }
   return state_interfaces_config;
 }

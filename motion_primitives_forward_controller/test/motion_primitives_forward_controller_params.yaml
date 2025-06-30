@@ -1,6 +1,5 @@
 test_motion_primitives_forward_controller:
   ros__parameters:
-    name: motion_primitive
     command_interfaces:
       - motion_type
       - q1
