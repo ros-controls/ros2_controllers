@@ -110,7 +110,7 @@ protected:
   size_t queue_size_ = 0;
   std::mutex command_mutex_;
   bool print_error_once_ = true;
-  bool robot_stopped_ = false;
+  std::atomic<bool> robot_stop_requested_ = false;
   bool was_executing_ = false;
   ExecutionState execution_status_;
   ReadyForNewPrimitive ready_for_new_primitive_;

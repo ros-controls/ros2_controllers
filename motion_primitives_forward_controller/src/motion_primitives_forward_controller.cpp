@@ -395,7 +395,7 @@ rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_
 
   std::lock_guard<std::mutex> guard(command_mutex_);
   reset_command_interfaces();
-  robot_stopped_ = true;
+  robot_stop_requested_ = true;
   // send stop command immediately to the hw-interface
   (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
   while (!moprim_queue_.empty())
@@ -413,7 +413,7 @@ rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_
   reset_command_interfaces();
   // send reset stop command to the hw-interface
   (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
-  robot_stopped_ = false;
+  robot_stop_requested_ = false;
 
   RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
   return rclcpp_action::CancelResponse::ACCEPT;
@@ -431,9 +431,9 @@ void MotionPrimitivesForwardController::execute_goal(
 {
   const auto & goal = goal_handle->get_goal();
 
-  if (robot_stopped_)
+  if (robot_stop_requested_)
   {
-    RCLCPP_WARN(get_node()->get_logger(), "Robot is stopped. Discarding the new command.");
+    RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
     return;
   }
 
