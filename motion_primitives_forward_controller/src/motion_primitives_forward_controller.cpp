@@ -242,7 +242,7 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 {
   std::lock_guard<std::mutex> guard(command_mutex_);
   // Get the oldest message from the queue
-  std::shared_ptr<MotionPrimitiveMsg> current_moprim = moprim_queue_.front();
+  std::shared_ptr<MotionPrimitive> current_moprim = moprim_queue_.front();
   moprim_queue_.pop();
 
   // Check if the message is valid
@@ -438,39 +438,33 @@ void MotionPrimitivesForwardController::execute_goal(
     return;
   }
 
-  size_t required_queue_space = primitives.size();
-  // add sequence markers only if there are multiple primitives
-  bool add_sequence_wrappers = primitives.size() > 1;
-  if (add_sequence_wrappers)
+  auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
   {
-    required_queue_space += 2;  // start + end
-  }
+    for (const auto & primitive : motion_primitives)
+    {
+      moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
+    }
+  };
 
-  // Add sequence start marker
-  if (add_sequence_wrappers)
+  if (primitives.size() > 1)
   {
-    std::shared_ptr<MotionPrimitiveMsg> start_marker = std::make_shared<MotionPrimitiveMsg>();
+    std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
     start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
     moprim_queue_.push(start_marker);
-  }
 
-  // Add motion primitives to the queue
-  for (const auto & primitive : primitives)
-  {
-    moprim_queue_.push(std::make_shared<MotionPrimitiveMsg>(primitive));
-  }
+    add_motions(primitives);
 
-  // Add sequence end marker
-  if (add_sequence_wrappers)
-  {
-    std::shared_ptr<MotionPrimitiveMsg> end_marker = std::make_shared<MotionPrimitiveMsg>();
+    std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
     end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
     moprim_queue_.push(end_marker);
   }
+  else
+  {
+    add_motions(primitives);
+  }
 
   RCLCPP_INFO(
-    get_node()->get_logger(), "Accepted goal with %zu motion primitives%s.", primitives.size(),
-    add_sequence_wrappers ? " (wrapped in sequence markers)" : "");
+    get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
 
   ExecuteMotion::Result result;
   rclcpp::Rate rate(50);

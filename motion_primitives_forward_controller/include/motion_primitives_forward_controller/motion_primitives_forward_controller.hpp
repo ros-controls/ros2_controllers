@@ -90,8 +90,8 @@ protected:
   std::shared_ptr<motion_primitives_forward_controller::ParamListener> param_listener_;
   motion_primitives_forward_controller::Params params_;
 
-  using MotionPrimitiveMsg = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-  std::queue<std::shared_ptr<MotionPrimitiveMsg>> moprim_queue_;
+  using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+  std::queue<std::shared_ptr<MotionPrimitive>> moprim_queue_;
 
   using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
   rclcpp_action::Server<ExecuteMotion>::SharedPtr action_server_;
