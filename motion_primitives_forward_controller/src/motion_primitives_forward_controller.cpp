@@ -30,7 +30,7 @@ MotionPrimitivesForwardController::MotionPrimitivesForwardController()
 
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init()
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Initializing Motion Primitives Forward Controller");
+  RCLCPP_DEBUG(get_node()->get_logger(), "Initializing Motion Primitives Forward Controller");
 
   try
   {
@@ -49,7 +49,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init(
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Configuring Motion Primitives Forward Controller");
+  RCLCPP_DEBUG(get_node()->get_logger(), "Configuring Motion Primitives Forward Controller");
 
   params_ = param_listener_->get_params();
 
@@ -94,7 +94,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  RCLCPP_INFO(get_node()->get_logger(), "configure successful");
+  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -134,7 +134,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
-  RCLCPP_INFO(get_node()->get_logger(), "Controller activated");
+  RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -142,7 +142,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
-  RCLCPP_INFO(get_node()->get_logger(), "Controller deactivated");
+  RCLCPP_DEBUG(get_node()->get_logger(), "Controller deactivated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -162,11 +162,9 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   switch (execution_status_)
   {
     case ExecutionState::IDLE:
-      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: IDLE");
       print_error_once_ = true;
       break;
     case ExecutionState::EXECUTING:
-      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: EXECUTING");
       if (!was_executing_)
       {
         was_executing_ = true;
@@ -175,12 +173,10 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       break;
 
     case ExecutionState::SUCCESS:
-      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: SUCCESS");
       print_error_once_ = true;
       break;
 
     case ExecutionState::STOPPED:
-      // RCLCPP_INFO(get_node()->get_logger(), "Execution state: STOPPED");
       print_error_once_ = true;
       break;
 
