@@ -170,6 +170,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   {
     case ExecutionState::IDLE:
       print_error_once_ = true;
+      was_executing_ = false;
       break;
     case ExecutionState::EXECUTING:
       if (!was_executing_)
@@ -181,10 +182,34 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     case ExecutionState::SUCCESS:
       print_error_once_ = true;
+
+      if (pending_action_goal_ && was_executing_)
+      {
+        was_executing_ = false;
+        auto result = std::make_shared<ExecuteMotion::Result>();
+        result->error_code = ExecuteMotion::Result::SUCCESSFUL;
+        result->error_string = "Motion primitives executed successfully";
+        pending_action_goal_->succeed(result);
+        pending_action_goal_.reset();
+        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives executed successfully.");
+      }
+
       break;
 
     case ExecutionState::STOPPED:
       print_error_once_ = true;
+      was_executing_ = false;
+
+      if (pending_action_goal_)
+      {
+        auto result = std::make_shared<ExecuteMotion::Result>();
+        result->error_code = ExecuteMotion::Result::CANCELED;
+        result->error_string = "Motion primitives execution canceled";
+        pending_action_goal_->succeed(result);
+        pending_action_goal_.reset();
+        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
+      }
+
       if (robot_stop_requested_)
       {
         // If the robot was stopped by a stop command, reset the command interfaces
@@ -197,6 +222,18 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       break;
 
     case ExecutionState::ERROR:
+      was_executing_ = false;
+
+      if (pending_action_goal_)
+      {
+        auto result = std::make_shared<ExecuteMotion::Result>();
+        result->error_code = ExecuteMotion::Result::FAILED;
+        result->error_string = "Motion primitives execution failed";
+        pending_action_goal_->succeed(result);
+        pending_action_goal_.reset();
+        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution failed");
+      }
+
       if (print_error_once_)
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
@@ -263,7 +300,6 @@ void MotionPrimitivesForwardController::reset_command_interfaces()
 // Set command interfaces from the message, gets called in the update function
 bool MotionPrimitivesForwardController::set_command_interfaces()
 {
-  std::lock_guard<std::mutex> guard(command_mutex_);
   // Get the oldest message from the queue
   std::shared_ptr<MotionPrimitive> current_moprim = moprim_queue_.front();
   moprim_queue_.pop();
@@ -348,6 +384,12 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
 
   const auto & primitives = goal->trajectory.motions;
 
+  if (robot_stop_requested_)
+  {
+    RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   if (primitives.empty())
   {
     RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
@@ -414,28 +456,9 @@ rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_
 void MotionPrimitivesForwardController::goal_accepted_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
 {
-  std::thread{std::bind(&MotionPrimitivesForwardController::execute_goal, this, goal_handle)}
-    .detach();
-}
+  pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
 
-void MotionPrimitivesForwardController::execute_goal(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
-{
-  const auto & goal = goal_handle->get_goal();
-
-  if (robot_stop_requested_)
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
-    return;
-  }
-
-  const auto & primitives = goal->trajectory.motions;
-
-  if (primitives.empty())
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Received goal with no motion primitives. Ignoring.");
-    return;
-  }
+  const auto & primitives = goal_handle->get_goal()->trajectory.motions;
 
   auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
   {
@@ -464,40 +487,8 @@ void MotionPrimitivesForwardController::execute_goal(
 
   RCLCPP_INFO(
     get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
-
-  ExecuteMotion::Result result;
-  rclcpp::Rate rate(50);
-  while (rclcpp::ok())
-  {
-    ExecutionState execution_status = static_cast<ExecutionState>(
-      static_cast<uint8_t>(std::round(state_interfaces_[0].get_value())));
-    if (execution_status == ExecutionState::SUCCESS && was_executing_)
-    {
-      RCLCPP_INFO(get_node()->get_logger(), "Execution completed successfully.");
-      result.error_code = ExecuteMotion::Result::SUCCESSFUL;
-      result.error_string = "Trajectory executed successfully";
-      was_executing_ = false;
-      break;
-    }
-    else if (execution_status == ExecutionState::ERROR)
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "Execution failed with an error.");
-      result.error_code = ExecuteMotion::Result::FAILED;
-      result.error_string = "Trajectory execution failed";
-      break;
-    }
-    else if (execution_status == ExecutionState::STOPPED)
-    {
-      RCLCPP_INFO(get_node()->get_logger(), "Execution stopped.");
-      result.error_code = ExecuteMotion::Result::CANCELED;
-      result.error_string = "Trajectory execution stopped";
-      break;
-    }
-    rate.sleep();
-  }
-
-  goal_handle->succeed(std::make_shared<ExecuteMotion::Result>(result));
 }
+
 }  // namespace motion_primitives_forward_controller
 
 #include "pluginlib/class_list_macros.hpp"

@@ -101,13 +101,11 @@ protected:
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
   void goal_accepted_callback(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
-  void execute_goal(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> pending_action_goal_;
 
   void reset_command_interfaces();
   bool set_command_interfaces();
 
-  std::mutex command_mutex_;
   bool print_error_once_ = true;
   // cancel requested by the action server
   std::atomic<bool> cancel_requested_ = false;
