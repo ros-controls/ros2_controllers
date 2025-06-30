@@ -414,10 +414,29 @@ controller_interface::return_type JointStateBroadcaster::update(
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     // no retries, just try to get the latest value once
-    const auto & opt = state_interfaces_[i].get_optional(0);
-    if (opt.has_value())
+    if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
     {
-      *mapped_values_[i] = opt.value();
+      const auto & opt = state_interfaces_[i].get_optional(0);
+      if (opt.has_value())
+      {
+        *mapped_values_[i] = opt.value();
+      }
+    }
+    else if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::BOOL)
+    {
+      const auto & opt = state_interfaces_[i].get_optional<bool>(0);
+      if (opt.has_value())
+      {
+        *mapped_values_[i] = static_cast<double>(opt.value());
+      }
+    }
+    else
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Unsupported data type for state interface '%s'. "
+        "Only double and bool are supported.",
+        state_interfaces_[i].get_name().c_str());
     }
   }
 
