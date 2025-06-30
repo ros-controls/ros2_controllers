@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>ros2_controllers</name>
-  <version>4.24.0</version>
+  <version>5.2.0</version>
   <description>Metapackage for ros2_controllers related packages</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -26,7 +26,6 @@
   <exec_depend>forward_command_controller</exec_depend>
   <exec_depend>gpio_controllers</exec_depend>
   <exec_depend>gps_sensor_broadcaster</exec_depend>
-  <exec_depend>gripper_controllers</exec_depend>
   <exec_depend>imu_sensor_broadcaster</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>

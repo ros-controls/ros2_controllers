@@ -26,7 +26,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
-#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Quaternion.hpp"
 
 namespace
 {
@@ -85,6 +85,11 @@ InterfaceConfiguration DiffDriveController::command_interface_configuration() co
 
 InterfaceConfiguration DiffDriveController::state_interface_configuration() const
 {
+  if (params_.open_loop)
+  {
+    return {interface_configuration_type::NONE, {}};
+  }
+
   std::vector<std::string> conf_names;
   for (const auto & joint_name : params_.left_wheel_names)
   {
@@ -102,15 +107,13 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
 {
   auto logger = get_node()->get_logger();
 
-  const std::shared_ptr<TwistStamped> command_msg_ptr = *(received_velocity_msg_ptr_.readFromRT());
-
-  if (command_msg_ptr == nullptr)
+  auto current_ref_op = received_velocity_msg_.try_get();
+  if (current_ref_op.has_value())
   {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
-    return controller_interface::return_type::ERROR;
+    command_msg_ = current_ref_op.value();
   }
 
-  const auto age_of_last_command = time - command_msg_ptr->header.stamp;
+  const auto age_of_last_command = time - command_msg_.header.stamp;
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
@@ -118,11 +121,10 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     reference_interfaces_[1] = 0.0;
   }
   else if (
-    std::isfinite(command_msg_ptr->twist.linear.x) &&
-    std::isfinite(command_msg_ptr->twist.angular.z))
+    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg_ptr->twist.linear.x;
-    reference_interfaces_[1] = command_msg_ptr->twist.angular.z;
+    reference_interfaces_[0] = command_msg_.twist.linear.x;
+    reference_interfaces_[1] = command_msg_.twist.angular.z;
   }
   else
   {
@@ -168,9 +170,9 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
     {
       const auto left_feedback_op =
-        registered_left_wheel_handles_[index].feedback.get().get_optional();
+        registered_left_wheel_handles_[index].feedback.value().get().get_optional();
       const auto right_feedback_op =
-        registered_right_wheel_handles_[index].feedback.get().get_optional();
+        registered_right_wheel_handles_[index].feedback.value().get().get_optional();
 
       if (!left_feedback_op.has_value() || !right_feedback_op.has_value())
       {
@@ -337,67 +339,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   const int nr_ref_itfs = 2;
   reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
 
-  // TODO(christophfroehlich) remove deprecated parameters
-  // START DEPRECATED
-  if (!params_.linear.x.has_velocity_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
-      "to NAN");
-    params_.linear.x.min_velocity = params_.linear.x.max_velocity =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.linear.x.has_acceleration_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
-      "limits to "
-      "NAN");
-    params_.linear.x.max_deceleration = params_.linear.x.max_acceleration =
-      params_.linear.x.max_deceleration_reverse = params_.linear.x.max_acceleration_reverse =
-        std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.linear.x.has_jerk_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
-      "NAN");
-    params_.linear.x.min_jerk = params_.linear.x.max_jerk =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_velocity_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_velocity_limits parameter is deprecated, instead set the respective limits "
-      "to NAN");
-    params_.angular.z.min_velocity = params_.angular.z.max_velocity =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_acceleration_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_acceleration_limits parameter is deprecated, instead set the respective "
-      "limits to "
-      "NAN");
-    params_.angular.z.max_deceleration = params_.angular.z.max_acceleration =
-      params_.angular.z.max_deceleration_reverse = params_.angular.z.max_acceleration_reverse =
-        std::numeric_limits<double>::quiet_NaN();
-  }
-  if (!params_.angular.z.has_jerk_limits)
-  {
-    RCLCPP_WARN(
-      logger,
-      "[deprecated] has_jerk_limits parameter is deprecated, instead set the respective limits to "
-      "NAN");
-    params_.angular.z.min_jerk = params_.angular.z.max_jerk =
-      std::numeric_limits<double>::quiet_NaN();
-  }
-  // END DEPRECATED
   limiter_linear_ = std::make_unique<SpeedLimiter>(
     params_.linear.x.min_velocity, params_.linear.x.max_velocity,
     params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
@@ -452,7 +393,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
         cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0) ||
         current_time_diff < cmd_vel_timeout_)
       {
-        received_velocity_msg_ptr_.writeFromNonRT(msg);
+        received_velocity_msg_.set(*msg);
       }
       else
       {
@@ -623,18 +564,16 @@ void DiffDriveController::reset_buffers()
   previous_two_commands_.push({{0.0, 0.0}});
   previous_two_commands_.push({{0.0, 0.0}});
 
-  // Fill RealtimeBuffer with NaNs so it will contain a known value
+  // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
-  received_velocity_msg_ptr_.reset();
-  std::shared_ptr<TwistStamped> empty_msg_ptr = std::make_shared<TwistStamped>();
-  empty_msg_ptr->header.stamp = get_node()->now();
-  empty_msg_ptr->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  empty_msg_ptr->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
-  received_velocity_msg_ptr_.writeFromNonRT(empty_msg_ptr);
+  command_msg_.header.stamp = get_node()->now();
+  command_msg_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  command_msg_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  received_velocity_msg_.set(command_msg_);
 }
 
 void DiffDriveController::halt()
@@ -667,21 +606,6 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
   registered_handles.reserve(wheel_names.size());
   for (const auto & wheel_name : wheel_names)
   {
-    const auto interface_name = feedback_type();
-    const auto state_handle = std::find_if(
-      state_interfaces_.cbegin(), state_interfaces_.cend(),
-      [&wheel_name, &interface_name](const auto & interface)
-      {
-        return interface.get_prefix_name() == wheel_name &&
-               interface.get_interface_name() == interface_name;
-      });
-
-    if (state_handle == state_interfaces_.cend())
-    {
-      RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
-      return controller_interface::CallbackReturn::ERROR;
-    }
-
     const auto command_handle = std::find_if(
       command_interfaces_.begin(), command_interfaces_.end(),
       [&wheel_name](const auto & interface)
@@ -696,18 +620,36 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
       return controller_interface::CallbackReturn::ERROR;
     }
 
-    registered_handles.emplace_back(
-      WheelHandle{std::ref(*state_handle), std::ref(*command_handle)});
+    if (params_.open_loop)
+    {
+      registered_handles.emplace_back(WheelHandle{std::nullopt, std::ref(*command_handle)});
+    }
+    else
+    {
+      const auto interface_name = feedback_type();
+      const auto state_handle = std::find_if(
+        state_interfaces_.cbegin(), state_interfaces_.cend(),
+        [&wheel_name, &interface_name](const auto & interface)
+        {
+          return interface.get_prefix_name() == wheel_name &&
+                 interface.get_interface_name() == interface_name;
+        });
+
+      if (state_handle == state_interfaces_.cend())
+      {
+        RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", wheel_name.c_str());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+
+      registered_handles.emplace_back(
+        WheelHandle{{std::ref(*state_handle)}, std::ref(*command_handle)});
+    }
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-bool DiffDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode (without linting type-cast error)
-  return true || chained_mode;
-}
+bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface>
 DiffDriveController::on_export_reference_interfaces()
