@@ -107,7 +107,6 @@ protected:
   void reset_command_interfaces();
   bool set_command_interfaces();
 
-  size_t queue_size_ = 0;
   std::mutex command_mutex_;
   bool print_error_once_ = true;
   std::atomic<bool> robot_stop_requested_ = false;

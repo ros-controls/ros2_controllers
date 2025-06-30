@@ -25,9 +25,3 @@ motion_primitives_forward_controller:
       not_empty<>: null,
     }
   }
-  queue_size: {
-    type: int,
-    default_value: 10,
-    description: "Queue size to buffer incoming commands",
-    read_only: true,
-  }

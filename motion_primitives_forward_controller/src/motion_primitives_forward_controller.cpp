@@ -87,13 +87,6 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     std::bind(
       &MotionPrimitivesForwardController::goal_accepted_callback, this, std::placeholders::_1));
 
-  queue_size_ = params_.queue_size;
-  if (queue_size_ == 0)
-  {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error: Queue size must be greater than 0!");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -451,18 +444,6 @@ void MotionPrimitivesForwardController::execute_goal(
   if (add_sequence_wrappers)
   {
     required_queue_space += 2;  // start + end
-  }
-
-  // Check if queue has enough space
-  if (moprim_queue_.size() + required_queue_space > queue_size_)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Received more motion primitives than queue can store. "
-      "Current queue size: %zu, required space: %zu. "
-      "Please increase the queue size in the controller parameters.",
-      moprim_queue_.size(), required_queue_space);
-    return;
   }
 
   // Add sequence start marker
