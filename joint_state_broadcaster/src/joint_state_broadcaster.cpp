@@ -201,6 +201,29 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
     return CallbackReturn::ERROR;
   }
 
+  // Erase the interfaces that are not castable to double
+  std::vector<hardware_interface::LoanedStateInterface> state_interfaces_to_keep;
+  std::for_each(
+    state_interfaces_.begin(), state_interfaces_.end(),
+    [&state_interfaces_to_keep](hardware_interface::LoanedStateInterface & si)
+    {
+      if (si.is_castable_to_double())
+      {
+        state_interfaces_to_keep.push_back(std::move(si));
+      }
+      else
+      {
+        RCLCPP_ERROR(
+          rclcpp::get_logger("JointStateBroadcaster"),
+          "State interface '%s' is not castable to double. "
+          "It will not be used in JointStateBroadcaster.",
+          si.get_name().c_str());
+      }
+    });
+
+  state_interfaces_.clear();
+  state_interfaces_ = std::move(state_interfaces_to_keep);
+
   init_auxiliary_data();
   init_joint_state_msg();
   init_dynamic_joint_state_msg();
