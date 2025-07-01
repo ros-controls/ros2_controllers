@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(gpio_controllers)
 
 find_package(ros2_control_cmake REQUIRED)
@@ -25,17 +25,17 @@ add_library(gpio_controllers
   src/gpio_command_controller.cpp
 )
 target_include_directories(gpio_controllers PRIVATE include)
-target_link_libraries(gpio_controllers PUBLIC gpio_command_controller_parameters)
-ament_target_dependencies(gpio_controllers PUBLIC
-  builtin_interfaces
-  controller_interface
-  hardware_interface
-  pluginlib
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-  control_msgs
-)
+target_link_libraries(gpio_controllers PUBLIC
+                      gpio_command_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
+                      ${builtin_interfaces_TARGETS})
+
 pluginlib_export_plugin_description_file(controller_interface gpio_controllers_plugin.xml)
 
 install(
@@ -63,10 +63,10 @@ if(BUILD_TESTING)
   )
 
   target_include_directories(test_load_gpio_command_controller PRIVATE include)
-  ament_target_dependencies(test_load_gpio_command_controller
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+  target_link_libraries(test_load_gpio_command_controller
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(
@@ -76,15 +76,7 @@ if(BUILD_TESTING)
   target_include_directories(test_gpio_command_controller PRIVATE include)
   target_link_libraries(test_gpio_command_controller
     gpio_controllers
-  )
-  ament_target_dependencies(test_gpio_command_controller
-    controller_interface
-    hardware_interface
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    ros2_control_test_assets
-    control_msgs
+    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 

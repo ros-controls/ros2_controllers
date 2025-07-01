@@ -64,7 +64,7 @@ Command interfaces
 ,,,,,,,,,,,,,,,,,,,
 
 - ``<steering_joints_names[i]>/position``     double, in rad
-- ``<traction_joints_names[i]>/velocity``      double, in m/s
+- ``<traction_joints_names[i]>/velocity``      double, in rad/s
 
 State interfaces
 ,,,,,,,,,,,,,,,,,
@@ -77,7 +77,7 @@ Depending on the ``position_feedback``, different feedback types are expected
 With the following state interfaces:
 
 - ``<steering_joints_names[i]>/position``                  double, in rad
-- ``<traction_joints_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in m or m/s
+- ``<traction_joints_names[i]>/<TRACTION_FEEDBACK_TYPE>``   double, in rad or rad/s
 
 Subscribers
 ,,,,,,,,,,,,

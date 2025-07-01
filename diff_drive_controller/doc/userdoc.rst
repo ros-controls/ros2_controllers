@@ -41,6 +41,7 @@ Feedback
 ,,,,,,,,,,,,,,
 
 As feedback interface type the joints' position (``hardware_interface::HW_IF_POSITION``) or velocity (``hardware_interface::HW_IF_VELOCITY``,if parameter ``position_feedback=false``) are used.
+Unless the parameter ``open_loop=true`` is set, then no external state interfaces are used (the commanded velocity is used for odometry instead).
 
 Output
 ,,,,,,,,,

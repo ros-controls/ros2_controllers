@@ -40,9 +40,17 @@ target_include_directories(force_torque_sensor_broadcaster PUBLIC
   $<INSTALL_INTERFACE:include/force_torque_sensor_broadcaster>
 )
 target_link_libraries(force_torque_sensor_broadcaster PUBLIC
-  force_torque_sensor_broadcaster_parameters
+                      force_torque_sensor_broadcaster_parameters
+                      controller_interface::controller_interface
+                      filters::filter_chain
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${geometry_msgs_TARGETS}
+                      ${tf2_geometry_msgs_TARGETS}
 )
-ament_target_dependencies(force_torque_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
@@ -57,12 +65,10 @@ if(BUILD_TESTING)
   ament_add_gmock(test_load_force_torque_sensor_broadcaster test/test_load_force_torque_sensor_broadcaster.cpp)
   target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
-  )
-  ament_target_dependencies(test_load_force_torque_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    force_torque_sensor_broadcaster_parameters
+    force_torque_sensor_broadcaster
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_force_torque_sensor_broadcaster
@@ -70,11 +76,8 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/force_torque_sensor_broadcaster_params.yaml)
   target_include_directories(test_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters
-  )
-
-  ament_target_dependencies(test_force_torque_sensor_broadcaster
-    hardware_interface
+    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster_parameters
   )
 
   add_rostest_with_parameters_gmock(test_force_torque_sensor_broadcaster_with_filters
@@ -82,14 +85,10 @@ if(BUILD_TESTING)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_force_torque_sensor_broadcaster_with_filters_parameters.yaml
   )
   target_include_directories(test_force_torque_sensor_broadcaster_with_filters PRIVATE include)
-
   target_link_libraries(test_force_torque_sensor_broadcaster_with_filters
-    force_torque_sensor_broadcaster force_torque_sensor_broadcaster_parameters)
-
-  ament_target_dependencies(test_force_torque_sensor_broadcaster_with_filters
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    force_torque_sensor_broadcaster
+    force_torque_sensor_broadcaster_parameters
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
 endif()
