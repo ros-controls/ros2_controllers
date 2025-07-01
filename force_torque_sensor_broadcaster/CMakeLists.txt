@@ -17,8 +17,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   tf2
-  tf2_ros
   tf2_geometry_msgs
+  tf2_ros
 )
 
 find_package(ament_cmake REQUIRED)

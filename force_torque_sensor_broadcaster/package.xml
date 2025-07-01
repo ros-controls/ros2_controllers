@@ -25,8 +25,8 @@
 
   <depend>backward_ros</depend>
   <depend>controller_interface</depend>
-  <depend>filters</depend>
   <depend>control_toolbox</depend>
+  <depend>filters</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
