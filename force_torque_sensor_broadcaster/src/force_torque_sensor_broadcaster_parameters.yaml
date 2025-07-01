@@ -49,7 +49,7 @@ force_torque_sensor_broadcaster:
   additional_frames_to_publish: {
     type: string_array,
     default_value: [],
-    description: "Array of additional frames to publish filtered wrench to"
+    description: "Array of additional frames to publish filtered wrench to."
   }
   offset:
     force:
