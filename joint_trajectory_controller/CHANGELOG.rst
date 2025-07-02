@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix atomic variables in JTC (backport `#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_) (`#1765 <https://github.com/ros-controls/ros2_controllers/issues/1765>`_)
+* Contributors: mergify[bot]
+
 2.47.0 (2025-06-07)
 -------------------
 * JTC: Use std::atomic<bool> (backport `#1720 <https://github.com/ros-controls/ros2_controllers/issues/1720>`_) (`#1722 <https://github.com/ros-controls/ros2_controllers/issues/1722>`_)
