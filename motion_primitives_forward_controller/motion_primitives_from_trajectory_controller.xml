@@ -1,0 +1,8 @@
+<library path="motion_primitives_from_trajectory_controller">
+  <class name="motion_primitives_from_trajectory_controller/MotionPrimitivesFromTrajectoryController"
+         type="motion_primitives_from_trajectory_controller::MotionPrimitivesFromTrajectoryController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    MotionPrimitivesFromTrajectoryController ros2_control controller.
+  </description>
+  </class>
+</library>

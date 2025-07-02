@@ -31,11 +31,32 @@ add_library(
   SHARED
   src/motion_primitives_forward_controller.cpp
 )
+add_library(
+  motion_primitives_from_trajectory_controller
+  SHARED
+  src/motion_primitives_from_trajectory_controller.cpp
+)
 target_include_directories(motion_primitives_forward_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
+target_include_directories(motion_primitives_from_trajectory_controller PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
 target_link_libraries(motion_primitives_forward_controller PUBLIC
+                      motion_primitives_forward_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
+                      ${std_srvs_TARGETS}
+                      ${industrial_robot_motion_interfaces_TARGETS}
+)
+target_link_libraries(motion_primitives_from_trajectory_controller PUBLIC
                       motion_primitives_forward_controller_parameters
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
@@ -53,9 +74,13 @@ target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_
 pluginlib_export_plugin_description_file(
   controller_interface motion_primitives_forward_controller.xml)
 
+pluginlib_export_plugin_description_file(
+  controller_interface motion_primitives_from_trajectory_controller.xml)
+
 install(
   TARGETS
     motion_primitives_forward_controller
+    motion_primitives_from_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -115,6 +140,7 @@ ament_export_dependencies(
 )
 ament_export_libraries(
   motion_primitives_forward_controller
+  motion_primitives_from_trajectory_controller
 )
 
 ament_package()
