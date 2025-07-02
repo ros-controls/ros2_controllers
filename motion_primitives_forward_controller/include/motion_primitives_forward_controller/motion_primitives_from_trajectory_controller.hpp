@@ -23,7 +23,9 @@
 #include <vector>
 
 #include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
@@ -31,7 +33,6 @@
 
 #include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace motion_primitives_from_trajectory_controller
 {
@@ -93,15 +94,15 @@ protected:
   using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
   std::queue<std::shared_ptr<MotionPrimitive>> moprim_queue_;
 
-  using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
-  rclcpp_action::Server<ExecuteMotion>::SharedPtr action_server_;
+  using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
+  rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
   rclcpp_action::GoalResponse goal_received_callback(
-    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecuteMotion::Goal> goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   rclcpp_action::CancelResponse goal_cancelled_callback(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   void goal_accepted_callback(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> pending_action_goal_;
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> pending_action_goal_;
 
   void reset_command_interfaces();
   bool set_command_interfaces();

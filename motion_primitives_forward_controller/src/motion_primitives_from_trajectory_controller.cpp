@@ -70,10 +70,10 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  action_server_ = rclcpp_action::create_server<ExecuteMotion>(
+  action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
-    std::string(get_node()->get_name()) + "/motion_sequence",
+    std::string(get_node()->get_name()) + "/follow_joint_trajectory",
     std::bind(
       &MotionPrimitivesFromTrajectoryController::goal_received_callback, this,
       std::placeholders::_1, std::placeholders::_2),
@@ -183,8 +183,8 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
       if (pending_action_goal_ && was_executing_)
       {
         was_executing_ = false;
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::SUCCESSFUL;
+        auto result = std::make_shared<FollowJTrajAction::Result>();
+        result->error_code = FollowJTrajAction::Result::SUCCESSFUL;
         result->error_string = "Motion primitives executed successfully";
         pending_action_goal_->succeed(result);
         pending_action_goal_.reset();
@@ -199,8 +199,9 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
 
       if (pending_action_goal_)
       {
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::CANCELED;
+        auto result = std::make_shared<FollowJTrajAction::Result>();
+        // result->error_code = FollowJTrajAction::Result::CANCELED;
+        result->error_code = 69;
         result->error_string = "Motion primitives execution canceled";
         pending_action_goal_->succeed(result);
         pending_action_goal_.reset();
@@ -223,8 +224,9 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
 
       if (pending_action_goal_)
       {
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::FAILED;
+        auto result = std::make_shared<FollowJTrajAction::Result>();
+        // result->error_code = FollowJTrajAction::Result::FAILED;
+        result->error_code = 404;
         result->error_string = "Motion primitives execution failed";
         pending_action_goal_->succeed(result);
         pending_action_goal_.reset();
@@ -375,115 +377,117 @@ bool MotionPrimitivesFromTrajectoryController::set_command_interfaces()
 }
 
 rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_received_callback(
-  const rclcpp_action::GoalUUID &, std::shared_ptr<const ExecuteMotion::Goal> goal)
+  const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received goal request");
 
-  const auto & primitives = goal->trajectory.motions;
+  // const auto & primitives = goal->trajectory.motions;
 
-  if (robot_stop_requested_)
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
-    return rclcpp_action::GoalResponse::REJECT;
-  }
+  // if (robot_stop_requested_)
+  // {
+  //   RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new
+  //   command."); return rclcpp_action::GoalResponse::REJECT;
+  // }
 
-  if (primitives.empty())
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
-    return rclcpp_action::GoalResponse::REJECT;
-  }
+  // if (primitives.empty())
+  // {
+  //   RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
+  //   return rclcpp_action::GoalResponse::REJECT;
+  // }
 
-  for (size_t i = 0; i < primitives.size(); ++i)
-  {
-    const auto & primitive = primitives[i];
+  // for (size_t i = 0; i < primitives.size(); ++i)
+  // {
+  //   const auto & primitive = primitives[i];
 
-    switch (static_cast<MotionType>(primitive.type))
-    {
-      case MotionType::LINEAR_JOINT:
-        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
-        if (primitive.joint_positions.empty())
-        {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
-          return rclcpp_action::GoalResponse::REJECT;
-        }
-        break;
+  //   switch (static_cast<MotionType>(primitive.type))
+  //   {
+  //     case MotionType::LINEAR_JOINT:
+  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
+  //       if (primitive.joint_positions.empty())
+  //       {
+  //         RCLCPP_ERROR(
+  //           get_node()->get_logger(),
+  //           "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
+  //         return rclcpp_action::GoalResponse::REJECT;
+  //       }
+  //       break;
 
-      case MotionType::LINEAR_CARTESIAN:
-        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
-        if (primitive.poses.empty())
-        {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Primitive %zu invalid: LINEAR_CARTESIAN requires at least one pose.", i);
-          return rclcpp_action::GoalResponse::REJECT;
-        }
-        break;
+  //     case MotionType::LINEAR_CARTESIAN:
+  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
+  //       if (primitive.poses.empty())
+  //       {
+  //         RCLCPP_ERROR(
+  //           get_node()->get_logger(),
+  //           "Primitive %zu invalid: LINEAR_CARTESIAN requires at least one pose.", i);
+  //         return rclcpp_action::GoalResponse::REJECT;
+  //       }
+  //       break;
 
-      case MotionType::CIRCULAR_CARTESIAN:
-        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: CIRCULAR_CARTESIAN (CIRC)", i);
-        if (primitive.poses.size() != 2)
-        {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Primitive %zu invalid: CIRCULAR_CARTESIAN requires exactly two poses.", i);
-          return rclcpp_action::GoalResponse::REJECT;
-        }
-        break;
+  //     case MotionType::CIRCULAR_CARTESIAN:
+  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: CIRCULAR_CARTESIAN (CIRC)", i);
+  //       if (primitive.poses.size() != 2)
+  //       {
+  //         RCLCPP_ERROR(
+  //           get_node()->get_logger(),
+  //           "Primitive %zu invalid: CIRCULAR_CARTESIAN requires exactly two poses.", i);
+  //         return rclcpp_action::GoalResponse::REJECT;
+  //       }
+  //       break;
 
-      default:
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "Primitive %zu invalid: unknown motion type %u.", i,
-          primitive.type);
-        return rclcpp_action::GoalResponse::REJECT;
-    }
-  }
+  //     default:
+  //       RCLCPP_ERROR(
+  //         get_node()->get_logger(), "Primitive %zu invalid: unknown motion type %u.", i,
+  //         primitive.type);
+  //       return rclcpp_action::GoalResponse::REJECT;
+  //   }
+  // }
 
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
 rclcpp_action::CancelResponse MotionPrimitivesFromTrajectoryController::goal_cancelled_callback(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>>)
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>>)
 {
   cancel_requested_ = true;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
-  pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
+  RCLCPP_INFO(get_node()->get_logger(), "Accepted goal");
 
-  const auto & primitives = goal_handle->get_goal()->trajectory.motions;
+  // pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
 
-  auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
-  {
-    for (const auto & primitive : motion_primitives)
-    {
-      moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
-    }
-  };
+  // const auto & primitives = goal_handle->get_goal()->trajectory.motions;
 
-  if (primitives.size() > 1)
-  {
-    std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
-    start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
-    moprim_queue_.push(start_marker);
+  // auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
+  // {
+  //   for (const auto & primitive : motion_primitives)
+  //   {
+  //     moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
+  //   }
+  // };
 
-    add_motions(primitives);
+  // if (primitives.size() > 1)
+  // {
+  //   std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
+  //   start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
+  //   moprim_queue_.push(start_marker);
 
-    std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
-    end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
-    moprim_queue_.push(end_marker);
-  }
-  else
-  {
-    add_motions(primitives);
-  }
+  //   add_motions(primitives);
 
-  RCLCPP_INFO(
-    get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
+  //   std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
+  //   end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
+  //   moprim_queue_.push(end_marker);
+  // }
+  // else
+  // {
+  //   add_motions(primitives);
+  // }
+
+  // RCLCPP_INFO(
+  //   get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
 }
 
 }  // namespace motion_primitives_from_trajectory_controller
