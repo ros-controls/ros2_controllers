@@ -2,6 +2,9 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.2.0 (2025-06-23)
+------------------
+
 5.1.0 (2025-06-11)
 ------------------
 * Revert temporary logging changes added for CI timeout investigation (`#1741 <https://github.com/ros-controls/ros2_controllers/issues/1741>`_)

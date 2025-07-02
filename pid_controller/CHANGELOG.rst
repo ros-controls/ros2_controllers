@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.2.0 (2025-06-23)
+------------------
+* Add new members for PID controller parameters (`#1585 <https://github.com/ros-controls/ros2_controllers/issues/1585>`_)
+* Contributors: Victor Coutinho Vieira Santos
+
 5.1.0 (2025-06-11)
 ------------------
 * Remove deprecated feedforward parameter+service (`#1753 <https://github.com/ros-controls/ros2_controllers/issues/1753>`_)
