@@ -2,6 +2,9 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.27.0 (2025-06-23)
 -------------------
 

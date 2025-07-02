@@ -2,6 +2,9 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.27.0 (2025-06-23)
 -------------------
 * Add new members for PID controller parameters (backport `#1585 <https://github.com/ros-controls/ros2_controllers/issues/1585>`_) (`#1769 <https://github.com/ros-controls/ros2_controllers/issues/1769>`_)

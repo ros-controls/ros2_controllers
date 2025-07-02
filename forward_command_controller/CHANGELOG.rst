@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.27.0 (2025-06-23)
 -------------------
 
