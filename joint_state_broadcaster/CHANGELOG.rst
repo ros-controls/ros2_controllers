@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.48.0 (2025-07-02)
+-------------------
 * [Humble] [JSB] Add frame_id to the joint states message (`#1751 <https://github.com/ros-controls/ros2_controllers/issues/1751>`_)
 * Contributors: Sai Kishor Kothakota
 

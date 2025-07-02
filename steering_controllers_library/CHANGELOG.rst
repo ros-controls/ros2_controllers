@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.48.0 (2025-07-02)
+-------------------
 * Fix SteeringOdometry calculation error (backport `#1777 <https://github.com/ros-controls/ros2_controllers/issues/1777>`_) (`#1778 <https://github.com/ros-controls/ros2_controllers/issues/1778>`_)
 * Contributors: mergify[bot]
 

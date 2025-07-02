@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.48.0 (2025-07-02)
+-------------------
 * Fix atomic variables in JTC (backport `#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_) (`#1765 <https://github.com/ros-controls/ros2_controllers/issues/1765>`_)
 * Contributors: mergify[bot]
 
