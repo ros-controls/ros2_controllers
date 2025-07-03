@@ -38,6 +38,8 @@ add_library(
   SHARED
   src/motion_primitives_from_trajectory_controller.cpp
   src/fk_client.cpp
+  src/rdp.cpp
+  src/approx_primitives_with_rdp.cpp
 )
 target_include_directories(motion_primitives_forward_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
