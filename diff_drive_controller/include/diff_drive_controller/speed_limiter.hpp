@@ -96,7 +96,7 @@ public:
   }
 
   /**
-   * \brief Limit the velocity and acceleration
+   * \brief Limit the velocity, acceleration, and jerk
    * \param [in, out] v  Velocity [m/s]
    * \param [in]      v0 Previous velocity to v  [m/s]
    * \param [in]      v1 Previous velocity to v0 [m/s]
