@@ -124,6 +124,7 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
+  moprim_queue_write_enabled_ = true;
   RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -215,6 +216,7 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
         reset_command_interfaces();
         (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
         robot_stop_requested_ = false;
+        moprim_queue_write_enabled_ = true;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
       break;
@@ -257,7 +259,7 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
   ready_for_new_primitive_ =
     static_cast<ReadyForNewPrimitive>(static_cast<uint8_t>(std::round(opt_value_ready.value())));
 
-  if (!moprim_queue_.empty())  // check if new command is available
+  if (!moprim_queue_write_enabled_ && !cancel_requested_)
   {
     switch (ready_for_new_primitive_)
     {
@@ -267,12 +269,21 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
       }
       case ReadyForNewPrimitive::READY:
       {
-        if (!set_command_interfaces())
+        if (moprim_queue_.empty())  // check if new command is available
         {
-          RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
-          return controller_interface::return_type::ERROR;
+          // all primitives read, queue ready to get filled with new primitives
+          moprim_queue_write_enabled_ = true;
+          return controller_interface::return_type::OK;
         }
-        return controller_interface::return_type::OK;
+        else
+        {
+          if (!set_command_interfaces())
+          {
+            RCLCPP_ERROR(get_node()->get_logger(), "Error: set_command_interfaces() failed");
+            return controller_interface::return_type::ERROR;
+          }
+          return controller_interface::return_type::OK;
+        }
       }
       default:
         RCLCPP_ERROR(
@@ -385,8 +396,16 @@ rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_recei
 
   // if (robot_stop_requested_)
   // {
-  //   RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new
-  //   command."); return rclcpp_action::GoalResponse::REJECT;
+  //   RCLCPP_WARN(get_node()->get_logger(),
+  //               "Robot requested to stop. Discarding the new command.");
+  //   return rclcpp_action::GoalResponse::REJECT;
+  // }
+
+  // if (!moprim_queue_write_enabled_)
+  // {
+  //   RCLCPP_WARN(
+  //     get_node()->get_logger(), "Queue is not ready to write. Discarding the new command.");
+  //   return rclcpp_action::GoalResponse::REJECT;
   // }
 
   // if (primitives.empty())
@@ -449,6 +468,7 @@ rclcpp_action::CancelResponse MotionPrimitivesFromTrajectoryController::goal_can
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>>)
 {
   cancel_requested_ = true;
+  moprim_queue_write_enabled_ = false;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -485,6 +505,7 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
   // {
   //   add_motions(primitives);
   // }
+  // moprim_queue_write_enabled_ = false;
 
   // RCLCPP_INFO(
   //   get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());

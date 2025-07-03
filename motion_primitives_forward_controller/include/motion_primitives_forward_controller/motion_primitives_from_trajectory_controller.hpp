@@ -115,6 +115,8 @@ protected:
   bool was_executing_ = false;
   ExecutionState execution_status_;
   ReadyForNewPrimitive ready_for_new_primitive_;
+
+  std::atomic<bool> moprim_queue_write_enabled_ = false;
 };
 
 }  // namespace motion_primitives_from_trajectory_controller
