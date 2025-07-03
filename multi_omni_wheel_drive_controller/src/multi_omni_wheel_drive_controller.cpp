@@ -165,15 +165,14 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
       tf_prefix.erase(0, 1);
     }
   }
-  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
-  const auto base_frame_id = tf_prefix + params_.base_frame_id;
+  const std::string odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const std::string base_frame_id = tf_prefix + params_.base_frame_id;
 
-  auto & odometry_message = realtime_odometry_publisher_->msg_;
-  odometry_message.header.frame_id = odom_frame_id;
-  odometry_message.child_frame_id = base_frame_id;
+  odometry_message_.header.frame_id = odom_frame_id;
+  odometry_message_.child_frame_id = base_frame_id;
 
   // Initialize odom values zeros
-  odometry_message.twist =
+  odometry_message_.twist =
     geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
 
   constexpr size_t NUM_DIMENSIONS = 6;
@@ -181,8 +180,8 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
   {
     // 0, 7, 14, 21, 28, 35
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    odometry_message.pose.covariance[diagonal_index] = params_.diagonal_covariance.pose[index];
-    odometry_message.twist.covariance[diagonal_index] = params_.diagonal_covariance.twist[index];
+    odometry_message_.pose.covariance[diagonal_index] = params_.diagonal_covariance.pose[index];
+    odometry_message_.twist.covariance[diagonal_index] = params_.diagonal_covariance.twist[index];
   }
 
   // Initialize transform publisher and message
@@ -193,10 +192,9 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
       odometry_transform_publisher_);
 
   // Keeping track of odom and base_link transforms only
-  auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
-  odometry_transform_message.transforms.resize(1);
-  odometry_transform_message.transforms.front().header.frame_id = odom_frame_id;
-  odometry_transform_message.transforms.front().child_frame_id = base_frame_id;
+  odometry_transform_message_.transforms.resize(1);
+  odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
+  odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -360,20 +358,18 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    nav_msgs::msg::Odometry odometry_message;
-    odometry_message.header.stamp = get_node()->now();
-    odometry_message.pose.pose.position.x = odometry_.getX();
-    odometry_message.pose.pose.position.y = odometry_.getY();
-    odometry_message.pose.pose.orientation.x = orientation.x();
-    odometry_message.pose.pose.orientation.y = orientation.y();
-    odometry_message.pose.pose.orientation.z = orientation.z();
-    odometry_message.pose.pose.orientation.w = orientation.w();
-    odometry_message.twist.twist.linear.x = odometry_.getLinearXVel();
-    odometry_message.twist.twist.linear.y = odometry_.getLinearYVel();
-    odometry_message.twist.twist.angular.z = odometry_.getAngularVel();
-    realtime_odometry_publisher_->try_publish(odometry_message);
+    odometry_message_.header.stamp = get_node()->now();
+    odometry_message_.pose.pose.position.x = odometry_.getX();
+    odometry_message_.pose.pose.position.y = odometry_.getY();
+    odometry_message_.pose.pose.orientation.x = orientation.x();
+    odometry_message_.pose.pose.orientation.y = orientation.y();
+    odometry_message_.pose.pose.orientation.z = orientation.z();
+    odometry_message_.pose.pose.orientation.w = orientation.w();
+    odometry_message_.twist.twist.linear.x = odometry_.getLinearXVel();
+    odometry_message_.twist.twist.linear.y = odometry_.getLinearYVel();
+    odometry_message_.twist.twist.angular.z = odometry_.getAngularVel();
+    realtime_odometry_publisher_->try_publish(odometry_message_);
 
-    tf2_msgs::msg::TFMessage transform_message;
     geometry_msgs::msg::TransformStamped transform;
     transform.header.stamp = get_node()->now();
     transform.transform.translation.x = odometry_.getX();
@@ -382,8 +378,8 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     transform.transform.rotation.y = orientation.y();
     transform.transform.rotation.z = orientation.z();
     transform.transform.rotation.w = orientation.w();
-    transform_message.transforms.push_back(transform);
-    realtime_odometry_transform_publisher_->try_publish(transform_message);
+    odometry_transform_message_.transforms.push_back(transform);
+    realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
   }
 
   compute_and_set_wheel_velocities();

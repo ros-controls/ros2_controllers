@@ -96,6 +96,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
     realtime_odometry_publisher_;
+  nav_msgs::msg::Odometry odometry_message_;
 
   Odometry odometry_;
 
@@ -103,6 +104,7 @@ protected:
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_;
+  tf2_msgs::msg::TFMessage odometry_transform_message_;
 
   void compute_and_set_wheel_velocities();
   const char * feedback_type() const;
