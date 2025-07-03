@@ -14,11 +14,8 @@ on:
       - '**.svg'
       - '**.yml'
       - '**.yaml'
-<<<<<<< HEAD
-=======
       - '!.github/**' # exclude yaml files in .github directory
       - '.github/workflows/rolling-check-docs.yml'
->>>>>>> 851f10a (Improve paths filtering of docs CI job (#1796))
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,6 +24,6 @@ concurrency:
 jobs:
   check-docs:
     name: Check Docs
-    uses: ros-controls/control.ros.org/.github/workflows/reusable-sphinx-check-single-version.yml@master
+    uses: ros-controls/control.ros.org/.github/workflows/reusable-sphinx-check-single-version.yml@rolling
     with:
       ROS2_CONTROLLERS_PR: ${{ github.ref }}
