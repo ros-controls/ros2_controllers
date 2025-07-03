@@ -390,77 +390,30 @@ bool MotionPrimitivesFromTrajectoryController::set_command_interfaces()
 rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Received goal request");
+  RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
-  // const auto & primitives = goal->trajectory.motions;
+  if (robot_stop_requested_)
+  {
+    RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
 
-  // if (robot_stop_requested_)
-  // {
-  //   RCLCPP_WARN(get_node()->get_logger(),
-  //               "Robot requested to stop. Discarding the new command.");
-  //   return rclcpp_action::GoalResponse::REJECT;
-  // }
+  if (!moprim_queue_write_enabled_)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(), "Queue is not ready to write. Discarding the new command.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
 
-  // if (!moprim_queue_write_enabled_)
-  // {
-  //   RCLCPP_WARN(
-  //     get_node()->get_logger(), "Queue is not ready to write. Discarding the new command.");
-  //   return rclcpp_action::GoalResponse::REJECT;
-  // }
+  if (goal->trajectory.points.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
 
-  // if (primitives.empty())
-  // {
-  //   RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
-  //   return rclcpp_action::GoalResponse::REJECT;
-  // }
+  // TODO(mathias31415): Check if first trajectory point matches the current robot state
 
-  // for (size_t i = 0; i < primitives.size(); ++i)
-  // {
-  //   const auto & primitive = primitives[i];
-
-  //   switch (static_cast<MotionType>(primitive.type))
-  //   {
-  //     case MotionType::LINEAR_JOINT:
-  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
-  //       if (primitive.joint_positions.empty())
-  //       {
-  //         RCLCPP_ERROR(
-  //           get_node()->get_logger(),
-  //           "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
-  //         return rclcpp_action::GoalResponse::REJECT;
-  //       }
-  //       break;
-
-  //     case MotionType::LINEAR_CARTESIAN:
-  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
-  //       if (primitive.poses.empty())
-  //       {
-  //         RCLCPP_ERROR(
-  //           get_node()->get_logger(),
-  //           "Primitive %zu invalid: LINEAR_CARTESIAN requires at least one pose.", i);
-  //         return rclcpp_action::GoalResponse::REJECT;
-  //       }
-  //       break;
-
-  //     case MotionType::CIRCULAR_CARTESIAN:
-  //       RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: CIRCULAR_CARTESIAN (CIRC)", i);
-  //       if (primitive.poses.size() != 2)
-  //       {
-  //         RCLCPP_ERROR(
-  //           get_node()->get_logger(),
-  //           "Primitive %zu invalid: CIRCULAR_CARTESIAN requires exactly two poses.", i);
-  //         return rclcpp_action::GoalResponse::REJECT;
-  //       }
-  //       break;
-
-  //     default:
-  //       RCLCPP_ERROR(
-  //         get_node()->get_logger(), "Primitive %zu invalid: unknown motion type %u.", i,
-  //         primitive.type);
-  //       return rclcpp_action::GoalResponse::REJECT;
-  //   }
-  // }
-
+  RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -475,40 +428,69 @@ rclcpp_action::CancelResponse MotionPrimitivesFromTrajectoryController::goal_can
 void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Accepted goal");
+  RCLCPP_INFO(get_node()->get_logger(), "Processing accepted goal ...");
 
-  // pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
+  pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
 
-  // const auto & primitives = goal_handle->get_goal()->trajectory.motions;
+  const auto & planned_trajectory = goal_handle->get_goal()->trajectory.points;
+  RCLCPP_INFO(
+    get_node()->get_logger(), "Received trajectory with %zu points.", planned_trajectory.size());
 
-  // auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
-  // {
-  //   for (const auto & primitive : motion_primitives)
-  //   {
-  //     moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
-  //   }
-  // };
+  // TODO(mathias31415): Process the trajectory points and convert them to motion primitives
 
-  // if (primitives.size() > 1)
-  // {
-  //   std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
-  //   start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
-  //   moprim_queue_.push(start_marker);
+  // dummy primitives
+  MotionPrimitive moprim1;
+  moprim1.type = MotionPrimitive::LINEAR_JOINT;
+  moprim1.blend_radius = 0.0;
+  moprim1.joint_positions = {1.57, -1.57, 1.57, -1.57, -1.57, -1.57};
+  industrial_robot_motion_interfaces::msg::MotionArgument arg_time1;
+  arg_time1.argument_name = "move_time";
+  arg_time1.argument_value = 2.0;
+  moprim1.additional_arguments.push_back(arg_time1);
 
-  //   add_motions(primitives);
+  MotionPrimitive moprim2;
+  moprim2.type = MotionPrimitive::LINEAR_JOINT;
+  moprim2.blend_radius = 0.0;
+  moprim2.joint_positions = {0.9, -1.57, 1.57, -1.57, -1.57, -1.57};
+  industrial_robot_motion_interfaces::msg::MotionArgument arg_time2;
+  arg_time2.argument_name = "move_time";
+  arg_time2.argument_value = 2.0;
+  moprim2.additional_arguments.push_back(arg_time2);
 
-  //   std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
-  //   end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
-  //   moprim_queue_.push(end_marker);
-  // }
-  // else
-  // {
-  //   add_motions(primitives);
-  // }
-  // moprim_queue_write_enabled_ = false;
+  std::vector<MotionPrimitive> primitives;
+  primitives.push_back(moprim1);
+  primitives.push_back(moprim2);
 
-  // RCLCPP_INFO(
-  //   get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
+  auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
+  {
+    for (const auto & primitive : motion_primitives)
+    {
+      moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
+    }
+  };
+
+  if (primitives.size() > 1)
+  {
+    std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
+    start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
+    moprim_queue_.push(start_marker);
+
+    add_motions(primitives);
+
+    std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
+    end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
+    moprim_queue_.push(end_marker);
+  }
+  else
+  {
+    add_motions(primitives);
+  }
+  moprim_queue_write_enabled_ = false;
+
+  RCLCPP_INFO(
+    get_node()->get_logger(),
+    "Reduced planned joint trajectory from %zu points to %zu motion primitives.",
+    planned_trajectory.size(), primitives.size());
 }
 
 }  // namespace motion_primitives_from_trajectory_controller
