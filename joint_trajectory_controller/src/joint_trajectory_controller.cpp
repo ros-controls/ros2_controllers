@@ -159,9 +159,8 @@ controller_interface::return_type JointTrajectoryController::update(
 
   auto logger = this->get_node()->get_logger();
   // update dynamic parameters
-  if (param_listener_->is_old(params_))
+  if (param_listener_->try_update_params(params_))
   {
-    params_ = param_listener_->get_params();
     default_tolerances_ = get_segment_tolerances(logger, params_);
     // update the PID gains
     // variable use_closed_loop_pid_adapter_ is updated in on_configure only

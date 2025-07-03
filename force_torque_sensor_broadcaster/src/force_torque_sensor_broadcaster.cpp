@@ -206,11 +206,9 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate
 
 controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
-{
-  if (param_listener_->is_old(params_))
-  {
-    params_ = param_listener_->get_params();
-  }
+{  
+  param_listener_->try_get_params(params_);
+
   wrench_raw_.header.stamp = time;
   force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
   this->apply_sensor_offset(params_, wrench_raw_);
