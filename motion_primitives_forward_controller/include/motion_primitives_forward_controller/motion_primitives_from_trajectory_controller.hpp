@@ -34,6 +34,8 @@
 #include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
 #include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
 
+#include "motion_primitives_forward_controller/fk_client.hpp"
+
 namespace motion_primitives_from_trajectory_controller
 {
 enum class ExecutionState : uint8_t
@@ -117,6 +119,8 @@ protected:
   ReadyForNewPrimitive ready_for_new_primitive_;
 
   std::atomic<bool> moprim_queue_write_enabled_ = false;
+
+  std::unique_ptr<FKClient> fk_client_;
 };
 
 }  // namespace motion_primitives_from_trajectory_controller

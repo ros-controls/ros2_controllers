@@ -70,6 +70,8 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  fk_client_ = std::make_unique<FKClient>(get_node());
+
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
@@ -435,6 +437,25 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
   const auto & planned_trajectory = goal_handle->get_goal()->trajectory.points;
   RCLCPP_INFO(
     get_node()->get_logger(), "Received trajectory with %zu points.", planned_trajectory.size());
+
+  const auto & joint_names = goal_handle->get_goal()->trajectory.joint_names;
+
+  // Get endefector pose for each trajectory point
+  for (const auto & point : planned_trajectory)
+  {
+    auto tool0_pose_opt = fk_client_->computeFK(joint_names, point.positions, "base", "tool0");
+    if (tool0_pose_opt)
+    {
+      const auto & pose = tool0_pose_opt.value();
+      RCLCPP_INFO(
+        get_node()->get_logger(), "Tool0 pose: position (%.3f, %.3f, %.3f)", pose.position.x,
+        pose.position.y, pose.position.z);
+    }
+    else
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to compute FK for a trajectory point.");
+    }
+  }
 
   // TODO(mathias31415): Process the trajectory points and convert them to motion primitives
 

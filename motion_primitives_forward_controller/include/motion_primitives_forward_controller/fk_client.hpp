@@ -17,25 +17,26 @@
 #ifndef MOTION_PRIMITIVES_FORWARD_CONTROLLER__FK_CLIENT_HPP_
 #define MOTION_PRIMITIVES_FORWARD_CONTROLLER__FK_CLIENT_HPP_
 
+#include <memory>
+#include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include <geometry_msgs/msg/pose.hpp>
-#include <moveit_msgs/srv/get_position_fk.hpp>
-#include <rclcpp/rclcpp.hpp>
+#include "geometry_msgs/msg/pose.hpp"
+#include "moveit_msgs/srv/get_position_fk.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 class FKClient
 {
 public:
-  explicit FKClient(const rclcpp::Node::SharedPtr & node);
+  explicit FKClient(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
 
   std::optional<geometry_msgs::msg::Pose> computeFK(
     const std::vector<std::string> & joint_names, const std::vector<double> & joint_positions,
-    const std::string & from_frame = "base", const std::string & to_link = "tool0");
+    const std::string & from_frame, const std::string & to_link);
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   rclcpp::Client<moveit_msgs::srv::GetPositionFK>::SharedPtr client_;
 };
 

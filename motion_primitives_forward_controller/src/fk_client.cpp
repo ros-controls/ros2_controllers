@@ -16,10 +16,11 @@
 
 #include "motion_primitives_forward_controller/fk_client.hpp"
 #include <chrono>
+#include "rclcpp/executors.hpp"
 
 using namespace std::chrono_literals;
 
-FKClient::FKClient(const rclcpp::Node::SharedPtr & node) : node_(node)
+FKClient::FKClient(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) : node_(node)
 {
   client_ = node_->create_client<moveit_msgs::srv::GetPositionFK>("/compute_fk");
 
@@ -46,7 +47,19 @@ std::optional<geometry_msgs::msg::Pose> FKClient::computeFK(
 
   auto future = client_->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(node_, future, 3s) == rclcpp::FutureReturnCode::SUCCESS)
+  auto start_time = node_->now();
+
+  while (rclcpp::ok() && future.wait_for(std::chrono::milliseconds(1)) != std::future_status::ready)
+  {
+    if ((node_->now() - start_time).seconds() > 3.0)
+    {
+      RCLCPP_ERROR(node_->get_logger(), "FK call timed out");
+      return std::nullopt;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  if (future.valid())
   {
     auto result = future.get();
     if (result->error_code.val == result->error_code.SUCCESS)
@@ -60,7 +73,7 @@ std::optional<geometry_msgs::msg::Pose> FKClient::computeFK(
   }
   else
   {
-    RCLCPP_ERROR(node_->get_logger(), "FK call timed out");
+    RCLCPP_ERROR(node_->get_logger(), "FK future invalid");
   }
 
   return std::nullopt;

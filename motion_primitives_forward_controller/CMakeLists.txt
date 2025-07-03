@@ -14,6 +14,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   std_srvs
+  moveit_msgs
+  geometry_msgs
   industrial_robot_motion_interfaces
 )
 
@@ -35,6 +37,7 @@ add_library(
   motion_primitives_from_trajectory_controller
   SHARED
   src/motion_primitives_from_trajectory_controller.cpp
+  src/fk_client.cpp
 )
 target_include_directories(motion_primitives_forward_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -65,6 +68,8 @@ target_link_libraries(motion_primitives_from_trajectory_controller PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       ${control_msgs_TARGETS}
+                      ${geometry_msgs_TARGETS}
+                      ${moveit_msgs_TARGETS}
                       ${std_srvs_TARGETS}
                       ${industrial_robot_motion_interfaces_TARGETS}
 )
