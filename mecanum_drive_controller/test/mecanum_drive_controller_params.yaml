@@ -17,7 +17,7 @@
       odom_frame_id: "odom"
       enable_odom_tf: true
       twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-      pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
+      pose_covariance_diagonal: [0.0, 6.0, 12.0, 18.0, 24.0, 30.0]
 
 
   test_mecanum_drive_controller_with_rotation:
