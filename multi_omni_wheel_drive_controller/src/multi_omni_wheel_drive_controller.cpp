@@ -191,10 +191,8 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
       odometry_transform_publisher_);
 
-  // Keeping track of odom and base_link transforms only
-  odometry_transform_message_.transforms.resize(1);
-  odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
-  odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
+  transform_.header.frame_id = odom_frame_id;
+  transform_.child_frame_id = base_frame_id;
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -370,16 +368,19 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
     odometry_message_.twist.twist.angular.z = odometry_.getAngularVel();
     realtime_odometry_publisher_->try_publish(odometry_message_);
 
-    geometry_msgs::msg::TransformStamped transform;
-    transform.header.stamp = get_node()->now();
-    transform.transform.translation.x = odometry_.getX();
-    transform.transform.translation.y = odometry_.getY();
-    transform.transform.rotation.x = orientation.x();
-    transform.transform.rotation.y = orientation.y();
-    transform.transform.rotation.z = orientation.z();
-    transform.transform.rotation.w = orientation.w();
-    odometry_transform_message_.transforms.push_back(transform);
-    realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
+    if (params_.enable_odom_tf)
+    {
+      transform_.header.stamp = get_node()->now();
+      transform_.transform.translation.x = odometry_.getX();
+      transform_.transform.translation.y = odometry_.getY();
+      transform_.transform.rotation.x = orientation.x();
+      transform_.transform.rotation.y = orientation.y();
+      transform_.transform.rotation.z = orientation.z();
+      transform_.transform.rotation.w = orientation.w();
+      tf2_msgs::msg::TFMessage odometry_transform_message;
+      odometry_transform_message.transforms.push_back(transform_);
+      realtime_odometry_transform_publisher_->try_publish(odometry_transform_message);
+    }
   }
 
   compute_and_set_wheel_velocities();
