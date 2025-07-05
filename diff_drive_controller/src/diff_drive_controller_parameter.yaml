@@ -3,6 +3,7 @@ diff_drive_controller:
     type: string_array,
     default_value: [],
     description: "Names of the left side wheels' joints",
+    read_only: true,
     validation: {
       not_empty<>: []
     }
@@ -11,6 +12,7 @@ diff_drive_controller:
     type: string_array,
     default_value: [],
     description: "Names of the right side wheels' joints",
+    read_only: true,
     validation: {
       not_empty<>: []
     }
@@ -19,6 +21,7 @@ diff_drive_controller:
     type: double,
     default_value: 0.0,
     description: "Shortest distance between the left and right wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
+    read_only: true,
     validation: {
       gt<>: [0.0]
     }
@@ -27,6 +30,7 @@ diff_drive_controller:
     type: double,
     default_value: 0.0,
     description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    read_only: true,
     validation: {
       gt<>: [0.0]
     }
@@ -35,87 +39,104 @@ diff_drive_controller:
     type: double,
     default_value: 1.0,
     description: "Correction factor for wheel separation (TODO(destogl): Please help me describe this correctly)",
+    read_only: true,
   }
   left_wheel_radius_multiplier: {
     type: double,
     default_value: 1.0,
     description: "Correction factor when radius of left wheels differs from the nominal value in ``wheel_radius`` parameter.",
+    read_only: true,
   }
   right_wheel_radius_multiplier: {
     type: double,
     default_value: 1.0,
     description: "Correction factor when radius of right wheels differs from the nominal value in ``wheel_radius`` parameter.",
+    read_only: true,
   }
   tf_frame_prefix_enable: {
     type: bool,
     default_value: true,
     description:  "Enables or disables appending tf_prefix to tf frame id's.",
+    read_only: true,
   }
   tf_frame_prefix: {
     type: string,
     default_value: "",
     description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+    read_only: true,
   }
   odom_frame_id: {
     type: string,
     default_value: "odom",
     description:  "Name of the frame for odometry. This frame is parent of ``base_frame_id`` when controller publishes odometry.",
+    read_only: true,
   }
   base_frame_id: {
     type: string,
     default_value: "base_link",
     description: "Name of the robot's base frame that is child of the odometry frame.",
+    read_only: true,
   }
   pose_covariance_diagonal: {
     type: double_array,
     default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true,
   }
   twist_covariance_diagonal: {
     type: double_array,
     default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true,
   }
   open_loop: {
     type: bool,
     default_value: false,
     description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    read_only: false,
   }
   position_feedback: {
     type: bool,
     default_value: true,
     description: "Is there position feedback from hardware.",
+    read_only: false,
   }
   enable_odom_tf: {
     type: bool,
     default_value: true,
     description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+    read_only: false,
   }
   cmd_vel_timeout: {
     type: double,
     default_value: 0.5, # seconds
     description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
+    read_only: false,
   }
   publish_limited_velocity: {
     type: bool,
     default_value: false,
     description: "Publish limited velocity value.",
+    read_only: false,
   }
   velocity_rolling_window_size: {
     type: int,
     default_value: 10,
     description: "Size of the rolling window for calculation of mean velocity use in odometry.",
+    read_only: true,
   }
   publish_rate: {
     type: double,
     default_value: 50.0, # Hz
     description: "Publishing rate (Hz) of the odometry and TF messages.",
+    read_only: false,
   }
   linear:
     x:
       max_velocity: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -123,6 +144,7 @@ diff_drive_controller:
       min_velocity: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -131,6 +153,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in forward direction.",
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -139,6 +162,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in forward direction.",
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -147,6 +171,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -155,6 +180,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -162,6 +188,7 @@ diff_drive_controller:
       max_jerk: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -169,6 +196,7 @@ diff_drive_controller:
       min_jerk: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -178,6 +206,7 @@ diff_drive_controller:
       max_velocity: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -185,6 +214,7 @@ diff_drive_controller:
       min_velocity: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -193,6 +223,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in positive direction.",
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -201,6 +232,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in positive direction.",
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -209,6 +241,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in negative direction. If not set, -max_acceleration will be used.",
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -217,6 +250,7 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in negative direction. If not set, -max_deceleration will be used.",
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -224,6 +258,7 @@ diff_drive_controller:
       max_jerk: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -231,6 +266,7 @@ diff_drive_controller:
       min_jerk: {
         type: double,
         default_value: .NAN,
+        read_only: false,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
