@@ -93,13 +93,13 @@ diff_drive_controller:
     type: bool,
     default_value: false,
     description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
-    read_only: false,
+    read_only: true,
   }
   position_feedback: {
     type: bool,
     default_value: true,
     description: "Is there position feedback from hardware.",
-    read_only: false,
+    read_only: true,
   }
   enable_odom_tf: {
     type: bool,
@@ -129,7 +129,7 @@ diff_drive_controller:
     type: double,
     default_value: 50.0, # Hz
     description: "Publishing rate (Hz) of the odometry and TF messages.",
-    read_only: false,
+    read_only: true,
   }
   linear:
     x:
