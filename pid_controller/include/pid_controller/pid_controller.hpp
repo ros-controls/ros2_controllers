@@ -101,7 +101,6 @@ protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
   // internal methods
-  void update_parameters();
   controller_interface::CallbackReturn configure_parameters();
 
 private:
