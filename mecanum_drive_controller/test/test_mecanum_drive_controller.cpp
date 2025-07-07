@@ -63,6 +63,13 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
   ASSERT_EQ(
+    controller_->params_.pose_covariance_diagonal,
+    std::vector<double>({0.0, 6.0, 12.0, 18.0, 24.0, 30.0}));
+  ASSERT_EQ(
+    controller_->params_.twist_covariance_diagonal,
+    std::vector<double>({0.0, 7.0, 14.0, 21.0, 28.0, 35.0}));
+
+  ASSERT_EQ(
     controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
   ASSERT_EQ(
     controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
