@@ -15,66 +15,48 @@
 // Authors: Mathias Fuhrer
 
 #include "motion_primitives_forward_controller/fk_client.hpp"
-#include <chrono>
-// #include "rclcpp/executors.hpp"
 
-using namespace std::chrono_literals;
-
-FKClient::FKClient(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) : node_(node)
+FKClient::FKClient(const std::string & node_name) : Node(node_name)
 {
-  client_ = node_->create_client<moveit_msgs::srv::GetPositionFK>("/compute_fk");
+  fk_client_ = this->create_client<moveit_msgs::srv::GetPositionFK>("/compute_fk");
 
-  while (!client_->wait_for_service(1s))
+  while (!fk_client_->wait_for_service(std::chrono::seconds(1)))
   {
-    RCLCPP_INFO(node_->get_logger(), "Waiting for /compute_fk service...");
-    if (!rclcpp::ok())
-    {
-      RCLCPP_ERROR(node_->get_logger(), "Interrupted while waiting for the service.");
-      return;
-    }
+    RCLCPP_INFO(this->get_logger(), "Waiting for /compute_fk service...");
   }
 }
 
-std::optional<geometry_msgs::msg::Pose> FKClient::computeFK(
+geometry_msgs::msg::Pose FKClient::computeFK(
   const std::vector<std::string> & joint_names, const std::vector<double> & joint_positions,
   const std::string & from_frame, const std::string & to_link)
 {
   auto request = std::make_shared<moveit_msgs::srv::GetPositionFK::Request>();
-  request->header.frame_id = from_frame;
   request->fk_link_names.push_back(to_link);
-  request->robot_state.joint_state.name = joint_names;
-  request->robot_state.joint_state.position = joint_positions;
 
-  auto future = client_->async_send_request(request);
+  sensor_msgs::msg::JointState joint_state;
+  joint_state.name = joint_names;
+  joint_state.position = joint_positions;
+  request->robot_state.joint_state = joint_state;
+  request->header.frame_id = from_frame;
 
-  auto start_time = node_->now();
+  auto future = fk_client_->async_send_request(request);
 
-  while (rclcpp::ok() && future.wait_for(std::chrono::milliseconds(1)) != std::future_status::ready)
+  if (
+    rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) ==
+    rclcpp::FutureReturnCode::SUCCESS)
   {
-    if ((node_->now() - start_time).seconds() > 3.0)
+    auto response = future.get();
+    if (!response->pose_stamped.empty())
     {
-      RCLCPP_ERROR(node_->get_logger(), "FK call timed out");
-      return std::nullopt;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-
-  if (future.valid())
-  {
-    auto result = future.get();
-    if (result->error_code.val == result->error_code.SUCCESS)
-    {
-      return result->pose_stamped[0].pose;
+      return response->pose_stamped.front().pose;
     }
     else
     {
-      RCLCPP_WARN(node_->get_logger(), "FK error: code=%d", result->error_code.val);
+      throw std::runtime_error("Empty response received from FK service.");
     }
   }
   else
   {
-    RCLCPP_ERROR(node_->get_logger(), "FK future invalid");
+    throw std::runtime_error("Error calling FK service.");
   }
-
-  return std::nullopt;
 }

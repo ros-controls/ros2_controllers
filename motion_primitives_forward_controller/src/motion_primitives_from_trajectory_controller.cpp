@@ -70,7 +70,7 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  fk_client_ = std::make_unique<FKClient>(get_node());
+  fk_client_ = std::make_shared<FKClient>();
 
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
@@ -135,6 +135,8 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
+  action_server_.reset();
+  fk_client_.reset();
   RCLCPP_DEBUG(get_node()->get_logger(), "Controller deactivated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -452,24 +454,24 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
   }
   RCLCPP_INFO(get_node()->get_logger(), "Received joint names: %s", oss.str().c_str());
 
-  // TODO(mathias31415): Make FK working
-
   // Get endefector pose for each trajectory point
-  // for (const auto & point : planned_trajectory)
-  // {
-  //   auto tool0_pose_opt = fk_client_->computeFK(joint_names, point.positions, "base", "tool0");
-  //   if (tool0_pose_opt)
-  //   {
-  //     const auto & pose = tool0_pose_opt.value();
-  //     RCLCPP_INFO(
-  //       get_node()->get_logger(), "Tool0 pose: position (%.3f, %.3f, %.3f)", pose.position.x,
-  //       pose.position.y, pose.position.z);
-  //   }
-  //   else
-  //   {
-  //     RCLCPP_WARN(get_node()->get_logger(), "Failed to compute FK for a trajectory point.");
-  //   }
-  // }
+  for (const auto & point : trajectory_msg->points)
+  {
+    try
+    {
+      auto tool0_pose = fk_client_->computeFK(joint_names, point.positions, "base_link", "tool0");
+      RCLCPP_INFO(
+        get_node()->get_logger(),
+        "Tool0 pose: position (%.3f, %.3f, %.3f), orientation [%.3f, %.3f, %.3f, %.3f]",
+        tool0_pose.position.x, tool0_pose.position.y, tool0_pose.position.z,
+        tool0_pose.orientation.x, tool0_pose.orientation.y, tool0_pose.orientation.z,
+        tool0_pose.orientation.w);
+    }
+    catch (const std::exception & e)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "FK-Error: %s", e.what());
+    }
+  }
 
   std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> planned_trajectory_data;
   planned_trajectory_data.reserve(trajectory_msg->points.size());

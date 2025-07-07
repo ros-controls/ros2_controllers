@@ -121,7 +121,7 @@ protected:
 
   std::atomic<bool> moprim_queue_write_enabled_ = false;
 
-  std::unique_ptr<FKClient> fk_client_;
+  std::shared_ptr<FKClient> fk_client_;
 
   MotionType approx_type_ = MotionType::LINEAR_JOINT;
 
