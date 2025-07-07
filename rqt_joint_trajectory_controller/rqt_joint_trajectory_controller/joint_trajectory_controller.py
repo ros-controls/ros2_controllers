@@ -466,13 +466,8 @@ def _jtc_joint_names(jtc_info):
     # from the first available interface
 
     joint_names = []
-<<<<<<< HEAD
     for interface in jtc_info.claimed_interfaces:
-        name = interface.split("/")[-2]
-=======
-    for interface in jtc_info.required_state_interfaces:
         name = "/".join(interface.split("/")[:-1])
->>>>>>> 9e01142 (fix rqt_joint_trajectory_controller for robots with namespace (#1792))
         if name not in joint_names:
             joint_names.append(name)
 
