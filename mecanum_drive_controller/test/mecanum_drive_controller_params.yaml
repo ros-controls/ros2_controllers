@@ -12,19 +12,11 @@ test_mecanum_drive_controller:
       wheels_radius: 0.5
       sum_of_robot_center_projection_on_X_Y_axis: 1.0
 
-<<<<<<< HEAD
     base_frame_id: "base_link"
     odom_frame_id: "odom"
     enable_odom_tf: true
     twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-    pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-=======
-      base_frame_id: "base_link"
-      odom_frame_id: "odom"
-      enable_odom_tf: true
-      twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-      pose_covariance_diagonal: [0.0, 6.0, 12.0, 18.0, 24.0, 30.0]
->>>>>>> 922e49b (Mecanum Drive: Populate the pose covariance matrix (#1772))
+    pose_covariance_diagonal: [0.0, 6.0, 12.0, 18.0, 24.0, 30.0]
 
 
 test_mecanum_drive_controller_with_rotation:
