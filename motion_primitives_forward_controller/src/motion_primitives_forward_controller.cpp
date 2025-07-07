@@ -122,7 +122,6 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
-  moprim_queue_write_enabled_ = true;
   RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -145,9 +144,10 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
     (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
-    while (!moprim_queue_.empty())
-    {  // clear the queue
-      moprim_queue_.pop();
+    std::shared_ptr<MotionPrimitive> primitive;
+    while (moprim_queue_.pop(primitive))
+    {
+      // clear the queue
     }
     robot_stop_requested_ = true;
   }
@@ -213,7 +213,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
         reset_command_interfaces();
         (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
         robot_stop_requested_ = false;
-        moprim_queue_write_enabled_ = true;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
 
@@ -256,7 +255,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   ready_for_new_primitive_ =
     static_cast<ReadyForNewPrimitive>(static_cast<uint8_t>(std::round(opt_value_ready.value())));
 
-  if (!moprim_queue_write_enabled_ && !cancel_requested_)
+  if (!cancel_requested_)
   {
     switch (ready_for_new_primitive_)
     {
@@ -268,8 +267,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       {
         if (moprim_queue_.empty())  // check if new command is available
         {
-          // all primitives read, queue ready to get filled with new primitives
-          moprim_queue_write_enabled_ = true;
           return controller_interface::return_type::OK;
         }
         else
@@ -308,13 +305,10 @@ void MotionPrimitivesForwardController::reset_command_interfaces()
 bool MotionPrimitivesForwardController::set_command_interfaces()
 {
   // Get the oldest message from the queue
-  std::shared_ptr<MotionPrimitive> current_moprim = moprim_queue_.front();
-  moprim_queue_.pop();
-
-  // Check if the message is valid
-  if (!current_moprim)
+  std::shared_ptr<MotionPrimitive> current_moprim;
+  if (!moprim_queue_.pop(current_moprim))
   {
-    RCLCPP_WARN(get_node()->get_logger(), "No valid reference message received");
+    RCLCPP_WARN(get_node()->get_logger(), "Failed to pop motion primitive from queue.");
     return false;
   }
 
@@ -397,13 +391,6 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (!moprim_queue_write_enabled_)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(), "Queue is not ready to write. Discarding the new command.");
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
   if (primitives.empty())
   {
     RCLCPP_WARN(get_node()->get_logger(), "Goal rejected: no motion primitives provided.");
@@ -464,7 +451,6 @@ rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>>)
 {
   cancel_requested_ = true;
-  moprim_queue_write_enabled_ = false;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -479,7 +465,10 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   {
     for (const auto & primitive : motion_primitives)
     {
-      moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
+      if (!moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive)))
+      {
+        RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion primitive to queue.");
+      }
     }
   };
 
@@ -487,19 +476,25 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   {
     std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
     start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
-    moprim_queue_.push(start_marker);
+    if (!moprim_queue_.push(start_marker))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Failed to push motion sequence start marker to queue.");
+    }
 
     add_motions(primitives);
 
     std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
     end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
-    moprim_queue_.push(end_marker);
+    if (!moprim_queue_.push(end_marker))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion sequence end marker to queue.");
+    }
   }
   else
   {
     add_motions(primitives);
   }
-  moprim_queue_write_enabled_ = false;
 
   RCLCPP_INFO(
     get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());

@@ -18,11 +18,11 @@
 #define MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <memory>
-#include <queue>
 #include <string>
 #include <vector>
 
 #include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include <realtime_tools/lock_free_queue.hpp>
 #include "controller_interface/controller_interface.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -91,7 +91,7 @@ protected:
   motion_primitives_forward_controller::Params params_;
 
   using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-  std::queue<std::shared_ptr<MotionPrimitive>> moprim_queue_;
+  realtime_tools::LockFreeSPSCQueue<std::shared_ptr<MotionPrimitive>, 128> moprim_queue_;
 
   using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
   rclcpp_action::Server<ExecuteMotion>::SharedPtr action_server_;
@@ -114,8 +114,6 @@ protected:
   bool was_executing_ = false;
   ExecutionState execution_status_;
   ReadyForNewPrimitive ready_for_new_primitive_;
-
-  std::atomic<bool> moprim_queue_write_enabled_ = false;
 };
 
 }  // namespace motion_primitives_forward_controller
