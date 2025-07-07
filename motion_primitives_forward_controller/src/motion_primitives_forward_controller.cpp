@@ -39,7 +39,9 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init(
   }
   catch (const std::exception & e)
   {
-    fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during controller's init with message: %s \n",
+      e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
