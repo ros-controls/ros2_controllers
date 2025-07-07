@@ -447,32 +447,6 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
 
   const auto & joint_names = trajectory_msg->joint_names;
 
-  std::ostringstream oss;
-  for (const auto & name : joint_names)
-  {
-    oss << name << " ";
-  }
-  RCLCPP_INFO(get_node()->get_logger(), "Received joint names: %s", oss.str().c_str());
-
-  // Get endefector pose for each trajectory point
-  for (const auto & point : trajectory_msg->points)
-  {
-    try
-    {
-      auto tool0_pose = fk_client_->computeFK(joint_names, point.positions, "base_link", "tool0");
-      RCLCPP_INFO(
-        get_node()->get_logger(),
-        "Tool0 pose: position (%.3f, %.3f, %.3f), orientation [%.3f, %.3f, %.3f, %.3f]",
-        tool0_pose.position.x, tool0_pose.position.y, tool0_pose.position.z,
-        tool0_pose.orientation.x, tool0_pose.orientation.y, tool0_pose.orientation.z,
-        tool0_pose.orientation.w);
-    }
-    catch (const std::exception & e)
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "FK-Error: %s", e.what());
-    }
-  }
-
   std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> planned_trajectory_data;
   planned_trajectory_data.reserve(trajectory_msg->points.size());
   for (const auto & point : trajectory_msg->points)
@@ -480,8 +454,19 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     approx_primitives_with_rdp::PlannedTrajectoryPoint pt;
     pt.time_from_start = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9;
     pt.joint_positions = point.positions;
-    // pt.pose = fk_client_->computeFK(trajectory_msg->joint_names, point.positions, "base",
-    // "tool0").value_or(Pose());
+    try
+    {
+      pt.pose = fk_client_->computeFK(joint_names, point.positions, "base", "tool0");
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Tool0 pose: position (%.3f, %.3f, %.3f), orientation [%.3f, %.3f, %.3f, %.3f]",
+        pt.pose.position.x, pt.pose.position.y, pt.pose.position.z, pt.pose.orientation.x,
+        pt.pose.orientation.y, pt.pose.orientation.z, pt.pose.orientation.w);
+    }
+    catch (const std::exception & e)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "FK-Error: %s", e.what());
+    }
     planned_trajectory_data.push_back(pt);
   }
   industrial_robot_motion_interfaces::msg::MotionSequence motion_sequence;
@@ -495,44 +480,20 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
         get_node()->get_logger(), "Approximating motion primitives with PTP motion primitives.");
       motion_sequence =
         approxPtpPrimitivesWithRDP(planned_trajectory_data, rdp_epsilon, use_time_not_vel_and_acc);
-
       break;
     }
     case MotionType::LINEAR_CARTESIAN:
     {
       RCLCPP_INFO(
         get_node()->get_logger(), "Approximating motion primitives with LIN motion primitives.");
-
-      RCLCPP_WARN(get_node()->get_logger(), "Not implemented yet.");
+      motion_sequence =
+        approxLinPrimitivesWithRDP(planned_trajectory_data, rdp_epsilon, use_time_not_vel_and_acc);
       break;
     }
     default:
       RCLCPP_WARN(get_node()->get_logger(), "Unknown motion type.");
       break;
   }
-
-  // // dummy primitives
-  // MotionPrimitive moprim1;
-  // moprim1.type = MotionPrimitive::LINEAR_JOINT;
-  // moprim1.blend_radius = 0.0;
-  // moprim1.joint_positions = {1.57, -1.57, 1.57, -1.57, -1.57, -1.57};
-  // industrial_robot_motion_interfaces::msg::MotionArgument arg_time1;
-  // arg_time1.argument_name = "move_time";
-  // arg_time1.argument_value = 2.0;
-  // moprim1.additional_arguments.push_back(arg_time1);
-
-  // MotionPrimitive moprim2;
-  // moprim2.type = MotionPrimitive::LINEAR_JOINT;
-  // moprim2.blend_radius = 0.0;
-  // moprim2.joint_positions = {0.9, -1.57, 1.57, -1.57, -1.57, -1.57};
-  // industrial_robot_motion_interfaces::msg::MotionArgument arg_time2;
-  // arg_time2.argument_name = "move_time";
-  // arg_time2.argument_value = 2.0;
-  // moprim2.additional_arguments.push_back(arg_time2);
-
-  // industrial_robot_motion_interfaces::msg::MotionSequence motion_sequence;
-  // motion_sequence.motions.push_back(moprim1);
-  // motion_sequence.motions.push_back(moprim2);
 
   auto add_motions =
     [this](const industrial_robot_motion_interfaces::msg::MotionSequence & moprim_sequence)
@@ -615,6 +576,8 @@ void MotionPrimitivesFromTrajectoryController::sort_to_local_joint_order(
 
     if (!point.effort.empty()) point.effort = remap(point.effort, mapping_vector);
   }
+
+  trajectory_msg->joint_names = local_joint_order;
 }
 
 }  // namespace motion_primitives_from_trajectory_controller

@@ -123,7 +123,7 @@ protected:
 
   std::shared_ptr<FKClient> fk_client_;
 
-  MotionType approx_type_ = MotionType::LINEAR_JOINT;
+  MotionType approx_type_ = MotionType::LINEAR_CARTESIAN;
 
   // ############ Function copied from JointTrajectoryController ############
   // TODO(mathias31415): Is there a cleaner solution?
