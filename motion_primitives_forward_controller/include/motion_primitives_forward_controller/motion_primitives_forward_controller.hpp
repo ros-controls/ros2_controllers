@@ -17,12 +17,14 @@
 #ifndef MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 #define MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
 #include <realtime_tools/lock_free_queue.hpp>
+#include <realtime_tools/realtime_server_goal_handle.hpp>
 #include "controller_interface/controller_interface.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -93,15 +95,18 @@ protected:
   using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
   realtime_tools::LockFreeSPSCQueue<std::shared_ptr<MotionPrimitive>, 128> moprim_queue_;
 
-  using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
-  rclcpp_action::Server<ExecuteMotion>::SharedPtr action_server_;
+  using ExecuteMotionAction = industrial_robot_motion_interfaces::action::ExecuteMotion;
+  rclcpp_action::Server<ExecuteMotionAction>::SharedPtr action_server_;
   rclcpp_action::GoalResponse goal_received_callback(
-    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecuteMotion::Goal> goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecuteMotionAction::Goal> goal);
   rclcpp_action::CancelResponse goal_cancelled_callback(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>> goal_handle);
   void goal_accepted_callback(
-    const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle);
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> pending_action_goal_;
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>> goal_handle);
+  using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<ExecuteMotionAction>;
+  std::shared_ptr<RealtimeGoalHandle> realtime_goal_handle_;
+  rclcpp::TimerBase::SharedPtr goal_handle_timer_;
+  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(std::chrono::milliseconds(20));
 
   void reset_command_interfaces();
   bool set_command_interfaces();

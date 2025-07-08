@@ -70,17 +70,14 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  action_server_ = rclcpp_action::create_server<ExecuteMotion>(
+  using namespace std::placeholders;
+  action_server_ = rclcpp_action::create_server<ExecuteMotionAction>(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
     std::string(get_node()->get_name()) + "/motion_sequence",
-    std::bind(
-      &MotionPrimitivesForwardController::goal_received_callback, this, std::placeholders::_1,
-      std::placeholders::_2),
-    std::bind(
-      &MotionPrimitivesForwardController::goal_cancelled_callback, this, std::placeholders::_1),
-    std::bind(
-      &MotionPrimitivesForwardController::goal_accepted_callback, this, std::placeholders::_1));
+    std::bind(&MotionPrimitivesForwardController::goal_received_callback, this, _1, _2),
+    std::bind(&MotionPrimitivesForwardController::goal_cancelled_callback, this, _1),
+    std::bind(&MotionPrimitivesForwardController::goal_accepted_callback, this, _1));
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -179,30 +176,27 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     case ExecutionState::SUCCESS:
       print_error_once_ = true;
 
-      if (pending_action_goal_ && was_executing_)
+      if (realtime_goal_handle_ && was_executing_)
       {
         was_executing_ = false;
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::SUCCESSFUL;
+        auto result = std::make_shared<ExecuteMotionAction::Result>();
+        result->error_code = ExecuteMotionAction::Result::SUCCESSFUL;
         result->error_string = "Motion primitives executed successfully";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
+        realtime_goal_handle_->setSucceeded(result);
+        realtime_goal_handle_.reset();
         RCLCPP_INFO(get_node()->get_logger(), "Motion primitives executed successfully.");
       }
-
       break;
 
     case ExecutionState::STOPPED:
       print_error_once_ = true;
       was_executing_ = false;
 
-      if (pending_action_goal_)
+      if (realtime_goal_handle_)
       {
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::CANCELED;
-        result->error_string = "Motion primitives execution canceled";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
+        auto result = std::make_shared<ExecuteMotionAction::Result>();
+        realtime_goal_handle_->setCanceled(result);
+        realtime_goal_handle_.reset();
         RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
       }
 
@@ -220,17 +214,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
     case ExecutionState::ERROR:
       was_executing_ = false;
-
-      if (pending_action_goal_)
-      {
-        auto result = std::make_shared<ExecuteMotion::Result>();
-        result->error_code = ExecuteMotion::Result::FAILED;
-        result->error_string = "Motion primitives execution failed";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
-        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution failed");
-      }
-
       if (print_error_once_)
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
@@ -379,9 +362,9 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 }
 
 rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_callback(
-  const rclcpp_action::GoalUUID &, std::shared_ptr<const ExecuteMotion::Goal> goal)
+  const rclcpp_action::GoalUUID &, std::shared_ptr<const ExecuteMotionAction::Goal> goal)
 {
-  RCLCPP_INFO(get_node()->get_logger(), "Received goal request");
+  RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   const auto & primitives = goal->trajectory.motions;
 
@@ -443,22 +426,21 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
         return rclcpp_action::GoalResponse::REJECT;
     }
   }
-
+  RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
 rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_callback(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>>)
+  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>>)
 {
+  RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
   cancel_requested_ = true;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void MotionPrimitivesForwardController::goal_accepted_callback(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotion>> goal_handle)
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>> goal_handle)
 {
-  pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
-
   const auto & primitives = goal_handle->get_goal()->trajectory.motions;
 
   auto add_motions = [this](const std::vector<MotionPrimitive> & motion_primitives)
@@ -495,6 +477,16 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   {
     add_motions(primitives);
   }
+
+  auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
+  realtime_goal_handle_ = rt_goal;
+
+  rt_goal->execute();
+
+  goal_handle_timer_.reset();
+  goal_handle_timer_ = get_node()->create_wall_timer(
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
+    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 
   RCLCPP_INFO(
     get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
