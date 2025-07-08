@@ -129,7 +129,8 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
-      logger, *get_node()->get_clock(), cmd_vel_timeout_.seconds() * 1000,
+      logger, *get_node()->get_clock(),
+      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.seconds() * 1000),
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
@@ -311,9 +312,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   auto logger = get_node()->get_logger();
 
   // update parameters if they have changed
-  if (param_listener_->is_old(params_))
+  if (param_listener_->try_update_params(params_))
   {
-    params_ = param_listener_->get_params();
     RCLCPP_INFO(logger, "Parameters were updated");
   }
 
