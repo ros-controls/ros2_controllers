@@ -141,8 +141,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
     (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
-    std::shared_ptr<MotionPrimitive> primitive;
-    while (moprim_queue_.pop(primitive))
+    while (moprim_queue_.pop(current_moprim_))
     {
       // clear the queue
     }
@@ -288,29 +287,28 @@ void MotionPrimitivesForwardController::reset_command_interfaces()
 bool MotionPrimitivesForwardController::set_command_interfaces()
 {
   // Get the oldest message from the queue
-  std::shared_ptr<MotionPrimitive> current_moprim;
-  if (!moprim_queue_.pop(current_moprim))
+  if (!moprim_queue_.pop(current_moprim_))
   {
     RCLCPP_WARN(get_node()->get_logger(), "Failed to pop motion primitive from queue.");
     return false;
   }
 
   // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim->type));
+  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_->type));
 
   // Process joint positions if available
-  if (!current_moprim->joint_positions.empty())
+  if (!current_moprim_->joint_positions.empty())
   {
-    for (size_t i = 0; i < current_moprim->joint_positions.size(); ++i)
+    for (size_t i = 0; i < current_moprim_->joint_positions.size(); ++i)
     {
-      (void)command_interfaces_[i + 1].set_value(current_moprim->joint_positions[i]);  // q1 to q6
+      (void)command_interfaces_[i + 1].set_value(current_moprim_->joint_positions[i]);  // q1 to q6
     }
   }
 
   // Process Cartesian poses if available
-  if (!current_moprim->poses.empty())
+  if (!current_moprim_->poses.empty())
   {
-    const auto & goal_pose = current_moprim->poses[0].pose;            // goal pose
+    const auto & goal_pose = current_moprim_->poses[0].pose;           // goal pose
     (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
     (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
     (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
@@ -321,10 +319,10 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 
     // Process via poses if available (only for circular motion)
     if (
-      current_moprim->type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
-      current_moprim->poses.size() == 2)
+      current_moprim_->type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
+      current_moprim_->poses.size() == 2)
     {
-      const auto & via_pose = current_moprim->poses[1].pose;            // via pose
+      const auto & via_pose = current_moprim_->poses[1].pose;           // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
       (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
       (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
@@ -335,10 +333,10 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     }
   }
 
-  (void)command_interfaces_[21].set_value(current_moprim->blend_radius);  // blend_radius
+  (void)command_interfaces_[21].set_value(current_moprim_->blend_radius);  // blend_radius
 
   // Read additional arguments
-  for (const auto & arg : current_moprim->additional_arguments)
+  for (const auto & arg : current_moprim_->additional_arguments)
   {
     if (arg.argument_name == "velocity")
     {

@@ -119,6 +119,7 @@ protected:
   bool was_executing_ = false;
   ExecutionState execution_status_;
   ReadyForNewPrimitive ready_for_new_primitive_;
+  std::shared_ptr<MotionPrimitive> current_moprim_;
 };
 
 }  // namespace motion_primitives_forward_controller
