@@ -90,7 +90,7 @@ protected:
   motion_primitives_forward_controller::Params params_;
 
   using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-  realtime_tools::LockFreeSPSCQueue<MotionPrimitive, 128> moprim_queue_;
+  realtime_tools::LockFreeSPSCQueue<MotionPrimitive, 1024> moprim_queue_;
 
   using ExecuteMotionAction = industrial_robot_motion_interfaces::action::ExecuteMotion;
   rclcpp_action::Server<ExecuteMotionAction>::SharedPtr action_server_;
