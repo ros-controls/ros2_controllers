@@ -140,7 +140,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     cancel_requested_ = false;
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
-    (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
+    (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
     // clear the queue (ignore return value)
     static_cast<void>(moprim_queue_.get_latest(current_moprim_));
     robot_stop_requested_ = true;
@@ -202,7 +202,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
         // If the robot was stopped by a stop command, reset the command interfaces
         // to allow new motion primitives to be sent.
         reset_command_interfaces();
-        (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
+        (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::RESET_STOP));
         robot_stop_requested_ = false;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
@@ -316,9 +316,7 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
     // Process via poses if available (only for circular motion)
-    if (
-      current_moprim_.type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
-      current_moprim_.poses.size() == 2)
+    if (current_moprim_.type == MotionType::CIRCULAR_CARTESIAN && current_moprim_.poses.size() == 2)
     {
       const auto & via_pose = current_moprim_.poses[1].pose;            // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
@@ -400,7 +398,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
   {
     const auto & primitive = primitives[i];
 
-    switch (static_cast<MotionType>(primitive.type))
+    switch (static_cast<uint8_t>(primitive.type))
     {
       case MotionType::LINEAR_JOINT:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
@@ -473,7 +471,7 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   if (primitives.size() > 1)
   {
     MotionPrimitive start_marker;
-    start_marker.type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
+    start_marker.type = static_cast<uint8_t>(MotionHelperType::MOTION_SEQUENCE_START);
     if (!moprim_queue_.push(start_marker))
     {
       RCLCPP_WARN(
@@ -483,7 +481,7 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
     add_motions(primitives);
 
     MotionPrimitive end_marker;
-    end_marker.type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
+    end_marker.type = static_cast<uint8_t>(MotionHelperType::MOTION_SEQUENCE_END);
     if (!moprim_queue_.push(end_marker))
     {
       RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion sequence end marker to queue.");

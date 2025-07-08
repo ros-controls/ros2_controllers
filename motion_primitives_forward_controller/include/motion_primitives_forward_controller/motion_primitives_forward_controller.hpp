@@ -46,12 +46,9 @@ enum class ExecutionState : uint8_t
   STOPPED = 4
 };
 
-enum class MotionType : uint8_t
+using MotionType = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+enum class MotionHelperType : uint8_t
 {
-  LINEAR_JOINT = 10,
-  LINEAR_CARTESIAN = 50,
-  CIRCULAR_CARTESIAN = 51,
-
   STOP_MOTION = 66,
   RESET_STOP = 67,
 
