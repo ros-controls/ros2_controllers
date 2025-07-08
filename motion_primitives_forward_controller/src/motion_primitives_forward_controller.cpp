@@ -141,10 +141,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
     (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
-    while (moprim_queue_.pop(current_moprim_))
-    {
-      // clear the queue
-    }
+    // clear the queue (ignore return value)
+    static_cast<void>(moprim_queue_.get_latest(current_moprim_));
     robot_stop_requested_ = true;
   }
 
