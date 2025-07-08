@@ -14,7 +14,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   std_srvs
-  industrial_robot_motion_interfaces
 )
 
 find_package(ament_cmake REQUIRED)
@@ -45,7 +44,6 @@ target_link_libraries(motion_primitives_forward_controller PUBLIC
                       realtime_tools::realtime_tools
                       ${control_msgs_TARGETS}
                       ${std_srvs_TARGETS}
-                      ${industrial_robot_motion_interfaces_TARGETS}
 )
 
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")

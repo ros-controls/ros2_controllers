@@ -31,8 +31,8 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
-#include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
-#include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
+#include "control_msgs/action/execute_motion_primitive_sequence.hpp"
+#include "control_msgs/msg/motion_primitive.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 namespace motion_primitives_forward_controller
@@ -46,7 +46,7 @@ enum class ExecutionState : uint8_t
   STOPPED = 4
 };
 
-using MotionType = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+using MotionType = control_msgs::msg::MotionPrimitive;
 enum class MotionHelperType : uint8_t
 {
   STOP_MOTION = 66,
@@ -89,10 +89,10 @@ protected:
   std::shared_ptr<motion_primitives_forward_controller::ParamListener> param_listener_;
   motion_primitives_forward_controller::Params params_;
 
-  using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
+  using MotionPrimitive = control_msgs::msg::MotionPrimitive;
   realtime_tools::LockFreeSPSCQueue<MotionPrimitive, 1024> moprim_queue_;
 
-  using ExecuteMotionAction = industrial_robot_motion_interfaces::action::ExecuteMotion;
+  using ExecuteMotionAction = control_msgs::action::ExecuteMotionPrimitiveSequence;
   rclcpp_action::Server<ExecuteMotionAction>::SharedPtr action_server_;
   rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const ExecuteMotionAction::Goal> goal);
