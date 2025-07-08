@@ -292,21 +292,21 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
   }
 
   // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_->type));
+  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_.type));
 
   // Process joint positions if available
-  if (!current_moprim_->joint_positions.empty())
+  if (!current_moprim_.joint_positions.empty())
   {
-    for (size_t i = 0; i < current_moprim_->joint_positions.size(); ++i)
+    for (size_t i = 0; i < current_moprim_.joint_positions.size(); ++i)
     {
-      (void)command_interfaces_[i + 1].set_value(current_moprim_->joint_positions[i]);  // q1 to q6
+      (void)command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);  // q1 to q6
     }
   }
 
   // Process Cartesian poses if available
-  if (!current_moprim_->poses.empty())
+  if (!current_moprim_.poses.empty())
   {
-    const auto & goal_pose = current_moprim_->poses[0].pose;           // goal pose
+    const auto & goal_pose = current_moprim_.poses[0].pose;            // goal pose
     (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
     (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
     (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
@@ -317,10 +317,10 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
 
     // Process via poses if available (only for circular motion)
     if (
-      current_moprim_->type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
-      current_moprim_->poses.size() == 2)
+      current_moprim_.type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
+      current_moprim_.poses.size() == 2)
     {
-      const auto & via_pose = current_moprim_->poses[1].pose;           // via pose
+      const auto & via_pose = current_moprim_.poses[1].pose;            // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
       (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
       (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
@@ -331,10 +331,10 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
     }
   }
 
-  (void)command_interfaces_[21].set_value(current_moprim_->blend_radius);  // blend_radius
+  (void)command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
 
   // Read additional arguments
-  for (const auto & arg : current_moprim_->additional_arguments)
+  for (const auto & arg : current_moprim_.additional_arguments)
   {
     if (arg.argument_name == "velocity")
     {
@@ -443,7 +443,7 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   {
     for (const auto & primitive : motion_primitives)
     {
-      if (!moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive)))
+      if (!moprim_queue_.push(primitive))
       {
         RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion primitive to queue.");
       }
@@ -452,8 +452,8 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
 
   if (primitives.size() > 1)
   {
-    std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
-    start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
+    MotionPrimitive start_marker;
+    start_marker.type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
     if (!moprim_queue_.push(start_marker))
     {
       RCLCPP_WARN(
@@ -462,8 +462,8 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
 
     add_motions(primitives);
 
-    std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
-    end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
+    MotionPrimitive end_marker;
+    end_marker.type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
     if (!moprim_queue_.push(end_marker))
     {
       RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion sequence end marker to queue.");

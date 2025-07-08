@@ -93,7 +93,7 @@ protected:
   motion_primitives_forward_controller::Params params_;
 
   using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-  realtime_tools::LockFreeSPSCQueue<std::shared_ptr<MotionPrimitive>, 128> moprim_queue_;
+  realtime_tools::LockFreeSPSCQueue<MotionPrimitive, 128> moprim_queue_;
 
   using ExecuteMotionAction = industrial_robot_motion_interfaces::action::ExecuteMotion;
   rclcpp_action::Server<ExecuteMotionAction>::SharedPtr action_server_;
@@ -119,7 +119,7 @@ protected:
   bool was_executing_ = false;
   ExecutionState execution_status_;
   ReadyForNewPrimitive ready_for_new_primitive_;
-  std::shared_ptr<MotionPrimitive> current_moprim_;
+  MotionPrimitive current_moprim_;
 };
 
 }  // namespace motion_primitives_forward_controller
