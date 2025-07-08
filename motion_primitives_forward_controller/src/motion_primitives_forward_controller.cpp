@@ -376,6 +376,26 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  if (
+    (primitives.size() == 1) &&
+    primitives.size() > (moprim_queue_.capacity() - moprim_queue_.size()))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Remaining queue capacity (%zu) is not enough for the requested %zu motion primitive.",
+      moprim_queue_.capacity() - moprim_queue_.size(), primitives.size());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  else if ((primitives.size() + 2) > (moprim_queue_.capacity() - moprim_queue_.size()))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Remaining queue capacity (%zu) is not enough for the requested %zu motion primitives (+ "
+      "start and stop marker).",
+      moprim_queue_.capacity() - moprim_queue_.size(), primitives.size());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   for (size_t i = 0; i < primitives.size(); ++i)
   {
     const auto & primitive = primitives[i];
