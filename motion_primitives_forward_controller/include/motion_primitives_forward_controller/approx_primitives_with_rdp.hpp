@@ -19,13 +19,13 @@
 
 #include <string>
 #include <vector>
+#include "control_msgs/msg/motion_argument.hpp"
+#include "control_msgs/msg/motion_primitive.hpp"
+#include "control_msgs/msg/motion_primitive_sequence.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "industrial_robot_motion_interfaces/msg/motion_argument.hpp"
-#include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
-#include "industrial_robot_motion_interfaces/msg/motion_sequence.hpp"
 #include "motion_primitives_forward_controller/rdp.hpp"
 
-using MotionSequence = industrial_robot_motion_interfaces::msg::MotionSequence;
+using MotionSequence = control_msgs::msg::MotionPrimitiveSequence;
 
 namespace approx_primitives_with_rdp
 {

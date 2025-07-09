@@ -97,6 +97,19 @@ install(
   DESTINATION include/${PROJECT_NAME}
 )
 
+ament_export_include_directories(
+  include
+)
+ament_export_dependencies(
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+ament_export_libraries(
+  motion_primitives_forward_controller
+  motion_primitives_from_trajectory_controller
+)
+
+ament_package()
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)

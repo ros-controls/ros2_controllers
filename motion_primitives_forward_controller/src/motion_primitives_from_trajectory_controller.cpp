@@ -40,7 +40,9 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   }
   catch (const std::exception & e)
   {
-    fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during controller's init with message: %s \n",
+      e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -126,7 +128,6 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
-  moprim_queue_write_enabled_ = true;
   RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -150,11 +151,9 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
     cancel_requested_ = false;
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
-    (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::STOP_MOTION));
-    while (!moprim_queue_.empty())
-    {  // clear the queue
-      moprim_queue_.pop();
-    }
+    (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
+    // clear the queue (ignore return value)
+    static_cast<void>(moprim_queue_.get_latest(current_moprim_));
     robot_stop_requested_ = true;
   }
 
@@ -185,31 +184,27 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
     case ExecutionState::SUCCESS:
       print_error_once_ = true;
 
-      if (pending_action_goal_ && was_executing_)
+      if (realtime_goal_handle_ && was_executing_)
       {
         was_executing_ = false;
         auto result = std::make_shared<FollowJTrajAction::Result>();
         result->error_code = FollowJTrajAction::Result::SUCCESSFUL;
         result->error_string = "Motion primitives executed successfully";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
+        realtime_goal_handle_->setSucceeded(result);
+        realtime_goal_handle_.reset();
         RCLCPP_INFO(get_node()->get_logger(), "Motion primitives executed successfully.");
       }
-
       break;
 
     case ExecutionState::STOPPED:
       print_error_once_ = true;
       was_executing_ = false;
 
-      if (pending_action_goal_)
+      if (realtime_goal_handle_)
       {
         auto result = std::make_shared<FollowJTrajAction::Result>();
-        // result->error_code = FollowJTrajAction::Result::CANCELED;
-        result->error_code = 69;
-        result->error_string = "Motion primitives execution canceled";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
+        realtime_goal_handle_->setCanceled(result);
+        realtime_goal_handle_.reset();
         RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
       }
 
@@ -218,27 +213,15 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
         // If the robot was stopped by a stop command, reset the command interfaces
         // to allow new motion primitives to be sent.
         reset_command_interfaces();
-        (void)command_interfaces_[0].set_value(static_cast<double>(MotionType::RESET_STOP));
+        (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::RESET_STOP));
         robot_stop_requested_ = false;
-        moprim_queue_write_enabled_ = true;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
+
       break;
 
     case ExecutionState::ERROR:
       was_executing_ = false;
-
-      if (pending_action_goal_)
-      {
-        auto result = std::make_shared<FollowJTrajAction::Result>();
-        // result->error_code = FollowJTrajAction::Result::FAILED;
-        result->error_code = 404;
-        result->error_string = "Motion primitives execution failed";
-        pending_action_goal_->succeed(result);
-        pending_action_goal_.reset();
-        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution failed");
-      }
-
       if (print_error_once_)
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
@@ -263,7 +246,7 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
   ready_for_new_primitive_ =
     static_cast<ReadyForNewPrimitive>(static_cast<uint8_t>(std::round(opt_value_ready.value())));
 
-  if (!moprim_queue_write_enabled_ && !cancel_requested_)
+  if (!cancel_requested_)
   {
     switch (ready_for_new_primitive_)
     {
@@ -275,8 +258,6 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
       {
         if (moprim_queue_.empty())  // check if new command is available
         {
-          // all primitives read, queue ready to get filled with new primitives
-          moprim_queue_write_enabled_ = true;
           return controller_interface::return_type::OK;
         }
         else
@@ -315,32 +296,28 @@ void MotionPrimitivesFromTrajectoryController::reset_command_interfaces()
 bool MotionPrimitivesFromTrajectoryController::set_command_interfaces()
 {
   // Get the oldest message from the queue
-  std::shared_ptr<MotionPrimitive> current_moprim = moprim_queue_.front();
-  moprim_queue_.pop();
-
-  // Check if the message is valid
-  if (!current_moprim)
+  if (!moprim_queue_.pop(current_moprim_))
   {
-    RCLCPP_WARN(get_node()->get_logger(), "No valid reference message received");
+    RCLCPP_WARN(get_node()->get_logger(), "Failed to pop motion primitive from queue.");
     return false;
   }
 
   // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim->type));
+  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_.type));
 
   // Process joint positions if available
-  if (!current_moprim->joint_positions.empty())
+  if (!current_moprim_.joint_positions.empty())
   {
-    for (size_t i = 0; i < current_moprim->joint_positions.size(); ++i)
+    for (size_t i = 0; i < current_moprim_.joint_positions.size(); ++i)
     {
-      (void)command_interfaces_[i + 1].set_value(current_moprim->joint_positions[i]);  // q1 to q6
+      (void)command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);  // q1 to q6
     }
   }
 
   // Process Cartesian poses if available
-  if (!current_moprim->poses.empty())
+  if (!current_moprim_.poses.empty())
   {
-    const auto & goal_pose = current_moprim->poses[0].pose;            // goal pose
+    const auto & goal_pose = current_moprim_.poses[0].pose;            // goal pose
     (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
     (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
     (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
@@ -350,11 +327,9 @@ bool MotionPrimitivesFromTrajectoryController::set_command_interfaces()
     (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
     // Process via poses if available (only for circular motion)
-    if (
-      current_moprim->type == static_cast<uint8_t>(MotionType::CIRCULAR_CARTESIAN) &&
-      current_moprim->poses.size() == 2)
+    if (current_moprim_.type == MotionType::CIRCULAR_CARTESIAN && current_moprim_.poses.size() == 2)
     {
-      const auto & via_pose = current_moprim->poses[1].pose;            // via pose
+      const auto & via_pose = current_moprim_.poses[1].pose;            // via pose
       (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
       (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
       (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
@@ -365,10 +340,10 @@ bool MotionPrimitivesFromTrajectoryController::set_command_interfaces()
     }
   }
 
-  (void)command_interfaces_[21].set_value(current_moprim->blend_radius);  // blend_radius
+  (void)command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
 
   // Read additional arguments
-  for (const auto & arg : current_moprim->additional_arguments)
+  for (const auto & arg : current_moprim_.additional_arguments)
   {
     if (arg.argument_name == "velocity")
     {
@@ -402,12 +377,7 @@ rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_recei
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (!moprim_queue_write_enabled_)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(), "Queue is not ready to write. Discarding the new command.");
-    return rclcpp_action::GoalResponse::REJECT;
-  }
+  // TODO(mathias31415): Check if queue has enough space? Number of primitives not known here?
 
   if (goal->trajectory.points.empty())
   {
@@ -424,17 +394,15 @@ rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_recei
 rclcpp_action::CancelResponse MotionPrimitivesFromTrajectoryController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>>)
 {
+  RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
   cancel_requested_ = true;
-  moprim_queue_write_enabled_ = false;
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
-  const std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Processing accepted goal ...");
-
-  pending_action_goal_ = goal_handle;  // Store the goal handle for later result feedback
 
   auto trajectory_msg =
     std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
@@ -469,7 +437,7 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     }
     planned_trajectory_data.push_back(pt);
   }
-  industrial_robot_motion_interfaces::msg::MotionSequence motion_sequence;
+  control_msgs::msg::MotionPrimitiveSequence motion_sequence;
   double rdp_epsilon = 0.001;
   bool use_time_not_vel_and_acc = true;
   switch (approx_type_)
@@ -495,32 +463,50 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       break;
   }
 
-  auto add_motions =
-    [this](const industrial_robot_motion_interfaces::msg::MotionSequence & moprim_sequence)
+  auto add_motions = [this](const control_msgs::msg::MotionPrimitiveSequence & moprim_sequence)
   {
     for (const auto & primitive : moprim_sequence.motions)
     {
-      moprim_queue_.push(std::make_shared<MotionPrimitive>(primitive));
+      if (!moprim_queue_.push(primitive))
+      {
+        RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion primitive to queue.");
+      }
     }
   };
 
   if (motion_sequence.motions.size() > 1)
   {
-    std::shared_ptr<MotionPrimitive> start_marker = std::make_shared<MotionPrimitive>();
-    start_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_START);
-    moprim_queue_.push(start_marker);
+    MotionPrimitive start_marker;
+    start_marker.type = static_cast<uint8_t>(MotionHelperType::MOTION_SEQUENCE_START);
+    if (!moprim_queue_.push(start_marker))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Failed to push motion sequence start marker to queue.");
+    }
 
     add_motions(motion_sequence);
 
-    std::shared_ptr<MotionPrimitive> end_marker = std::make_shared<MotionPrimitive>();
-    end_marker->type = static_cast<uint8_t>(MotionType::MOTION_SEQUENCE_END);
-    moprim_queue_.push(end_marker);
+    MotionPrimitive end_marker;
+    end_marker.type = static_cast<uint8_t>(MotionHelperType::MOTION_SEQUENCE_END);
+    if (!moprim_queue_.push(end_marker))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to push motion sequence end marker to queue.");
+    }
   }
   else
   {
     add_motions(motion_sequence);
   }
-  moprim_queue_write_enabled_ = false;
+
+  auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
+  realtime_goal_handle_ = rt_goal;
+
+  rt_goal->execute();
+
+  goal_handle_timer_.reset();
+  goal_handle_timer_ = get_node()->create_wall_timer(
+    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
+    std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 
   RCLCPP_INFO(
     get_node()->get_logger(),

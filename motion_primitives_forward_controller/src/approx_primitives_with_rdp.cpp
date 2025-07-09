@@ -19,11 +19,11 @@
 #include <cmath>
 #include <iostream>
 
+using control_msgs::msg::MotionArgument;
+using control_msgs::msg::MotionPrimitive;
+using control_msgs::msg::MotionPrimitiveSequence;
 using geometry_msgs::msg::Pose;
 using geometry_msgs::msg::PoseStamped;
-using industrial_robot_motion_interfaces::msg::MotionArgument;
-using industrial_robot_motion_interfaces::msg::MotionPrimitive;
-using industrial_robot_motion_interfaces::msg::MotionSequence;
 
 namespace approx_primitives_with_rdp
 {
