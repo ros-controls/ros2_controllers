@@ -16,7 +16,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   std_srvs
   moveit_msgs
   geometry_msgs
-  industrial_robot_motion_interfaces
 )
 
 find_package(ament_cmake REQUIRED)
@@ -50,30 +49,28 @@ target_include_directories(motion_primitives_from_trajectory_controller PUBLIC
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 target_link_libraries(motion_primitives_forward_controller PUBLIC
-                      motion_primitives_forward_controller_parameters
-                      controller_interface::controller_interface
-                      hardware_interface::hardware_interface
-                      pluginlib::pluginlib
-                      rclcpp::rclcpp
-                      rclcpp_lifecycle::rclcpp_lifecycle
-                      realtime_tools::realtime_tools
-                      ${control_msgs_TARGETS}
-                      ${std_srvs_TARGETS}
-                      ${industrial_robot_motion_interfaces_TARGETS}
+  motion_primitives_forward_controller_parameters
+  controller_interface::controller_interface
+  hardware_interface::hardware_interface
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  realtime_tools::realtime_tools
+  ${control_msgs_TARGETS}
+  ${std_srvs_TARGETS}
 )
 target_link_libraries(motion_primitives_from_trajectory_controller PUBLIC
-                      motion_primitives_forward_controller_parameters
-                      controller_interface::controller_interface
-                      hardware_interface::hardware_interface
-                      pluginlib::pluginlib
-                      rclcpp::rclcpp
-                      rclcpp_lifecycle::rclcpp_lifecycle
-                      realtime_tools::realtime_tools
-                      ${control_msgs_TARGETS}
-                      ${geometry_msgs_TARGETS}
-                      ${moveit_msgs_TARGETS}
-                      ${std_srvs_TARGETS}
-                      ${industrial_robot_motion_interfaces_TARGETS}
+  motion_primitives_forward_controller_parameters
+  controller_interface::controller_interface
+  hardware_interface::hardware_interface
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  realtime_tools::realtime_tools
+  ${control_msgs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${moveit_msgs_TARGETS}
+  ${std_srvs_TARGETS}
 )
 
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")
@@ -88,6 +85,8 @@ install(
   TARGETS
     motion_primitives_forward_controller
     motion_primitives_from_trajectory_controller
+    motion_primitives_forward_controller_parameters
+  EXPORT motion_primitives_forward_controller_targets
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -138,16 +137,3 @@ if(BUILD_TESTING)
     ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
-
-ament_export_include_directories(
-  include
-)
-ament_export_dependencies(
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
-)
-ament_export_libraries(
-  motion_primitives_forward_controller
-  motion_primitives_from_trajectory_controller
-)
-
-ament_package()

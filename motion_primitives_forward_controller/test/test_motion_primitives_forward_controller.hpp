@@ -41,11 +41,11 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-#include "industrial_robot_motion_interfaces/action/execute_motion.hpp"
-#include "industrial_robot_motion_interfaces/msg/motion_primitive.hpp"
+#include "control_msgs/action/execute_motion_primitive_sequence.hpp"
+#include "control_msgs/msg/motion_primitive.hpp"
 
-using MotionPrimitive = industrial_robot_motion_interfaces::msg::MotionPrimitive;
-using ExecuteMotion = industrial_robot_motion_interfaces::action::ExecuteMotion;
+using MotionPrimitive = control_msgs::msg::MotionPrimitive;
+using ExecuteMotion = control_msgs::action::ExecuteMotionPrimitiveSequence;
 
 namespace
 {

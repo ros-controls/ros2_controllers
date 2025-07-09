@@ -72,7 +72,7 @@ TEST_F(MotionPrimitivesForwardControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message queue is reset
-  auto moprim_queue_ = controller_->moprim_queue_;
+  auto & moprim_queue_ = controller_->moprim_queue_;
   ASSERT_TRUE(moprim_queue_.empty());
 }
 
