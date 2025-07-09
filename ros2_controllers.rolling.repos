@@ -11,6 +11,8 @@ repositories:
     type: git
     url: https://github.com/urfeex/control_msgs.git
     version: motion_primitives
+    # url: https://github.com/ros-controls/control_msgs.git
+    # version: master
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
