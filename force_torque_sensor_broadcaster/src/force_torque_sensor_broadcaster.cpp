@@ -91,6 +91,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
         torque_names.z));
   }
 
+  // As sensor_filter_chain param is of type none, we cannot directly check if it present
+  // If the filter configuration fails, just continue without it
   try
   {
     filter_chain_ =
@@ -100,20 +102,16 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   {
     fprintf(
       stderr,
-      "Exception thrown during filter chain creation at configure stage with message : %s \n",
+      "Exception thrown during filter chain creation with message : %s \n",
       e.what());
     return CallbackReturn::ERROR;
   }
-  if (!filter_chain_->configure(
+
+  // Refer to the params yaml for info on the prefix
+  has_filter_chain_ = filter_chain_->configure(
         "sensor_filter_chain", get_node()->get_node_logging_interface(),
-        get_node()->get_node_parameters_interface()))
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Could not configure sensor filter chain, please check if the "
-      "parameters are provided correctly.");
-    return CallbackReturn::ERROR;
-  }
+        get_node()->get_node_parameters_interface());
+  
   try
   {
     // register ft sensor data publisher
@@ -121,11 +119,13 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
       "~/wrench", rclcpp::SystemDefaultsQoS());
     realtime_raw_publisher_ = std::make_unique<StateRTPublisher>(sensor_raw_state_publisher_);
 
-    sensor_filtered_state_publisher_ =
-      get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
-        "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
-    realtime_filtered_publisher_ =
-      std::make_unique<StateRTPublisher>(sensor_filtered_state_publisher_);
+    if (has_filter_chain_) {
+      sensor_filtered_state_publisher_ =
+        get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
+      realtime_filtered_publisher_ =
+        std::make_unique<StateRTPublisher>(sensor_filtered_state_publisher_);
+    }
   }
   catch (const std::exception & e)
   {
@@ -142,31 +142,10 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   realtime_raw_publisher_->msg_.header.frame_id = params_.frame_id;
   realtime_raw_publisher_->unlock();
 
-  realtime_filtered_publisher_->lock();
-  realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_filtered_publisher_->unlock();
-
-  // Add additional frames to publish if any exits
-  if (!params_.additional_frames_to_publish.empty())
-  {
-    auto nr_frames = params_.additional_frames_to_publish.size();
-    wrench_additional_frames_pubs_.reserve(nr_frames);
-    wrench_additional_frames_publishers_.reserve(nr_frames);
-    for (const auto & frame : params_.additional_frames_to_publish)
-    {
-      StatePublisher pub = get_node()->create_publisher<WrenchMsgType>(
-        "~/wrench_filtered_" + frame, rclcpp::SystemDefaultsQoS());
-      wrench_additional_frames_pubs_.emplace_back(pub);
-      wrench_additional_frames_publishers_.emplace_back(std::make_unique<StateRTPublisher>(pub));
-
-      wrench_additional_frames_publishers_.back()->lock();
-      wrench_additional_frames_publishers_.back()->msg_.header.frame_id = frame;
-      wrench_additional_frames_publishers_.back()->unlock();
-    }
-
-    // initialize buffer transforms
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_node()->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  if (has_filter_chain_){
+    realtime_filtered_publisher_->lock();
+    realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
+    realtime_filtered_publisher_->unlock();
   }
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
@@ -222,58 +201,16 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
   }
 
   // Filter sensor data
-  auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
-  if (!filtered)
-  {
-    wrench_filtered_.wrench.force.x = std::numeric_limits<double>::quiet_NaN();
-    wrench_filtered_.wrench.force.y = std::numeric_limits<double>::quiet_NaN();
-    wrench_filtered_.wrench.force.z = std::numeric_limits<double>::quiet_NaN();
-    wrench_filtered_.wrench.torque.x = std::numeric_limits<double>::quiet_NaN();
-    wrench_filtered_.wrench.torque.y = std::numeric_limits<double>::quiet_NaN();
-    wrench_filtered_.wrench.torque.z = std::numeric_limits<double>::quiet_NaN();
+  if (has_filter_chain_) {
+    auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
+    if (filtered && realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
+    {
+      realtime_filtered_publisher_->msg_.header.stamp = time;
+      realtime_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
+      realtime_filtered_publisher_->unlockAndPublish();
+    }
   }
 
-  if (realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
-  {
-    realtime_filtered_publisher_->msg_.header.stamp = time;
-    realtime_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
-    realtime_filtered_publisher_->unlockAndPublish();
-  }
-
-  for (const auto & publisher : wrench_additional_frames_publishers_)
-  {
-    try
-    {
-      if (filtered)
-      {
-        auto transform = tf_buffer_->lookupTransform(
-          publisher->msg_.header.frame_id, params_.frame_id, tf2::TimePointZero);
-        tf2::doTransform(wrench_filtered_, publisher->msg_, transform);
-      }
-      else
-      {
-        throw tf2::TransformException("cannot transform, filtered message is invalid");
-      }
-    }
-    catch (const tf2::TransformException & e)
-    {
-      RCLCPP_ERROR_SKIPFIRST_THROTTLE(
-        get_node()->get_logger(), *(get_node()->get_clock()), 5000,
-        "LookupTransform failed from '%s' to '%s'. %s", params_.frame_id.c_str(),
-        publisher->msg_.header.frame_id.c_str(), e.what());
-      publisher->msg_.wrench.force.x = std::numeric_limits<double>::quiet_NaN();
-      publisher->msg_.wrench.force.y = std::numeric_limits<double>::quiet_NaN();
-      publisher->msg_.wrench.force.z = std::numeric_limits<double>::quiet_NaN();
-      publisher->msg_.wrench.torque.x = std::numeric_limits<double>::quiet_NaN();
-      publisher->msg_.wrench.torque.y = std::numeric_limits<double>::quiet_NaN();
-      publisher->msg_.wrench.torque.z = std::numeric_limits<double>::quiet_NaN();
-    }
-    if (publisher && publisher->trylock())
-    {
-      publisher->msg_.header.stamp = time;
-      publisher->unlockAndPublish();
-    }
-  }
   return controller_interface::return_type::OK;
 }
 

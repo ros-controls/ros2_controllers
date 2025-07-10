@@ -73,15 +73,13 @@ protected:
 
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
-  std::string sensor_name_;
-  std::array<std::string, 6> interface_names_;
-  std::vector<std::string> additional_frames_to_publish_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
 
   WrenchMsgType wrench_raw_;
   WrenchMsgType wrench_filtered_;
   std::unique_ptr<filters::FilterChain<WrenchMsgType>> filter_chain_;
+  bool has_filter_chain_;
 
   using StatePublisher = rclcpp::Publisher<WrenchMsgType>::SharedPtr;
   using StateRTPublisher = realtime_tools::RealtimePublisher<WrenchMsgType>;
@@ -89,13 +87,6 @@ protected:
   StatePublisher sensor_filtered_state_publisher_;
   std::unique_ptr<StateRTPublisher> realtime_raw_publisher_;
   std::unique_ptr<StateRTPublisher> realtime_filtered_publisher_;
-
-  // Transformation variables
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  std::vector<StatePublisher> wrench_additional_frames_pubs_;
-  std::vector<std::unique_ptr<StateRTPublisher>> wrench_additional_frames_publishers_;
 };
 
 }  // namespace force_torque_sensor_broadcaster
