@@ -79,7 +79,6 @@ protected:
   WrenchMsgType wrench_raw_;
   WrenchMsgType wrench_filtered_;
   std::unique_ptr<filters::FilterChain<WrenchMsgType>> filter_chain_;
-  bool has_filter_chain_;
 
   using StatePublisher = rclcpp::Publisher<WrenchMsgType>::SharedPtr;
   using StateRTPublisher = realtime_tools::RealtimePublisher<WrenchMsgType>;
