@@ -75,6 +75,7 @@ protected:
   Params params_;
 
   std::unique_ptr<semantic_components::ForceTorqueSensor> force_torque_sensor_;
+  bool has_filter_chain_ = false;
 
   WrenchMsgType wrench_raw_;
   WrenchMsgType wrench_filtered_;

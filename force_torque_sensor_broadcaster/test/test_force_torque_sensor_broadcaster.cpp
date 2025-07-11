@@ -519,6 +519,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Configure_Success)
 
   // configure passed
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->has_filter_chain_, true);
 
   // check interface configuration
   auto cmd_if_conf = fts_broadcaster_->command_interface_configuration();

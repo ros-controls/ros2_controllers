@@ -109,11 +109,11 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   // As the sensor_filter_chain parameter is of type 'none', we cannot directly check if it is present.
   // Even if the sensor_filter_chain parameter is not specified, the filter chain will be correctly
   // configured with an empty list of filters (https://github.com/ros/filters/issues/89).
-  if (!filter_chain_->configure(
+  has_filter_chain_ = filter_chain_->configure(
     "sensor_filter_chain", get_node()->get_node_logging_interface(),
-    get_node()->get_node_parameters_interface())) {
-      return controller_interface::CallbackReturn::ERROR;
-  }
+    get_node()->get_node_parameters_interface());
+
+  RCLCPP_INFO_EXPRESSION(get_node()->get_logger(), has_filter_chain_, "Filter chain is successfully configured!");
 
   try
   {
@@ -143,9 +143,11 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   realtime_raw_publisher_->msg_.header.frame_id = params_.frame_id;
   realtime_raw_publisher_->unlock();
 
-  realtime_filtered_publisher_->lock();
-  realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_filtered_publisher_->unlock();
+  if (has_filter_chain_){
+    realtime_filtered_publisher_->lock();
+    realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
+    realtime_filtered_publisher_->unlock();
+  }
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -199,13 +201,16 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
     realtime_raw_publisher_->unlockAndPublish();
   }
 
-  // Filter sensor data, if no filter chain config was specified, wrench_filtered_ = wrench_raw_
-  auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
-  if (filtered && realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
+  if(has_filter_chain_)
   {
-    realtime_filtered_publisher_->msg_.header.stamp = time;
-    realtime_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
-    realtime_filtered_publisher_->unlockAndPublish();
+    // Filter sensor data, if no filter chain config was specified, wrench_filtered_ = wrench_raw_
+    auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
+    if (filtered && realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
+    {
+      realtime_filtered_publisher_->msg_.header.stamp = time;
+      realtime_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
+      realtime_filtered_publisher_->unlockAndPublish();
+    }
   }
 
   return controller_interface::return_type::OK;
