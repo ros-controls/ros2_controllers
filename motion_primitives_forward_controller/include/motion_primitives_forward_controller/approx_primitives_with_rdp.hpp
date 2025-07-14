@@ -51,6 +51,10 @@ double calculateBlendRadius(
   const rdp::Point & previous_point, const rdp::Point & current_point,
   const rdp::Point & next_point);
 
+void calculateCartVelAndAcc(
+  const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
+  std::vector<double> & velocities, std::vector<double> & accelerations);
+
 }  // namespace approx_primitives_with_rdp
 
 #endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__APPROX_PRIMITIVES_WITH_RDP_HPP_
