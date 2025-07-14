@@ -39,8 +39,8 @@ struct PlannedTrajectoryPoint
 
 // Approximate with LIN Primitives in Cartesian Space
 MotionSequence approxLinPrimitivesWithRDP(
-  const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon,
-  bool use_time_not_vel_and_acc = false);
+  const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon_position,
+  double epsilon_angle, bool use_time_not_vel_and_acc = false);
 
 // Approximate with PTP Primitives in Joint Space
 MotionSequence approxPtpPrimitivesWithRDP(

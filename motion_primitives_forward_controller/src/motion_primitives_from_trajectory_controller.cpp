@@ -57,6 +57,33 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
 
   params_ = param_listener_->get_params();
 
+  if (params_.local_joint_order.size() != 6)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Error: Exactly 6 joints must be provided in local_joint_order!");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (params_.approximate_mode == "RDP_PTP")
+  {
+    approx_mode_ = ApproxMode::RDP_PTP;
+  }
+  else if (params_.approximate_mode == "RDP_LIN")
+  {
+    approx_mode_ = ApproxMode::RDP_LIN;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Error: Unknown approximate mode '%s'",
+      params_.approximate_mode.c_str());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  use_time_not_vel_and_acc_ = params_.use_time_not_vel_and_acc;
+  epsilon_joint_angle_ = params_.epsilon_joint_angle;
+  epsilon_cart_position_ = params_.epsilon_cart_position;
+  epsilon_cart_angle_ = params_.epsilon_cart_angle;
+
   // Check if there are exactly 25 command interfaces
   if (params_.command_interfaces.size() != 25)
   {  // motion_type + 6 joints + 2*7 positions + blend_radius + velocity + acceleration + move_time
@@ -438,24 +465,23 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     planned_trajectory_data.push_back(pt);
   }
   control_msgs::msg::MotionPrimitiveSequence motion_sequence;
-  double rdp_epsilon = 0.001;
-  bool use_time_not_vel_and_acc = true;
-  switch (approx_type_)
+  switch (approx_mode_)
   {
-    case MotionType::LINEAR_JOINT:
+    case ApproxMode::RDP_PTP:
     {
       RCLCPP_INFO(
         get_node()->get_logger(), "Approximating motion primitives with PTP motion primitives.");
-      motion_sequence =
-        approxPtpPrimitivesWithRDP(planned_trajectory_data, rdp_epsilon, use_time_not_vel_and_acc);
+      motion_sequence = approxPtpPrimitivesWithRDP(
+        planned_trajectory_data, epsilon_joint_angle_, use_time_not_vel_and_acc_);
       break;
     }
-    case MotionType::LINEAR_CARTESIAN:
+    case ApproxMode::RDP_LIN:
     {
       RCLCPP_INFO(
         get_node()->get_logger(), "Approximating motion primitives with LIN motion primitives.");
-      motion_sequence =
-        approxLinPrimitivesWithRDP(planned_trajectory_data, rdp_epsilon, use_time_not_vel_and_acc);
+      motion_sequence = approxLinPrimitivesWithRDP(
+        planned_trajectory_data, epsilon_cart_position_, epsilon_cart_angle_,
+        use_time_not_vel_and_acc_);
       break;
     }
     default:
@@ -514,15 +540,11 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     trajectory_msg->points.size(), motion_sequence.motions.size());
 }
 
-// TODO(mathias31415): read local_joint_order from param instead
 void MotionPrimitivesFromTrajectoryController::sort_to_local_joint_order(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const
 {
-  const std::vector<std::string> local_joint_order = {"shoulder_pan_joint", "shoulder_lift_joint",
-                                                      "elbow_joint",        "wrist_1_joint",
-                                                      "wrist_2_joint",      "wrist_3_joint"};
-
-  std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, local_joint_order);
+  std::vector<size_t> mapping_vector =
+    mapping(trajectory_msg->joint_names, params_.local_joint_order);
 
   auto remap = [this](
                  const std::vector<double> & to_remap,
@@ -563,7 +585,7 @@ void MotionPrimitivesFromTrajectoryController::sort_to_local_joint_order(
     if (!point.effort.empty()) point.effort = remap(point.effort, mapping_vector);
   }
 
-  trajectory_msg->joint_names = local_joint_order;
+  trajectory_msg->joint_names = params_.local_joint_order;
 }
 
 }  // namespace motion_primitives_from_trajectory_controller

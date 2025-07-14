@@ -19,3 +19,46 @@ motion_primitives_forward_controller:
       not_empty<>: null,
     }
   }
+  local_joint_order: {
+    type: string_array,
+    default_value: [],
+    description: "Local joint order used internally by the controller.",
+    read_only: false,
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+  approximate_mode: {
+    type: string,
+    default_value: "RDP_PTP",
+    description: "Approximation mode for motion primitives: 'RDP_PTP' or 'RDP_LIN'.",
+    read_only: false,
+    validation: {
+      not_empty<>: []
+    }
+  }
+  use_time_not_vel_and_acc: {
+    type: bool,
+    default_value: false,
+    description: "If true, uses time for motion primitives (e.g., UR); if false, uses velocity and acceleration (e.g., UR, KUKA).",
+    read_only: false
+  }
+  epsilon_joint_angle: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in joint space (angle difference threshold).",
+    read_only: false
+  }
+  epsilon_cart_position: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in Cartesian space (position threshold).",
+    read_only: false
+  }
+  epsilon_cart_angle: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in Cartesian space (orientation angle threshold).",
+    read_only: false
+  }

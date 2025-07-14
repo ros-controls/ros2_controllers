@@ -30,7 +30,7 @@ namespace approx_primitives_with_rdp
 
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  double epsilon, bool use_time_not_vel_and_acc)
+  double epsilon_position, double epsilon_angle, bool use_time_not_vel_and_acc)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -47,7 +47,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     points.push_back({point.pose.position.x, point.pose.position.y, point.pose.position.z});
   }
 
-  auto [reduced_points, reduced_indices] = rdp::rdpRecursive(points, epsilon);
+  auto [reduced_points, reduced_indices] = rdp::rdpRecursive(points, epsilon_position);
 
   for (size_t i = 1; i < reduced_points.size(); ++i)
   {
@@ -97,7 +97,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     pose_stamped.pose.position.x = reduced_points[i][0];
     pose_stamped.pose.position.y = reduced_points[i][1];
     pose_stamped.pose.position.z = reduced_points[i][2];
-    // TODO(mathias31415): Also use RDP for orientation
+    // TODO(mathias31415): Also use RDP for orientation? With epsilon_angle
     pose_stamped.pose.orientation = trajectory[reduced_indices[i]].pose.orientation;
 
     primitive.poses.push_back(pose_stamped);
@@ -116,7 +116,7 @@ MotionSequence approxLinPrimitivesWithRDP(
 
   motion_sequence.motions = motion_primitives;
   std::cout << "Reduced " << points.size() << " points to " << (reduced_points.size() - 1)
-            << " LIN primitives with epsilon=" << epsilon << std::endl;
+            << " LIN primitives with epsilon=" << epsilon_position << std::endl;
 
   return motion_sequence;
 }

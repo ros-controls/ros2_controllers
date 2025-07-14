@@ -66,6 +66,12 @@ enum class ReadyForNewPrimitive : uint8_t
   READY = 1
 };
 
+enum class ApproxMode
+{
+  RDP_PTP,
+  RDP_LIN
+};
+
 class MotionPrimitivesFromTrajectoryController : public controller_interface::ControllerInterface
 {
 public:
@@ -125,7 +131,11 @@ protected:
 
   std::shared_ptr<FKClient> fk_client_;
 
-  uint8_t approx_type_ = MotionType::LINEAR_CARTESIAN;
+  ApproxMode approx_mode_;
+  bool use_time_not_vel_and_acc_;
+  double epsilon_joint_angle_;
+  double epsilon_cart_position_;
+  double epsilon_cart_angle_;
 
   // ############ Function copied from JointTrajectoryController ############
   // TODO(mathias31415): Is there a cleaner solution?
