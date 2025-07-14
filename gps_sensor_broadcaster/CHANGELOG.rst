@@ -2,6 +2,9 @@
 Changelog for package gps_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.2.0 (2025-06-23)
 ------------------
 

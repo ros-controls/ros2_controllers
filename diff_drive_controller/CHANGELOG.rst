@@ -2,6 +2,14 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Explicit cast `rcutils_duration_value_t` (`#1808 <https://github.com/ros-controls/ros2_controllers/issues/1808>`_)
+* Update description of limit() function in speed_limiter (`#1793 <https://github.com/ros-controls/ros2_controllers/issues/1793>`_)
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
+* Contributors: Aarav Gupta, Christoph Fröhlich, Kenta Kato
+
 5.2.0 (2025-06-23)
 ------------------
 

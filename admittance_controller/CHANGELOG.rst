@@ -2,6 +2,12 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
+* Contributors: Christoph Fröhlich, Kenta Kato
+
 5.2.0 (2025-06-23)
 ------------------
 
