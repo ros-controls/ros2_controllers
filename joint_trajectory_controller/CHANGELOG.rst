@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.3.0 (2025-07-14)
+------------------
 * Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
 * Add speed scaling support to JTC (`#1191 <https://github.com/ros-controls/ros2_controllers/issues/1191>`_)
 * Contributors: Felix Exner (fexner), Kenta Kato

@@ -2,8 +2,8 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.3.0 (2025-07-14)
+------------------
 * Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
 * Contributors: Christoph Fröhlich
 

@@ -2,8 +2,8 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.3.0 (2025-07-14)
+------------------
 * Fix cmake deprecation (`#1780 <https://github.com/ros-controls/ros2_controllers/issues/1780>`_)
 * Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
 * Contributors: Christoph Fröhlich, mosfet80
