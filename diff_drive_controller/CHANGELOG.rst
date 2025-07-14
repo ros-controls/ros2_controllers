@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.28.0 (2025-07-14)
+-------------------
 * Explicit cast rcutils_duration_value_t (backport `#1808 <https://github.com/ros-controls/ros2_controllers/issues/1808>`_) (`#1812 <https://github.com/ros-controls/ros2_controllers/issues/1812>`_)
 * Update description of limit() function in speed_limiter (backport `#1793 <https://github.com/ros-controls/ros2_controllers/issues/1793>`_) (`#1795 <https://github.com/ros-controls/ros2_controllers/issues/1795>`_)
 * Contributors: Christoph Fröhlich, mergify[bot]
