@@ -55,6 +55,10 @@ void calculateCartVelAndAcc(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
   std::vector<double> & velocities, std::vector<double> & accelerations);
 
+void calculateJointVelAndAcc(
+  const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
+  std::vector<double> & velocities, std::vector<double> & accelerations);
+
 }  // namespace approx_primitives_with_rdp
 
 #endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__APPROX_PRIMITIVES_WITH_RDP_HPP_

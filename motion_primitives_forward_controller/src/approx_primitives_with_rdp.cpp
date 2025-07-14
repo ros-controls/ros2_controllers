@@ -167,6 +167,10 @@ MotionSequence approxPtpPrimitivesWithRDP(
 
   auto [reduced_points, reduced_indices] = rdp::rdpRecursive(points, epsilon);
 
+  // Compute joint velocities and accelerations between trajectory points
+  std::vector<double> joint_velocities, joint_accelerations;
+  calculateJointVelAndAcc(trajectory, joint_velocities, joint_accelerations);
+
   for (size_t i = 1; i < reduced_points.size(); ++i)
   {
     MotionPrimitive primitive;
@@ -197,11 +201,16 @@ MotionSequence approxPtpPrimitivesWithRDP(
     double velocity = -1.0;
     double acceleration = -1.0;
     double move_time = -1.0;
+
+    size_t start_index = reduced_indices[i - 1];
+    size_t end_index = reduced_indices[i];
+
     if (use_time_not_vel_and_acc)
     {
-      double prev_time = trajectory[reduced_indices[i - 1]].time_from_start;
-      double curr_time = trajectory[reduced_indices[i]].time_from_start;
+      double prev_time = trajectory[start_index].time_from_start;
+      double curr_time = trajectory[end_index].time_from_start;
       move_time = curr_time - prev_time;
+
       MotionArgument arg_time;
       arg_time.argument_name = "move_time";
       arg_time.argument_value = move_time;
@@ -209,9 +218,22 @@ MotionSequence approxPtpPrimitivesWithRDP(
     }
     else
     {
-      // TODO(mathias31415): Calculate vel and acc based on time_from_start
-      velocity = 1.0;
-      acceleration = 1.0;
+      // Get max velocity and acceleration in the reduced segment
+      double max_vel = 0.0;
+      double max_acc = 0.0;
+
+      for (size_t j = start_index + 1; j <= end_index && j - 1 < joint_velocities.size(); ++j)
+      {
+        max_vel = std::max(max_vel, joint_velocities[j - 1]);
+      }
+
+      for (size_t j = start_index + 2; j <= end_index && j - 2 < joint_accelerations.size(); ++j)
+      {
+        max_acc = std::max(max_acc, joint_accelerations[j - 2]);
+      }
+
+      velocity = max_vel;
+      acceleration = max_acc;
 
       MotionArgument arg_vel;
       arg_vel.argument_name = "velocity";
@@ -240,6 +262,7 @@ MotionSequence approxPtpPrimitivesWithRDP(
   }
 
   motion_sequence.motions = motion_primitives;
+
   std::cout << "Reduced " << points.size() << " joint points to " << (reduced_points.size() - 1)
             << " PTP primitives with epsilon=" << epsilon << std::endl;
 
@@ -335,6 +358,65 @@ void calculateCartVelAndAcc(
     double acceleration = delta_velocity / time_interval;
 
     accelerations.push_back(std::abs(acceleration));
+  }
+}
+
+void calculateJointVelAndAcc(
+  const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
+  std::vector<double> & velocities, std::vector<double> & accelerations)
+{
+  velocities.clear();
+  accelerations.clear();
+
+  size_t num_points = trajectory.size();
+  if (num_points < 2)
+  {
+    std::cerr << "[calculateJointVelAndAcc] Warning: trajectory too short to calculate "
+                 "joint velocity/acceleration."
+              << std::endl;
+    return;
+  }
+
+  size_t num_joints = trajectory[0].joint_positions.size();
+
+  // Compute joint velocities (max per timestep across joints)
+  for (size_t i = 1; i < num_points; ++i)
+  {
+    double dt = trajectory[i].time_from_start - trajectory[i - 1].time_from_start;
+    if (dt <= 0.0)
+    {
+      std::cerr << "[calculateJointVelAndAcc] Warning: non-positive time diff at index " << i
+                << std::endl;
+      velocities.push_back(0.0);
+      continue;
+    }
+
+    double max_joint_vel = 0.0;
+    for (size_t j = 0; j < num_joints; ++j)
+    {
+      double dq = trajectory[i].joint_positions[j] - trajectory[i - 1].joint_positions[j];
+      double vel = std::abs(dq / dt);
+      if (vel > max_joint_vel) max_joint_vel = vel;
+    }
+
+    velocities.push_back(max_joint_vel);
+  }
+
+  // Compute joint accelerations (max per timestep across joints)
+  for (size_t i = 1; i < velocities.size(); ++i)
+  {
+    double dt = trajectory[i + 1].time_from_start - trajectory[i].time_from_start;
+    if (dt <= 0.0)
+    {
+      std::cerr
+        << "[calculateJointVelAndAcc] Warning: non-positive time diff for acceleration at index "
+        << i << std::endl;
+      accelerations.push_back(0.0);
+      continue;
+    }
+
+    double dvel = velocities[i] - velocities[i - 1];
+    accelerations.push_back(std::abs(dvel / dt));
   }
 }
 
