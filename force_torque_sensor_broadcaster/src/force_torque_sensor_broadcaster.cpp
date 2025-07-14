@@ -20,9 +20,9 @@
 
 #include <limits>
 #include <memory>
-#include <rclcpp/logging.hpp>
 #include <string>
 
+#include "rclcpp/logging.hpp"
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -99,21 +99,19 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   }
   catch (const std::exception & e)
   {
-    fprintf(
-      stderr,
-      "Exception thrown during filter chain creation with message : %s \n",
-      e.what());
+    fprintf(stderr, "Exception thrown during filter chain creation with message : %s \n", e.what());
     return CallbackReturn::ERROR;
   }
 
-  // As the sensor_filter_chain parameter is of type 'none', we cannot directly check if it is present.
-  // Even if the sensor_filter_chain parameter is not specified, the filter chain will be correctly
-  // configured with an empty list of filters (https://github.com/ros/filters/issues/89).
+  // As the sensor_filter_chain parameter is of type 'none', we cannot directly check if it is
+  // present. Even if the sensor_filter_chain parameter is not specified, the filter chain will be
+  // correctly configured with an empty list of filters (https://github.com/ros/filters/issues/89).
   has_filter_chain_ = filter_chain_->configure(
     "sensor_filter_chain", get_node()->get_node_logging_interface(),
     get_node()->get_node_parameters_interface());
 
-  RCLCPP_INFO_EXPRESSION(get_node()->get_logger(), has_filter_chain_, "Filter chain is successfully configured!");
+  RCLCPP_INFO_EXPRESSION(
+    get_node()->get_logger(), has_filter_chain_, "Filter chain is successfully configured!");
 
   try
   {
@@ -124,7 +122,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
     sensor_filtered_state_publisher_ =
       get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
-          "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
+        "~/wrench_filtered", rclcpp::SystemDefaultsQoS());
     realtime_filtered_publisher_ =
       std::make_unique<StateRTPublisher>(sensor_filtered_state_publisher_);
   }
@@ -143,7 +141,8 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   realtime_raw_publisher_->msg_.header.frame_id = params_.frame_id;
   realtime_raw_publisher_->unlock();
 
-  if (has_filter_chain_){
+  if (has_filter_chain_)
+  {
     realtime_filtered_publisher_->lock();
     realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
     realtime_filtered_publisher_->unlock();
@@ -201,7 +200,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
     realtime_raw_publisher_->unlockAndPublish();
   }
 
-  if(has_filter_chain_)
+  if (has_filter_chain_)
   {
     // Filter sensor data, if no filter chain config was specified, wrench_filtered_ = wrench_raw_
     auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
