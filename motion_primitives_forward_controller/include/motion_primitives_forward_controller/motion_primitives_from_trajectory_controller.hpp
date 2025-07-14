@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include <motion_primitives_forward_controller/motion_primitives_from_trajectory_controller_parameters.hpp>
 #include <realtime_tools/lock_free_queue.hpp>
 #include <realtime_tools/realtime_server_goal_handle.hpp>
 #include "control_msgs/action/follow_joint_trajectory.hpp"

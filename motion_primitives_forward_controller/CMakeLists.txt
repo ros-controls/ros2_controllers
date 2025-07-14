@@ -27,6 +27,9 @@ endforeach()
 generate_parameter_library(motion_primitives_forward_controller_parameters
   src/motion_primitives_forward_controller.yaml
 )
+generate_parameter_library(motion_primitives_from_trajectory_controller_parameters
+  src/motion_primitives_from_trajectory_controller.yaml
+)
 add_library(
   motion_primitives_forward_controller
   SHARED
@@ -60,7 +63,7 @@ target_link_libraries(motion_primitives_forward_controller PUBLIC
   ${std_srvs_TARGETS}
 )
 target_link_libraries(motion_primitives_from_trajectory_controller PUBLIC
-  motion_primitives_forward_controller_parameters
+  motion_primitives_from_trajectory_controller_parameters
   controller_interface::controller_interface
   hardware_interface::hardware_interface
   pluginlib::pluginlib
@@ -84,13 +87,23 @@ pluginlib_export_plugin_description_file(
 install(
   TARGETS
     motion_primitives_forward_controller
-    motion_primitives_from_trajectory_controller
     motion_primitives_forward_controller_parameters
   EXPORT motion_primitives_forward_controller_targets
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
+install(
+  TARGETS
+    motion_primitives_from_trajectory_controller
+    motion_primitives_from_trajectory_controller_parameters
+  EXPORT motion_primitives_from_trajectory_controller_targets
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+ament_export_targets(motion_primitives_forward_controller_targets)
+ament_export_targets(motion_primitives_from_trajectory_controller_targets)
 
 install(
   DIRECTORY include/
