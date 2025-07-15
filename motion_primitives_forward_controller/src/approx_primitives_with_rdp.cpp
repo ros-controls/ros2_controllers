@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include "rclcpp/rclcpp.hpp"
 
 using control_msgs::msg::MotionArgument;
 using control_msgs::msg::MotionPrimitive;
@@ -37,7 +38,9 @@ MotionSequence approxLinPrimitivesWithRDP(
 
   if (trajectory.empty())
   {
-    std::cerr << "[approxLinPrimitivesWithRDP] Warning: trajectory is empty." << std::endl;
+    RCLCPP_WARN(
+      rclcpp::get_logger("approx_primitives_with_rdp"),
+      "[approxLinPrimitivesWithRDP] Warning: trajectory is empty.");
     return motion_sequence;
   }
 
@@ -51,9 +54,11 @@ MotionSequence approxLinPrimitivesWithRDP(
 
   auto [reduced_points, reduced_indices] = rdp::rdpRecursive(cartesian_points, epsilon_position);
 
-  std::cout << "[approxLinPrimitivesWithRDP] Added " << reduced_indices.size()
-            << " points due to position change (epsilon_position = " << epsilon_position << ")."
-            << std::endl;
+  RCLCPP_INFO(
+    rclcpp::get_logger("approx_primitives_with_rdp"),
+    "[approxLinPrimitivesWithRDP] Added %zu points due to position change (epsilon_position = "
+    "%.4f).",
+    reduced_indices.size(), epsilon_position);
 
   std::set<size_t> final_indices(reduced_indices.begin(), reduced_indices.end());
   std::set<size_t> position_indices(reduced_indices.begin(), reduced_indices.end());
@@ -89,10 +94,11 @@ MotionSequence approxLinPrimitivesWithRDP(
   std::vector<size_t> sorted_final_indices(final_indices.begin(), final_indices.end());
   std::sort(sorted_final_indices.begin(), sorted_final_indices.end());
 
-  std::cout << "[approxLinPrimitivesWithRDP] Added "
-            << sorted_final_indices.size() - reduced_indices.size()
-            << " additional intermediate points due to orientation angle change (epsilon_angle = "
-            << epsilon_angle << ")." << std::endl;
+  RCLCPP_INFO(
+    rclcpp::get_logger("approx_primitives_with_rdp"),
+    "[approxLinPrimitivesWithRDP] Added %zu additional intermediate points due to orientation "
+    "angle change (epsilon_angle = %.4f).",
+    sorted_final_indices.size() - reduced_indices.size(), epsilon_angle);
 
   // Compute cartesian velocity and acceleration between trajectory points
   std::vector<double> velocities, accelerations;
@@ -173,15 +179,14 @@ MotionSequence approxLinPrimitivesWithRDP(
     else
       reason = "unknown";
 
-    std::cout << "Added LIN Primitive [" << i << "] (" << reason << "): (x,y,z,qx,qy,qz,qw) = ("
-              << pose_stamped.pose.position.x << ", " << pose_stamped.pose.position.y << ", "
-              << pose_stamped.pose.position.z << ", " << pose_stamped.pose.orientation.x << ", "
-              << pose_stamped.pose.orientation.y << ", " << pose_stamped.pose.orientation.z << ", "
-              << pose_stamped.pose.orientation.w << "), "
-              << "blend_radius = " << primitive.blend_radius << ", "
-              << "move_time = " << move_time << ", "
-              << "velocity = " << velocity << ", "
-              << "acceleration = " << acceleration << std::endl;
+    RCLCPP_INFO(
+      rclcpp::get_logger("approx_primitives_with_rdp"),
+      "Added LIN Primitive [%zu] (%s): (x,y,z,qx,qy,qz,qw) = (%.4f, %.4f, %.4f, %.4f, %.4f, %.4f, "
+      "%.4f), blend_radius = %.4f, move_time = %.4f, velocity = %.4f, acceleration = %.4f",
+      i, reason.c_str(), pose_stamped.pose.position.x, pose_stamped.pose.position.y,
+      pose_stamped.pose.position.z, pose_stamped.pose.orientation.x,
+      pose_stamped.pose.orientation.y, pose_stamped.pose.orientation.z,
+      pose_stamped.pose.orientation.w, primitive.blend_radius, move_time, velocity, acceleration);
   }
 
   motion_sequence.motions = motion_primitives;
@@ -198,7 +203,9 @@ MotionSequence approxPtpPrimitivesWithRDP(
 
   if (trajectory.empty())
   {
-    std::cerr << "[approxPtpPrimitivesWithRDP] Warning: trajectory is empty." << std::endl;
+    RCLCPP_WARN(
+      rclcpp::get_logger("approx_primitives_with_rdp"),
+      "[approxPtpPrimitivesWithRDP] Warning: trajectory is empty.");
     return motion_sequence;
   }
 
@@ -292,22 +299,25 @@ MotionSequence approxPtpPrimitivesWithRDP(
     primitive.joint_positions = reduced_points[i];
     motion_primitives.push_back(primitive);
 
-    std::cout << "Added PTP Primitive [" << i << "]: joints = (";
+    std::ostringstream joint_stream;
+    joint_stream << "Added PTP Primitive [" << i << "]: joints = (";
     for (size_t j = 0; j < reduced_points[i].size(); ++j)
     {
-      std::cout << reduced_points[i][j];
-      if (j + 1 < reduced_points[i].size()) std::cout << ", ";
+      joint_stream << reduced_points[i][j];
+      if (j + 1 < reduced_points[i].size()) joint_stream << ", ";
     }
-    std::cout << "), blend_radius = " << primitive.blend_radius << ", "
-              << "move_time = " << move_time << ", "
-              << "velocity = " << velocity << ", "
-              << "acceleration = " << acceleration << std::endl;
+    joint_stream << "), blend_radius = " << primitive.blend_radius << ", move_time = " << move_time
+                 << ", velocity = " << velocity << ", acceleration = " << acceleration;
+
+    RCLCPP_INFO(rclcpp::get_logger("approx_primitives_with_rdp"), "%s", joint_stream.str().c_str());
   }
 
   motion_sequence.motions = motion_primitives;
 
-  std::cout << "Reduced " << points.size() << " joint points to " << (reduced_points.size() - 1)
-            << " PTP primitives with epsilon=" << epsilon << std::endl;
+  RCLCPP_INFO(
+    rclcpp::get_logger("approx_primitives_with_rdp"),
+    "Reduced %zu joint points to %zu PTP primitives with epsilon=%.4f", points.size(),
+    reduced_points.size() - 1, epsilon);
 
   return motion_sequence;
 }
@@ -351,9 +361,9 @@ void calculateCartVelAndAcc(
   size_t num_points = trajectory.size();
   if (num_points < 2)
   {
-    std::cerr << "[calculateCartVelAndAcc] Warning: trajectory too short to calculate "
-                 "velocity/acceleration."
-              << std::endl;
+    RCLCPP_WARN(
+      rclcpp::get_logger("approx_primitives_with_rdp"),
+      "[calculateCartVelAndAcc] Warning: trajectory too short to calculate velocity/acceleration.");
     return;
   }
 
@@ -368,8 +378,9 @@ void calculateCartVelAndAcc(
 
     if (delta_time <= 0.0)
     {
-      std::cerr << "[calculateCartVelAndAcc] Warning: non-positive time difference at index " << i
-                << std::endl;
+      RCLCPP_WARN(
+        rclcpp::get_logger("approx_primitives_with_rdp"),
+        "[calculateCartVelAndAcc] Warning: non-positive time difference at index %zu", i);
       velocities.push_back(0.0);
       continue;
     }
@@ -390,9 +401,11 @@ void calculateCartVelAndAcc(
 
     if (time_interval <= 0.0)
     {
-      std::cerr << "[calculateCartVelAndAcc] Warning: non-positive time difference for "
-                   "acceleration at index "
-                << i << std::endl;
+      RCLCPP_WARN(
+        rclcpp::get_logger("approx_primitives_with_rdp"),
+        "[calculateCartVelAndAcc] Warning: non-positive time difference for acceleration at index "
+        "%zu",
+        i);
       accelerations.push_back(0.0);
       continue;
     }
@@ -414,9 +427,10 @@ void calculateJointVelAndAcc(
   size_t num_points = trajectory.size();
   if (num_points < 2)
   {
-    std::cerr << "[calculateJointVelAndAcc] Warning: trajectory too short to calculate "
-                 "joint velocity/acceleration."
-              << std::endl;
+    RCLCPP_WARN(
+      rclcpp::get_logger("approx_primitives_with_rdp"),
+      "[calculateJointVelAndAcc] Warning: trajectory too short to calculate joint "
+      "velocity/acceleration.");
     return;
   }
 
@@ -428,8 +442,9 @@ void calculateJointVelAndAcc(
     double dt = trajectory[i].time_from_start - trajectory[i - 1].time_from_start;
     if (dt <= 0.0)
     {
-      std::cerr << "[calculateJointVelAndAcc] Warning: non-positive time diff at index " << i
-                << std::endl;
+      RCLCPP_WARN(
+        rclcpp::get_logger("approx_primitives_with_rdp"),
+        "[calculateJointVelAndAcc] Warning: non-positive time diff at index %zu", i);
       velocities.push_back(0.0);
       continue;
     }
@@ -451,9 +466,10 @@ void calculateJointVelAndAcc(
     double dt = trajectory[i + 1].time_from_start - trajectory[i].time_from_start;
     if (dt <= 0.0)
     {
-      std::cerr
-        << "[calculateJointVelAndAcc] Warning: non-positive time diff for acceleration at index "
-        << i << std::endl;
+      RCLCPP_WARN(
+        rclcpp::get_logger("approx_primitives_with_rdp"),
+        "[calculateJointVelAndAcc] Warning: non-positive time diff for acceleration at index %zu",
+        i);
       accelerations.push_back(0.0);
       continue;
     }
