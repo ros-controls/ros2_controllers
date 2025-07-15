@@ -3,9 +3,11 @@ multi_interface_forward_command_controller:
     type: string,
     default_value: "",
     description: "Name of the joint to control",
+    read_only: true
   }
   interface_names: {
     type: string_array,
     default_value: [],
     description: "Names of the interfaces to command",
+    read_only: true
   }
