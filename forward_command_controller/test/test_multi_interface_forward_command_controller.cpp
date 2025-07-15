@@ -85,50 +85,6 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(
   }
 }
 
-TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
-{
-  SetUpController(false, {rclcpp::Parameter("interface_names", std::vector<std::string>())});
-
-  // configure failed, 'joint' parameter not set
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterNotSet)
-{
-  SetUpController(false, {rclcpp::Parameter("joint", "")});
-
-  // configure failed, 'interface_names' parameter not set
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterIsEmpty)
-{
-  SetUpController(
-    false, {rclcpp::Parameter("joint", ""),
-            rclcpp::Parameter("interface_names", std::vector<std::string>())});
-
-  // configure failed, 'joint' is empty
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterEmpty)
-{
-  SetUpController(
-    false, {rclcpp::Parameter("joint", "joint1"),
-            rclcpp::Parameter("interface_names", std::vector<std::string>())});
-
-  // configure failed, 'interface_name' is empty
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
 TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
 {
   SetUpController(

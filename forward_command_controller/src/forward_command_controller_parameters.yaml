@@ -1,13 +1,17 @@
 forward_command_controller:
   joints: {
     type: string_array,
-    default_value: [],
     description: "Name of the joints to control",
+    validation: {
+      not_empty<>: []
+    },
     read_only: true
   }
   interface_name: {
     type: string,
-    default_value: "",
     description: "Name of the interface to command",
+    validation: {
+      not_empty<>: []
+    },
     read_only: true
   }
