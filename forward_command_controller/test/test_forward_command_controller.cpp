@@ -246,10 +246,8 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
 
 TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
 {
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joints", joint_names_});
-  controller_->get_node()->set_parameter({"interface_name", "position"});
+  SetUpController(
+    {rclcpp::Parameter("joints", joint_names_), rclcpp::Parameter("interface_name", "position")});
 
   // default values
   ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
