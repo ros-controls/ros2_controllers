@@ -57,7 +57,7 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpController();
+  void SetUpController(const std::vector<rclcpp::Parameter> & parameters = {});
   void SetUpHandles();
 
 protected:
