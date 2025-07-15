@@ -58,9 +58,6 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
 
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
-<<<<<<< HEAD
-    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
-=======
     [this](const CmdType::SharedPtr msg)
     {
       const auto cmd = *msg;
@@ -74,9 +71,8 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
           "Non-finite value received. Dropping message");
         return;
       }
-      rt_command_.set(cmd);
+      rt_command_ptr_.writeFromNonRT(msg);
     });
->>>>>>> a10c564 (Reject non-finite values in forward controller subscriber callback (#1815))
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
