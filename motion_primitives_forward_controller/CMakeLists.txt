@@ -16,6 +16,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   std_srvs
   moveit_msgs
   geometry_msgs
+  tf2
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -74,6 +76,8 @@ target_link_libraries(motion_primitives_from_trajectory_controller PUBLIC
   ${geometry_msgs_TARGETS}
   ${moveit_msgs_TARGETS}
   ${std_srvs_TARGETS}
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 target_compile_definitions(motion_primitives_forward_controller PRIVATE "MOTION_PRIMITIVES_FORWARD_CONTROLLER_BUILDING_DLL")

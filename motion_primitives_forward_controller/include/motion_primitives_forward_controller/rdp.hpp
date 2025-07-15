@@ -20,6 +20,9 @@
 #include <utility>
 #include <vector>
 
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 namespace rdp
 {
 
@@ -49,6 +52,28 @@ double pointLineDistanceND(const Point & point, const Point & start, const Point
  */
 std::pair<PointList, std::vector<std::size_t>> rdpRecursive(
   const PointList & points, double epsilon, std::size_t offset = 0);
+
+/**
+ * Computes the angular distance (in radians) between two quaternions.
+ *
+ * @param q1 First quaternion.
+ * @param q2 Second quaternion.
+ * @return Angular difference in radians.
+ */
+double quaternionAngularDistance(
+  const geometry_msgs::msg::Quaternion & q1, const geometry_msgs::msg::Quaternion & q2);
+
+/**
+ * Recursive RDP for quaternions based on angular deviation.
+ *
+ * @param quaternions List of quaternions.
+ * @param epsilon_angle Angular threshold (in radians).
+ * @param offset Index offset for tracking original indices.
+ * @return Pair of simplified quaternions and their original indices.
+ */
+std::pair<std::vector<geometry_msgs::msg::Quaternion>, std::vector<size_t>> rdpRecursiveQuaternion(
+  const std::vector<geometry_msgs::msg::Quaternion> & quaternions, double epsilon_angle_rad,
+  size_t offset);
 
 }  // namespace rdp
 

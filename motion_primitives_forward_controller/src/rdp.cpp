@@ -121,4 +121,94 @@ std::pair<PointList, std::vector<std::size_t>> rdpRecursive(
   }
 }
 
+// Compute angular difference (in radians) between two quaternions
+double quaternionAngularDistance(
+  const geometry_msgs::msg::Quaternion & q1, const geometry_msgs::msg::Quaternion & q2)
+{
+  tf2::Quaternion tf_q1, tf_q2;
+  tf2::fromMsg(q1, tf_q1);
+  tf2::fromMsg(q2, tf_q2);
+
+  tf_q1.normalize();
+  tf_q2.normalize();
+
+  double dot = tf_q1.dot(tf_q2);
+  dot = std::clamp(dot, -1.0, 1.0);  // numerical safety
+
+  return 2.0 * std::acos(std::abs(dot));  // shortest angle between unit quaternions
+}
+
+// Recursively apply the Ramer-Douglas-Peucker algorithm to a list of quaternions.
+// Returns a simplified list of quaternions and their corresponding original indices.
+std::pair<std::vector<geometry_msgs::msg::Quaternion>, std::vector<size_t>> rdpRecursiveQuaternion(
+  const std::vector<geometry_msgs::msg::Quaternion> & quaternions, double epsilon_angle_rad,
+  size_t offset)
+{
+  if (quaternions.size() < 2)
+  {
+    std::vector<size_t> indices;
+    for (size_t i = 0; i < quaternions.size(); ++i) indices.push_back(offset + i);
+    return {quaternions, indices};
+  }
+
+  double max_angle = 0.0;
+  size_t max_index = 0;
+
+  const geometry_msgs::msg::Quaternion & q_start = quaternions.front();
+  const geometry_msgs::msg::Quaternion & q_end = quaternions.back();
+
+  // Check intermediate quaternions for deviation from SLERP curve
+  for (size_t i = 1; i < quaternions.size() - 1; ++i)
+  {
+    double t = static_cast<double>(i) / static_cast<double>(quaternions.size() - 1);
+
+    // Interpolate on the SLERP curve between q_start and q_end
+    tf2::Quaternion tf_q_start, tf_q_end;
+    tf2::fromMsg(q_start, tf_q_start);
+    tf2::fromMsg(q_end, tf_q_end);
+
+    tf_q_start.normalize();
+    tf_q_end.normalize();
+
+    tf2::Quaternion tf_q_interp = tf_q_start.slerp(tf_q_end, t);
+    tf_q_interp.normalize();
+    geometry_msgs::msg::Quaternion q_interp = tf2::toMsg(tf_q_interp);
+
+    // Calculate angular distance to actual intermediate quaternion
+    double angle_diff = quaternionAngularDistance(q_interp, quaternions[i]);
+
+    if (angle_diff > max_angle)
+    {
+      max_angle = angle_diff;
+      max_index = i;
+    }
+  }
+
+  if (max_angle > epsilon_angle_rad)
+  {
+    auto left = rdpRecursiveQuaternion(
+      std::vector<geometry_msgs::msg::Quaternion>(
+        quaternions.begin(), quaternions.begin() + max_index + 1),
+      epsilon_angle_rad, offset);
+
+    auto right = rdpRecursiveQuaternion(
+      std::vector<geometry_msgs::msg::Quaternion>(
+        quaternions.begin() + max_index, quaternions.end()),
+      epsilon_angle_rad, offset + max_index);
+
+    // Avoid duplicate point
+    left.first.pop_back();
+    left.second.pop_back();
+
+    // Merge results
+    left.first.insert(left.first.end(), right.first.begin(), right.first.end());
+    left.second.insert(left.second.end(), right.second.begin(), right.second.end());
+    return left;
+  }
+  else
+  {
+    return {{quaternions.front(), quaternions.back()}, {offset, offset + quaternions.size() - 1}};
+  }
+}
+
 }  // namespace rdp

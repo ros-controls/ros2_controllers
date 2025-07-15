@@ -41,6 +41,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     return motion_sequence;
   }
 
+  // Reduce positions using RDP
   rdp::PointList cartesian_points;
   for (const auto & point : trajectory)
   {
@@ -50,38 +51,82 @@ MotionSequence approxLinPrimitivesWithRDP(
 
   auto [reduced_points, reduced_indices] = rdp::rdpRecursive(cartesian_points, epsilon_position);
 
+  std::cout << "[approxLinPrimitivesWithRDP] Added " << reduced_indices.size()
+            << " points due to position change (epsilon_position = " << epsilon_position << ")."
+            << std::endl;
+
+  std::set<size_t> final_indices(reduced_indices.begin(), reduced_indices.end());
+  std::set<size_t> position_indices(reduced_indices.begin(), reduced_indices.end());
+  std::set<size_t> orientation_indices;
+
+  // Enrich reduced_indices by checking quaternion changes in each segment
+  for (size_t i = 1; i < reduced_indices.size(); ++i)
+  {
+    size_t start_index = reduced_indices[i - 1];
+    size_t end_index = reduced_indices[i];
+
+    if (end_index - start_index <= 1) continue;  // nothing in between
+
+    // Extract quaternion segment
+    std::vector<geometry_msgs::msg::Quaternion> quats;
+    for (size_t j = start_index; j <= end_index; ++j)
+    {
+      quats.push_back(trajectory[j].pose.orientation);
+    }
+
+    auto [reduced_quats, reduced_quat_indices] =
+      rdp::rdpRecursiveQuaternion(quats, epsilon_angle, start_index);
+
+    for (size_t idx : reduced_quat_indices)
+    {
+      if (final_indices.insert(idx).second)  // true if inserted (i.e., newly added)
+      {
+        orientation_indices.insert(idx);
+      }
+    }
+  }
+
+  std::vector<size_t> sorted_final_indices(final_indices.begin(), final_indices.end());
+  std::sort(sorted_final_indices.begin(), sorted_final_indices.end());
+
+  std::cout << "[approxLinPrimitivesWithRDP] Added "
+            << sorted_final_indices.size() - reduced_indices.size()
+            << " additional intermediate points due to orientation angle change (epsilon_angle = "
+            << epsilon_angle << ")." << std::endl;
+
   // Compute cartesian velocity and acceleration between trajectory points
   std::vector<double> velocities, accelerations;
   calculateCartVelAndAcc(trajectory, velocities, accelerations);
 
-  for (size_t i = 1; i < reduced_points.size(); ++i)
+  for (size_t i = 1; i < sorted_final_indices.size(); ++i)
   {
+    size_t start_index = sorted_final_indices[i - 1];
+    size_t end_index = sorted_final_indices[i];
+
     MotionPrimitive primitive;
     primitive.type = MotionPrimitive::LINEAR_CARTESIAN;
 
     // Blend radius (zero at last point)
-    if (i == reduced_points.size() - 1)
+    if (i == sorted_final_indices.size() - 1)
     {
       primitive.blend_radius = 0.0;
     }
     else
     {
+      const auto & p0 = trajectory[start_index].pose.position;
+      const auto & p1 = trajectory[end_index].pose.position;
+      const auto & p2 = trajectory[sorted_final_indices[i + 1]].pose.position;
       primitive.blend_radius =
-        calculateBlendRadius(reduced_points[i - 1], reduced_points[i], reduced_points[i + 1]);
+        calculateBlendRadius({p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, {p2.x, p2.y, p2.z});
     }
 
     double velocity = -1.0;
     double acceleration = -1.0;
     double move_time = -1.0;
 
-    const size_t start_index = reduced_indices[i - 1];
-    const size_t end_index = reduced_indices[i];
-
     if (use_time_not_vel_and_acc)
     {
-      const double prev_time = trajectory[start_index].time_from_start;
-      const double curr_time = trajectory[end_index].time_from_start;
-      move_time = curr_time - prev_time;
+      move_time = trajectory[end_index].time_from_start - trajectory[start_index].time_from_start;
       MotionArgument arg_time;
       arg_time.argument_name = "move_time";
       arg_time.argument_value = move_time;
@@ -89,20 +134,13 @@ MotionSequence approxLinPrimitivesWithRDP(
     }
     else
     {
-      // Use max velocity and acceleration in the reduced segment
-      double max_vel = 0.0;
-      double max_acc = 0.0;
-
+      // Use max velocity and acceleration in the reduced segment (min 0.01)
+      double max_vel = 0.01;
+      double max_acc = 0.01;
       for (size_t j = start_index + 1; j <= end_index && j - 1 < velocities.size(); ++j)
-      {
         max_vel = std::max(max_vel, velocities[j - 1]);
-      }
-
       for (size_t j = start_index + 2; j <= end_index && j - 2 < accelerations.size(); ++j)
-      {
         max_acc = std::max(max_acc, accelerations[j - 2]);
-      }
-
       velocity = max_vel;
       acceleration = max_acc;
 
@@ -118,16 +156,24 @@ MotionSequence approxLinPrimitivesWithRDP(
     }
 
     PoseStamped pose_stamped;
-    pose_stamped.pose.position.x = reduced_points[i][0];
-    pose_stamped.pose.position.y = reduced_points[i][1];
-    pose_stamped.pose.position.z = reduced_points[i][2];
-    // TODO(mathias31415): Also use RDP for orientation? With epsilon_angle
-    pose_stamped.pose.orientation = trajectory[reduced_indices[i]].pose.orientation;
-
+    pose_stamped.pose = trajectory[end_index].pose;
     primitive.poses.push_back(pose_stamped);
     motion_primitives.push_back(primitive);
 
-    std::cout << "Added LIN Primitive [" << i << "]: (x,y,z,qx,qy,qz,qw) = ("
+    // Determine reason for addition
+    std::string reason;
+    bool pos = position_indices.count(end_index);
+    bool ori = orientation_indices.count(end_index);
+    if (pos && ori)
+      reason = "position+orientation";
+    else if (pos)
+      reason = "position";
+    else if (ori)
+      reason = "orientation";
+    else
+      reason = "unknown";
+
+    std::cout << "Added LIN Primitive [" << i << "] (" << reason << "): (x,y,z,qx,qy,qz,qw) = ("
               << pose_stamped.pose.position.x << ", " << pose_stamped.pose.position.y << ", "
               << pose_stamped.pose.position.z << ", " << pose_stamped.pose.orientation.x << ", "
               << pose_stamped.pose.orientation.y << ", " << pose_stamped.pose.orientation.z << ", "
@@ -139,9 +185,6 @@ MotionSequence approxLinPrimitivesWithRDP(
   }
 
   motion_sequence.motions = motion_primitives;
-
-  std::cout << "Reduced " << cartesian_points.size() << " points to " << (reduced_points.size() - 1)
-            << " LIN primitives with epsilon=" << epsilon_position << std::endl;
 
   return motion_sequence;
 }
