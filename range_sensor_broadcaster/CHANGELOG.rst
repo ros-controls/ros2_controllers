@@ -2,6 +2,11 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.3.0 (2025-07-14)
+------------------
+* Fix cmake deprecation (`#1780 <https://github.com/ros-controls/ros2_controllers/issues/1780>`_)
+* Contributors: mosfet80
+
 5.2.0 (2025-06-23)
 ------------------
 

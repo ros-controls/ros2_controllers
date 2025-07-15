@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.3.0 (2025-07-14)
+------------------
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Contributors: Kenta Kato
+
 5.2.0 (2025-06-23)
 ------------------
 
