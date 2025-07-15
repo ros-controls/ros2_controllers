@@ -51,7 +51,7 @@ class MotionPrimitiveCollector(Node):
         self.recording_joint_states = False
 
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         self.trajectory_sub = self.create_subscription(
             JointTrajectory,
             "/motion_primitive_from_trajectory_controller/planned_trajectory",

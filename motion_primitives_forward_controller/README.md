@@ -28,6 +28,19 @@ For this setup, the [motion primitives mode of the `Universal_Robots_ROS2_Driver
 ![UR Robot Architecture](doc/ros2_control_motion_primitives_ur_integrated.drawio.png)
 
 
+## Notes
+Save data:
+```
+ros2 run motion_primitives_forward_controller record_moprim_from_traj_data.py
+```
+Compare data:
+~~ros2 run motion_primitives_forward_controller compare.py~~ ?
+```
+python3 src/ros2_controllers/motion_primitives_forward_controller/motion_primitives_forward_controller/compare.py
+```
+
+
+
 # TODOs/ improvements
 - Use references for command and state interfaces to improve code readability and less error-prone.
 - Extend the tests
