@@ -33,6 +33,9 @@
   <depend>geometry_msgs</depend>
   <depend>moveit_msgs</depend>
 
+  <exec_depend>python3</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>hardware_interface</test_depend>
