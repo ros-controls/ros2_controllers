@@ -244,6 +244,52 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
 }
 
+TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
+{
+  SetUpController();
+
+  controller_->get_node()->set_parameter({"joints", joint_names_});
+  controller_->get_node()->set_parameter({"interface_name", "position"});
+
+  // default values
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+
+  auto node_state = controller_->configure();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  node_state = controller_->get_node()->activate();
+  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  // send a new command
+  rclcpp::Node test_node("test_node");
+  auto command_pub = test_node.create_publisher<std_msgs::msg::Float64MultiArray>(
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+  std_msgs::msg::Float64MultiArray command_msg;
+  command_msg.data = {10.0, std::numeric_limits<double>::infinity(), 30.0};
+  command_pub->publish(command_msg);
+
+  // wait for command message to be passed
+  const auto timeout = std::chrono::milliseconds{10};
+  const auto until = controller_->get_node()->get_clock()->now() + timeout;
+  while (controller_->get_node()->get_clock()->now() < until)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::microseconds(10));
+  }
+
+  // update successful
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // check message containing infinite command value was rejected
+  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+}
+
 TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
 {
   SetUpController(
