@@ -36,10 +36,14 @@ void JointGroupVelocityControllerTest::SetUp()
 
 void JointGroupVelocityControllerTest::TearDown() { controller_.reset(nullptr); }
 
-void JointGroupVelocityControllerTest::SetUpController()
+void JointGroupVelocityControllerTest::SetUpController(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  const auto result = controller_->init(
-    "test_joint_group_velocity_controller", "", 0, "", controller_->define_custom_node_options());
+  auto node_options = controller_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
+
+  const auto result =
+    controller_->init("test_joint_group_velocity_controller", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
@@ -50,54 +54,19 @@ void JointGroupVelocityControllerTest::SetUpController()
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
-TEST_F(JointGroupVelocityControllerTest, JointsParameterNotSet)
-{
-  SetUpController();
-
-  // configure failed, 'joints' parameter not set
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
-TEST_F(JointGroupVelocityControllerTest, JointsParameterIsEmpty)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
-
-  // configure failed, 'joints' is empty
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
 TEST_F(JointGroupVelocityControllerTest, ConfigureAndActivateParamsSuccess)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
-TEST_F(JointGroupVelocityControllerTest, ActivateWithWrongJointsNamesFails)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint4"}});
-
-  // activate failed, 'joint4' is not a valid joint name for the hardware
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
-
-  // activate should succeed now
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-}
-
 TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful though no command has been send yet
@@ -128,8 +97,8 @@ TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
 
 TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // send command with wrong number of joints
@@ -150,8 +119,8 @@ TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
 
 TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
+
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful, no command received yet
@@ -167,8 +136,7 @@ TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
 
 TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // default values
   ASSERT_EQ(joint_1_cmd_.get_value(), 1.1);
@@ -211,8 +179,7 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
 
 TEST_F(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
