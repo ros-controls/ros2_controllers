@@ -7,7 +7,6 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
-  control_toolbox
   filters
   generate_parameter_library
   geometry_msgs
@@ -16,9 +15,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
 )
 
 find_package(ament_cmake REQUIRED)
@@ -48,9 +44,7 @@ target_link_libraries(force_torque_sensor_broadcaster PUBLIC
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
-                      ${geometry_msgs_TARGETS}
-                      ${tf2_geometry_msgs_TARGETS}
-)
+                      ${geometry_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface force_torque_sensor_broadcaster.xml)
@@ -65,9 +59,9 @@ if(BUILD_TESTING)
   ament_add_gmock(test_load_force_torque_sensor_broadcaster test/test_load_force_torque_sensor_broadcaster.cpp)
   target_include_directories(test_load_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster_parameters
     force_torque_sensor_broadcaster
     controller_manager::controller_manager
+    hardware_interface::hardware_interface
     ros2_control_test_assets::ros2_control_test_assets
   )
 
@@ -79,7 +73,6 @@ if(BUILD_TESTING)
     force_torque_sensor_broadcaster
     force_torque_sensor_broadcaster_parameters
   )
-
 endif()
 
 install(
