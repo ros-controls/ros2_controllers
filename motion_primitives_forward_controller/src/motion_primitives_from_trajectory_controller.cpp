@@ -115,6 +115,15 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
       &MotionPrimitivesFromTrajectoryController::goal_accepted_callback, this,
       std::placeholders::_1));
 
+  planned_trajectory_publisher_ =
+    get_node()->create_publisher<trajectory_msgs::msg::JointTrajectory>(
+      "~/planned_trajectory", rclcpp::QoS(1));
+  planned_poses_publisher_ =
+    get_node()->create_publisher<geometry_msgs::msg::PoseArray>("~/planned_poses", rclcpp::QoS(1));
+  motion_primitive_publisher_ =
+    get_node()->create_publisher<control_msgs::msg::MotionPrimitiveSequence>(
+      "~/approximated_motion_primitives", rclcpp::QoS(1));
+
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -436,11 +445,18 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
 
   sort_to_local_joint_order(trajectory_msg);
 
+  // Publish planned trajectory
+  planned_trajectory_publisher_->publish(*trajectory_msg);
+
   RCLCPP_INFO(
     get_node()->get_logger(), "Received trajectory with %zu points.",
     trajectory_msg->points.size());
 
   const auto & joint_names = trajectory_msg->joint_names;
+
+  geometry_msgs::msg::PoseArray planned_poses_msg;
+  planned_poses_msg.header.stamp = get_node()->now();
+  planned_poses_msg.header.frame_id = "base";
 
   std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> planned_trajectory_data;
   planned_trajectory_data.reserve(trajectory_msg->points.size());
@@ -452,6 +468,7 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     try
     {
       pt.pose = fk_client_->computeFK(joint_names, point.positions, "base", "tool0");
+      planned_poses_msg.poses.push_back(pt.pose);
       RCLCPP_DEBUG(
         get_node()->get_logger(),
         "Tool0 pose: position (%.3f, %.3f, %.3f), orientation [%.3f, %.3f, %.3f, %.3f]",
@@ -464,6 +481,9 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     }
     planned_trajectory_data.push_back(pt);
   }
+  // Publish planned poses
+  planned_poses_publisher_->publish(planned_poses_msg);
+
   control_msgs::msg::MotionPrimitiveSequence motion_sequence;
   switch (approx_mode_)
   {
@@ -488,6 +508,8 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       RCLCPP_WARN(get_node()->get_logger(), "Unknown motion type.");
       break;
   }
+  // Publish approximated motion primitives
+  motion_primitive_publisher_->publish(motion_sequence);
 
   auto add_motions = [this](const control_msgs::msg::MotionPrimitiveSequence & moprim_sequence)
   {

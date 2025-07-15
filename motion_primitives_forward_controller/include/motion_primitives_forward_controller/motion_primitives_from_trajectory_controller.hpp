@@ -34,6 +34,7 @@
 
 #include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "control_msgs/msg/motion_primitive.hpp"
+#include "geometry_msgs/msg/pose_array.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
 #include "motion_primitives_forward_controller/approx_primitives_with_rdp.hpp"
@@ -136,6 +137,11 @@ protected:
   double epsilon_joint_angle_;
   double epsilon_cart_position_;
   double epsilon_cart_angle_;
+
+  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr planned_trajectory_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr planned_poses_publisher_;
+  rclcpp::Publisher<control_msgs::msg::MotionPrimitiveSequence>::SharedPtr
+    motion_primitive_publisher_;
 
   // ############ Function copied from JointTrajectoryController ############
   // TODO(mathias31415): Is there a cleaner solution?
