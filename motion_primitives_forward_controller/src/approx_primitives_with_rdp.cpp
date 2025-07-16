@@ -179,7 +179,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     else
       reason = "unknown";
 
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       rclcpp::get_logger("approx_primitives_with_rdp"),
       "Added LIN Primitive [%zu] (%s): (x,y,z,qx,qy,qz,qw) = (%.4f, %.4f, %.4f, %.4f, %.4f, %.4f, "
       "%.4f), blend_radius = %.4f, move_time = %.4f, velocity = %.4f, acceleration = %.4f",
@@ -309,7 +309,7 @@ MotionSequence approxPtpPrimitivesWithRDP(
     joint_stream << "), blend_radius = " << primitive.blend_radius << ", move_time = " << move_time
                  << ", velocity = " << velocity << ", acceleration = " << acceleration;
 
-    RCLCPP_INFO(rclcpp::get_logger("approx_primitives_with_rdp"), "%s", joint_stream.str().c_str());
+    RCLCPP_DEBUG(rclcpp::get_logger("approx_primitives_with_rdp"), "%s", joint_stream.str().c_str());
   }
 
   motion_sequence.motions = motion_primitives;
