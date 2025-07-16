@@ -24,12 +24,12 @@
 #include <vector>
 
 #include "geometry_msgs/msg/wrench_stamped.hpp"
-#include "gtest/gtest.h"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
+
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
@@ -98,14 +98,6 @@ void ForceTorqueSensorBroadcasterTest::subscribe_and_get_message(
     // check if message has been received
     if (received_msg.get())
     {
-      std::cout << "Received message on topic '" << topic_name << "':" << std::endl;
-      std::cout << "  frame_id: " << received_msg->header.frame_id << std::endl;
-      std::cout << "  force.x: " << received_msg->wrench.force.x << std::endl;
-      std::cout << "  force.y: " << received_msg->wrench.force.y << std::endl;
-      std::cout << "  force.z: " << received_msg->wrench.force.z << std::endl;
-      std::cout << "  torque.x: " << received_msg->wrench.torque.x << std::endl;
-      std::cout << "  torque.y: " << received_msg->wrench.torque.y << std::endl;
-      std::cout << "  torque.z: " << received_msg->wrench.torque.z << std::endl;
       break;
     }
   }
@@ -538,6 +530,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorFilterChain_ActivateDeactivate_Su
 
   // configure and activate success
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->has_filter_chain_, true);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check interface configuration
@@ -565,11 +558,54 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Update_Success)
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster_with_chain");
 
   ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->has_filter_chain_, true);
   ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ASSERT_EQ(
     fts_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+
+  // Dummy wrenches
+  geometry_msgs::msg::WrenchStamped wrench_in;
+  geometry_msgs::msg::WrenchStamped wrench_out;
+
+  wrench_in.wrench.force.x = 1.0;
+  wrench_in.wrench.force.y = 2.0;
+  wrench_in.wrench.force.z = 3.0;
+  wrench_in.wrench.torque.x = 4.0;
+  wrench_in.wrench.torque.y = 5.0;
+  wrench_in.wrench.torque.z = 6.0;
+
+  // Update the filter chain directly (the values from the update are just published)
+  fts_broadcaster_->filter_chain_->update(wrench_in, wrench_out);
+
+  ASSERT_EQ(wrench_out.wrench.force.x, wrench_in.wrench.force.x + 1.0);
+  ASSERT_EQ(wrench_out.wrench.force.y, wrench_in.wrench.force.y + 1.0);
+  ASSERT_EQ(wrench_out.wrench.force.z, wrench_in.wrench.force.z + 1.0);
+  ASSERT_EQ(wrench_out.wrench.torque.x, wrench_in.wrench.torque.x + 1.0);
+  ASSERT_EQ(wrench_out.wrench.torque.y, wrench_in.wrench.torque.y + 1.0);
+  ASSERT_EQ(wrench_out.wrench.torque.z, wrench_in.wrench.torque.z + 1.0);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Publish_Success)
+{
+  SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster_with_chain");
+
+  ASSERT_EQ(fts_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(fts_broadcaster_->has_filter_chain_, true);
+  ASSERT_EQ(fts_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  geometry_msgs::msg::WrenchStamped wrench_msg_filtered;
+  std::string topic_name = "/test_force_torque_sensor_broadcaster_with_chain/wrench_filtered";
+  subscribe_and_get_message(wrench_msg_filtered, topic_name);
+
+  ASSERT_EQ(wrench_msg_filtered.header.frame_id, frame_id_);
+  ASSERT_EQ(wrench_msg_filtered.wrench.force.x, sensor_values_[0] + 1.0);
+  ASSERT_EQ(wrench_msg_filtered.wrench.force.y, sensor_values_[1] + 1.0);
+  ASSERT_EQ(wrench_msg_filtered.wrench.force.z, sensor_values_[2] + 1.0);
+  ASSERT_EQ(wrench_msg_filtered.wrench.torque.x, sensor_values_[3] + 1.0);
+  ASSERT_EQ(wrench_msg_filtered.wrench.torque.y, sensor_values_[4] + 1.0);
+  ASSERT_EQ(wrench_msg_filtered.wrench.torque.z, sensor_values_[5] + 1.0);
 }
 
 int main(int argc, char ** argv)

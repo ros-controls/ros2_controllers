@@ -41,6 +41,9 @@ class FriendForceTorqueSensorBroadcaster
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorStatePublishTest);
 
   FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Configure_Success);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorFilterChain_ActivateDeactivate_Success);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Update_Success);
+  FRIEND_TEST(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Publish_Success);
 };
 
 class ForceTorqueSensorBroadcasterTest : public ::testing::Test
@@ -70,9 +73,6 @@ protected:
 
   void subscribe_and_get_message(
     geometry_msgs::msg::WrenchStamped & wrench_msg, std::string & topic_name);
-
-  void subscribe_additional_frames_and_get_message(
-    const std::string & frame, geometry_msgs::msg::WrenchStamped & wrench_msg);
 };
 
 #endif  // TEST_FORCE_TORQUE_SENSOR_BROADCASTER_HPP_

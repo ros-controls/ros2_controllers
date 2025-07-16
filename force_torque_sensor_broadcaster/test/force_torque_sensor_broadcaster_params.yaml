@@ -1,6 +1,5 @@
 test_force_torque_sensor_broadcaster:
   ros__parameters:
-
     frame_id:  "fts_sensor_frame"
 test_force_torque_sensor_broadcaster_with_chain:
   ros__parameters:
@@ -8,11 +7,5 @@ test_force_torque_sensor_broadcaster_with_chain:
     sensor_name: "fts_sensor"
     sensor_filter_chain:
       filter1:
-        name: gravity_compensation
-        type: control_filters/GravityCompensationWrench
-        params:
-          sensor_frame: ${WRIST_SIDE_PREFIX}_ft_sensor_link
-          world_frame: base_footprint
-          tool:
-            CoG: [-0.0001, 0.0000, 0.0319]
-            mass: 0.776
+        name: dummy
+        type: filters/IncrementFilterWrench
