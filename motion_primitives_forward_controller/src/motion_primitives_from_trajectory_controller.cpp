@@ -99,8 +99,6 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  fk_client_ = std::make_shared<FKClient>();
-
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
@@ -163,6 +161,8 @@ MotionPrimitivesFromTrajectoryController::state_interface_configuration() const
 controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  fk_client_ = std::make_shared<FKClient>();
+
   reset_command_interfaces();
   RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
   return controller_interface::CallbackReturn::SUCCESS;
