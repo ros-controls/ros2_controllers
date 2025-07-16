@@ -207,7 +207,6 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
   {
     case ExecutionState::IDLE:
       print_error_once_ = true;
-      was_executing_ = false;
       break;
     case ExecutionState::EXECUTING:
       if (!was_executing_)
