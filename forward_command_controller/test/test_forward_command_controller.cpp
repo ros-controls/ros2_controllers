@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
