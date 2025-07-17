@@ -42,15 +42,50 @@ from fk_client import FKClient
 def main():
     data_dir = "src/ros2_controllers/motion_primitives_forward_controller/data"
 
-    filename_planned = "trajectory_20250715_114409_planned.csv"
-    filename_executed = "trajectory_20250715_114409_executed.csv"
-    filename_reduced = "trajectory_20250715_114409_reduced_PTP.csv"
-    mode = "joint"
+    # filename_planned = "trajectory_20250715_114409_planned.csv"
+    # filename_executed = "trajectory_20250715_114409_executed.csv"
+    # filename_reduced = "trajectory_20250715_114409_reduced_PTP.csv"
+    # mode = "joint"
 
     # filename_planned = "trajectory_20250715_114057_planned.csv"
     # filename_executed = "trajectory_20250715_114057_executed.csv"
     # filename_reduced = "trajectory_20250715_114057_reduced_LIN.csv"
     # mode = "cartesian"
+
+    # filename_planned = "trajectory_20250716_090701_planned.csv"
+    # filename_executed = "trajectory_20250716_090701_executed.csv"
+    # filename_reduced = "trajectory_20250716_090701_reduced_LIN.csv"
+    # mode = "cartesian"
+
+    # filename_planned = "trajectory_20250716_091324_planned.csv"
+    # filename_executed = "trajectory_20250716_091324_executed.csv"
+    # filename_reduced = "trajectory_20250716_091324_reduced_LIN.csv"
+    # mode = "cartesian"
+
+    # filename_planned = "trajectory_20250716_092410_planned.csv"
+    # filename_executed = "trajectory_20250716_092410_executed.csv"
+    # filename_reduced = "trajectory_20250716_092410_reduced_PTP.csv"
+    # mode = "joint"
+
+    # filename_planned = "trajectory_20250716_093119_planned.csv"
+    # filename_executed = "trajectory_20250716_093119_executed.csv"
+    # filename_reduced = "trajectory_20250716_093119_reduced_PTP.csv"
+    # mode = "joint"
+
+    # filename_planned = "trajectory_20250716_093707_planned.csv"
+    # filename_executed = "trajectory_20250716_093707_executed.csv"
+    # filename_reduced = "trajectory_20250716_093707_reduced_PTP.csv"
+    # mode = "joint"
+
+    # filename_planned = "trajectory_20250716_101518_planned.csv"
+    # filename_executed = "trajectory_20250716_101518_executed.csv"
+    # filename_reduced = "trajectory_20250716_101518_reduced_LIN.csv"
+    # mode = "cartesian"
+
+    filename_planned = "trajectory_20250716_101907_planned.csv"
+    filename_executed = "trajectory_20250716_101907_executed.csv"
+    filename_reduced = "trajectory_20250716_101907_reduced_LIN.csv"
+    mode = "cartesian"
 
     filepath_planned = os.path.join(data_dir, filename_planned)
     filepath_executed = os.path.join(data_dir, filename_executed)
