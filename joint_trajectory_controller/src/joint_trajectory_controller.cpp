@@ -1146,6 +1146,7 @@ void JointTrajectoryController::publish_state(
     state_publisher_legacy_->msg_.desired.velocities = desired_state.velocities;
     state_publisher_legacy_->msg_.desired.accelerations = desired_state.accelerations;
     state_publisher_legacy_->msg_.actual.positions = current_state.positions;
+    state_publisher_legacy_->msg_.actual.time_from_start = current_state.time_from_start;
     state_publisher_legacy_->msg_.error.positions = state_error.positions;
     if (has_velocity_state_interface_)
     {
@@ -1175,6 +1176,7 @@ void JointTrajectoryController::publish_state(
     state_publisher_->msg_.reference.positions = desired_state.positions;
     state_publisher_->msg_.reference.velocities = desired_state.velocities;
     state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
+    state_publisher_->msg_.reference.time_from_start = desired_state.time_from_start;
     state_publisher_->msg_.feedback.positions = current_state.positions;
     // DESIRED and ACTUAL are deprecated in the message but we are still
     // reporting on them
@@ -1183,6 +1185,7 @@ void JointTrajectoryController::publish_state(
     state_publisher_legacy_->msg_.desired.accelerations = desired_state.accelerations;
     state_publisher_legacy_->msg_.actual.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
+    state_publisher_->msg_.feedback.time_from_start = desired_state.time_from_start;
     if (has_velocity_state_interface_)
     {
       state_publisher_->msg_.feedback.velocities = current_state.velocities;
