@@ -218,16 +218,19 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
 
     case ExecutionState::SUCCESS:
       print_error_once_ = true;
-
-      if (realtime_goal_handle_ && was_executing_)
+      if (has_active_goal_ && was_executing_)
       {
-        was_executing_ = false;
-        auto result = std::make_shared<FollowJTrajAction::Result>();
-        result->error_code = FollowJTrajAction::Result::SUCCESSFUL;
-        result->error_string = "Motion primitives executed successfully";
-        realtime_goal_handle_->setSucceeded(result);
-        realtime_goal_handle_.reset();
-        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives executed successfully.");
+        rt_goal_handle_.try_get(
+          [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
+          {
+            was_executing_ = false;
+            auto result = std::make_shared<FollowJTrajAction::Result>();
+            result->error_code = FollowJTrajAction::Result::SUCCESSFUL;
+            result->error_string = "Motion primitives executed successfully";
+            goal_handle->setSucceeded(result);
+            has_active_goal_ = false;
+            RCLCPP_INFO(get_node()->get_logger(), "Motion primitives executed successfully.");
+          });
       }
       break;
 
@@ -235,12 +238,16 @@ controller_interface::return_type MotionPrimitivesFromTrajectoryController::upda
       print_error_once_ = true;
       was_executing_ = false;
 
-      if (realtime_goal_handle_)
+      if (has_active_goal_)
       {
-        auto result = std::make_shared<FollowJTrajAction::Result>();
-        realtime_goal_handle_->setCanceled(result);
-        realtime_goal_handle_.reset();
-        RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
+        rt_goal_handle_.try_get(
+          [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
+          {
+            auto result = std::make_shared<FollowJTrajAction::Result>();
+            goal_handle->setCanceled(result);
+            has_active_goal_ = false;
+            RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
+          });
       }
 
       if (robot_stop_requested_)
@@ -406,6 +413,13 @@ rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_recei
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
+  if (has_active_goal_)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(), "Already has an active goal, rejecting new goal request.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   if (robot_stop_requested_)
   {
     RCLCPP_WARN(get_node()->get_logger(), "Robot requested to stop. Discarding the new command.");
@@ -546,7 +560,12 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
   }
 
   auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  realtime_goal_handle_ = rt_goal;
+  rt_goal_handle_.set(
+    [&](auto & handle)
+    {
+      handle = rt_goal;
+      has_active_goal_ = true;
+    });
 
   rt_goal->execute();
 

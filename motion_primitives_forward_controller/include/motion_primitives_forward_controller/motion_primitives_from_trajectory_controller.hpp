@@ -31,6 +31,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 
 #include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "control_msgs/msg/motion_primitive.hpp"
@@ -112,7 +113,8 @@ protected:
   void goal_accepted_callback(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
-  std::shared_ptr<RealtimeGoalHandle> realtime_goal_handle_;
+  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<RealtimeGoalHandle>> rt_goal_handle_;
+  std::atomic<bool> has_active_goal_ = false;
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(std::chrono::milliseconds(20));
 

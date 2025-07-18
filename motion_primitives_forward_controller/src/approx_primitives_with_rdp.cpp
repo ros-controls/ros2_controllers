@@ -309,7 +309,8 @@ MotionSequence approxPtpPrimitivesWithRDP(
     joint_stream << "), blend_radius = " << primitive.blend_radius << ", move_time = " << move_time
                  << ", velocity = " << velocity << ", acceleration = " << acceleration;
 
-    RCLCPP_DEBUG(rclcpp::get_logger("approx_primitives_with_rdp"), "%s", joint_stream.str().c_str());
+    RCLCPP_DEBUG(
+      rclcpp::get_logger("approx_primitives_with_rdp"), "%s", joint_stream.str().c_str());
   }
 
   motion_sequence.motions = motion_primitives;
