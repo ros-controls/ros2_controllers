@@ -114,10 +114,9 @@ The body twist of the robot can be obtained from the wheel velocities by using t
 Swerve Drive Robots
 ,,,,,,,,,,,,,,,,,,,
 
-The below explains the kinematics of omnidirectional drive robots using four swerve modules, each with independently controlled steering and driving motors. It follows the coordinate conventions defined in `ROS REP 103 <https://www.ros.org/reps/rep-0103.html>`__.
+The below explains the kinematics of omnidirectional drive robots using four swerve modules, each with independently controlled steering and driving motors. It follows the coordinate conventions defined in `REP-103 <https://www.ros.org/reps/rep-0103.html>`__.
 
 .. image:: images/swerve_drive.svg
-   :width: 550
    :align: center
    :alt: Swerve Drive Robot
 
@@ -130,15 +129,16 @@ The below explains the kinematics of omnidirectional drive robots using four swe
 * :math:`w` is the track width (distance between left and right wheels).
 * Red arrows on wheel :math:`i` signify the direction of the wheel's velocity :math:`v_i`.
 
-Each swerve module :math:`i` (for :math:`i = 0, 1, 2, 3`, typically front-left, front-right, back-left, back-right) is located at :math:`(l_{i,x}, l_{i,y})` relative to the center, typically:
-- Front-left: :math:`(l/2, w/2)`
-- Front-right: :math:`(l/2, -w/2)`
-- Back-left: :math:`(-l/2, w/2)`
-- Back-right: :math:`(-l/2, -w/2)`
+Each swerve module :math:`i`, for :math:`i = 0, 1, 2, 3` (typically front-left, front-right, back-left, back-right) is located at :math:`(l_{i,x}, l_{i,y})` relative to the center, typically:
+
+* Front-left: :math:`(l/2, w/2)`
+* Front-right: :math:`(l/2, -w/2)`
+* Back-left: :math:`(-l/2, w/2)`
+* Back-right: :math:`(-l/2, -w/2)`
 
 **Inverse Kinematics**
 
-The necessary wheel velocities and steering angles to achieve a desired body twist are computed by the `SwerveDriveKinematics` class in the `swerve_drive_controller` package. For each module :math:`i` at position :math:`(l_{i,x}, l_{i,y})`, the velocity vector is:
+For each module :math:`i` at position :math:`(l_{i,x}, l_{i,y})`, the velocity vector is:
 
 .. math::
 
@@ -163,7 +163,7 @@ The wheel velocity :math:`v_i` and steering angle :math:`\phi_i` are:
    \phi_i = \arctan2(v_{i,y}, v_{i,x})
 
 
-**Forward Kinematics**
+**Odometry**
 
 The body twist of the robot is computed from the wheel velocities :math:`v_i` and steering angles :math:`\phi_i`. Each module’s velocity components in the body frame are:
 
@@ -182,9 +182,8 @@ The chassis velocities are calculated as:
   \omega_{b,z} = \frac{\sum_{i=0}^{3} (v_{i,y} l_{i,x} - v_{i,x} l_{i,y})}{\sum_{i=0}^{3} (l_{i,x}^2 + l_{i,y}^2)}
 
 
-**Odometry**
 
-The `SwerveDriveKinematics` class updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in the global frame using the computed chassis velocities. The global velocities are:
+Odometry updates the robot’s pose (:math:`x`, :math:`y`, :math:`\theta`) in the global frame using the computed chassis velocities. The global velocities are:
 
 .. math::
 
@@ -194,12 +193,6 @@ The `SwerveDriveKinematics` class updates the robot’s pose (:math:`x`, :math:`
 
    v_{y,\text{global}} = v_{b,x} \sin(\theta) + v_{b,y} \cos(\theta)
 
-The pose is updated via Euler integration over time step :math:`\Delta t`:
-
-.. math::
-
-   \dot{x} = v_{x,\text{global}}, \quad \dot{y} = v_{y,\text{global}}, \quad \dot{\theta} = \omega_{b,z}
-   
 
 Nonholonomic Wheeled Mobile Robots
 .....................................
