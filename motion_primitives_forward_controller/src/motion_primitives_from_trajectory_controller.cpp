@@ -137,7 +137,7 @@ MotionPrimitivesFromTrajectoryController::command_interface_configuration() cons
   // Iterate over all command interfaces from the config yaml file
   for (const auto & interface_name : params_.command_interfaces)
   {
-    command_interfaces_config.names.push_back("motion_primitive/" + interface_name);
+    command_interfaces_config.names.push_back(interface_name);
   }
   return command_interfaces_config;
 }
@@ -153,7 +153,7 @@ MotionPrimitivesFromTrajectoryController::state_interface_configuration() const
   // Iterate over all state interfaces from the config yaml file
   for (const auto & interface_name : params_.state_interfaces)
   {
-    state_interfaces_config.names.push_back("motion_primitive/" + interface_name);
+    state_interfaces_config.names.push_back(interface_name);
   }
   return state_interfaces_config;
 }
