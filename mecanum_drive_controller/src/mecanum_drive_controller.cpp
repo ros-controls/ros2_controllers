@@ -33,16 +33,15 @@ using ControllerReferenceMsg =
 
 // called from RT control loop
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerReferenceMsg> & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+  ControllerReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg->header.stamp = node->now();
-  msg->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+  msg.header.stamp = node->now();
+  msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 
 }  // namespace
@@ -129,9 +128,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  reset_controller_reference_msg(msg, get_node());
-  input_ref_.writeFromNonRT(msg);
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 
   try
   {
@@ -148,19 +146,41 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // Append the tf prefix if there is one
+  std::string tf_prefix = "";
+  if (params_.tf_frame_prefix_enable)
+  {
+    tf_prefix = params_.tf_frame_prefix != "" ? params_.tf_frame_prefix
+                                              : std::string(get_node()->get_namespace());
+
+    // Make sure prefix does not start with '/' and always ends with '/'
+    if (tf_prefix.back() != '/')
+    {
+      tf_prefix = tf_prefix + "/";
+    }
+    if (tf_prefix.front() == '/')
+    {
+      tf_prefix.erase(0, 1);
+    }
+  }
+
+  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const auto base_frame_id = tf_prefix + params_.base_frame_id;
+
   rt_odom_state_publisher_->lock();
   rt_odom_state_publisher_->msg_.header.stamp = get_node()->now();
-  rt_odom_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
+  rt_odom_state_publisher_->msg_.header.frame_id = odom_frame_id;
+  rt_odom_state_publisher_->msg_.child_frame_id = base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
-  auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
+  auto & pose_covariance = rt_odom_state_publisher_->msg_.pose.covariance;
+  auto & twist_covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
   {
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+    pose_covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
+    twist_covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
   rt_odom_state_publisher_->unlock();
 
@@ -182,8 +202,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   rt_tf_odom_state_publisher_->lock();
   rt_tf_odom_state_publisher_->msg_.transforms.resize(1);
   rt_tf_odom_state_publisher_->msg_.transforms[0].header.stamp = get_node()->now();
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = params_.odom_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = params_.base_frame_id;
+  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = odom_frame_id;
+  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = base_frame_id;
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
@@ -207,7 +227,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   controller_state_publisher_->lock();
   controller_state_publisher_->msg_.header.stamp = get_node()->now();
-  controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
+  controller_state_publisher_->msg_.header.frame_id = odom_frame_id;
   controller_state_publisher_->unlock();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
@@ -231,7 +251,7 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
   // Check the timeout condition
   if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
   {
-    input_ref_.writeFromNonRT(msg);
+    input_ref_.set(*msg);
   }
   else
   {
@@ -241,7 +261,9 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       rclcpp::Time(msg->header.stamp).seconds(), age_of_last_command.seconds(),
       ref_timeout_.seconds());
 
-    reset_controller_reference_msg(msg, get_node());
+    ControllerReferenceMsg emtpy_msg;
+    reset_controller_reference_msg(emtpy_msg, get_node());
+    input_ref_.set(emtpy_msg);
   }
 }
 
@@ -298,17 +320,16 @@ MecanumDriveController::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool MecanumDriveController::on_set_chained_mode(bool chained_mode)
-{
-  // Always accept switch to/from chained mode
-  return true || chained_mode;
-}
+bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Set default value in command
-  reset_controller_reference_msg(*(input_ref_.readFromRT()), get_node());
+  // Try to set default value in command.
+  // If this fails, then another command will be received soon anyways.
+  ControllerReferenceMsg emtpy_msg;
+  reset_controller_reference_msg(emtpy_msg, get_node());
+  input_ref_.try_set(emtpy_msg);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -337,41 +358,50 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  auto current_ref = *(input_ref_.readFromRT());
-  const auto age_of_last_command = time - (current_ref)->header.stamp;
+  auto current_ref_op = input_ref_.try_get();
+  if (current_ref_op.has_value())
+  {
+    current_ref_ = current_ref_op.value();
+  }
 
-  // send message only if there is no timeout
+  const auto age_of_last_command = time - current_ref_.header.stamp;
+
+  // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
     if (
-      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
-      !std::isnan(current_ref->twist.angular.z))
+      !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
+      !std::isnan(current_ref_.twist.angular.z))
     {
-      reference_interfaces_[0] = current_ref->twist.linear.x;
-      reference_interfaces_[1] = current_ref->twist.linear.y;
-      reference_interfaces_[2] = current_ref->twist.angular.z;
+      reference_interfaces_[0] = current_ref_.twist.linear.x;
+      reference_interfaces_[1] = current_ref_.twist.linear.y;
+      reference_interfaces_[2] = current_ref_.twist.angular.z;
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
-        current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-        current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+        current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+        current_ref_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+        current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+        input_ref_.try_set(current_ref_);
       }
     }
   }
   else
   {
     if (
-      !std::isnan(current_ref->twist.linear.x) && !std::isnan(current_ref->twist.linear.y) &&
-      !std::isnan(current_ref->twist.angular.z))
+      !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
+      !std::isnan(current_ref_.twist.angular.z))
     {
       reference_interfaces_[0] = 0.0;
       reference_interfaces_[1] = 0.0;
       reference_interfaces_[2] = 0.0;
 
-      current_ref->twist.linear.x = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.linear.y = std::numeric_limits<double>::quiet_NaN();
-      current_ref->twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
+      current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+      input_ref_.try_set(current_ref_);
     }
   }
 

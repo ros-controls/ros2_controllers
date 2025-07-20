@@ -25,6 +25,27 @@
 #include "geometry_msgs/msg/wrench.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+namespace
+{  // utility
+
+// called from RT control loop
+void reset_controller_reference_msg(trajectory_msgs::msg::JointTrajectoryPoint & msg)
+{
+  msg.positions.clear();
+  msg.velocities.clear();
+}
+
+// called from RT control loop
+void reset_wrench_msg(
+  geometry_msgs::msg::WrenchStamped & msg,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+{
+  msg.header.stamp = node->now();
+  msg.wrench = geometry_msgs::msg::Wrench();
+}
+
+}  // namespace
+
 namespace admittance_controller
 {
 
@@ -133,7 +154,6 @@ AdmittanceController::on_export_reference_interfaces()
   reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
   position_reference_ = {};
   velocity_reference_ = {};
-  input_wrench_command_.reset();
 
   // assign reference interfaces
   auto index = 0ul;
@@ -286,7 +306,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   // setup subscribers and publishers
   auto joint_command_callback =
     [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg)
-  { input_joint_command_.writeFromNonRT(msg); };
+  { input_joint_command_.set(*msg); };
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
@@ -307,8 +327,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
             msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
           return;
         }
-        input_wrench_command_.writeFromNonRT(msg);
+        input_wrench_command_.set(msg);
       });
+
   s_publisher_ = get_node()->create_publisher<control_msgs::msg::AdmittanceControllerState>(
     "~/status", rclcpp::SystemDefaultsQoS());
   state_publisher_ =
@@ -390,6 +411,8 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
       return controller_interface::CallbackReturn::ERROR;
     }
   }
+  reset_controller_reference_msg(joint_command_msg_);
+  reset_wrench_msg(wrench_command_msg_, get_node());
 
   // Use current joint_state as a default reference
   last_reference_ = joint_state_;
@@ -408,26 +431,29 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
   {
     return controller_interface::return_type::ERROR;
   }
-
-  joint_command_msg_ = *input_joint_command_.readFromRT();
+  auto joint_command_msg_op = input_joint_command_.try_get();
+  if (joint_command_msg_op.has_value())
+  {
+    joint_command_msg_ = joint_command_msg_op.value();
+  }
 
   // if message exists, load values into references
-  if (joint_command_msg_.get())
+  if (!joint_command_msg_.positions.empty() || !joint_command_msg_.velocities.empty())
   {
     for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
     {
       if (interface == hardware_interface::HW_IF_POSITION)
       {
-        for (size_t i = 0; i < joint_command_msg_->positions.size(); ++i)
+        for (size_t i = 0; i < joint_command_msg_.positions.size(); ++i)
         {
-          position_reference_[i].get() = joint_command_msg_->positions[i];
+          position_reference_[i].get() = joint_command_msg_.positions[i];
         }
       }
       else if (interface == hardware_interface::HW_IF_VELOCITY)
       {
-        for (size_t i = 0; i < joint_command_msg_->velocities.size(); ++i)
+        for (size_t i = 0; i < joint_command_msg_.velocities.size(); ++i)
         {
-          velocity_reference_[i].get() = joint_command_msg_->velocities[i];
+          velocity_reference_[i].get() = joint_command_msg_.velocities[i];
         }
       }
     }
@@ -451,7 +477,13 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   // get all controller inputs
   read_state_from_hardware(joint_state_, ft_values_);
 
-  auto offsetted_ft_values = add_wrenches(ft_values_, input_wrench_command_.readFromRT()->wrench);
+  auto wrench_command_op = input_wrench_command_.try_get();
+  if (wrench_command_op.has_value())
+  {
+    wrench_command_msg_ = wrench_command_op.value();
+  }
+
+  auto offsetted_ft_values = add_wrenches(ft_values_, wrench_command_msg_.wrench);
 
   // apply admittance control to reference to determine desired state
   admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
@@ -497,6 +529,9 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   }
   release_interfaces();
   admittance_->reset(num_joints_);
+
+  reset_controller_reference_msg(joint_command_msg_);
+  reset_wrench_msg(wrench_command_msg_, get_node());
 
   return CallbackReturn::SUCCESS;
 }

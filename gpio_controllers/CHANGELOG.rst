@@ -2,6 +2,33 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.3.0 (2025-07-14)
+------------------
+* Fix cmake deprecation (`#1780 <https://github.com/ros-controls/ros2_controllers/issues/1780>`_)
+* Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
+* Contributors: Christoph Fröhlich, mosfet80
+
+5.2.0 (2025-06-23)
+------------------
+
+5.1.0 (2025-06-11)
+------------------
+* Add missing github_url to rst files (`#1717 <https://github.com/ros-controls/ros2_controllers/issues/1717>`_)
+* Contributors: Christoph Fröhlich
+
+5.0.2 (2025-05-26)
+------------------
+* Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)
+* Contributors: Christoph Fröhlich
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+
 4.24.0 (2025-04-27)
 -------------------
 * Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
