@@ -59,15 +59,29 @@ controller_interface::CallbackReturn GripperActionController::on_init()
 controller_interface::return_type GripperActionController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  auto logger = get_node()->get_logger();
   auto command_struct_rt_op = command_.try_get();
   if (command_struct_rt_op.has_value())
   {
     command_struct_rt_ = command_struct_rt_op.value();
   }
+  const auto current_position_op = joint_position_state_interface_->get().get_optional();
+  if (!current_position_op.has_value())
+  {
+    RCLCPP_DEBUG(logger, "Unable to retrieve current position value");
+    return controller_interface::return_type::OK;
+  }
+  const auto current_velocity_op = joint_velocity_state_interface_->get().get_optional();
+  if (!current_velocity_op.has_value())
+  {
+    RCLCPP_DEBUG(logger, "Unable to retrieve current velocity value");
+    return controller_interface::return_type::OK;
+  }
 
-  const double error_position = command_struct_rt_.position_cmd_ - current_position;
+  const double error_position = command_struct_rt_.position_cmd_ - current_position_op.value();
 
-  check_for_success(get_node()->now(), error_position, current_position, current_velocity);
+  check_for_success(
+    get_node()->now(), error_position, current_position_op.value(), current_velocity_op.value());
 
   if (!joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_))
   {
