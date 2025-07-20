@@ -133,10 +133,10 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
 
   // are the command_itfs updated?
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 3.333333, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[1].get_value(), 3.333333, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[1].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg.header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
@@ -239,10 +239,10 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
 
   // are the command_itfs updated?
-  EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), 3.333333, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[1].get_value(), 3.333333, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[1].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 
   // adjusting to achieve age_of_last_command > ref_timeout
   msg.header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
