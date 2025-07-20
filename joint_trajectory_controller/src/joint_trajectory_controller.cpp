@@ -143,21 +143,26 @@ JointTrajectoryController::state_interface_configuration() const
 controller_interface::return_type JointTrajectoryController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  auto logger = this->get_node()->get_logger();
   if (scaling_state_interface_.has_value())
   {
-    scaling_factor_ = scaling_state_interface_->get().get_value();
+    auto scaling_state_interface_op = scaling_state_interface_->get().get_optional();
+    if (!scaling_state_interface_op.has_value())
+    {
+      RCLCPP_DEBUG(logger, "Unable to retrieve scaling state interface value");
+      return controller_interface::return_type::OK;
+    }
+    scaling_factor_ = scaling_state_interface_op.value();
   }
 
   if (scaling_command_interface_.has_value())
   {
     if (!scaling_command_interface_->get().set_value(scaling_factor_cmd_.load()))
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Could not set speed scaling factor through command interfaces.");
+      RCLCPP_ERROR(logger, "Could not set speed scaling factor through command interfaces.");
     }
   }
 
-  auto logger = this->get_node()->get_logger();
   // update dynamic parameters
   if (param_listener_->try_update_params(params_))
   {
@@ -542,8 +547,12 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
-             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             {
+               auto interface_op = interface.get().get_optional();
+               return !interface_op.has_value() || std::isnan(interface_op.value());
+             }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as state. Therefore needs check for both.
@@ -619,16 +628,28 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   {
     for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      trajectory_point_interface[map_cmd_to_joints_[index]] =
-        joint_interface[index].get().get_value();
+      auto joint_interface_op = joint_interface[index].get().get_optional();
+      if (!joint_interface_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "Unable to retrieve value of joint interface at index %zu",
+          index);
+        return true;
+      }
+      trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_op.value();
     }
+    return true;
   };
 
   auto interface_has_values = [](const auto & joint_interface)
   {
     return std::find_if(
-             joint_interface.begin(), joint_interface.end(), [](const auto & interface)
-             { return std::isnan(interface.get().get_value()); }) == joint_interface.end();
+             joint_interface.begin(), joint_interface.end(),
+             [](const auto & interface)
+             {
+               auto interface_op = interface.get().get_optional();
+               return !interface_op.has_value() || std::isnan(interface_op.value());
+             }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as command.
