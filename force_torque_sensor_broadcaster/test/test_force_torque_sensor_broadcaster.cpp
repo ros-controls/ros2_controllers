@@ -407,7 +407,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Multipl
   for (size_t i = 0; i < 6; ++i)
   {
     ASSERT_EQ(
-      exported_state_interfaces[i]->get_value(),
+      exported_state_interfaces[i]->get_optional().value(),
       sensor_values_[i] * (i < 3 ? force_multipliers[i] : torque_multipliers[i - 3]));
   }
 }
