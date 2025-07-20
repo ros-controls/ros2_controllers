@@ -174,20 +174,20 @@ controller_interface::return_type ForwardControllersBase::update(
     return controller_interface::return_type::ERROR;
   }
 
-  const auto & data = (*joint_commands)->data;
-
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    if (!command_interfaces_[index].set_value(data[index]))
+    const auto & value = joint_commands_.data[index];
+    bool success = command_interfaces_[index].set_value(value);
+
+    if (!success)
     {
       RCLCPP_WARN(
-        logger, "Unable to set the command interface value at index %zu: value = %f", index,
-        data[index]);
+        get_node()->get_logger(),
+        "Unable to set the command interface value at index %zu: value = %f", index, value);
       return controller_interface::return_type::OK;
     }
   }
 
   return controller_interface::return_type::OK;
 }
-
 }  // namespace forward_command_controller
