@@ -183,7 +183,7 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
-
+}
 // Tests controller update_reference_from_subscribers and
 // for position_feedback=false behavior
 // when too old msg is sent i.e age_of_last_command > ref_timeout case
