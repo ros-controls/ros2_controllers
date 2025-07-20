@@ -432,9 +432,11 @@ void GpioCommandController::apply_state_value(
         get_node()->get_logger(), "Unable to retrieve the data from state: %s \n",
         interface_name.c_str());
     }
-
-    state_msg.interface_values[gpio_index].values[interface_index] =
-      state_msg_interface_value_op.value();
+    else
+    {
+      state_msg.interface_values[gpio_index].values[interface_index] =
+        state_msg_interface_value_op.value();
+    }
   }
   catch (const std::exception & e)
   {
