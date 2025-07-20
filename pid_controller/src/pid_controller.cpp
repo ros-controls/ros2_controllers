@@ -486,7 +486,7 @@ controller_interface::return_type PidController::update_and_write_commands(
         RCLCPP_DEBUG(
           get_node()->get_logger(), "Unable to retrieve the state interface value for %s",
           state_interfaces_[i].get_name().c_str());
-        return controller_interface::return_type::OK;
+        continue;
       }
       measured_state_values_[i] = state_interface_value_op.value();
     }

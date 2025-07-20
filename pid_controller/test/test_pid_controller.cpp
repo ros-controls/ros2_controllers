@@ -552,7 +552,8 @@ TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), first_expected_command_value);
+  ASSERT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(), first_expected_command_value);
 
   // turn on feedforward gain
   for (const auto & dof_name : dof_names_)
@@ -568,7 +569,8 @@ TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
     controller_interface::return_type::OK);
 
   // check on result from update
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), second_expected_command_value);
+  ASSERT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(), second_expected_command_value);
 
   // Check updated parameters
   for (const auto & dof_name : dof_names_)
