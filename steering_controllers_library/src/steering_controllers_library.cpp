@@ -530,9 +530,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
       const auto & value = traction_commands[i];
-      bool success = command_interfaces_[i].set_value(value);
 
-      if (!success)
+      if (!command_interfaces_[i].set_value(value))
       {
         RCLCPP_WARN(logger, "Unable to set traction command at index %zu: value = %f", i, value);
         return controller_interface::return_type::OK;
@@ -541,9 +540,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
     {
       const auto & value = steering_commands[i];
-      bool success = command_interfaces_[i + params_.traction_joints_names.size()].set_value(value);
 
-      if (!success)
+      if (!command_interfaces_[i + params_.traction_joints_names.size()].set_value(value))
       {
         RCLCPP_WARN(logger, "Unable to set steering command at index %zu: value = %f", i, value);
         return controller_interface::return_type::OK;

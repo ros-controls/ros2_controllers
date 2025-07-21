@@ -177,9 +177,8 @@ controller_interface::return_type ForwardControllersBase::update(
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
     const auto & value = joint_commands_.data[index];
-    bool success = command_interfaces_[index].set_value(value);
 
-    if (!success)
+    if (!command_interfaces_[index].set_value(value))
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
