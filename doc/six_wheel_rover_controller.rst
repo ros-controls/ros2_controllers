@@ -1,6 +1,6 @@
-.. _doc_six_wheel_steering_controller:
+.. _doc_six_wheel_rover_controller:
 
-six_wheel_steering_controller
+six_wheel_rover_controller
 =============================
 
 This page introduces the kinematic model for a six-wheeled rover featuring four-wheel steering, commonly used in rocker-bogie style vehicles.
