@@ -134,8 +134,8 @@ MotionSequence approxLinPrimitivesWithRDP(
     {
       move_time = trajectory[end_index].time_from_start - trajectory[start_index].time_from_start;
       MotionArgument arg_time;
-      arg_time.argument_name = "move_time";
-      arg_time.argument_value = move_time;
+      arg_time.name = "move_time";
+      arg_time.value = move_time;
       primitive.additional_arguments.push_back(arg_time);
     }
     else
@@ -151,13 +151,13 @@ MotionSequence approxLinPrimitivesWithRDP(
       acceleration = max_acc;
 
       MotionArgument arg_vel;
-      arg_vel.argument_name = "velocity";
-      arg_vel.argument_value = velocity;
+      arg_vel.name = "velocity";
+      arg_vel.value = velocity;
       primitive.additional_arguments.push_back(arg_vel);
 
       MotionArgument arg_acc;
-      arg_acc.argument_name = "acceleration";
-      arg_acc.argument_value = acceleration;
+      arg_acc.name = "acceleration";
+      arg_acc.value = acceleration;
       primitive.additional_arguments.push_back(arg_acc);
     }
 
@@ -262,8 +262,8 @@ MotionSequence approxPtpPrimitivesWithRDP(
       move_time = curr_time - prev_time;
 
       MotionArgument arg_time;
-      arg_time.argument_name = "move_time";
-      arg_time.argument_value = move_time;
+      arg_time.name = "move_time";
+      arg_time.value = move_time;
       primitive.additional_arguments.push_back(arg_time);
     }
     else
@@ -286,13 +286,13 @@ MotionSequence approxPtpPrimitivesWithRDP(
       acceleration = max_acc;
 
       MotionArgument arg_vel;
-      arg_vel.argument_name = "velocity";
-      arg_vel.argument_value = velocity;
+      arg_vel.name = "velocity";
+      arg_vel.value = velocity;
       primitive.additional_arguments.push_back(arg_vel);
 
       MotionArgument arg_acc;
-      arg_acc.argument_name = "acceleration";
-      arg_acc.argument_value = acceleration;
+      arg_acc.name = "acceleration";
+      arg_acc.value = acceleration;
       primitive.additional_arguments.push_back(arg_acc);
     }
 
