@@ -612,8 +612,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
           RCLCPP_DEBUG(
             logger, "Unable to retrieve position feedback data for traction wheel %zu", i);
         }
+        else
+        {
         controller_state_publisher_->msg_.traction_wheels_position.push_back(
           position_state_interface_op.value());
+        }
       }
       else
       {
@@ -623,8 +626,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
           RCLCPP_DEBUG(
             logger, "Unable to retrieve velocity feedback data for traction wheel %zu", i);
         }
+        else
+        {
         controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
           velocity_state_interface_op.value());
+        }
       }
 
       auto velocity_command_interface_op = command_interfaces_[i].get_optional();
@@ -632,8 +638,11 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       {
         RCLCPP_DEBUG(logger, "Unable to retrieve velocity command for traction wheel %zu", i);
       }
+      else
+      {
       controller_state_publisher_->msg_.traction_command.push_back(
         velocity_command_interface_op.value());
+      }
     }
 
     for (size_t i = 0; i < number_of_steering_wheels; ++i)
@@ -650,9 +659,12 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
                                                 : "command interface value",
           i);
       }
+      else
+      {
       controller_state_publisher_->msg_.steer_positions.push_back(state_interface_value_op.value());
       controller_state_publisher_->msg_.steering_angle_command.push_back(
         command_interface_value_op.value());
+      }
     }
 
     controller_state_publisher_->unlockAndPublish();
