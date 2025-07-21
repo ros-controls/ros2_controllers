@@ -550,26 +550,11 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
-    const auto front_left_op = state_interfaces_[FRONT_LEFT].get_optional();
-    const auto front_right_op = state_interfaces_[FRONT_RIGHT].get_optional();
-    const auto rear_right_op = state_interfaces_[REAR_RIGHT].get_optional();
-    const auto rear_left_op = state_interfaces_[REAR_LEFT].get_optional();
 
-    if (
-      !front_left_op.has_value() || !front_right_op.has_value() || !rear_right_op.has_value() ||
-      !rear_left_op.has_value())
-    {
-      RCLCPP_DEBUG(
-        get_node()->get_logger(),
-        "Unable to retrieve the data of state interface of front left or front right or rear left "
-        "or rear right");
-      return controller_interface::return_type::OK;
-    }
-
-    controller_state_publisher_->msg_.front_left_wheel_velocity = front_left_op.value();
-    controller_state_publisher_->msg_.front_right_wheel_velocity = front_right_op.value();
-    controller_state_publisher_->msg_.back_right_wheel_velocity = rear_right_op.value();
-    controller_state_publisher_->msg_.back_left_wheel_velocity = rear_left_op.value();
+    controller_state_publisher_->msg_.front_left_wheel_velocity = wheel_front_left_state_vel;
+    controller_state_publisher_->msg_.front_right_wheel_velocity = wheel_front_right_state_vel;
+    controller_state_publisher_->msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
+    controller_state_publisher_->msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
 
     controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
     controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
