@@ -87,6 +87,7 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   joint_acc_overwrite_ = params_.joint_acc_overwrite;
   cart_vel_overwrite_ = params_.cart_vel_overwrite;
   cart_acc_overwrite_ = params_.cart_acc_overwrite;
+  blend_radius_overwrite_ = params_.blend_radius_overwrite;
 
   // Check if there are exactly 25 command interfaces
   if (params_.command_interfaces.size() != 25)
@@ -527,7 +528,7 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       }
       motion_sequence = approxPtpPrimitivesWithRDP(
         planned_trajectory_data, epsilon_joint_angle_, max_traj_joint_vel_, max_traj_joint_acc_,
-        use_time_not_vel_and_acc_);
+        use_time_not_vel_and_acc_, blend_radius_overwrite_);
       break;
     }
     case ApproxMode::RDP_LIN:
@@ -554,7 +555,7 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       }
       motion_sequence = approxLinPrimitivesWithRDP(
         planned_trajectory_data, epsilon_cart_position_, epsilon_cart_angle_, max_traj_cart_vel_,
-        max_traj_cart_acc_, use_time_not_vel_and_acc_);
+        max_traj_cart_acc_, use_time_not_vel_and_acc_, blend_radius_overwrite_);
       break;
     }
     default:

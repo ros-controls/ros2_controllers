@@ -140,6 +140,8 @@ protected:
   double epsilon_cart_position_;
   double epsilon_cart_angle_;
 
+  double blend_radius_overwrite_;
+
   double joint_vel_overwrite_;
   double joint_acc_overwrite_;
   double max_traj_joint_vel_;

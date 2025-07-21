@@ -40,12 +40,13 @@ struct PlannedTrajectoryPoint
 // Approximate with LIN Primitives in Cartesian Space
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon_position,
-  double epsilon_angle, double cart_vel, double cart_acc, bool use_time_not_vel_and_acc = false);
+  double epsilon_angle, double cart_vel, double cart_acc, bool use_time_not_vel_and_acc = false,
+  double blend_overwrite = -1.0);
 
 // Approximate with PTP Primitives in Joint Space
 MotionSequence approxPtpPrimitivesWithRDP(
   const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon, double joint_vel,
-  double joint_acc, bool use_time_not_vel_and_acc = false);
+  double joint_acc, bool use_time_not_vel_and_acc = false, double blend_overwrite = -1.0);
 
 double calculateBlendRadius(
   const rdp::Point & previous_point, const rdp::Point & current_point,

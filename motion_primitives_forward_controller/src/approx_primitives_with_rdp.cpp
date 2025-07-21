@@ -32,7 +32,7 @@ namespace approx_primitives_with_rdp
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
   double epsilon_position, double epsilon_angle, double cart_vel, double cart_acc,
-  bool use_time_not_vel_and_acc)
+  bool use_time_not_vel_and_acc, double blend_overwrite)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -119,11 +119,18 @@ MotionSequence approxLinPrimitivesWithRDP(
     }
     else
     {
-      const auto & p0 = trajectory[start_index].pose.position;
-      const auto & p1 = trajectory[end_index].pose.position;
-      const auto & p2 = trajectory[sorted_final_indices[i + 1]].pose.position;
-      primitive.blend_radius =
-        calculateBlendRadius({p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, {p2.x, p2.y, p2.z});
+      if (blend_overwrite > 0.0)
+      {
+        primitive.blend_radius = blend_overwrite;
+      }
+      else
+      {
+        const auto & p0 = trajectory[start_index].pose.position;
+        const auto & p1 = trajectory[end_index].pose.position;
+        const auto & p2 = trajectory[sorted_final_indices[i + 1]].pose.position;
+        primitive.blend_radius =
+          calculateBlendRadius({p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, {p2.x, p2.y, p2.z});
+      }
     }
 
     double velocity = -1.0;
@@ -190,7 +197,8 @@ MotionSequence approxLinPrimitivesWithRDP(
 
 MotionSequence approxPtpPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  double epsilon, double joint_vel, double joint_acc, bool use_time_not_vel_and_acc)
+  double epsilon, double joint_vel, double joint_acc, bool use_time_not_vel_and_acc,
+  double blend_overwrite)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -225,20 +233,27 @@ MotionSequence approxPtpPrimitivesWithRDP(
     }
     else
     {
-      size_t prev_index = reduced_indices[i - 1];
-      size_t curr_index = reduced_indices[i];
-      size_t next_index = reduced_indices[i + 1];
+      if (blend_overwrite > 0.0)
+      {
+        primitive.blend_radius = blend_overwrite;
+      }
+      else
+      {
+        size_t prev_index = reduced_indices[i - 1];
+        size_t curr_index = reduced_indices[i];
+        size_t next_index = reduced_indices[i + 1];
 
-      rdp::Point prev_xyz = {
-        trajectory[prev_index].pose.position.x, trajectory[prev_index].pose.position.y,
-        trajectory[prev_index].pose.position.z};
-      rdp::Point curr_xyz = {
-        trajectory[curr_index].pose.position.x, trajectory[curr_index].pose.position.y,
-        trajectory[curr_index].pose.position.z};
-      rdp::Point next_xyz = {
-        trajectory[next_index].pose.position.x, trajectory[next_index].pose.position.y,
-        trajectory[next_index].pose.position.z};
-      primitive.blend_radius = calculateBlendRadius(prev_xyz, curr_xyz, next_xyz);
+        rdp::Point prev_xyz = {
+          trajectory[prev_index].pose.position.x, trajectory[prev_index].pose.position.y,
+          trajectory[prev_index].pose.position.z};
+        rdp::Point curr_xyz = {
+          trajectory[curr_index].pose.position.x, trajectory[curr_index].pose.position.y,
+          trajectory[curr_index].pose.position.z};
+        rdp::Point next_xyz = {
+          trajectory[next_index].pose.position.x, trajectory[next_index].pose.position.y,
+          trajectory[next_index].pose.position.z};
+        primitive.blend_radius = calculateBlendRadius(prev_xyz, curr_xyz, next_xyz);
+      }
     }
 
     double velocity = -1.0;
