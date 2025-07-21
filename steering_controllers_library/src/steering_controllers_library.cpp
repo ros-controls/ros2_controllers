@@ -614,8 +614,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         }
         else
         {
-        controller_state_publisher_->msg_.traction_wheels_position.push_back(
-          position_state_interface_op.value());
+          controller_state_publisher_->msg_.traction_wheels_position.push_back(
+            position_state_interface_op.value());
         }
       }
       else
@@ -628,8 +628,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         }
         else
         {
-        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
-          velocity_state_interface_op.value());
+          controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
+            velocity_state_interface_op.value());
         }
       }
 
@@ -640,8 +640,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       }
       else
       {
-      controller_state_publisher_->msg_.traction_command.push_back(
-        velocity_command_interface_op.value());
+        controller_state_publisher_->msg_.traction_command.push_back(
+          velocity_command_interface_op.value());
       }
     }
 
@@ -661,9 +661,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       }
       else
       {
-      controller_state_publisher_->msg_.steer_positions.push_back(state_interface_value_op.value());
-      controller_state_publisher_->msg_.steering_angle_command.push_back(
-        command_interface_value_op.value());
+        controller_state_publisher_->msg_.steer_positions.push_back(
+          state_interface_value_op.value());
+        controller_state_publisher_->msg_.steering_angle_command.push_back(
+          command_interface_value_op.value());
       }
     }
 
