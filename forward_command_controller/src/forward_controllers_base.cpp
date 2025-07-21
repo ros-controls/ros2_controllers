@@ -182,7 +182,7 @@ controller_interface::return_type ForwardControllersBase::update(
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
-        "Unable to set the command interface value at index %zu: value = %f", index, value);
+        "Unable to set the command interface value %s: value = %f", command_interfaces_[index].get_name().c_str(), value);
       return controller_interface::return_type::OK;
     }
   }

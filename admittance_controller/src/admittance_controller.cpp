@@ -563,10 +563,10 @@ void AdmittanceController::read_state_from_hardware(
   {
     if (has_position_state_interface_)
     {
-      auto state_current_position_op =
+      const auto state_current_position_op =
         state_interfaces_[pos_ind * num_joints_ + joint_ind].get_optional();
       nan_position |=
-        !state_current_position_op.has_value() || std::isnan(state_current_position_op.has_value());
+        !state_current_position_op.has_value() || std::isnan(state_current_position_op.value());
       if (state_current_position_op.has_value())
       {
         state_current.positions[joint_ind] = state_current_position_op.value();
@@ -589,7 +589,7 @@ void AdmittanceController::read_state_from_hardware(
       auto state_current_acceleration_op =
         state_interfaces_[acc_ind * num_joints_ + joint_ind].get_optional();
       nan_acceleration |= !state_current_acceleration_op.has_value() ||
-                          std::isnan(state_current_acceleration_op.has_value());
+                          std::isnan(state_current_acceleration_op.value());
       if (state_current_acceleration_op.has_value())
       {
         state_current.accelerations[joint_ind] = state_current_acceleration_op.value();

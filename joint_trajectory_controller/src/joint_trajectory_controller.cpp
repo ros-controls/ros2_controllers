@@ -471,7 +471,10 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
         RCLCPP_DEBUG(
           logger, "Unable to retrieve joint state interface value for joint at index %zu", index);
       }
-      trajectory_point_interface[index] = joint_state_interface_value_op.value();
+      else
+      {
+        trajectory_point_interface[index] = joint_state_interface_value_op.value();
+      }
     }
   };
   auto assign_point_from_command_interface =
@@ -488,8 +491,11 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
         RCLCPP_DEBUG(
           logger, "Unable to retrieve joint command interface value for joint at index %zu", index);
       }
+      else
+      {
       trajectory_point_interface[map_cmd_to_joints_[index]] =
         joint_command_interface_value_op.value();
+        }
     }
   };
 

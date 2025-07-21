@@ -362,7 +362,10 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   {
     RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
   }
-  command_struct_.position_cmd_ = position_op.value();
+  else
+  {
+    command_struct_.position_cmd_ = position_op.value();
+  }
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
   command_.try_set(command_struct_);
