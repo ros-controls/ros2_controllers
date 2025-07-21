@@ -31,7 +31,8 @@ namespace approx_primitives_with_rdp
 
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  double epsilon_position, double epsilon_angle, bool use_time_not_vel_and_acc)
+  double epsilon_position, double epsilon_angle, double cart_vel, double cart_acc,
+  bool use_time_not_vel_and_acc)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -72,7 +73,7 @@ MotionSequence approxLinPrimitivesWithRDP(
 
     if (end_index - start_index <= 1) continue;  // nothing in between
 
-    // Extract quaternion segment
+    // Extract quaternion segment for RDP
     std::vector<geometry_msgs::msg::Quaternion> quats;
     for (size_t j = start_index; j <= end_index; ++j)
     {
@@ -82,6 +83,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     auto [reduced_quats, reduced_quat_indices] =
       rdp::rdpRecursiveQuaternion(quats, epsilon_angle, start_index);
 
+    // Add new orientation indices to final set
     for (size_t idx : reduced_quat_indices)
     {
       if (final_indices.insert(idx).second)  // true if inserted (i.e., newly added)
@@ -91,6 +93,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     }
   }
 
+  // Sort final indices for ordered primitive generation
   std::vector<size_t> sorted_final_indices(final_indices.begin(), final_indices.end());
   std::sort(sorted_final_indices.begin(), sorted_final_indices.end());
 
@@ -100,10 +103,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     "angle change (epsilon_angle = %.4f).",
     sorted_final_indices.size() - reduced_indices.size(), epsilon_angle);
 
-  // Compute cartesian velocity and acceleration between trajectory points
-  std::vector<double> velocities, accelerations;
-  calculateCartVelAndAcc(trajectory, velocities, accelerations);
-
+  // Generate motion primitives between reduced points
   for (size_t i = 1; i < sorted_final_indices.size(); ++i)
   {
     size_t start_index = sorted_final_indices[i - 1];
@@ -112,10 +112,10 @@ MotionSequence approxLinPrimitivesWithRDP(
     MotionPrimitive primitive;
     primitive.type = MotionPrimitive::LINEAR_CARTESIAN;
 
-    // Blend radius (zero at last point)
+    // Calculate blend radius based on the distance to the next and previous point
     if (i == sorted_final_indices.size() - 1)
     {
-      primitive.blend_radius = 0.0;
+      primitive.blend_radius = 0.0;  // Last point has no blend radius
     }
     else
     {
@@ -130,6 +130,7 @@ MotionSequence approxLinPrimitivesWithRDP(
     double acceleration = -1.0;
     double move_time = -1.0;
 
+    // Use time or velocity+acceleration based on use_time_not_vel_and_acc
     if (use_time_not_vel_and_acc)
     {
       move_time = trajectory[end_index].time_from_start - trajectory[start_index].time_from_start;
@@ -140,16 +141,8 @@ MotionSequence approxLinPrimitivesWithRDP(
     }
     else
     {
-      // Use max velocity and acceleration in the reduced segment (min 0.01)
-      double max_vel = 0.01;
-      double max_acc = 0.01;
-      for (size_t j = start_index + 1; j <= end_index && j - 1 < velocities.size(); ++j)
-        max_vel = std::max(max_vel, velocities[j - 1]);
-      for (size_t j = start_index + 2; j <= end_index && j - 2 < accelerations.size(); ++j)
-        max_acc = std::max(max_acc, accelerations[j - 2]);
-      velocity = max_vel;
-      acceleration = max_acc;
-
+      velocity = cart_vel;
+      acceleration = cart_acc;
       MotionArgument arg_vel;
       arg_vel.name = "velocity";
       arg_vel.value = velocity;
@@ -161,6 +154,7 @@ MotionSequence approxLinPrimitivesWithRDP(
       primitive.additional_arguments.push_back(arg_acc);
     }
 
+    // Add pose to primitive
     PoseStamped pose_stamped;
     pose_stamped.pose = trajectory[end_index].pose;
     primitive.poses.push_back(pose_stamped);
@@ -196,7 +190,7 @@ MotionSequence approxLinPrimitivesWithRDP(
 
 MotionSequence approxPtpPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  double epsilon, bool use_time_not_vel_and_acc)
+  double epsilon, double joint_vel, double joint_acc, bool use_time_not_vel_and_acc)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -209,6 +203,7 @@ MotionSequence approxPtpPrimitivesWithRDP(
     return motion_sequence;
   }
 
+  // Collect joint positions for RDP
   rdp::PointList points;
   for (const auto & pt : trajectory)
   {
@@ -217,18 +212,16 @@ MotionSequence approxPtpPrimitivesWithRDP(
 
   auto [reduced_points, reduced_indices] = rdp::rdpRecursive(points, epsilon);
 
-  // Compute joint velocities and accelerations between trajectory points
-  std::vector<double> joint_velocities, joint_accelerations;
-  calculateJointVelAndAcc(trajectory, joint_velocities, joint_accelerations);
-
+  // Generate motion primitives between reduced joint points
   for (size_t i = 1; i < reduced_points.size(); ++i)
   {
     MotionPrimitive primitive;
     primitive.type = MotionPrimitive::LINEAR_JOINT;
 
+    // Calculate blend radius based on the distance to the next and previous point
     if (i == reduced_points.size() - 1)
     {
-      primitive.blend_radius = 0.0;
+      primitive.blend_radius = 0.0;  // Last point has no blend radius
     }
     else
     {
@@ -252,11 +245,11 @@ MotionSequence approxPtpPrimitivesWithRDP(
     double acceleration = -1.0;
     double move_time = -1.0;
 
-    size_t start_index = reduced_indices[i - 1];
-    size_t end_index = reduced_indices[i];
-
+    // Use time or velocity+acceleration based on use_time_not_vel_and_acc
     if (use_time_not_vel_and_acc)
     {
+      size_t start_index = reduced_indices[i - 1];
+      size_t end_index = reduced_indices[i];
       double prev_time = trajectory[start_index].time_from_start;
       double curr_time = trajectory[end_index].time_from_start;
       move_time = curr_time - prev_time;
@@ -268,22 +261,8 @@ MotionSequence approxPtpPrimitivesWithRDP(
     }
     else
     {
-      // Get max velocity and acceleration in the reduced segment
-      double max_vel = 0.0;
-      double max_acc = 0.0;
-
-      for (size_t j = start_index + 1; j <= end_index && j - 1 < joint_velocities.size(); ++j)
-      {
-        max_vel = std::max(max_vel, joint_velocities[j - 1]);
-      }
-
-      for (size_t j = start_index + 2; j <= end_index && j - 2 < joint_accelerations.size(); ++j)
-      {
-        max_acc = std::max(max_acc, joint_accelerations[j - 2]);
-      }
-
-      velocity = max_vel;
-      acceleration = max_acc;
+      velocity = joint_vel;
+      acceleration = joint_acc;
 
       MotionArgument arg_vel;
       arg_vel.name = "velocity";
@@ -339,10 +318,10 @@ double calculateBlendRadius(
   double min_dist = std::min(dist_prev, dist_next);
   double blend = 0.1 * min_dist;
 
-  // Clamp blend radius to [0, 0.1] with minimum threshold 0.001
+  // Clamp blend radius to [0.001, 0.1]
   if (blend < 0.001)
   {
-    blend = 0.0;
+    blend = 0.001;
   }
   else if (blend > 0.1)
   {
@@ -350,134 +329,6 @@ double calculateBlendRadius(
   }
 
   return blend;
-}
-
-void calculateCartVelAndAcc(
-  const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  std::vector<double> & velocities, std::vector<double> & accelerations)
-{
-  velocities.clear();
-  accelerations.clear();
-
-  size_t num_points = trajectory.size();
-  if (num_points < 2)
-  {
-    RCLCPP_WARN(
-      rclcpp::get_logger("approx_primitives_with_rdp"),
-      "[calculateCartVelAndAcc] Warning: trajectory too short to calculate velocity/acceleration.");
-    return;
-  }
-
-  for (size_t i = 1; i < num_points; ++i)
-  {
-    const auto & previous_position = trajectory[i - 1].pose.position;
-    const auto & current_position = trajectory[i].pose.position;
-
-    double previous_time = trajectory[i - 1].time_from_start;
-    double current_time = trajectory[i].time_from_start;
-    double delta_time = current_time - previous_time;
-
-    if (delta_time <= 0.0)
-    {
-      RCLCPP_WARN(
-        rclcpp::get_logger("approx_primitives_with_rdp"),
-        "[calculateCartVelAndAcc] Warning: non-positive time difference at index %zu", i);
-      velocities.push_back(0.0);
-      continue;
-    }
-
-    double dx = current_position.x - previous_position.x;
-    double dy = current_position.y - previous_position.y;
-    double dz = current_position.z - previous_position.z;
-    double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-
-    double velocity = distance / delta_time;
-    velocities.push_back(velocity);
-  }
-
-  // Accelerations (starts at index 1 because it compares velocities[i] and velocities[i - 1])
-  for (size_t i = 1; i < velocities.size(); ++i)
-  {
-    double time_interval = trajectory[i + 1].time_from_start - trajectory[i].time_from_start;
-
-    if (time_interval <= 0.0)
-    {
-      RCLCPP_WARN(
-        rclcpp::get_logger("approx_primitives_with_rdp"),
-        "[calculateCartVelAndAcc] Warning: non-positive time difference for acceleration at index "
-        "%zu",
-        i);
-      accelerations.push_back(0.0);
-      continue;
-    }
-
-    double delta_velocity = velocities[i] - velocities[i - 1];
-    double acceleration = delta_velocity / time_interval;
-
-    accelerations.push_back(std::abs(acceleration));
-  }
-}
-
-void calculateJointVelAndAcc(
-  const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
-  std::vector<double> & velocities, std::vector<double> & accelerations)
-{
-  velocities.clear();
-  accelerations.clear();
-
-  size_t num_points = trajectory.size();
-  if (num_points < 2)
-  {
-    RCLCPP_WARN(
-      rclcpp::get_logger("approx_primitives_with_rdp"),
-      "[calculateJointVelAndAcc] Warning: trajectory too short to calculate joint "
-      "velocity/acceleration.");
-    return;
-  }
-
-  size_t num_joints = trajectory[0].joint_positions.size();
-
-  // Compute joint velocities (max per timestep across joints)
-  for (size_t i = 1; i < num_points; ++i)
-  {
-    double dt = trajectory[i].time_from_start - trajectory[i - 1].time_from_start;
-    if (dt <= 0.0)
-    {
-      RCLCPP_WARN(
-        rclcpp::get_logger("approx_primitives_with_rdp"),
-        "[calculateJointVelAndAcc] Warning: non-positive time diff at index %zu", i);
-      velocities.push_back(0.0);
-      continue;
-    }
-
-    double max_joint_vel = 0.0;
-    for (size_t j = 0; j < num_joints; ++j)
-    {
-      double dq = trajectory[i].joint_positions[j] - trajectory[i - 1].joint_positions[j];
-      double vel = std::abs(dq / dt);
-      if (vel > max_joint_vel) max_joint_vel = vel;
-    }
-
-    velocities.push_back(max_joint_vel);
-  }
-
-  // Compute joint accelerations (max per timestep across joints)
-  for (size_t i = 1; i < velocities.size(); ++i)
-  {
-    double dt = trajectory[i + 1].time_from_start - trajectory[i].time_from_start;
-    if (dt <= 0.0)
-    {
-      RCLCPP_WARN(
-        rclcpp::get_logger("approx_primitives_with_rdp"),
-        "[calculateJointVelAndAcc] Warning: non-positive time diff for acceleration at index %zu",
-        i);
-      accelerations.push_back(0.0);
-      continue;
-    }
-
-    double dvel = velocities[i] - velocities[i - 1];
-    accelerations.push_back(std::abs(dvel / dt));
-  }
 }
 
 }  // namespace approx_primitives_with_rdp

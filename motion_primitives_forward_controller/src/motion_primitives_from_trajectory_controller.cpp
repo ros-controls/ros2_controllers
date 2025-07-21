@@ -83,6 +83,10 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   epsilon_joint_angle_ = params_.epsilon_joint_angle;
   epsilon_cart_position_ = params_.epsilon_cart_position;
   epsilon_cart_angle_ = params_.epsilon_cart_angle;
+  joint_vel_overwrite_ = params_.joint_vel_overwrite;
+  joint_acc_overwrite_ = params_.joint_acc_overwrite;
+  cart_vel_overwrite_ = params_.cart_vel_overwrite;
+  cart_acc_overwrite_ = params_.cart_acc_overwrite;
 
   // Check if there are exactly 25 command interfaces
   if (params_.command_interfaces.size() != 25)
@@ -433,8 +437,6 @@ rclcpp_action::GoalResponse MotionPrimitivesFromTrajectoryController::goal_recei
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  // TODO(mathias31415): Check if first trajectory point matches the current robot state
-
   RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -472,10 +474,13 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
 
   std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> planned_trajectory_data;
   planned_trajectory_data.reserve(trajectory_msg->points.size());
+  std::vector<double> time_from_start;
+  time_from_start.reserve(planned_trajectory_data.size());
   for (const auto & point : trajectory_msg->points)
   {
     approx_primitives_with_rdp::PlannedTrajectoryPoint pt;
     pt.time_from_start = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9;
+    time_from_start.push_back(pt.time_from_start);
     pt.joint_positions = point.positions;
     try
     {
@@ -503,17 +508,53 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     {
       RCLCPP_INFO(
         get_node()->get_logger(), "Approximating motion primitives with PTP motion primitives.");
+      get_max_traj_joint_vel_and_acc(trajectory_msg, max_traj_joint_vel_, max_traj_joint_acc_);
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Max trajectory joint velocity: %.3f, Max trajectory joint acceleration: %.3f",
+        max_traj_joint_vel_, max_traj_joint_acc_);
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Joint velocity override: %.3f, Joint acceleration override: %.3f", joint_vel_overwrite_,
+        joint_acc_overwrite_);
+      if (joint_vel_overwrite_ > 0.0)
+      {
+        max_traj_joint_vel_ = joint_vel_overwrite_;
+      }
+      if (joint_acc_overwrite_ > 0.0)
+      {
+        max_traj_joint_acc_ = joint_acc_overwrite_;
+      }
       motion_sequence = approxPtpPrimitivesWithRDP(
-        planned_trajectory_data, epsilon_joint_angle_, use_time_not_vel_and_acc_);
+        planned_trajectory_data, epsilon_joint_angle_, max_traj_joint_vel_, max_traj_joint_acc_,
+        use_time_not_vel_and_acc_);
       break;
     }
     case ApproxMode::RDP_LIN:
     {
       RCLCPP_INFO(
         get_node()->get_logger(), "Approximating motion primitives with LIN motion primitives.");
+      get_max_traj_cart_vel_and_acc(
+        planned_poses_msg, time_from_start, max_traj_cart_vel_, max_traj_cart_acc_);
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Max trajectory cartesian velocity: %.3f, Max trajectory cartesian acceleration: %.3f",
+        max_traj_cart_vel_, max_traj_cart_acc_);
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Cartesian velocity override: %.3f, Cartesian acceleration override: %.3f",
+        cart_vel_overwrite_, cart_acc_overwrite_);
+      if (cart_vel_overwrite_ > 0.0)
+      {
+        max_traj_cart_vel_ = cart_vel_overwrite_;
+      }
+      if (cart_acc_overwrite_ > 0.0)
+      {
+        max_traj_cart_acc_ = cart_acc_overwrite_;
+      }
       motion_sequence = approxLinPrimitivesWithRDP(
-        planned_trajectory_data, epsilon_cart_position_, epsilon_cart_angle_,
-        use_time_not_vel_and_acc_);
+        planned_trajectory_data, epsilon_cart_position_, epsilon_cart_angle_, max_traj_cart_vel_,
+        max_traj_cart_acc_, use_time_not_vel_and_acc_);
       break;
     }
     default:
@@ -577,6 +618,91 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
     get_node()->get_logger(),
     "Reduced planned joint trajectory from %zu points to %zu motion primitives.",
     trajectory_msg->points.size(), motion_sequence.motions.size());
+}
+
+void MotionPrimitivesFromTrajectoryController::get_max_traj_joint_vel_and_acc(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg, double & max_vel,
+  double & max_acc)
+{
+  max_vel = 0.0;
+  max_acc = 0.0;
+
+  if (!trajectory_msg)
+  {
+    RCLCPP_WARN(
+      rclcpp::get_logger("MotionPrimitivesFromTrajectoryController"),
+      "Received null trajectory pointer in get_max_traj_joint_vel_and_acc()");
+    return;
+  }
+
+  for (const auto & point : trajectory_msg->points)
+  {
+    for (const auto & vel : point.velocities)
+    {
+      max_vel = std::max(max_vel, std::abs(vel));
+    }
+
+    for (const auto & acc : point.accelerations)
+    {
+      max_acc = std::max(max_acc, std::abs(acc));
+    }
+  }
+}
+
+void MotionPrimitivesFromTrajectoryController::get_max_traj_cart_vel_and_acc(
+  const geometry_msgs::msg::PoseArray & planned_poses_msg,
+  const std::vector<double> & time_from_start, double & max_vel, double & max_acc)
+{
+  max_vel = 0.0;
+  max_acc = 0.0;
+
+  const auto & poses = planned_poses_msg.poses;
+  size_t n = poses.size();
+
+  if (n < 2 || time_from_start.size() != n)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Invalid input: expected at least 2 poses and time_from_start of same size, got %zu poses "
+      "and %zu time values.",
+      n, time_from_start.size());
+    return;
+  }
+
+  std::vector<double> translational_velocities;
+
+  for (size_t i = 1; i < n; ++i)
+  {
+    const auto & p1 = poses[i - 1].position;
+    const auto & p2 = poses[i].position;
+
+    double dt = time_from_start[i] - time_from_start[i - 1];
+    if (dt <= 0.0)
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Invalid time difference between poses: %f", dt);
+      continue;
+    }
+
+    double dx = p2.x - p1.x;
+    double dy = p2.y - p1.y;
+    double dz = p2.z - p1.z;
+    double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+    double vel = dist / dt;
+    translational_velocities.push_back(vel);
+
+    max_vel = std::max(max_vel, vel);
+  }
+
+  for (size_t i = 1; i < translational_velocities.size(); ++i)
+  {
+    double dv = translational_velocities[i] - translational_velocities[i - 1];
+    double dt = time_from_start[i + 1] - time_from_start[i];
+    if (dt <= 0.0) continue;
+
+    double acc = std::abs(dv / dt);
+    max_acc = std::max(max_acc, acc);
+  }
 }
 
 void MotionPrimitivesFromTrajectoryController::sort_to_local_joint_order(

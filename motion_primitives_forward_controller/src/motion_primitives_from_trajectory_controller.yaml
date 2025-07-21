@@ -62,3 +62,33 @@ motion_primitives_forward_controller:
     description: "Epsilon for RDP simplification in Cartesian space (orientation angle threshold).",
     read_only: false
   }
+  blend_radius_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Blend radius overwrite for motion primitives.",
+    read_only: false
+  }
+  joint_vel_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Joint velocity overwrite for motion primitives.",
+    read_only: false
+  }
+  joint_acc_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Joint acceleration overwrite for motion primitives.",
+    read_only: false
+  }
+  cart_vel_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Cartesian velocity overwrite for motion primitives.",
+    read_only: false
+  }
+  cart_acc_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Cartesian acceleration overwrite for motion primitives.",
+    read_only: false
+  }

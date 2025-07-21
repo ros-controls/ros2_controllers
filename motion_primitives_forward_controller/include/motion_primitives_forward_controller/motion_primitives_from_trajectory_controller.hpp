@@ -140,6 +140,21 @@ protected:
   double epsilon_cart_position_;
   double epsilon_cart_angle_;
 
+  double joint_vel_overwrite_;
+  double joint_acc_overwrite_;
+  double max_traj_joint_vel_;
+  double max_traj_joint_acc_;
+  void get_max_traj_joint_vel_and_acc(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+    double & max_traj_joint_vel, double & max_traj_joint_acc);
+  double cart_vel_overwrite_;
+  double cart_acc_overwrite_;
+  double max_traj_cart_vel_;
+  double max_traj_cart_acc_;
+  void get_max_traj_cart_vel_and_acc(
+    const geometry_msgs::msg::PoseArray & planned_poses_msg,
+    const std::vector<double> & time_from_start, double & max_vel, double & max_acc);
+
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr planned_trajectory_publisher_;
   rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr planned_poses_publisher_;
   rclcpp::Publisher<control_msgs::msg::MotionPrimitiveSequence>::SharedPtr
