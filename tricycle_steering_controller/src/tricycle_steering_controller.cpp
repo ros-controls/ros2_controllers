@@ -59,7 +59,7 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
 
     if (
       !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
-      !steering_position_op.value())
+      !steering_position_op.has_value())
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
