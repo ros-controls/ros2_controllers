@@ -546,7 +546,10 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
           get_node()->get_logger(),
           "Unable to retrieve value of joint interface for joint at index %zu", index);
       }
-      trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_value_op.value();
+      else
+      {
+        trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_value_op.value();
+      }
     }
   };
 
@@ -1687,8 +1690,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Time between points %zu and %zu is not strictly increasing, it is %f and %f "
-        "respectively",
+        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
         i - 1, i, previous_traj_time.seconds(),
         rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
       return false;
