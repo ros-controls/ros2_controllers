@@ -79,7 +79,7 @@ Controller Parameters
    * - ``traction_joints``
      - A list of the six drive wheel joint names from the robot's URDF model, in the following order: front-left, front-right, middle-left, middle-right, rear-left, rear-right.
    * - ``steering_joints``
-     - A list of the four corner steering joint names from the robot's URDF model.
+     - A list of the four corner steering joint names from the robot's URDF model, in the following order: front-left, front-right, rear-left, rear-right.
    * - ``d1``
      - Half the front/rear track width (meters). Lateral distance from the longitudinal center to the steering pivot.
    * - ``d2``
