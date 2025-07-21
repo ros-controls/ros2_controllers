@@ -643,11 +643,10 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
         RCLCPP_DEBUG(
           get_node()->get_logger(), "Unable to retrieve value of joint interface at index %zu",
           index);
-        return true;
+        continue;
       }
       trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_op.value();
     }
-    return true;
   };
 
   auto interface_has_values = [](const auto & joint_interface)
