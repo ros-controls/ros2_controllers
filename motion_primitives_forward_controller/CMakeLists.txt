@@ -127,15 +127,6 @@ ament_export_libraries(
 
 ament_package()
 
-install(PROGRAMS
-  motion_primitives_forward_controller/record_moprim_from_traj_data.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-install(PROGRAMS
-  motion_primitives_forward_controller/compare.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
