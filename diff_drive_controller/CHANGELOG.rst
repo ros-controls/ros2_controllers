@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.49.0 (2025-07-21)
+-------------------
 * Update description of limit() function in speed_limiter (backport `#1793 <https://github.com/ros-controls/ros2_controllers/issues/1793>`_) (`#1794 <https://github.com/ros-controls/ros2_controllers/issues/1794>`_)
 * Contributors: mergify[bot]
 
