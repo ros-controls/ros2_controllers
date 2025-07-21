@@ -181,8 +181,8 @@ controller_interface::return_type ForwardControllersBase::update(
     if (!command_interfaces_[index].set_value(value))
     {
       RCLCPP_WARN(
-        get_node()->get_logger(),
-        "Unable to set the command interface value %s: value = %f", command_interfaces_[index].get_name().c_str(), value);
+        get_node()->get_logger(), "Unable to set the command interface value %s: value = %f",
+        command_interfaces_[index].get_name().c_str(), value);
       return controller_interface::return_type::OK;
     }
   }

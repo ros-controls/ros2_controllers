@@ -493,9 +493,9 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       }
       else
       {
-      trajectory_point_interface[map_cmd_to_joints_[index]] =
-        joint_command_interface_value_op.value();
-        }
+        trajectory_point_interface[map_cmd_to_joints_[index]] =
+          joint_command_interface_value_op.value();
+      }
     }
   };
 
