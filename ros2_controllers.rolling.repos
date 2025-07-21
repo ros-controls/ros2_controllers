@@ -14,7 +14,7 @@ repositories:
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
-    version: fix/pid
+    version: ros2-master
   kinematics_interface:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git
