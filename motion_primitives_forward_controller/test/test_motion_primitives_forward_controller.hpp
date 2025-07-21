@@ -164,12 +164,12 @@ protected:
     primitive.blend_radius = blend_radius;
 
     primitive.additional_arguments.resize(3);
-    primitive.additional_arguments[0].argument_name = "velocity";
-    primitive.additional_arguments[0].argument_value = velocity;
-    primitive.additional_arguments[1].argument_name = "acceleration";
-    primitive.additional_arguments[1].argument_value = acceleration;
-    primitive.additional_arguments[2].argument_name = "move_time";
-    primitive.additional_arguments[2].argument_value = move_time;
+    primitive.additional_arguments[0].name = "velocity";
+    primitive.additional_arguments[0].value = velocity;
+    primitive.additional_arguments[1].name = "acceleration";
+    primitive.additional_arguments[1].value = acceleration;
+    primitive.additional_arguments[2].name = "move_time";
+    primitive.additional_arguments[2].value = move_time;
 
     goal_msg.trajectory.motions.push_back(primitive);
 

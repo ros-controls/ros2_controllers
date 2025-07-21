@@ -340,22 +340,21 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
   // Read additional arguments
   for (const auto & arg : current_moprim_.additional_arguments)
   {
-    if (arg.argument_name == "velocity")
+    if (arg.name == "velocity")
     {
-      (void)command_interfaces_[22].set_value(arg.argument_value);
+      (void)command_interfaces_[22].set_value(arg.value);
     }
-    else if (arg.argument_name == "acceleration")
+    else if (arg.name == "acceleration")
     {
-      (void)command_interfaces_[23].set_value(arg.argument_value);
+      (void)command_interfaces_[23].set_value(arg.value);
     }
-    else if (arg.argument_name == "move_time")
+    else if (arg.name == "move_time")
     {
-      (void)command_interfaces_[24].set_value(arg.argument_value);
+      (void)command_interfaces_[24].set_value(arg.value);
     }
     else
     {
-      RCLCPP_WARN(
-        get_node()->get_logger(), "Unknown additional argument: %s", arg.argument_name.c_str());
+      RCLCPP_WARN(get_node()->get_logger(), "Unknown additional argument: %s", arg.name.c_str());
     }
   }
   return true;
