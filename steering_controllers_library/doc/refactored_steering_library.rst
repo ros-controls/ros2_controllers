@@ -8,7 +8,7 @@ Motivation
 
 The current ``steering_controllers_library`` has a monolithic design that tightly couples the core controller logic with specific kinematic implementations (Bicycle, Tricycle, Ackermann). This architecture presents several challenges:
 
-1.  **Lack of Extensibility:** Adding support for new, more complex kinematic models, such as the six-wheel, four-wheel-steering rover discussed in the six_wheel_steering_controllers.srt, requires modifying the core library itself. This is not a scalable solution.
+1.  **Lack of Extensibility:** Adding support for new, more complex kinematic models, such as the six-wheel, four-wheel-steering rover discussed in the six_wheel_steering_controllers.rst, requires modifying the core library itself. This is not a scalable solution.
 2.  **Configuration Complexity:** The parameter interface is ambiguous and not easily adaptable to different vehicle types.
 3.  **High Maintenance Burden:** The central library becomes increasingly complex with each new model, making it difficult to maintain and debug.
 
