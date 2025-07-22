@@ -97,14 +97,14 @@ CallbackReturn SwerveController::on_init()
   try
   {
     // Declare parameters
-    auto_declare<std::string>("joint_steering_left_front", front_left_axle_joint_name_);
-    auto_declare<std::string>("joint_steering_right_front", front_right_axle_joint_name_);
-    auto_declare<std::string>("joint_steering_left_rear", rear_left_axle_joint_name_);
-    auto_declare<std::string>("joint_steering_right_rear", rear_right_axle_joint_name_);
-    auto_declare<std::string>("joint_wheel_left_front", front_left_wheel_joint_name_);
-    auto_declare<std::string>("joint_wheel_right_front", front_right_wheel_joint_name_);
-    auto_declare<std::string>("joint_wheel_left_rear", rear_left_wheel_joint_name_);
-    auto_declare<std::string>("joint_wheel_right_rear", rear_right_wheel_joint_name_);
+    auto_declare<std::string>("joint_steering_left_front", left_front_axle_joint_name_);
+    auto_declare<std::string>("joint_steering_right_front", right_front_axle_joint_name_);
+    auto_declare<std::string>("joint_steering_left_rear", left_rear_axle_joint_name_);
+    auto_declare<std::string>("joint_steering_right_rear", right_rear_axle_joint_name_);
+    auto_declare<std::string>("joint_wheel_left_front", left_front_wheel_joint_name_);
+    auto_declare<std::string>("joint_wheel_right_front", right_front_wheel_joint_name_);
+    auto_declare<std::string>("joint_wheel_left_rear", left_rear_wheel_joint_name_);
+    auto_declare<std::string>("joint_wheel_right_rear", right_rear_wheel_joint_name_);
     auto_declare<double>("chassis_length", wheel_params_.x_offset);
     auto_declare<double>("chassis_width", wheel_params_.y_offset);
     auto_declare<double>("wheel_radius", wheel_params_.radius);
@@ -118,10 +118,10 @@ CallbackReturn SwerveController::on_init()
     auto_declare<double>("publish_rate", publish_rate_);
     auto_declare<bool>("enable_odom_tf", enable_odom_tf_);
     auto_declare<bool>("open_loop", open_loop_);
-    auto_declare<double>("front_left_velocity_threshold", front_left_velocity_threshold_);
-    auto_declare<double>("front_right_velocity_threshold", front_right_velocity_threshold_);
-    auto_declare<double>("rear_left_velocity_threshold", rear_left_velocity_threshold_);
-    auto_declare<double>("rear_right_velocity_threshold", rear_right_velocity_threshold_);
+    auto_declare<double>("front_left_velocity_threshold", left_front_velocity_threshold_);
+    auto_declare<double>("front_right_velocity_threshold", right_front_velocity_threshold_);
+    auto_declare<double>("rear_left_velocity_threshold", left_rear_velocity_threshold_);
+    auto_declare<double>("rear_right_velocity_threshold", right_rear_velocity_threshold_);
   }
   catch (const std::exception & e)
   {
@@ -134,15 +134,15 @@ InterfaceConfiguration SwerveController::command_interface_configuration() const
 {
   std::vector<std::string> conf_names;
 
-  conf_names.push_back(front_left_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(front_right_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(rear_left_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(rear_right_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(left_front_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(right_front_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(left_rear_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(right_rear_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
 
-  conf_names.push_back(front_left_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(front_right_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(rear_left_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(rear_right_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(left_front_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(right_front_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(left_rear_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(right_rear_axle_joint_name_ + "/" + HW_IF_POSITION);
 
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
@@ -150,15 +150,15 @@ InterfaceConfiguration SwerveController::command_interface_configuration() const
 InterfaceConfiguration SwerveController::state_interface_configuration() const
 {
   std::vector<std::string> conf_names;
-  conf_names.push_back(front_left_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(front_right_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(rear_left_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(rear_right_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(left_front_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(right_front_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(left_rear_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(right_rear_wheel_joint_name_ + "/" + HW_IF_VELOCITY);
 
-  conf_names.push_back(front_left_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(front_right_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(rear_left_axle_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(rear_right_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(left_front_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(right_front_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(left_rear_axle_joint_name_ + "/" + HW_IF_POSITION);
+  conf_names.push_back(right_rear_axle_joint_name_ + "/" + HW_IF_POSITION);
 
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
@@ -169,17 +169,17 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
   auto logger = rclcpp::get_logger("SwerveController");
   try
   {
-    front_left_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_left_front").as_string();
-    front_right_wheel_joint_name_ =
+    left_front_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_left_front").as_string();
+    right_front_wheel_joint_name_ =
       get_node()->get_parameter("joint_wheel_right_front").as_string();
-    rear_left_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_left_rear").as_string();
-    rear_right_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_right_rear").as_string();
-    front_left_axle_joint_name_ =
+    left_rear_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_left_rear").as_string();
+    right_rear_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_right_rear").as_string();
+    left_front_axle_joint_name_ =
       get_node()->get_parameter("joint_steering_left_front").as_string();
-    front_right_axle_joint_name_ =
+    right_front_axle_joint_name_ =
       get_node()->get_parameter("joint_steering_right_front").as_string();
-    rear_left_axle_joint_name_ = get_node()->get_parameter("joint_steering_left_rear").as_string();
-    rear_right_axle_joint_name_ =
+    left_rear_axle_joint_name_ = get_node()->get_parameter("joint_steering_left_rear").as_string();
+    right_rear_axle_joint_name_ =
       get_node()->get_parameter("joint_steering_right_rear").as_string();
     cmd_vel_topic_ = get_node()->get_parameter("cmd_vel_topic").as_string();
     odometry_topic_ = get_node()->get_parameter("odom").as_string();
@@ -195,13 +195,13 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     wheel_params_.radius = get_node()->get_parameter("wheel_radius").as_double();
     wheel_params_.center_of_rotation = get_node()->get_parameter("center_of_rotation").as_double();
 
-    front_left_velocity_threshold_ =
+    left_front_velocity_threshold_ =
       get_node()->get_parameter("front_left_velocity_threshold").as_double();
-    front_right_velocity_threshold_ =
+    right_front_velocity_threshold_ =
       get_node()->get_parameter("front_right_velocity_threshold").as_double();
-    rear_left_velocity_threshold_ =
+    left_rear_velocity_threshold_ =
       get_node()->get_parameter("rear_left_velocity_threshold").as_double();
-    rear_right_velocity_threshold_ =
+    right_rear_velocity_threshold_ =
       get_node()->get_parameter("rear_right_velocity_threshold").as_double();
 
     for (std::size_t i = 0; i < 6; ++i)
@@ -214,57 +214,57 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
       twist_covariance_diagonal_array_[i] = 0.01;
     }
 
-    if (front_left_wheel_joint_name_.empty())
+    if (left_front_wheel_joint_name_.empty())
     {
-      RCLCPP_ERROR(logger, "front_wheel_joint_name is not set");
+      RCLCPP_ERROR(logger, "left_front_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (front_right_wheel_joint_name_.empty())
+    if (right_front_wheel_joint_name_.empty())
     {
-      RCLCPP_ERROR(logger, "front_right_wheel_joint_name is not set");
+      RCLCPP_ERROR(logger, "right_front_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_left_wheel_joint_name_.empty())
+    if (left_rear_wheel_joint_name_.empty())
     {
-      RCLCPP_ERROR(logger, "rear_left_wheel_joint_name is not set");
+      RCLCPP_ERROR(logger, "left_rear_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_right_wheel_joint_name_.empty())
+    if (right_rear_wheel_joint_name_.empty())
     {
-      RCLCPP_ERROR(logger, "rear_right_wheel_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-
-    if (front_left_axle_joint_name_.empty())
-    {
-      RCLCPP_ERROR(logger, "front_axle_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (front_right_axle_joint_name_.empty())
-    {
-      RCLCPP_ERROR(logger, "front_right_axle_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (rear_left_axle_joint_name_.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_left_axle_joint_name_ is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (rear_right_axle_joint_name_.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_right_axle_joint_name_ is not set");
+      RCLCPP_ERROR(logger, "right_rear_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
 
-    wheel_joint_names[0] = front_left_wheel_joint_name_;
-    wheel_joint_names[1] = front_right_wheel_joint_name_;
-    wheel_joint_names[2] = rear_left_wheel_joint_name_;
-    wheel_joint_names[3] = rear_right_wheel_joint_name_;
+    if (left_front_axle_joint_name_.empty())
+    {
+      RCLCPP_ERROR(logger, "left_front_axle_joint_name is not set");
+      return CallbackReturn::ERROR;
+    }
+    if (right_front_axle_joint_name_.empty())
+    {
+      RCLCPP_ERROR(logger, "right_front_axle_joint_name is not set");
+      return CallbackReturn::ERROR;
+    }
+    if (left_rear_axle_joint_name_.empty())
+    {
+      RCLCPP_ERROR(logger, "left_rear_axle_joint_name_ is not set");
+      return CallbackReturn::ERROR;
+    }
+    if (right_rear_axle_joint_name_.empty())
+    {
+      RCLCPP_ERROR(logger, "right_rear_axle_joint_name_ is not set");
+      return CallbackReturn::ERROR;
+    }
 
-    axle_joint_names[0] = front_left_axle_joint_name_;
-    axle_joint_names[1] = front_right_axle_joint_name_;
-    axle_joint_names[2] = rear_left_axle_joint_name_;
-    axle_joint_names[3] = rear_right_axle_joint_name_;
+    wheel_joint_names[0] = left_front_wheel_joint_name_;
+    wheel_joint_names[1] = right_front_wheel_joint_name_;
+    wheel_joint_names[2] = left_rear_wheel_joint_name_;
+    wheel_joint_names[3] = right_rear_wheel_joint_name_;
+
+    axle_joint_names[0] = left_front_axle_joint_name_;
+    axle_joint_names[1] = right_front_axle_joint_name_;
+    axle_joint_names[2] = left_rear_axle_joint_name_;
+    axle_joint_names[3] = right_rear_axle_joint_name_;
 
     cmd_vel_timeout_ = std::chrono::milliseconds(
       static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0));
@@ -477,10 +477,10 @@ controller_interface::return_type SwerveController::update(
     swerveDriveKinematics_.compute_wheel_commands(linear_x_cmd, linear_y_cmd, angular_cmd);
 
   std::vector<std::tuple<WheelCommand &, double, std::string>> wheel_data = {
-    {wheel_command[0], front_left_velocity_threshold_, "front_left_wheel"},
-    {wheel_command[1], front_right_velocity_threshold_, "front_right_wheel"},
-    {wheel_command[2], rear_left_velocity_threshold_, "rear_left_wheel"},
-    {wheel_command[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
+    {wheel_command[0], left_front_velocity_threshold_, "left_front_wheel"},
+    {wheel_command[1], right_front_velocity_threshold_, "right_front_wheel"},
+    {wheel_command[2], left_front_velocity_threshold_, "left_rear_wheel"},
+    {wheel_command[3], right_front_velocity_threshold_, "right_rear_wheel"}};
 
   for (const auto & [wheel_command_, threshold, label] : wheel_data)
   {

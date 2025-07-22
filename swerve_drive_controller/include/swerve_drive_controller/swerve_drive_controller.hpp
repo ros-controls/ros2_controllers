@@ -121,15 +121,15 @@ protected:
   std::vector<std::unique_ptr<Axle>> axle_handles_;
 
   // Joint names for wheels and axles
-  std::string front_left_wheel_joint_name_;
-  std::string front_right_wheel_joint_name_;
-  std::string rear_left_wheel_joint_name_;
-  std::string rear_right_wheel_joint_name_;
+  std::string left_front_wheel_joint_name_;
+  std::string right_front_wheel_joint_name_;
+  std::string left_rear_wheel_joint_name_;
+  std::string right_rear_wheel_joint_name_;
 
-  std::string front_left_axle_joint_name_;
-  std::string front_right_axle_joint_name_;
-  std::string rear_left_axle_joint_name_;
-  std::string rear_right_axle_joint_name_;
+  std::string left_front_axle_joint_name_;
+  std::string right_front_axle_joint_name_;
+  std::string left_rear_axle_joint_name_;
+  std::string right_rear_axle_joint_name_;
 
   std::array<std::string, 4> wheel_joint_names{};
   std::array<std::string, 4> axle_joint_names{};
@@ -142,10 +142,10 @@ protected:
   bool open_loop_ = false;
   bool use_stamped_vel_ = false;
 
-  double front_left_velocity_threshold_;
-  double front_right_velocity_threshold_;
-  double rear_left_velocity_threshold_;
-  double rear_right_velocity_threshold_;
+  double left_front_velocity_threshold_;
+  double right_front_velocity_threshold_;
+  double left_rear_velocity_threshold_;
+  double right_rear_velocity_threshold_;
 
   SwerveDriveKinematics swerveDriveKinematics_;
 
