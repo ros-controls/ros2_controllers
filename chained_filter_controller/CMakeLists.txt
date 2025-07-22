@@ -1,11 +1,10 @@
 # cmake_minimum_required and project setup
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(chained_filter_controller)
 
-# Enable warnings
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 # Dependencies
 find_package(ament_cmake REQUIRED)

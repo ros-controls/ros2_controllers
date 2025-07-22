@@ -74,11 +74,17 @@ controller_interface::CallbackReturn ChainedFilter::on_activate(const rclcpp_lif
 controller_interface::return_type ChainedFilter::update_and_write_commands(
   const rclcpp::Time &, const rclcpp::Duration &)
 {
-  const auto sensor_value = state_interfaces_[0].get_value();
-
-  if (!std::isnan(sensor_value))
+  const auto sensor_op = state_interfaces_[0].get_optional();
+  if (!sensor_op.has_value())
   {
-    filter_->update(sensor_value, output_state_value_);
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to read sensor value from state interface '%s'.",
+      state_interfaces_[0].get_name().c_str());
+    return controller_interface::return_type::OK;
+  }
+  if (!std::isnan(sensor_op.value()))
+  {
+    filter_->update(sensor_op.value(), output_state_value_);
   }
 
   return controller_interface::return_type::OK;

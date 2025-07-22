@@ -24,7 +24,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-#include "chained_filter_parameters.hpp"
+#include "chained_filter_controller/chained_filter_parameters.hpp"
 
 namespace chained_filter_controller
 {
