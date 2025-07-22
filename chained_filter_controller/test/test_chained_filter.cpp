@@ -26,6 +26,7 @@
 
 using chained_filter_controller::ChainedFilter;
 using controller_interface::CallbackReturn;
+using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
 
@@ -83,6 +84,22 @@ TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
 
   ASSERT_FALSE(controller_->is_in_chained_mode())
     << "No controller is claiming the reference interfaces (it has none).";
+}
+
+TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are_specified)
+{
+  SetUpController(
+    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
+     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  auto state_if_conf = controller_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(1));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  auto cmd_if_conf = controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(0));
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
 }
 
 TEST_F(ChainedFilterTest, UpdateFilter)
