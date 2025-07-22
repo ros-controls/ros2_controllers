@@ -75,6 +75,16 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
    GPS Sensor Broadcaster <../gps_sensor_broadcaster/doc/userdoc.rst>
 
+Filters
+**********************
+
+Chainable controllers for filter state interfaces.
+
+.. toctree::
+   :titlesonly:
+
+   Chained Filter Controller <../chained_filter_controller/doc/userdoc.rst>
+
 Common Controller Parameters
 ****************************
 
