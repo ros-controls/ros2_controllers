@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include <memory>
-#include "chained_filter_controller/chained_filter.hpp"
+
 #include "controller_interface/controller_interface.hpp"
 #include "rclcpp/rclcpp.hpp"
+
+#include "chained_filter_controller/chained_filter.hpp"
 
 using chained_filter_controller::ChainedFilter;
 using controller_interface::CallbackReturn;
