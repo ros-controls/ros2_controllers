@@ -78,7 +78,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
 Filters
 **********************
 
-Chainable controllers for filter state interfaces.
+Chainable controllers for filtering of state interfaces.
 
 .. toctree::
    :titlesonly:
