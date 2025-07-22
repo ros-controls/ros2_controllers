@@ -176,10 +176,17 @@ controller_interface::return_type ForwardControllersBase::update(
 
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value(joint_commands_.data[index]);
+    const auto & value = joint_commands_.data[index];
+
+    if (!command_interfaces_[index].set_value(value))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Unable to set the command interface value %s: value = %f",
+        command_interfaces_[index].get_name().c_str(), value);
+      return controller_interface::return_type::OK;
+    }
   }
 
   return controller_interface::return_type::OK;
 }
-
 }  // namespace forward_command_controller

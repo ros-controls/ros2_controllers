@@ -213,9 +213,9 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
   // send command
   forward_command_controller::CmdType command_msg;
@@ -228,9 +228,9 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands have been modified
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 30.0);
 }
 
 TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
@@ -256,9 +256,9 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
     controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 }
 
 TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
@@ -278,9 +278,9 @@ TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 }
 
 TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
@@ -291,9 +291,9 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
   // default values
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
   auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -324,9 +324,9 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 30.0);
 }
 
 TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
@@ -337,9 +337,9 @@ TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
   // default values
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
   auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -370,9 +370,9 @@ TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check message containing infinite command value was rejected
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 }
 
 TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
@@ -383,9 +383,9 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
   // default values
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
   auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -420,9 +420,9 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 20);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 30);
 
   node_state = controller_->get_node()->deactivate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -468,9 +468,9 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
     controller_interface::return_type::OK);
 
   // values should not change
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 20);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 30);
 
   // set commands again
   controller_->rt_command_.set(command);
@@ -481,7 +481,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 5.5);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 6.6);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 7.7);
+  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 5.5);
+  ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 6.6);
+  ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 7.7);
 }

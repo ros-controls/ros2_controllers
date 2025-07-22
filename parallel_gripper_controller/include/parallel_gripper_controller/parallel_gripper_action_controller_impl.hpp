@@ -59,26 +59,50 @@ controller_interface::CallbackReturn GripperActionController::on_init()
 controller_interface::return_type GripperActionController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+  auto logger = get_node()->get_logger();
   auto command_struct_rt_op = command_.try_get();
   if (command_struct_rt_op.has_value())
   {
     command_struct_rt_ = command_struct_rt_op.value();
   }
-
-  const double current_position = joint_position_state_interface_->get().get_value();
-  const double current_velocity = joint_velocity_state_interface_->get().get_value();
-  const double error_position = command_struct_rt_.position_cmd_ - current_position;
-
-  check_for_success(get_node()->now(), error_position, current_position, current_velocity);
-
-  joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_);
-  if (speed_interface_.has_value())
+  const auto current_position_op = joint_position_state_interface_->get().get_optional();
+  if (!current_position_op.has_value())
   {
-    speed_interface_->get().set_value(command_struct_rt_.max_velocity_);
+    RCLCPP_DEBUG(logger, "Unable to retrieve current position value");
+    return controller_interface::return_type::OK;
   }
-  if (effort_interface_.has_value())
+  const auto current_velocity_op = joint_velocity_state_interface_->get().get_optional();
+  if (!current_velocity_op.has_value())
   {
-    effort_interface_->get().set_value(command_struct_rt_.max_effort_);
+    RCLCPP_DEBUG(logger, "Unable to retrieve current velocity value");
+    return controller_interface::return_type::OK;
+  }
+
+  const double error_position = command_struct_rt_.position_cmd_ - current_position_op.value();
+
+  check_for_success(
+    get_node()->now(), error_position, current_position_op.value(), current_velocity_op.value());
+
+  if (!joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_))
+  {
+    RCLCPP_WARN(
+      logger, "Unable to set the joint position command to: %f", command_struct_rt_.position_cmd_);
+    return controller_interface::return_type::OK;
+  }
+  if (
+    speed_interface_.has_value() &&
+    !speed_interface_->get().set_value(command_struct_rt_.max_velocity_))
+  {
+    RCLCPP_WARN(logger, "Unable to set the speed command to: %f", command_struct_rt_.max_velocity_);
+
+    return controller_interface::return_type::OK;
+  }
+  if (
+    effort_interface_.has_value() &&
+    !effort_interface_->get().set_value(command_struct_rt_.max_effort_))
+  {
+    RCLCPP_WARN(logger, "Unable to set the effort command to: %f", command_struct_rt_.max_effort_);
+    return controller_interface::return_type::OK;
   }
 
   return controller_interface::return_type::OK;
@@ -176,7 +200,12 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
 
 void GripperActionController::set_hold_position()
 {
-  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
+  const auto position_op = joint_position_state_interface_->get().get_optional();
+  if (!position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
+  }
+  command_struct_.position_cmd_ = position_op.value();
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
   command_.set(command_struct_);
@@ -327,8 +356,16 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
     }
   }
 
-  // Command
-  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
+  // Command - non RT version
+  const auto position_op = joint_position_state_interface_->get().get_optional();
+  if (!position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
+  }
+  else
+  {
+    command_struct_.position_cmd_ = position_op.value();
+  }
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
   command_.try_set(command_struct_);
