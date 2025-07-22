@@ -26,7 +26,6 @@ controller_interface::CallbackReturn ChainedFilter::on_init()
   try
   {
     param_listener_ = std::make_shared<chained_filter::ParamListener>(get_node());
-    params_ = param_listener_->get_params();
     filter_ = std::make_unique<filters::FilterChain<double>>("double");
   }
   catch (const std::exception & e)
@@ -50,18 +49,25 @@ controller_interface::InterfaceConfiguration ChainedFilter::state_interface_conf
 
 controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_lifecycle::State &)
 {
-  params_ = param_listener_->get_params();
-
-  if (!filter_->configure(
-        "filter_chain", get_node()->get_node_logging_interface(),
-        get_node()->get_node_parameters_interface()))
+  try
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Failed to configure filter chain. Check the parameters for filters setup.");
-    return controller_interface::CallbackReturn::FAILURE;
-  }
+    params_ = param_listener_->get_params();
 
+    if (!filter_->configure(
+          "filter_chain", get_node()->get_node_logging_interface(),
+          get_node()->get_node_parameters_interface()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Failed to configure filter chain. Check the parameters for filters setup.");
+      return controller_interface::CallbackReturn::FAILURE;
+    }
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(stderr, "Exception thrown during configure stage with message: %s \n", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

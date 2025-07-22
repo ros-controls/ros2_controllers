@@ -1,12 +1,18 @@
 chained_filter:
   input_interface:
     type: string
-    default_value: "joint1/position"
+    default_value: ""
     description: "Name of the input state interface"
+    validation: {
+      not_empty<>: []
+    }
   output_interface:
     type: string
-    default_value: "filtered_position"
+    default_value: ""
     description: "Name of the output state interface"
+    validation: {
+      not_empty<>: []
+    }
   filter_chain: {
     type: none,
     description: "Map of parameters that defines a filter chain, containing filterN as key. The fields for each filter are:

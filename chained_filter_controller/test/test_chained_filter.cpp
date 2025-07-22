@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "test_chained_filter.hpp"
+
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <utility>
 
 #include "controller_interface/controller_interface.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -24,74 +27,80 @@
 using chained_filter_controller::ChainedFilter;
 using controller_interface::CallbackReturn;
 
-class ChainedFilterControllerTest : public ::testing::Test
-{
-protected:
-  void SetUp() override { controller_ = std::make_shared<ChainedFilter>(); }
-  static void TearDownTestCase() { rclcpp::shutdown(); }
+using hardware_interface::LoanedStateInterface;
 
-  std::shared_ptr<ChainedFilter> controller_;
-};
+void ChainedFilterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-TEST_F(ChainedFilterControllerTest, InitReturnsSuccess)
+void ChainedFilterTest::TearDownTestCase() { rclcpp::shutdown(); }
+
+void ChainedFilterTest::SetUp()
 {
-  const auto ret =
-    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
+  // initialize controller
+  controller_ = std::make_unique<FriendChainedFilter>();
 }
 
-TEST_F(ChainedFilterControllerTest, ConfigureReturnsFailureWithNoParams)
+void ChainedFilterTest::TearDown() { controller_.reset(nullptr); }
+
+void ChainedFilterTest::SetUpController(const std::vector<rclcpp::Parameter> & parameters)
 {
-  // Initialize the controller
-  const auto ret =
-    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
+  auto node_options = controller_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
 
-  // We do NOT declare any filter parameters — this mimics a misconfigured user setup
-  // The expectation is that configuration fails gracefully (not segfault)
+  const auto result = controller_->init("test_chained_filter", "", 0, "", node_options);
+  ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  auto result = controller_->on_configure(rclcpp_lifecycle::State{});
-  EXPECT_EQ(result, controller_interface::CallbackReturn::SUCCESS);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_);
+  controller_->assign_interfaces({}, std::move(state_ifs));
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
-TEST_F(ChainedFilterControllerTest, ActivateReturnsSuccessWithoutError)
+TEST_F(ChainedFilterTest, InitReturnsSuccess)
 {
-  const auto init_result =
-    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
-  ASSERT_EQ(init_result, controller_interface::return_type::OK);
+  SetUpController(
+    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
+     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
+}
+
+TEST_F(ChainedFilterTest, InitFailureWithNoParams)
+{
+  const auto result =
+    controller_->init("test_chained_filter", "", 0, "", controller_->define_custom_node_options());
+  EXPECT_EQ(result, controller_interface::return_type::ERROR);
+}
+
+TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
+{
+  SetUpController(
+    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
+     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
 
   auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
   EXPECT_EQ(configure_result, CallbackReturn::SUCCESS);  // Expected because no params loaded
 
   auto activate_result = controller_->on_activate(rclcpp_lifecycle::State());
   EXPECT_EQ(activate_result, CallbackReturn::SUCCESS);
+
+  ASSERT_FALSE(controller_->is_in_chained_mode())
+    << "No controller is claiming the reference interfaces (it has none).";
 }
 
-TEST_F(ChainedFilterControllerTest, DeactivateDoesNotCrash)
+TEST_F(ChainedFilterTest, UpdateFilter)
+{
+  // TODO(anyone): Implement a test that checks if the filter updates correctly.
+}
+
+TEST_F(ChainedFilterTest, DeactivateDoesNotCrash)
 {
   EXPECT_NO_THROW({ controller_->on_deactivate(rclcpp_lifecycle::State()); });
 }
 
-TEST_F(ChainedFilterControllerTest, CleanupDoesNotCrash)
+TEST_F(ChainedFilterTest, CleanupDoesNotCrash)
 {
   EXPECT_NO_THROW({ controller_->on_cleanup(rclcpp_lifecycle::State()); });
 }
 
-TEST_F(ChainedFilterControllerTest, ShutdownDoesNotCrash)
+TEST_F(ChainedFilterTest, ShutdownDoesNotCrash)
 {
   EXPECT_NO_THROW({ controller_->on_shutdown(rclcpp_lifecycle::State()); });
-}
-
-int main(int argc, char ** argv)
-{
-  // Initialize ROS 2
-  rclcpp::init(argc, argv);
-
-  // Run all the tests
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-
-  // Shutdown ROS 2
-  rclcpp::shutdown();
-  return result;
 }
