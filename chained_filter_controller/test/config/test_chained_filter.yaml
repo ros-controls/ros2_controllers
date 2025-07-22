@@ -5,6 +5,6 @@ test_chained_filter:
         name: filter1
         type: "filters/MeanFilterDouble"
         params:
-          number_of_observations: 10
+          number_of_observations: 2
     input_interface: "wheel_left/position"
     output_interface: "wheel_left/filtered_position"

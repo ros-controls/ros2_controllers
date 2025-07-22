@@ -57,13 +57,16 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
-
-  ament_add_gmock(test_chained_filter_controller
-    test/test_chained_filter.cpp)
+  add_rostest_with_parameters_gmock(test_chained_filter_controller
+    test/test_chained_filter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_chained_filter.yaml
+  )
   target_link_libraries(test_chained_filter_controller
     ${PROJECT_NAME}
+    chained_filter_parameters
   )
+
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_chained_filter_controller test/test_load_chained_filter_controller.cpp)
   target_link_libraries(test_load_chained_filter_controller
     controller_manager::controller_manager

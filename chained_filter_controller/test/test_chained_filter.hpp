@@ -44,7 +44,9 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpController(const std::vector<rclcpp::Parameter> & parameters = {});
+  void SetUpController(
+    const std::string node_name = "test_chained_filter",
+    const std::vector<rclcpp::Parameter> & parameters = {});
 
 protected:
   std::unique_ptr<FriendChainedFilter> controller_;

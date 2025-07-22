@@ -30,9 +30,9 @@ using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
 
-void ChainedFilterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
+void ChainedFilterTest::SetUpTestCase() { /*rclcpp::init(0, nullptr);*/ }
 
-void ChainedFilterTest::TearDownTestCase() { rclcpp::shutdown(); }
+void ChainedFilterTest::TearDownTestCase() { /*rclcpp::shutdown(); */ }
 
 void ChainedFilterTest::SetUp()
 {
@@ -42,12 +42,13 @@ void ChainedFilterTest::SetUp()
 
 void ChainedFilterTest::TearDown() { controller_.reset(nullptr); }
 
-void ChainedFilterTest::SetUpController(const std::vector<rclcpp::Parameter> & parameters)
+void ChainedFilterTest::SetUpController(
+  const std::string node_name, const std::vector<rclcpp::Parameter> & parameters)
 {
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
 
-  const auto result = controller_->init("test_chained_filter", "", 0, "", node_options);
+  const auto result = controller_->init(node_name, "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -56,25 +57,18 @@ void ChainedFilterTest::SetUpController(const std::vector<rclcpp::Parameter> & p
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
-TEST_F(ChainedFilterTest, InitReturnsSuccess)
-{
-  SetUpController(
-    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
-     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
-}
+TEST_F(ChainedFilterTest, InitReturnsSuccess) { SetUpController(); }
 
 TEST_F(ChainedFilterTest, InitFailureWithNoParams)
 {
-  const auto result =
-    controller_->init("test_chained_filter", "", 0, "", controller_->define_custom_node_options());
+  const auto result = controller_->init(
+    "test_chained_filter_no_params", "", 0, "", controller_->define_custom_node_options());
   EXPECT_EQ(result, controller_interface::return_type::ERROR);
 }
 
 TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
 {
-  SetUpController(
-    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
-     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
+  SetUpController();
 
   auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
   EXPECT_EQ(configure_result, CallbackReturn::SUCCESS);  // Expected because no params loaded
@@ -88,9 +82,7 @@ TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
 
 TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are_specified)
 {
-  SetUpController(
-    {rclcpp::Parameter("input_interface", std::string("wheel_left/position")),
-     rclcpp::Parameter("output_interface", std::string("wheel_left/position/filtered"))});
+  SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -100,11 +92,41 @@ TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(0));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
+
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "wheel_left/filtered_position");
+  EXPECT_EQ(state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter");
 }
 
 TEST_F(ChainedFilterTest, UpdateFilter)
 {
-  // TODO(anyone): Implement a test that checks if the filter updates correctly.
+  SetUpController();
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
+    controller_interface::return_type::OK);
+  // input state interface should not change
+  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  // output should be the same
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+
+  ASSERT_TRUE(joint_1_pos_.set_value(2.0));
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
+    controller_interface::return_type::OK);
+  // input and output should have changed
+  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
+    controller_interface::return_type::OK);
+  // output should have reached steady state (mean filter)
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 }
 
 TEST_F(ChainedFilterTest, DeactivateDoesNotCrash)
@@ -120,4 +142,13 @@ TEST_F(ChainedFilterTest, CleanupDoesNotCrash)
 TEST_F(ChainedFilterTest, ShutdownDoesNotCrash)
 {
   EXPECT_NO_THROW({ controller_->on_shutdown(rclcpp_lifecycle::State()); });
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
