@@ -1,4 +1,4 @@
-<library path="libchained_filter_controller">
+<library path="chained_filter_controller">
   <class name="chained_filter_controller/ChainedFilter"
          type="chained_filter_controller::ChainedFilter"
          base_class_type="controller_interface::ChainableControllerInterface">
