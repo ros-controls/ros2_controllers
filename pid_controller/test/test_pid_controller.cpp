@@ -46,8 +46,8 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i, 2.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].d, 3.0);
     ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].antiwindup);
-    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_max, 5.0);
-    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_min, -5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_max, 5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_min, -5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
   }
   ASSERT_EQ(controller_->params_.command_interface, command_interface_);
@@ -274,7 +274,7 @@ TEST_F(PidControllerTest, test_feedforward_mode_parameter)
 
 TEST_F(PidControllerTest, test_update_logic_feedforward_off)
 {
-  SetUpController();
+  SetUpController("test_pid_controller_unlimited");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
   executor.add_node(service_caller_node_->get_node_base_interface());
@@ -372,10 +372,10 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
     // check the command value:
     // ref = 101.101, state = 1.1, ds = 0.01
     // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-    // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
+    // p_term = 100.001 * 1, i_term = 0.0 at first update call, d_term = error/ds = 10000.1 * 3
     // feedforward ON, feedforward_gain = 0
-    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.3 + 0 * 101.101 = 30102.3
-    const double expected_command_value = 30102.301020;
+    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30100.3 + 0 * 101.101 = 30102.3
+    const double expected_command_value = 30100.301000;
 
     double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
     EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -390,7 +390,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
 
 TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
 {
-  SetUpController();
+  SetUpController("test_pid_controller_unlimited");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
   executor.add_node(service_caller_node_->get_node_base_interface());
@@ -429,12 +429,19 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   // ref = 5.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
   // error = ref - state =  5.0 - 1.1 = 3.9, error_dot = error/ds = 3.9/0.01 = 390.0,
   // p_term = error * p_gain = 3.9 * 1.0 = 3.9,
-  // i_term = error * ds * i_gain = 3.9 * 0.01 * 2.0 = 0.078,
+  // i_term = zero at first update
   // d_term = error_dot * d_gain = 390.0 * 3.0 = 1170.0
   // feedforward OFF -> cmd = p_term + i_term + d_term = 3.9 + 0.078 + 1170.0 = 1173.978
+<<<<<<< HEAD
   const double expected_command_value = 1173.978;
 
   EXPECT_EQ(controller_->command_interfaces_[0].get_value(), expected_command_value);
+=======
+  {
+    const double expected_command_value = 1173.9;
+    EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
+  }
+>>>>>>> bf253f1 (Change the tests to work without deprecated PID settings (#1824))
 }
 
 /**
@@ -442,7 +449,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
  */
 TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
 {
-  SetUpController();
+  SetUpController("test_pid_controller_unlimited");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
   executor.add_node(service_caller_node_->get_node_base_interface());
@@ -451,7 +458,7 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_names_[0]].angle_wraparound);
 
-  // write reference interface so that the values are would be wrapped
+  // write reference interface so that the values would be wrapped
   controller_->reference_interfaces_[0] = 10.0;
 
   // run update
@@ -460,8 +467,20 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
     controller_interface::return_type::OK);
 
   // check the result of the commands - the values are not wrapped
+<<<<<<< HEAD
   const double expected_command_value = 2679.078;
   EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
+=======
+  // ref = 10.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
+  // error = ref - state =  10.0 - 1.1 = 8.9, error_dot = error/ds = 8.9/0.01 = 890.0,
+  // p_term = error * p_gain = 8.9 * 1.0 = 8.9,
+  // i_term = zero at first update
+  // d_term = error_dot * d_gain = 890.0 * 3.0 = 2670.0
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 8.9 + 0.0 + 2670.0 = 2678.9
+  const double expected_command_value = 2678.9;
+  EXPECT_NEAR(
+    controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
+>>>>>>> bf253f1 (Change the tests to work without deprecated PID settings (#1824))
 }
 
 /**
@@ -490,9 +509,21 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
+<<<<<<< HEAD
   // Check the command value
   const double expected_command_value = 787.713559;
   EXPECT_NEAR(controller_->command_interfaces_[0].get_value(), expected_command_value, 1e-5);
+=======
+  // Check the command value with wrapped error
+  // ref = 10.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
+  // error = ref - state =  wrap(10.0 - 1.1) = 8.9-2*pi = 2.616814, error_dot = error/ds
+  // = 2.6168/0.01 = 261.6814, p_term = error * p_gain = 2.6168 * 1.0 = 2.6168, i_term = zero at
+  // first update d_term = error_dot * d_gain = 261.6814 * 3.0 = 785.0444079 feedforward OFF -> cmd
+  // = p_term + i_term + d_term = 2.616814, + 0.0 + 785.0444079 = 787.6612219
+  const double expected_command_value = 787.6612219;
+  EXPECT_NEAR(
+    controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
+>>>>>>> bf253f1 (Change the tests to work without deprecated PID settings (#1824))
 }
 
 TEST_F(PidControllerTest, subscribe_and_get_messages_success)
@@ -720,9 +751,9 @@ TEST_F(PidControllerTest, test_save_i_term_off)
 
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  const double expected_command_value = 30102.30102;
+  // p_term = 100.001 * 1, i_term = zero at first update, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30100.301
+  const double expected_command_value = 30100.3010;
 
   double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
@@ -770,9 +801,9 @@ TEST_F(PidControllerTest, test_save_i_term_on)
 
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-  // p_term = 100.001 * 1, i_term = 1.00001 * 2 = 2.00002, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.3
-  const double expected_command_value = 30102.30102;
+  // p_term = 100.001 * 1, i_term = zero at first update, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.301
+  const double expected_command_value = 30100.3010;
 
   double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);

@@ -93,10 +93,17 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
     controller_interface::return_type::OK);
 
   // check the commands
+<<<<<<< HEAD
   const double joint1_expected_cmd = 8.915;
   const double joint2_expected_cmd = 9.915;
   ASSERT_EQ(controller_->command_interfaces_[0].get_value(), joint1_expected_cmd);
   ASSERT_EQ(controller_->command_interfaces_[1].get_value(), joint2_expected_cmd);
+=======
+  const double joint1_expected_cmd = 8.90;
+  const double joint2_expected_cmd = 9.90;
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), joint1_expected_cmd);
+  ASSERT_EQ(controller_->command_interfaces_[1].get_optional().value(), joint2_expected_cmd);
+>>>>>>> bf253f1 (Change the tests to work without deprecated PID settings (#1824))
 }
 
 int main(int argc, char ** argv)
