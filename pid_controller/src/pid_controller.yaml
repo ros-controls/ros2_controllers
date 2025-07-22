@@ -135,3 +135,8 @@ pid_controller:
         default_value: true,
         description: "Indicating if integral term is retained after re-activation"
       }
+      activate_state_publisher: {
+        type: bool,
+        default_value: false,
+        description: "Individual state publisher activation for each DOF. If true, the controller will publish the state of each DOF to the topic `/<controller_name>/<dof_name>/pid_state`."
+      }
