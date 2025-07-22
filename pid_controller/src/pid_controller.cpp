@@ -139,9 +139,8 @@ controller_interface::CallbackReturn PidController::configure_parameters()
 
   for (size_t i = 0; i < dof_; ++i)
   {
-    // prefix should be interpreted as parameters prefix
-    pids_[i] =
-      std::make_shared<control_toolbox::PidROS>(get_node(), "gains." + params_.dof_names[i], true);
+    pids_[i] = std::make_shared<control_toolbox::PidROS>(
+      get_node(), "gains." + params_.dof_names[i], "~/" + params_.dof_names[i], false);
     if (!pids_[i]->initialize_from_ros_parameters())
     {
       return CallbackReturn::FAILURE;

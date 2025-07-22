@@ -80,6 +80,9 @@ Services
 Publishers
 ,,,,,,,,,,,
 - <controller_name>/controller_state  [control_msgs/msg/MultiDOFStateStamped]
+- <controller_name>/<dof>/pid_state  [control_msgs/msg/PidState]
+
+Initially the PidState publisher is turned off. It can be turned on by using  ``gains.<dof>.activate_state_publisher`` parameter.
 
 Parameters
 ,,,,,,,,,,,
