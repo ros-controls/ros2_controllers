@@ -69,7 +69,7 @@ pid_controller
   * Output clamping via ``u_clamp_max`` and ``u_clamp_min`` was added, allowing users to bound the controller output.
   * The legacy ``antiwindup`` boolean and integral clamp parameters ``i_clamp_max``/``i_clamp_min`` have been deprecated in favor of the new ``antiwindup_strategy`` parameter. A ``tracking_time_constant`` parameter has also been introduced to configure the back-calculation strategy.
   * A new ``error_deadband`` parameter stops integration when the error is within a specified range.
-<<<<<<< HEAD
+* PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
 
 steering_controllers_library
 ********************************
@@ -91,6 +91,3 @@ gpio_controllers
 force_torque_sensor_broadcaster
 *******************************
 * Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
-=======
-* PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
->>>>>>> 0f51de6 (Apply API change of PidROS (#1823))
