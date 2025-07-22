@@ -77,10 +77,6 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  // turn on feedforward
-  controller_->feedforward_mode_enabled_.writeFromNonRT(true);
-  ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-
   // set up the reference interface,
   controller_->reference_interfaces_ = {
     get_joint1_reference_position(), get_joint2_reference_position(),
@@ -94,8 +90,8 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   // check the commands
   const double joint1_expected_cmd = 8.915;
   const double joint2_expected_cmd = 9.915;
-  ASSERT_EQ(controller_->command_interfaces_[0].get_value(), joint1_expected_cmd);
-  ASSERT_EQ(controller_->command_interfaces_[1].get_value(), joint2_expected_cmd);
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), joint1_expected_cmd);
+  ASSERT_EQ(controller_->command_interfaces_[1].get_optional().value(), joint2_expected_cmd);
 }
 
 int main(int argc, char ** argv)

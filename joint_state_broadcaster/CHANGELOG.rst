@@ -2,6 +2,18 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.3.0 (2025-07-14)
+------------------
+
+5.2.0 (2025-06-23)
+------------------
+
+5.1.0 (2025-06-11)
+------------------
+* Added frame_id to Joint State Broadcaster (`#1746 <https://github.com/ros-controls/ros2_controllers/issues/1746>`_)
+* Fix RST syntax (`#1715 <https://github.com/ros-controls/ros2_controllers/issues/1715>`_)
+* Contributors: Christoph Fröhlich, Jakub "Deli" Delicat
+
 5.0.2 (2025-05-26)
 ------------------
 * Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)

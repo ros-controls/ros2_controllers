@@ -103,13 +103,13 @@ TEST_F(AckermannSteeringControllerTest, activate_success)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
-  EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*msg)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*msg)->twist.linear.z));
-  EXPECT_TRUE(std::isnan((*msg)->twist.angular.x));
-  EXPECT_TRUE(std::isnan((*msg)->twist.angular.y));
-  EXPECT_TRUE(std::isnan((*msg)->twist.angular.z));
+  auto msg = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(msg.twist.linear.x));
+  EXPECT_TRUE(std::isnan(msg.twist.linear.y));
+  EXPECT_TRUE(std::isnan(msg.twist.linear.z));
+  EXPECT_TRUE(std::isnan(msg.twist.angular.x));
+  EXPECT_TRUE(std::isnan(msg.twist.angular.y));
+  EXPECT_TRUE(std::isnan(msg.twist.angular.z));
 }
 
 TEST_F(AckermannSteeringControllerTest, update_success)
@@ -140,9 +140,9 @@ TEST_F(AckermannSteeringControllerTest, reactivate_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -161,11 +161,11 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   // set command statically
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
-  msg->header.stamp = controller_->get_node()->now();
-  msg->twist.linear.x = 0.1;
-  msg->twist.angular.z = 0.2;
-  controller_->input_ref_.writeFromNonRT(msg);
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 0.1;
+  msg.twist.angular.z = 0.2;
+  controller_->input_ref_.set(msg);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -173,19 +173,19 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -213,19 +213,19 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -249,8 +249,9 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_RIGHT_WHEEL], 1.1);
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_LEFT_WHEEL], 3.3);
+  // never received a valid command, linear velocity should have been reset
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 0.0);
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 0.0);
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
   EXPECT_EQ(msg.steering_angle_command[1], 4.4);
 
@@ -263,25 +264,24 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    msg.linear_velocity_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
-  EXPECT_NEAR(
-    msg.linear_velocity_command[CMD_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+    msg.traction_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.traction_command[CMD_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[1], 1.4179821977774734, COMMON_THRESHOLD);
 }

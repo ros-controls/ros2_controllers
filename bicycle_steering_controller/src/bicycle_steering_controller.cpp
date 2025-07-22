@@ -31,25 +31,6 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 {
   bicycle_params_ = bicycle_param_listener_->get_params();
 
-  // TODO(anyone): Remove deprecated parameters
-  // START OF DEPRECATED
-  if (bicycle_params_.front_wheel_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheel_radius' instead");
-    bicycle_params_.traction_wheel_radius = bicycle_params_.front_wheel_radius;
-  }
-
-  if (bicycle_params_.rear_wheel_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheel_radius' instead");
-    bicycle_params_.traction_wheel_radius = bicycle_params_.rear_wheel_radius;
-  }
-  // END OF DEPRECATED
-
   const double wheelbase = bicycle_params_.wheelbase;
   const double traction_wheel_radius = bicycle_params_.traction_wheel_radius;
 
@@ -64,14 +45,27 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 
 bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
 {
+  auto logger = get_node()->get_logger();
+
   if (params_.open_loop)
   {
     odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
-    const double traction_wheel_value = state_interfaces_[STATE_TRACTION_WHEEL].get_value();
-    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    const auto traction_wheel_value_op = state_interfaces_[STATE_TRACTION_WHEEL].get_optional();
+    const auto steering_position_op = state_interfaces_[STATE_STEER_AXIS].get_optional();
+
+    if (!traction_wheel_value_op.has_value() || !steering_position_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        logger, "Unable to retrieve the data from the traction wheel or steering position!");
+      return true;
+    }
+
+    const double traction_wheel_value = traction_wheel_value_op.value();
+    const double steering_position = steering_position_op.value();
+
     if (std::isfinite(traction_wheel_value) && std::isfinite(steering_position))
     {
       if (params_.position_feedback)

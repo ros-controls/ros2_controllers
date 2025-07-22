@@ -33,65 +33,6 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 {
   ackermann_params_ = ackermann_param_listener_->get_params();
 
-  // TODO(anyone): Remove deprecated parameters
-  // START OF DEPRECATED
-  if (ackermann_params_.front_wheels_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheels_radius' instead");
-    ackermann_params_.traction_wheels_radius = ackermann_params_.front_wheels_radius;
-  }
-
-  if (ackermann_params_.rear_wheels_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheels_radius' instead");
-    ackermann_params_.traction_wheels_radius = ackermann_params_.rear_wheels_radius;
-  }
-
-  if (ackermann_params_.front_wheel_track > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheel_track', set 'traction_track_width' or "
-      "'steering_track_width' instead");
-    if (params_.front_steering)
-    {
-      ackermann_params_.steering_track_width = ackermann_params_.front_wheel_track;
-    }
-    else
-    {
-      ackermann_params_.traction_track_width = ackermann_params_.front_wheel_track;
-    }
-  }
-
-  if (ackermann_params_.rear_wheel_track > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheel_track', set 'traction_track_width' or "
-      "'steering_track_width' instead");
-    if (params_.front_steering)
-    {
-      ackermann_params_.traction_track_width = ackermann_params_.rear_wheel_track;
-    }
-    else
-    {
-      ackermann_params_.steering_track_width = ackermann_params_.rear_wheel_track;
-    }
-  }
-
-  if (ackermann_params_.traction_wheels_radius <= std::numeric_limits<double>::epsilon())
-  {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "parameter 'traction_wheels_radius' is not set, cannot configure odometry");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-  // END OF DEPRECATED
-
   if (ackermann_params_.steering_track_width <= std::numeric_limits<double>::epsilon())
   {
     ackermann_params_.steering_track_width = ackermann_params_.traction_track_width;
@@ -114,18 +55,39 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
 bool AckermannSteeringController::update_odometry(const rclcpp::Duration & period)
 {
+  auto logger = get_node()->get_logger();
+
   if (params_.open_loop)
   {
     odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
-    const double traction_right_wheel_value =
-      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
-    const double traction_left_wheel_value =
-      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double steering_right_position = state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value();
-    const double steering_left_position = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_value();
+    const auto traction_right_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional();
+    const auto traction_left_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional();
+    const auto steering_right_position_op =
+      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional();
+    const auto steering_left_position_op = state_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional();
+
+    if (
+      !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
+      !steering_right_position_op.has_value() || !steering_left_position_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        logger,
+        "Unable to retrieve the data from right wheel or left wheel or right steering position or "
+        "left steering position!");
+
+      return true;
+    }
+
+    const double traction_right_wheel_value = traction_right_wheel_value_op.value();
+    const double traction_left_wheel_value = traction_left_wheel_value_op.value();
+    const double steering_right_position = steering_right_position_op.value();
+    const double steering_left_position = steering_left_position_op.value();
+
     if (
       std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
       std::isfinite(steering_right_position) && std::isfinite(steering_left_position))

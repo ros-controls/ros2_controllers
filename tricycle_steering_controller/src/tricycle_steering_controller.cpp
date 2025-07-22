@@ -30,41 +30,6 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
 {
   tricycle_params_ = tricycle_param_listener_->get_params();
 
-  // TODO(anyone): Remove deprecated parameters
-  // START OF DEPRECATED
-  if (tricycle_params_.front_wheels_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'front_wheel_radius', set 'traction_wheels_radius' instead");
-    tricycle_params_.traction_wheels_radius = tricycle_params_.front_wheels_radius;
-  }
-
-  if (tricycle_params_.rear_wheels_radius > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'rear_wheel_radius', set 'traction_wheels_radius' instead");
-    tricycle_params_.traction_wheels_radius = tricycle_params_.rear_wheels_radius;
-  }
-
-  if (tricycle_params_.wheel_track > 0.0)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "DEPRECATED parameter 'wheel_track', set 'traction_track_width' instead");
-    tricycle_params_.traction_track_width = tricycle_params_.wheel_track;
-  }
-
-  if (tricycle_params_.traction_track_width <= std::numeric_limits<double>::epsilon())
-  {
-    RCLCPP_FATAL(
-      get_node()->get_logger(),
-      "parameter 'traction_track_width' is not set, cannot configure odometry");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-  // END OF DEPRECATED
-
   const double traction_wheels_radius = tricycle_params_.traction_wheels_radius;
   const double traction_track_width = tricycle_params_.traction_track_width;
   const double wheelbase = tricycle_params_.wheelbase;
@@ -86,11 +51,24 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
   }
   else
   {
-    const double traction_right_wheel_value =
-      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
-    const double traction_left_wheel_value =
-      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    const auto traction_right_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional();
+    const auto traction_left_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional();
+    const auto steering_position_op = state_interfaces_[STATE_STEER_AXIS].get_optional();
+
+    if (
+      !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
+      !steering_position_op.has_value())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Unable to retrieve the data from right wheel or left wheel or steering position");
+      return true;
+    }
+    const double traction_right_wheel_value = traction_right_wheel_value_op.value();
+    const double traction_left_wheel_value = traction_left_wheel_value_op.value();
+    const double steering_position = steering_position_op.value();
     if (
       std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
       std::isfinite(steering_position))
