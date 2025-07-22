@@ -29,7 +29,8 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
 
   // wx = W/2, wy = L/2
 
-  for (std::size_t i = 0; i < 4; i++) {
+  for (std::size_t i = 0; i < 4; i++)
+  {
     const auto & [wx, wy] = wheel_positions_[i];
 
     double vx = linear_velocity_x - angular_velocity_z * wy;
@@ -48,7 +49,8 @@ OdometryState SwerveDriveKinematics::update_odometry(
 {
   // Compute robot-centric velocity (assuming perfect wheel control)
   double vx_sum = 0.0, vy_sum = 0.0, wz_sum = 0.0;
-  for (std::size_t i = 0; i < 4; i++) {
+  for (std::size_t i = 0; i < 4; i++)
+  {
     double vx = wheel_velocities[i] * std::cos(steering_angles[i]);
     double vy = wheel_velocities[i] * std::sin(steering_angles[i]);
 
@@ -63,10 +65,11 @@ OdometryState SwerveDriveKinematics::update_odometry(
   double vy_robot = vy_sum / 4.0;
 
   double wz_denominator = 0.0;
-  for (std::size_t i = 0; i < 4; i++) {
+  for (std::size_t i = 0; i < 4; i++)
+  {
     wz_denominator +=
       (wheel_positions_[i].first * wheel_positions_[i].first +
-      wheel_positions_[i].second * wheel_positions_[i].second);
+       wheel_positions_[i].second * wheel_positions_[i].second);
   }
   double wz_robot = wz_sum / wz_denominator;
 
@@ -86,10 +89,12 @@ OdometryState SwerveDriveKinematics::update_odometry(
 
 double SwerveDriveKinematics::normalize_angle(double angle)
 {
-  while (angle > M_PI) {
+  while (angle > M_PI)
+  {
     angle -= 2.0 * M_PI;
   }
-  while (angle < -M_PI) {
+  while (angle < -M_PI)
+  {
     angle += 2.0 * M_PI;
   }
   return angle;

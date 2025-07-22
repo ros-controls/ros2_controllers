@@ -53,9 +53,9 @@ Wheel::Wheel(
 {
 }
 
-void Wheel::set_velocity(double velocity) {velocity_.get().set_value(velocity);}
+void Wheel::set_velocity(double velocity) { velocity_.get().set_value(velocity); }
 
-double Wheel::get_feedback() {return Wheel::feedback_.get().get_optional().value();}
+double Wheel::get_feedback() { return Wheel::feedback_.get().get_optional().value(); }
 
 Axle::Axle(
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> position,
@@ -64,15 +64,15 @@ Axle::Axle(
 {
 }
 
-void Axle::set_position(double position) {position_.get().set_value(position);}
+void Axle::set_position(double position) { position_.get().set_value(position); }
 
-double Axle::get_feedback() {return Axle::feedback_.get().get_optional().value();}
+double Axle::get_feedback() { return Axle::feedback_.get().get_optional().value(); }
 
 std::array<std::pair<double, double>, 4> wheel_positions_ = {{
-  {-0.1, 0.175},     // front left
-  {0.1, 0.175},      // front right
-  {-0.1, -0.175},    // rear left
-  {0.1, -0.175}      // rear right
+  {-0.1, 0.175},   // front left
+  {0.1, 0.175},    // front right
+  {-0.1, -0.175},  // rear left
+  {0.1, -0.175}    // rear right
 }};
 
 SwerveController::SwerveController()
@@ -89,11 +89,13 @@ SwerveController::SwerveController()
 CallbackReturn SwerveController::on_init()
 {
   auto node = get_node();
-  if (!node) {
+  if (!node)
+  {
     RCLCPP_ERROR(rclcpp::get_logger("SwerveController"), "Node is null in on_init");
     return controller_interface::CallbackReturn::ERROR;
   }
-  try {
+  try
+  {
     // Declare parameters
     auto_declare<std::string>("joint_steering_left_front", front_left_axle_joint_name_);
     auto_declare<std::string>("joint_steering_right_front", front_right_axle_joint_name_);
@@ -120,7 +122,9 @@ CallbackReturn SwerveController::on_init()
     auto_declare<double>("front_right_velocity_threshold", front_right_velocity_threshold_);
     auto_declare<double>("rear_left_velocity_threshold", rear_left_velocity_threshold_);
     auto_declare<double>("rear_right_velocity_threshold", rear_right_velocity_threshold_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     return CallbackReturn::ERROR;
   }
   return CallbackReturn::SUCCESS;
@@ -163,7 +167,8 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
 {
   // auto logger = get_node()->get_logger();
   auto logger = rclcpp::get_logger("SwerveController");
-  try {
+  try
+  {
     front_left_wheel_joint_name_ = get_node()->get_parameter("joint_wheel_left_front").as_string();
     front_right_wheel_joint_name_ =
       get_node()->get_parameter("joint_wheel_right_front").as_string();
@@ -199,44 +204,54 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     rear_right_velocity_threshold_ =
       get_node()->get_parameter("rear_right_velocity_threshold").as_double();
 
-    for (std::size_t i = 0; i < 6; ++i) {
+    for (std::size_t i = 0; i < 6; ++i)
+    {
       pose_covariance_diagonal_array_[i] = 0.01;
     }
 
-    for (std::size_t i = 0; i < 6; ++i) {
+    for (std::size_t i = 0; i < 6; ++i)
+    {
       twist_covariance_diagonal_array_[i] = 0.01;
     }
 
-    if (front_left_wheel_joint_name_.empty()) {
+    if (front_left_wheel_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "front_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (front_right_wheel_joint_name_.empty()) {
+    if (front_right_wheel_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "front_right_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_left_wheel_joint_name_.empty()) {
+    if (rear_left_wheel_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "rear_left_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_right_wheel_joint_name_.empty()) {
+    if (rear_right_wheel_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "rear_right_wheel_joint_name is not set");
       return CallbackReturn::ERROR;
     }
 
-    if (front_left_axle_joint_name_.empty()) {
+    if (front_left_axle_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "front_axle_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (front_right_axle_joint_name_.empty()) {
+    if (front_right_axle_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "front_right_axle_joint_name is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_left_axle_joint_name_.empty()) {
+    if (rear_left_axle_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "rear_left_axle_joint_name_ is not set");
       return CallbackReturn::ERROR;
     }
-    if (rear_right_axle_joint_name_.empty()) {
+    if (rear_right_axle_joint_name_.empty())
+    {
       RCLCPP_ERROR(logger, "rear_right_axle_joint_name_ is not set");
       return CallbackReturn::ERROR;
     }
@@ -254,7 +269,8 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     cmd_vel_timeout_ = std::chrono::milliseconds(
       static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0));
 
-    if (!reset()) {
+    if (!reset())
+    {
       return CallbackReturn::ERROR;
     }
 
@@ -265,16 +281,19 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     empty_twist.twist.angular.z = 0.0;
     received_velocity_msg_ptr_.writeFromNonRT(std::make_shared<TwistStamped>(empty_twist));
 
-    if (use_stamped_vel_) {
+    if (use_stamped_vel_)
+    {
       velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
         DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
         [this, logger](const std::shared_ptr<TwistStamped> msg) -> void
         {
-          if (!subscriber_is_active_) {
+          if (!subscriber_is_active_)
+          {
             RCLCPP_WARN(logger, "Can't accept new commands. subscriber is inactive");
             return;
           }
-          if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0)) {
+          if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
+          {
             RCLCPP_WARN_ONCE(
               logger,
               "Received TwistStamped with zero timestamp, setting it to current "
@@ -283,18 +302,21 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
           }
           received_velocity_msg_ptr_.writeFromNonRT(std::move(msg));
         });
-    } else {
+    }
+    else
+    {
       velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
         DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
         [this, logger](const std::shared_ptr<Twist> msg) -> void
         {
-          if (!subscriber_is_active_) {
+          if (!subscriber_is_active_)
+          {
             RCLCPP_WARN(logger, "Can't accept new commands. subscriber is inactive");
             return;
           }
           // Write fake header in the stored stamped command
           const std::shared_ptr<TwistStamped> twist_stamped =
-          *(received_velocity_msg_ptr_.readFromRT());
+            *(received_velocity_msg_ptr_.readFromRT());
           twist_stamped->twist = *msg;
           twist_stamped->header.stamp = get_node()->get_clock()->now();
         });
@@ -309,9 +331,12 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
 
     std::string tf_prefix = "";
     tf_prefix = std::string(get_node()->get_namespace());
-    if (tf_prefix == "/") {
+    if (tf_prefix == "/")
+    {
       tf_prefix = "";
-    } else {
+    }
+    else
+    {
       tf_prefix = tf_prefix + "/";
     }
 
@@ -328,7 +353,8 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
       geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
 
     constexpr std::size_t NUM_DIMENSIONS = 6;
-    for (std::size_t index = 0; index < 6; ++index) {
+    for (std::size_t index = 0; index < 6; ++index)
+    {
       const std::size_t diagonal_index = NUM_DIMENSIONS * index + index;
       odometry_message.pose.covariance[diagonal_index] = pose_covariance_diagonal_array_[index];
       odometry_message.twist.covariance[diagonal_index] = twist_covariance_diagonal_array_[index];
@@ -347,7 +373,9 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     odometry_transform_message.transforms.front().child_frame_id = base_frame_id;
 
     previous_update_timestamp_ = get_node()->get_clock()->now();
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     RCLCPP_ERROR(logger, "EXCEPTION DURING on_configure: %s", e.what());
     return CallbackReturn::ERROR;
   }
@@ -360,25 +388,31 @@ CallbackReturn SwerveController::on_activate(const rclcpp_lifecycle::State &)
   auto logger = rclcpp::get_logger("SwerveController");
 
   wheel_handles_.resize(4);
-  for(std::size_t i = 0; i < 4; i++) {
+  for (std::size_t i = 0; i < 4; i++)
+  {
     wheel_handles_[i] = get_wheel(wheel_joint_names[i]);
   }
 
   axle_handles_.resize(4);
-  for(std::size_t i = 0; i < 4; i++) {
+  for (std::size_t i = 0; i < 4; i++)
+  {
     axle_handles_[i] = get_axle(axle_joint_names[i]);
   }
 
-  for(std::size_t i = 0; i < wheel_handles_.size(); ++i) {
-    if(!wheel_handles_[i]) {
+  for (std::size_t i = 0; i < wheel_handles_.size(); ++i)
+  {
+    if (!wheel_handles_[i])
+    {
       RCLCPP_ERROR(logger, "ERROR IN FETCHING wheel handle for: %s", wheel_joint_names[i].c_str());
       return CallbackReturn::ERROR;
     }
     wheel_handles_[i]->set_velocity(0.0);
   }
 
-  for(std::size_t i = 0; i < axle_handles_.size(); ++i) {
-    if(!axle_handles_[i]) {
+  for (std::size_t i = 0; i < axle_handles_.size(); ++i)
+  {
+    if (!axle_handles_[i])
+    {
       RCLCPP_ERROR(logger, "ERROR IN FETCHING axle handle for: %s", axle_joint_names[i].c_str());
       return CallbackReturn::ERROR;
     }
@@ -396,8 +430,10 @@ controller_interface::return_type SwerveController::update(
 {
   auto logger = rclcpp::get_logger("SwerveController");
 
-  if (this->get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE) {
-    if (!is_halted_) {
+  if (this->get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
+  {
+    if (!is_halted_)
+    {
       halt();
       is_halted_ = true;
     }
@@ -409,7 +445,8 @@ controller_interface::return_type SwerveController::update(
 
   std::shared_ptr<TwistStamped> last_command_msg = *(received_velocity_msg_ptr_.readFromRT());
 
-  if (last_command_msg == nullptr) {
+  if (last_command_msg == nullptr)
+  {
     last_command_msg = std::make_shared<TwistStamped>();
     last_command_msg->header.stamp = current_time;
     last_command_msg->twist.linear.x = 0.0;
@@ -421,7 +458,8 @@ controller_interface::return_type SwerveController::update(
 
   const auto age_of_last_command = current_time - last_command_msg->header.stamp;
 
-  if (age_of_last_command > cmd_vel_timeout_) {
+  if (age_of_last_command > cmd_vel_timeout_)
+  {
     last_command_msg->twist.linear.x = 0.0;
     last_command_msg->twist.linear.y = 0.0;
     last_command_msg->twist.angular.z = 0.0;
@@ -444,21 +482,25 @@ controller_interface::return_type SwerveController::update(
     {wheel_command[2], rear_left_velocity_threshold_, "rear_left_wheel"},
     {wheel_command[3], rear_right_velocity_threshold_, "rear_right_wheel"}};
 
-  for (const auto & [wheel_command_, threshold, label] : wheel_data) {
-    if (wheel_command_.drive_velocity > threshold) {
+  for (const auto & [wheel_command_, threshold, label] : wheel_data)
+  {
+    if (wheel_command_.drive_velocity > threshold)
+    {
       wheel_command_.drive_velocity = threshold;
     }
   }
 
-  for(std::size_t i = 0; i < 4; i++) {
-    if(!axle_handles_[i] || !wheel_handles_[i]) {
-      throw std::runtime_error("Axle or Wheel handle is nullptr for: " +
-           axle_joint_names[i] + " / " + wheel_joint_names[i]);
+  for (std::size_t i = 0; i < 4; i++)
+  {
+    if (!axle_handles_[i] || !wheel_handles_[i])
+    {
+      throw std::runtime_error(
+        "Axle or Wheel handle is nullptr for: " + axle_joint_names[i] + " / " +
+        wheel_joint_names[i]);
     }
     axle_handles_[i]->set_position(wheel_command[i].steering_angle);
     wheel_handles_[i]->set_velocity(wheel_command[i].drive_velocity);
   }
-
 
   const auto update_dt = current_time - previous_update_timestamp_;
   previous_update_timestamp_ = current_time;
@@ -468,11 +510,15 @@ controller_interface::return_type SwerveController::update(
   std::array<double, 4> velocity_array{};
   std::array<double, 4> steering_angle_array{};
 
-  for(std::size_t i = 0; i < 4; ++i) {
-    if(open_loop_) {
+  for (std::size_t i = 0; i < 4; ++i)
+  {
+    if (open_loop_)
+    {
       velocity_array[i] = wheel_command[i].drive_velocity;
       steering_angle_array[i] = wheel_command[i].steering_angle;
-    } else {
+    }
+    else
+    {
       velocity_array[i] = wheel_handles_[i]->get_feedback();
       steering_angle_array[i] = axle_handles_[i]->get_feedback();
     }
@@ -483,15 +529,20 @@ controller_interface::return_type SwerveController::update(
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.theta);
 
-  try {
-    if (previous_publish_timestamp_ + publish_period_ < time) {
+  try
+  {
+    if (previous_publish_timestamp_ + publish_period_ < time)
+    {
       previous_publish_timestamp_ += publish_period_;
     }
-  } catch (const std::runtime_error &) {
+  }
+  catch (const std::runtime_error &)
+  {
     previous_publish_timestamp_ = time;
   }
 
-  if (realtime_odometry_publisher_ && realtime_odometry_publisher_->trylock()) {
+  if (realtime_odometry_publisher_ && realtime_odometry_publisher_->trylock())
+  {
     auto & odometry_message = realtime_odometry_publisher_->msg_;
     odometry_message.header.stamp = time;
     odometry_message.pose.pose.position.x = odometry_.x;
@@ -504,7 +555,8 @@ controller_interface::return_type SwerveController::update(
     realtime_odometry_publisher_->unlockAndPublish();
   }
 
-  if (realtime_odometry_transform_publisher_ && realtime_odometry_transform_publisher_->trylock()) {
+  if (realtime_odometry_transform_publisher_ && realtime_odometry_transform_publisher_->trylock())
+  {
     auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
     transform.header.stamp = time;
 
@@ -530,7 +582,8 @@ CallbackReturn SwerveController::on_deactivate(const rclcpp_lifecycle::State &)
 
 CallbackReturn SwerveController::on_cleanup(const rclcpp_lifecycle::State &)
 {
-  if (!reset()) {
+  if (!reset())
+  {
     return CallbackReturn::ERROR;
   }
 
@@ -540,7 +593,8 @@ CallbackReturn SwerveController::on_cleanup(const rclcpp_lifecycle::State &)
 
 CallbackReturn SwerveController::on_error(const rclcpp_lifecycle::State &)
 {
-  if (!reset()) {
+  if (!reset())
+  {
     return CallbackReturn::ERROR;
   }
   return CallbackReturn::SUCCESS;
@@ -569,26 +623,26 @@ CallbackReturn SwerveController::on_shutdown(const rclcpp_lifecycle::State &)
 
 void SwerveController::halt()
 {
-  for(std::size_t i = 0; i < wheel_handles_.size(); ++i) {
+  for (std::size_t i = 0; i < wheel_handles_.size(); ++i)
+  {
     wheel_handles_[i]->set_velocity(0.0);
   }
-  for(std::size_t i = 0; i < axle_handles_.size(); ++i) {
+  for (std::size_t i = 0; i < axle_handles_.size(); ++i)
+  {
     axle_handles_[i]->set_position(0.0);
   }
 }
 
-
-template<typename T>
+template <typename T>
 std::unique_ptr<T> get_interface_object(
   std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
   const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
-  const std::string & name,
-  const std::string & interface_suffix,
-  const std::string & hw_if_type)
+  const std::string & name, const std::string & interface_suffix, const std::string & hw_if_type)
 {
   auto logger = rclcpp::get_logger("SwerveController");
 
-  if (name.empty()) {
+  if (name.empty())
+  {
     RCLCPP_ERROR(logger, "Joint name not given. Make sure all joints are specified.");
     return nullptr;
   }
@@ -603,7 +657,8 @@ std::unique_ptr<T> get_interface_object(
              interface.get_interface_name() == hw_if_type;
     });
 
-  if (command_handle == command_interfaces.end()) {
+  if (command_handle == command_interfaces.end())
+  {
     RCLCPP_ERROR(logger, "Unable to find command interface for: %s", name.c_str());
     RCLCPP_ERROR(logger, "Expected interface name: %s", expected_interface_name.c_str());
     return nullptr;
@@ -617,13 +672,14 @@ std::unique_ptr<T> get_interface_object(
              interface.get_interface_name() == hw_if_type;
     });
 
-  if (state_handle == state_interfaces.end()) {
-    RCLCPP_ERROR(logger, "Unable to find the state interface for: %s",
-       name.c_str());
+  if (state_handle == state_interfaces.end())
+  {
+    RCLCPP_ERROR(logger, "Unable to find the state interface for: %s", name.c_str());
     return nullptr;
   }
-  static_assert(!std::is_const_v<std::remove_reference_t<decltype(*command_handle)>>,
-   "Command handle is const!");
+  static_assert(
+    !std::is_const_v<std::remove_reference_t<decltype(*command_handle)>>,
+    "Command handle is const!");
   return std::make_unique<T>(std::ref(*command_handle), std::ref(*state_handle), name);
 }
 
@@ -638,7 +694,6 @@ std::unique_ptr<Axle> SwerveController::get_axle(const std::string & axle_name)
   return get_interface_object<Axle>(
     command_interfaces_, state_interfaces_, axle_name, "/position", HW_IF_POSITION);
 }
-
 
 }  // namespace swerve_drive_controller
 

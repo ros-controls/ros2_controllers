@@ -25,7 +25,6 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <tf2_msgs/msg/tf_message.hpp>
 
-
 namespace swerve_drive_controller
 {
 
