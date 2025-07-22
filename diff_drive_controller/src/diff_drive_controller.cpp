@@ -645,11 +645,15 @@ void DiffDriveController::reset_buffers()
 
 void DiffDriveController::halt()
 {
-  const auto halt_wheels = [](auto & wheel_handles)
+  auto logger = get_node()->get_logger();
+  const auto halt_wheels = [&](auto & wheel_handles)
   {
     for (const auto & wheel_handle : wheel_handles)
     {
-      wheel_handle.velocity.get().set_value(0.0);
+      if (!wheel_handle.velocity.get().set_value(0.0))
+      {
+        RCLCPP_WARN(logger, "Failed to set wheel velocity to value 0.0");
+      }
     }
   };
 
