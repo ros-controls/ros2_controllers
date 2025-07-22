@@ -333,10 +333,10 @@ double calculateBlendRadius(
   double min_dist = std::min(dist_prev, dist_next);
   double blend = 0.1 * min_dist;
 
-  // Clamp blend radius to [0.001, 0.1]
-  if (blend < 0.001)
+  // Clamp blend radius to [0.01, 0.1]
+  if (blend < 0.01)
   {
-    blend = 0.001;
+    blend = 0.01;
   }
   else if (blend > 0.1)
   {
