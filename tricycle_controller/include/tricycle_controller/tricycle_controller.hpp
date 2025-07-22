@@ -38,6 +38,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
+#include "amr_hardware_interface/constants.hpp"
 
 #include "tricycle_controller/odometry.hpp"
 #include "tricycle_controller/steering_limiter.hpp"
@@ -155,6 +156,7 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
     std::shared_ptr<std_srvs::srv::SetBool::Response> res);
+  void clip_wheel_speed_and_steering_angle(double & wheel_speed, double & steering_angle);
   bool reset();
   void halt();
 };

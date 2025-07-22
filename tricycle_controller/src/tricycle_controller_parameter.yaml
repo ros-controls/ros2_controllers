@@ -239,3 +239,9 @@ tricycle_controller:
     default_value: 20.0, # seconds
     description: "Time threshold after which to use stationary steering limits when speed is below low_speed_threshold",
   }
+  use_normal_clipping: {
+    type: bool,
+    default_value: false,
+    description: "If true, applies normal clipping to wheel speed and steering angle."
+  }
+
