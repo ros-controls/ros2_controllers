@@ -368,11 +368,18 @@ void GpioCommandController::apply_command(
   const auto full_command_interface_name =
     gpio_commands.interface_groups[gpio_index] + '/' +
     gpio_commands.interface_values[gpio_index].interface_names[command_interface_index];
+
+  const auto & command_value =
+    gpio_commands.interface_values[gpio_index].values[command_interface_index];
+
   try
   {
-    command_interfaces_map_.at(full_command_interface_name)
-      .get()
-      .set_value(gpio_commands.interface_values[gpio_index].values[command_interface_index]);
+    if (!command_interfaces_map_.at(full_command_interface_name).get().set_value(command_value))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
+        full_command_interface_name.c_str(), command_value);
+    }
   }
   catch (const std::exception & e)
   {
@@ -412,8 +419,20 @@ void GpioCommandController::apply_state_value(
     state_msg.interface_values[gpio_index].interface_names[interface_index];
   try
   {
-    state_msg.interface_values[gpio_index].values[interface_index] =
-      state_interfaces_map_.at(interface_name).get().get_value();
+    auto state_msg_interface_value_op =
+      state_interfaces_map_.at(interface_name).get().get_optional();
+
+    if (!state_msg_interface_value_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(), "Unable to retrieve the data from state: %s \n",
+        interface_name.c_str());
+    }
+    else
+    {
+      state_msg.interface_values[gpio_index].values[interface_index] =
+        state_msg_interface_value_op.value();
+    }
   }
   catch (const std::exception & e)
   {
