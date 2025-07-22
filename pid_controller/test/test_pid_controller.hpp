@@ -140,18 +140,11 @@ public:
     // initialize controller
     controller_ = std::make_unique<CtrlType>();
 
-<<<<<<< HEAD
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
-      "/test_pid_controller/reference", rclcpp::SystemDefaultsQoS());
 
     service_caller_node_ = std::make_shared<rclcpp::Node>("service_caller");
     feedforward_service_client_ = service_caller_node_->create_client<ControllerModeSrvType>(
       "/test_pid_controller/set_feedforward_control");
-=======
-    // create a publisher node, publisher will be created in SetUpController
-    command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
->>>>>>> bf253f1 (Change the tests to work without deprecated PID settings (#1824))
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
