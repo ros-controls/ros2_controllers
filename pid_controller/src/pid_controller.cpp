@@ -480,7 +480,15 @@ controller_interface::return_type PidController::update_and_write_commands(
   {
     for (size_t i = 0; i < measured_state_values_.size(); ++i)
     {
-      measured_state_values_[i] = state_interfaces_[i].get_value();
+      const auto state_interface_value_op = state_interfaces_[i].get_optional();
+      if (!state_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "Unable to retrieve the state interface value for %s",
+          state_interfaces_[i].get_name().c_str());
+        continue;
+      }
+      measured_state_values_[i] = state_interface_value_op.value();
     }
   }
 
@@ -582,7 +590,18 @@ controller_interface::return_type PidController::update_and_write_commands(
       state_publisher_->msg_.dof_states[i].time_step = period.seconds();
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
-      state_publisher_->msg_.dof_states[i].output = command_interfaces_[i].get_value();
+      const auto command_interface_value_op = command_interfaces_[i].get_optional();
+
+      if (!command_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "Unable to retrieve the command interface value for %s",
+          command_interfaces_[i].get_name().c_str());
+      }
+      else
+      {
+        state_publisher_->msg_.dof_states[i].output = command_interface_value_op.value();
+      }
     }
     state_publisher_->unlockAndPublish();
   }

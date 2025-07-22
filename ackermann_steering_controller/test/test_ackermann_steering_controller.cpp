@@ -140,9 +140,9 @@ TEST_F(AckermannSteeringControllerTest, reactivate_success)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -173,17 +173,17 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
@@ -213,17 +213,17 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
@@ -264,17 +264,17 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_value(), 0.22222222222222224,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_value(), 1.4179821977774734,
-    COMMON_THRESHOLD);
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    1.4179821977774734, COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 
