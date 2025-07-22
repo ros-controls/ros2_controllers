@@ -28,27 +28,24 @@ class ChainedFilterControllerTest : public ::testing::Test
 {
 protected:
   void SetUp() override { controller_ = std::make_shared<ChainedFilter>(); }
+  static void TearDownTestCase() { rclcpp::shutdown(); }
 
   std::shared_ptr<ChainedFilter> controller_;
 };
 
 TEST_F(ChainedFilterControllerTest, InitReturnsSuccess)
 {
-  auto result = controller_->init("chained_filter", "test_ns", 3, "", rclcpp::NodeOptions());
-  EXPECT_EQ(result, controller_interface::return_type::OK);
+  const auto ret =
+    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
+  ASSERT_EQ(ret, controller_interface::return_type::OK);
 }
 
 TEST_F(ChainedFilterControllerTest, ConfigureReturnsFailureWithNoParams)
 {
-  // Initialize the controller (should set up internal node)
-  ASSERT_EQ(
-    controller_->init(
-      "chained_filter",        // controller name
-      "test_ns",               // namespace
-      0,                       // intra-process (0 = disabled)
-      "test_node",             // RCL node name
-      rclcpp::NodeOptions()),  // node options
-    controller_interface::return_type::OK);
+  // Initialize the controller
+  const auto ret =
+    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
+  ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   // We do NOT declare any filter parameters — this mimics a misconfigured user setup
   // The expectation is that configuration fails gracefully (not segfault)
@@ -59,7 +56,8 @@ TEST_F(ChainedFilterControllerTest, ConfigureReturnsFailureWithNoParams)
 
 TEST_F(ChainedFilterControllerTest, ActivateReturnsSuccessWithoutError)
 {
-  auto init_result = controller_->init("chained_filter", "test_ns", 3, "", rclcpp::NodeOptions());
+  const auto init_result =
+    controller_->init("chained_filter", "", 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(init_result, controller_interface::return_type::OK);
 
   auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
