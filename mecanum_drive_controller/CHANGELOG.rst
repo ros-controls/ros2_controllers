@@ -2,6 +2,11 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
 5.3.0 (2025-07-14)
 ------------------
 * Mecanum Drive: Populate the pose covariance matrix (`#1772 <https://github.com/ros-controls/ros2_controllers/issues/1772>`_)

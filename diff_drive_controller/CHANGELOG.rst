@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
 5.3.0 (2025-07-14)
 ------------------
 * Explicit cast `rcutils_duration_value_t` (`#1808 <https://github.com/ros-controls/ros2_controllers/issues/1808>`_)

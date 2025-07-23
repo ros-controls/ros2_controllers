@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Reject non-finite values in forward controller subscriber callback (`#1815 <https://github.com/ros-controls/ros2_controllers/issues/1815>`_)
+* Contributors: Sanjeev Kumar, kaizen
+
 5.3.0 (2025-07-14)
 ------------------
 * Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
