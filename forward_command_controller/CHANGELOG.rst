@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Reject non-finite values in forward controller subscriber callback (#… (backport `#1815 <https://github.com/ros-controls/ros2_controllers/issues/1815>`_) (`#1817 <https://github.com/ros-controls/ros2_controllers/issues/1817>`_)
+* Contributors: Christoph Fröhlich, Kaizen
+
 4.28.0 (2025-07-14)
 -------------------
 

@@ -2,6 +2,9 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.28.0 (2025-07-14)
 -------------------
 * Mecanum Drive: Populate the pose covariance matrix (backport `#1772 <https://github.com/ros-controls/ros2_controllers/issues/1772>`_) (`#1807 <https://github.com/ros-controls/ros2_controllers/issues/1807>`_)
