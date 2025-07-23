@@ -78,7 +78,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
 Filters
 **********************
 
-Chainable controllers for filtering of state interfaces.
+Chainable controllers for filtering of state interfaces. They export the filtered values as state interfaces, which can be used by other controllers or broadcasters, and don't publish to ROS topics.
 
 .. toctree::
    :titlesonly:

@@ -4,7 +4,7 @@
 
 Chained Filter Controller
 --------------------------------
-tbd.
+This controller wraps around ``filter_chain`` library from the `filters <https://index.ros.org/p/filters/#humble>`__ package. It allows to chain multiple filters together, where the output of one filter is the input of the next one. The controller can be used to apply a sequence of filters to a single interface, the same filter chain to multiple interfaces, or different filter chains to different interfaces.
 
 
 Parameters
