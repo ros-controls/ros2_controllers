@@ -102,9 +102,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_publisher_->unlock();
+  sensor_state_message_.header.frame_id = params_.frame_id;
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -146,13 +144,13 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
 {
   param_listener_->try_get_params(params_);
 
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  if (realtime_publisher_)
   {
-    realtime_publisher_->msg_.header.stamp = time;
-    force_torque_sensor_->get_values_as_message(realtime_publisher_->msg_.wrench);
-    this->apply_sensor_offset(params_, realtime_publisher_->msg_);
-    this->apply_sensor_multiplier(params_, realtime_publisher_->msg_);
-    realtime_publisher_->unlockAndPublish();
+    sensor_state_message_.header.stamp = time;
+    force_torque_sensor_->get_values_as_message(sensor_state_message_.wrench);
+    this->apply_sensor_offset(params_, sensor_state_message_);
+    this->apply_sensor_multiplier(params_, sensor_state_message_);
+    realtime_publisher_->try_publish(sensor_state_message_);
   }
 
   return controller_interface::return_type::OK;
