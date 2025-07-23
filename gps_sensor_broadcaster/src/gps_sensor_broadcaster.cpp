@@ -78,10 +78,8 @@ callback_return_type GPSSensorBroadcaster::setup_publisher()
     sensor_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::NavSatFix>(
       "~/gps/fix", rclcpp::SystemDefaultsQoS());
     realtime_publisher_ = std::make_unique<StatePublisher>(sensor_state_publisher_);
-    realtime_publisher_->lock();
-    realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+    state_message_.header.frame_id = params_.frame_id;
     setup_covariance();
-    realtime_publisher_->unlock();
 
     return callback_return_type::SUCCESS;
   }
@@ -98,14 +96,14 @@ void GPSSensorBroadcaster::setup_covariance()
 {
   if (params_.read_covariance_from_interface)
   {
-    realtime_publisher_->msg_.position_covariance_type = COVARIANCE_TYPE_DIAGONAL_KNOWN;
+    state_message_.position_covariance_type = COVARIANCE_TYPE_DIAGONAL_KNOWN;
     return;
   }
 
   for (size_t i = 0; i < COVARIANCE_3x3_SIZE; ++i)
   {
-    realtime_publisher_->msg_.position_covariance[i] = params_.static_position_covariance[i];
-    realtime_publisher_->msg_.position_covariance_type = COVARIANCE_TYPE_KNOWN;
+    state_message_.position_covariance[i] = params_.static_position_covariance[i];
+    state_message_.position_covariance_type = COVARIANCE_TYPE_KNOWN;
   }
 }
 
@@ -148,19 +146,19 @@ callback_return_type GPSSensorBroadcaster::on_deactivate(const rclcpp_lifecycle:
 controller_interface::return_type GPSSensorBroadcaster::update(
   const rclcpp::Time &, const rclcpp::Duration &)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  if (realtime_publisher_)
   {
-    realtime_publisher_->msg_.header.stamp = get_node()->now();
+    state_message_.header.stamp = get_node()->now();
     std::visit(
       Visitor{
         [this](auto & sensor)
         {
           sensor_msgs::msg::NavSatFix message;
-          sensor.get_values_as_message(realtime_publisher_->msg_);
+          sensor.get_values_as_message(state_message_);
         },
         [](std::monostate &) {}},
       gps_sensor_);
-    realtime_publisher_->unlockAndPublish();
+    realtime_publisher_->try_publish(state_message_);
   }
   return controller_interface::return_type::OK;
 }
