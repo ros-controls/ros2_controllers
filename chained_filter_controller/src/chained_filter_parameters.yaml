@@ -17,8 +17,17 @@ chained_filter:
     }
   filter_chain: {
     type: none,
-    description: "Map of parameters that defines a filter chain, containing filterN as key. The fields for each filter are:
+    description: "Map of parameters that defines a filter chain, containing filterN as key. Valid for all interfaces, overrides <input_interfaces>.filter_chain if set.
+    The fields for each filter are:
     type: The filter plugin to be loaded
     name: Actual name semantically describing the filter, e.g., low_pass_filter
     params: And underlying map of parameters needed for a specific filter, refer to the specific filter documentation."
   }
+  __map_input_interfaces:
+    filter_chain: {
+      type: none,
+      description: "Instead of a single configuration, a distinct configuration can be provided for each input interface. The key is the name of the input interface, and the value is a map of parameters that defines a filter chain, containing filterN as key. The fields for each filter are:
+      type: The filter plugin to be loaded
+      name: Actual name semantically describing the filter, e.g., low_pass_filter
+      params: And underlying map of parameters needed for a specific filter, refer to the specific filter documentation."
+    }

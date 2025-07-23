@@ -2,7 +2,7 @@ test_chained_filter_multiple_interfaces:
   ros__parameters:
     filter_chain:
       filter1:
-        name: filter1
+        name: position_filter
         type: "filters/MeanFilterDouble"
         params:
           number_of_observations: 2
@@ -12,3 +12,26 @@ test_chained_filter_multiple_interfaces:
     output_interfaces:
       - "wheel_left/filtered_position"
       - "wheel_right/filtered_position"
+
+test_chained_filter_multiple_interfaces_config_per_input:
+  ros__parameters:
+    input_interfaces:
+      - "wheel_left/position"
+      - "wheel_right/position"
+    output_interfaces:
+      - "wheel_left/filtered_position"
+      - "wheel_right/filtered_position"
+    wheel_left/position:
+      filter_chain:
+        filter1:
+          name: wheel_left_filter
+          type: "filters/MeanFilterDouble"
+          params:
+            number_of_observations: 2
+    wheel_right/position:
+      filter_chain:
+        filter1:
+          name: wheel_right_filter
+          type: "filters/MeanFilterDouble"
+          params:
+            number_of_observations: 3

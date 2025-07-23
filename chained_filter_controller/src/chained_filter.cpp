@@ -57,20 +57,44 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_li
         get_node()->get_logger(), "Input and output interfaces have to have the same size.");
       return controller_interface::CallbackReturn::FAILURE;
     }
-
     filters_.resize(params_.input_interfaces.size());
     output_state_values_.resize(
       params_.output_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
-    for (auto & filter : filters_)
+
+    // Check if global filter chain configuration is set, if not we use a per-interface
+    // configuration
+    bool has_global_filter_setting = true;
+    if (params_.input_interfaces.size() > 1)
     {
-      filter = std::make_unique<filters::FilterChain<double>>("double");
-      if (!filter->configure(
-            "filter_chain", get_node()->get_node_logging_interface(),
-            get_node()->get_node_parameters_interface()))
+      if (!get_node()->has_parameter("filter_chain.filter1.name"))
+      {
+        rcl_interfaces::msg::ParameterDescriptor desc;
+        desc.name = "filter_chain.filter1.name";
+        desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+        desc.read_only = true;
+        get_node()->declare_parameter(
+          "filter_chain.filter1.name", rclcpp::ParameterValue{""}, desc);
+        has_global_filter_setting =
+          !get_node()->get_parameter("filter_chain.filter1.name").as_string().empty();
+      }
+      RCLCPP_INFO_EXPRESSION(
+        get_node()->get_logger(), has_global_filter_setting,
+        "Using global filter setting for all interfaces.");
+    }
+
+    for (size_t i = 0; i < params_.input_interfaces.size(); ++i)
+    {
+      filters_[i] = std::make_unique<filters::FilterChain<double>>("double");
+      if (!filters_[i]->configure(
+            has_global_filter_setting ? "filter_chain"
+                                      : params_.input_interfaces[i] + ".filter_chain",
+            get_node()->get_node_logging_interface(), get_node()->get_node_parameters_interface()))
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Failed to configure filter chain. Check the parameters for filters setup.");
+          "Failed to configure filter chain for interfaces  %s. Check the parameters for filters "
+          "setup.",
+          params_.input_interfaces[i].c_str());
         return controller_interface::CallbackReturn::FAILURE;
       }
     }
