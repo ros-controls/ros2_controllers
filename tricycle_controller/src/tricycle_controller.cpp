@@ -90,10 +90,6 @@ void TricycleController::clip_speed_for_angle(
   double & wheel_speed,
   double steering_angle)
 {
-  // remember original
-  double original_ws = wheel_speed;
-
-  // your existing logic (using params_.clipping_speed_limits etc.)
   const auto & speed_limits = params_.clipping.speed_limits;
   const auto & angle_limits = params_.clipping.angle_limits;
   double speed_scale         = 0.1;
@@ -111,25 +107,12 @@ void TricycleController::clip_speed_for_angle(
     }
   }
   wheel_speed = std::clamp(wheel_speed, min_speed, max_speed);
-
-  // log if we actually clipped
-  if (wheel_speed != original_ws) {
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "Clipped wheel speed from %.3f to %.3f for steering angle %.3f",
-      original_ws, wheel_speed, steering_angle
-    );
-  }
 }
 
 void TricycleController::clip_angle_for_speed(
   double & steering_angle,
   double   wheel_speed)
 {
-  // remember original
-  double original_alpha = steering_angle;
-
-  // existing logic
   const auto & speed_limits = params_.clipping.speed_limits;
   const auto & angle_limits = params_.clipping.angle_limits;
   auto loc = std::lower_bound(speed_limits.begin(),
@@ -140,15 +123,6 @@ void TricycleController::clip_angle_for_speed(
 
   double angle_limit = angle_limits[idx];
   steering_angle = std::clamp(steering_angle, -angle_limit, angle_limit);
-
-  // log if we actually clipped
-  if (steering_angle != original_alpha) {
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "Clipped steering angle from %.3f to %.3f for wheel speed %.3f",
-      original_alpha, steering_angle, wheel_speed
-    );
-  }
 }
 
 void TricycleController::clip_wheel_speed_and_steering_angle(
