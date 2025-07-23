@@ -58,7 +58,6 @@ public:
   void TearDown();
 
   void SetUpController(const std::vector<rclcpp::Parameter> & parameters = {});
-  void SetUpHandles();
 
 protected:
   std::unique_ptr<FriendForwardCommandController> controller_;
