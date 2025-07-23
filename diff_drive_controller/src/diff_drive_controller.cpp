@@ -231,24 +231,20 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 
   if (should_publish)
   {
-    if (realtime_odometry_publisher_->trylock())
-    {
-      auto & odometry_message = realtime_odometry_publisher_->msg_;
-      odometry_message.header.stamp = time;
-      odometry_message.pose.pose.position.x = odometry_.getX();
-      odometry_message.pose.pose.position.y = odometry_.getY();
-      odometry_message.pose.pose.orientation.x = orientation.x();
-      odometry_message.pose.pose.orientation.y = orientation.y();
-      odometry_message.pose.pose.orientation.z = orientation.z();
-      odometry_message.pose.pose.orientation.w = orientation.w();
-      odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = odometry_.getAngular();
-      realtime_odometry_publisher_->unlockAndPublish();
-    }
+    odometry_message_.header.stamp = time;
+    odometry_message_.pose.pose.position.x = odometry_.getX();
+    odometry_message_.pose.pose.position.y = odometry_.getY();
+    odometry_message_.pose.pose.orientation.x = orientation.x();
+    odometry_message_.pose.pose.orientation.y = orientation.y();
+    odometry_message_.pose.pose.orientation.z = orientation.z();
+    odometry_message_.pose.pose.orientation.w = orientation.w();
+    odometry_message_.twist.twist.linear.x = odometry_.getLinear();
+    odometry_message_.twist.twist.angular.z = odometry_.getAngular();
+    realtime_odometry_publisher_->try_publish(odometry_message_);
 
-    if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+    if (params_.enable_odom_tf)
     {
-      auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+      auto & transform = odometry_transform_message_.transforms.front();
       transform.header.stamp = time;
       transform.transform.translation.x = odometry_.getX();
       transform.transform.translation.y = odometry_.getY();
@@ -256,7 +252,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
       transform.transform.rotation.y = orientation.y();
       transform.transform.rotation.z = orientation.z();
       transform.transform.rotation.w = orientation.w();
-      realtime_odometry_transform_publisher_->unlockAndPublish();
+      realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
     }
   }
 
@@ -271,17 +267,16 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   previous_two_commands_.push({{linear_command, angular_command}});
 
   //    Publish limited velocity
-  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
+  if (publish_limited_velocity_)
   {
-    auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
-    limited_velocity_command.header.stamp = time;
-    limited_velocity_command.twist.linear.x = linear_command;
-    limited_velocity_command.twist.linear.y = 0.0;
-    limited_velocity_command.twist.linear.z = 0.0;
-    limited_velocity_command.twist.angular.x = 0.0;
-    limited_velocity_command.twist.angular.y = 0.0;
-    limited_velocity_command.twist.angular.z = angular_command;
-    realtime_limited_velocity_publisher_->unlockAndPublish();
+    limited_velocity_message_.header.stamp = time;
+    limited_velocity_message_.twist.linear.x = linear_command;
+    limited_velocity_message_.twist.linear.y = 0.0;
+    limited_velocity_message_.twist.linear.z = 0.0;
+    limited_velocity_message_.twist.angular.x = 0.0;
+    limited_velocity_message_.twist.angular.y = 0.0;
+    limited_velocity_message_.twist.angular.z = angular_command;
+    realtime_limited_velocity_publisher_->try_publish(limited_velocity_message_);
   }
 
   // Compute wheels velocities:
@@ -469,10 +464,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       odometry_transform_publisher_);
 
   // keeping track of odom and base_link transforms only
-  auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
-  odometry_transform_message.transforms.resize(1);
-  odometry_transform_message.transforms.front().header.frame_id = odom_frame_id;
-  odometry_transform_message.transforms.front().child_frame_id = base_frame_id;
+  odometry_transform_message_.transforms.resize(1);
+  odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
+  odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
