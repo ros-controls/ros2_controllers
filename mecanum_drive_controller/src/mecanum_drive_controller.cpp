@@ -531,7 +531,7 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
 
   // Publish tf /odom frame
-  if (params_.enable_odom_tf)
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_)
   {
     tf_odom_state_msg_.transforms.front().header.stamp = time;
     tf_odom_state_msg_.transforms.front().transform.translation.x = odometry_.getX();

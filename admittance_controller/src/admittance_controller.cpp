@@ -490,8 +490,11 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   write_state_to_hardware(reference_admittance_);
 
   // Publish controller state
-  state_msg_ = admittance_->get_controller_state();
-  state_publisher_->try_publish(state_msg_);
+  if (state_publisher_)
+  {
+    state_msg_ = admittance_->get_controller_state();
+    state_publisher_->try_publish(state_msg_);
+  }
 
   return controller_interface::return_type::OK;
 }
