@@ -57,9 +57,9 @@ protected:
 
   std::shared_ptr<chained_filter::ParamListener> param_listener_;
   chained_filter::Params params_;
-  std::unique_ptr<filters::FilterChain<double>> filter_;
 
-  double output_state_value_;
+  std::vector<std::unique_ptr<filters::FilterChain<double>>> filters_;
+  std::vector<double> output_state_values_;
 };
 }  // namespace chained_filter_controller
 #endif  // CHAINED_FILTER_CONTROLLER__CHAINED_FILTER_HPP_

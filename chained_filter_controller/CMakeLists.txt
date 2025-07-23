@@ -63,7 +63,14 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_chained_filter_controller
     ${PROJECT_NAME}
-    chained_filter_parameters
+  )
+
+  add_rostest_with_parameters_gmock(test_multiple_chained_filter_controller
+    test/test_multiple_chained_filter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/config/test_multiple_chained_filter.yaml
+  )
+  target_link_libraries(test_multiple_chained_filter_controller
+    ${PROJECT_NAME}
   )
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test_chained_filter.hpp"
+#include "test_multiple_chained_filter.hpp"
 
 #include <gmock/gmock.h>
 
@@ -30,19 +30,19 @@ using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
 
-void ChainedFilterTest::SetUpTestCase() { /*rclcpp::init(0, nullptr);*/ }
+void MultipleChainedFilterTest::SetUpTestCase() { /*rclcpp::init(0, nullptr);*/ }
 
-void ChainedFilterTest::TearDownTestCase() { /*rclcpp::shutdown(); */ }
+void MultipleChainedFilterTest::TearDownTestCase() { /*rclcpp::shutdown(); */ }
 
-void ChainedFilterTest::SetUp()
+void MultipleChainedFilterTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<ChainedFilter>();
 }
 
-void ChainedFilterTest::TearDown() { controller_.reset(nullptr); }
+void MultipleChainedFilterTest::TearDown() { controller_.reset(nullptr); }
 
-void ChainedFilterTest::SetUpController(
+void MultipleChainedFilterTest::SetUpController(
   const std::string node_name, const std::vector<rclcpp::Parameter> & parameters)
 {
   auto node_options = controller_->define_custom_node_options();
@@ -53,32 +53,14 @@ void ChainedFilterTest::SetUpController(
 
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(joint_1_pos_);
+  state_ifs.emplace_back(joint_2_pos_);
   controller_->assign_interfaces({}, std::move(state_ifs));
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
-TEST_F(ChainedFilterTest, InitReturnsSuccess) { SetUpController(); }
+TEST_F(MultipleChainedFilterTest, InitReturnsSuccess) { SetUpController(); }
 
-TEST_F(ChainedFilterTest, InitFailureWithNoParams)
-{
-  const auto result = controller_->init(
-    "test_chained_filter_no_params", "", 0, "", controller_->define_custom_node_options());
-  EXPECT_EQ(result, controller_interface::return_type::ERROR);
-}
-
-TEST_F(ChainedFilterTest, ConfigureFailureWithWrongInterfaceSizes)
-{
-  SetUpController(
-    "test_chained_filter",
-    {rclcpp::Parameter("input_interfaces", std::vector<std::string>{"wheel_left/position"}),
-     rclcpp::Parameter(
-       "output_interfaces",
-       std::vector<std::string>{"wheel_left/filtered_position", "extra_interface"})});
-  auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
-  EXPECT_EQ(configure_result, CallbackReturn::FAILURE);
-}
-
-TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
+TEST_F(MultipleChainedFilterTest, ActivateReturnsSuccessWithoutError)
 {
   SetUpController();
 
@@ -92,26 +74,32 @@ TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
     << "No controller is claiming the reference interfaces (it has none).";
 }
 
-TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are_specified)
+TEST_F(
+  MultipleChainedFilterTest,
+  state_interface_configuration_succeeds_when_multiple_wheels_are_specified)
 {
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   auto state_if_conf = controller_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, SizeIs(1));
+  ASSERT_THAT(state_if_conf.names, SizeIs(2));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(0));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  ASSERT_THAT(state_if_exported_conf, SizeIs(2));
   EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "wheel_left/filtered_position");
-  EXPECT_EQ(state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter");
+  EXPECT_EQ(
+    state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter_multiple_interfaces");
+  EXPECT_EQ(state_if_exported_conf[1]->get_interface_name(), "wheel_right/filtered_position");
+  EXPECT_EQ(
+    state_if_exported_conf[1]->get_prefix_name(), "test_chained_filter_multiple_interfaces");
 }
 
-TEST_F(ChainedFilterTest, UpdateFilter)
+TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
 {
   SetUpController();
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -122,38 +110,30 @@ TEST_F(ChainedFilterTest, UpdateFilter)
     controller_interface::return_type::OK);
   // input state interface should not change
   EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  ASSERT_THAT(state_if_exported_conf, SizeIs(2));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 
   ASSERT_TRUE(joint_1_pos_.set_value(2.0));
+  ASSERT_TRUE(joint_2_pos_.set_value(3.0));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
   EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
+  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.6);
+
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // output should have reached steady state (mean filter)
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
-}
-
-TEST_F(ChainedFilterTest, DeactivateDoesNotCrash)
-{
-  EXPECT_NO_THROW({ controller_->on_deactivate(rclcpp_lifecycle::State()); });
-}
-
-TEST_F(ChainedFilterTest, CleanupDoesNotCrash)
-{
-  EXPECT_NO_THROW({ controller_->on_cleanup(rclcpp_lifecycle::State()); });
-}
-
-TEST_F(ChainedFilterTest, ShutdownDoesNotCrash)
-{
-  EXPECT_NO_THROW({ controller_->on_shutdown(rclcpp_lifecycle::State()); });
+  EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 }
 
 int main(int argc, char ** argv)

@@ -1,14 +1,16 @@
 chained_filter:
-  input_interface:
-    type: string
-    default_value: ""
+  input_interfaces:
+    type: string_array
+    default_value: []
+    read_only: true
     description: "Name of the input state interface"
     validation: {
       not_empty<>: []
     }
-  output_interface:
-    type: string
-    default_value: ""
+  output_interfaces:
+    type: string_array
+    default_value: []
+    read_only: true
     description: "Name of the output state interface"
     validation: {
       not_empty<>: []

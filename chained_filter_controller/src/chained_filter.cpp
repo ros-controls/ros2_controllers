@@ -26,7 +26,6 @@ controller_interface::CallbackReturn ChainedFilter::on_init()
   try
   {
     param_listener_ = std::make_shared<chained_filter::ParamListener>(get_node());
-    filter_ = std::make_unique<filters::FilterChain<double>>("double");
   }
   catch (const std::exception & e)
   {
@@ -43,8 +42,7 @@ controller_interface::InterfaceConfiguration ChainedFilter::command_interface_co
 
 controller_interface::InterfaceConfiguration ChainedFilter::state_interface_configuration() const
 {
-  return {
-    controller_interface::interface_configuration_type::INDIVIDUAL, {params_.input_interface}};
+  return {controller_interface::interface_configuration_type::INDIVIDUAL, params_.input_interfaces};
 }
 
 controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_lifecycle::State &)
@@ -53,14 +51,28 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_li
   {
     params_ = param_listener_->get_params();
 
-    if (!filter_->configure(
-          "filter_chain", get_node()->get_node_logging_interface(),
-          get_node()->get_node_parameters_interface()))
+    if (params_.input_interfaces.size() != params_.output_interfaces.size())
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Failed to configure filter chain. Check the parameters for filters setup.");
+        get_node()->get_logger(), "Input and output interfaces have to have the same size.");
       return controller_interface::CallbackReturn::FAILURE;
+    }
+
+    filters_.resize(params_.input_interfaces.size());
+    output_state_values_.resize(
+      params_.output_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
+    for (auto & filter : filters_)
+    {
+      filter = std::make_unique<filters::FilterChain<double>>("double");
+      if (!filter->configure(
+            "filter_chain", get_node()->get_node_logging_interface(),
+            get_node()->get_node_parameters_interface()))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Failed to configure filter chain. Check the parameters for filters setup.");
+        return controller_interface::CallbackReturn::FAILURE;
+      }
     }
   }
   catch (const std::exception & e)
@@ -73,24 +85,29 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_li
 
 controller_interface::CallbackReturn ChainedFilter::on_activate(const rclcpp_lifecycle::State &)
 {
-  output_state_value_ = std::numeric_limits<double>::quiet_NaN();
+  std::fill(
+    output_state_values_.begin(), output_state_values_.end(),
+    std::numeric_limits<double>::quiet_NaN());
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ChainedFilter::update_and_write_commands(
   const rclcpp::Time &, const rclcpp::Duration &)
 {
-  const auto sensor_op = state_interfaces_[0].get_optional();
-  if (!sensor_op.has_value())
+  for (size_t i = 0; i < params_.input_interfaces.size(); ++i)
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Failed to read sensor value from state interface '%s'.",
-      state_interfaces_[0].get_name().c_str());
-    return controller_interface::return_type::OK;
-  }
-  if (!std::isnan(sensor_op.value()))
-  {
-    filter_->update(sensor_op.value(), output_state_value_);
+    const auto sensor_op = state_interfaces_[i].get_optional();
+    if (!sensor_op.has_value())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to read sensor value from state interface '%s'.",
+        state_interfaces_[0].get_name().c_str());
+      continue;
+    }
+    if (!std::isnan(sensor_op.value()))
+    {
+      filters_[i]->update(sensor_op.value(), output_state_values_[i]);
+    }
   }
 
   return controller_interface::return_type::OK;
@@ -98,8 +115,13 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
 
 std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_interfaces()
 {
-  return {hardware_interface::StateInterface(
-    get_node()->get_name(), params_.output_interface, &output_state_value_)};
+  std::vector<hardware_interface::StateInterface> state_interfaces;
+  for (size_t i = 0; i < params_.output_interfaces.size(); ++i)
+  {
+    state_interfaces.emplace_back(
+      get_node()->get_name(), params_.output_interfaces.at(i), &output_state_values_.at(i));
+  }
+  return state_interfaces;
 }
 
 controller_interface::return_type ChainedFilter::update_reference_from_subscribers(

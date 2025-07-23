@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_CHAINED_FILTER_HPP_
-#define TEST_CHAINED_FILTER_HPP_
+#ifndef TEST_MULTIPLE_CHAINED_FILTER_HPP_
+#define TEST_MULTIPLE_CHAINED_FILTER_HPP_
 
 #include <memory>
 #include <string>
@@ -29,7 +29,7 @@
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::StateInterface;
 
-class ChainedFilterTest : public ::testing::Test
+class MultipleChainedFilterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -39,18 +39,19 @@ public:
   void TearDown();
 
   void SetUpController(
-    const std::string node_name = "test_chained_filter",
+    const std::string node_name = "test_chained_filter_multiple_interfaces",
     const std::vector<rclcpp::Parameter> & parameters = {});
 
 protected:
   std::unique_ptr<chained_filter_controller::ChainedFilter> controller_;
 
   // dummy joint state values used for tests
-  const std::vector<std::string> joint_names_ = {"wheel_left"};
-  std::vector<double> joint_states_ = {1.1};
+  const std::vector<std::string> joint_names_ = {"wheel_left", "wheel_right"};
+  std::vector<double> joint_states_ = {1.1, 2.2};
 
   StateInterface joint_1_pos_{joint_names_[0], HW_IF_POSITION, &joint_states_[0]};
+  StateInterface joint_2_pos_{joint_names_[1], HW_IF_POSITION, &joint_states_[1]};
   rclcpp::executors::SingleThreadedExecutor executor;
 };
 
-#endif  // TEST_CHAINED_FILTER_HPP_
+#endif  // TEST_MULTIPLE_CHAINED_FILTER_HPP_
