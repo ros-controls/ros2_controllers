@@ -21,6 +21,8 @@
 #include <memory>
 #include <string>
 
+#include "imu_sensor_broadcaster/imu_transform.hpp"
+
 namespace imu_sensor_broadcaster
 {
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
@@ -28,7 +30,6 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
   try
   {
     param_listener_ = std::make_shared<ParamListener>(get_node());
-    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -43,7 +44,22 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  params_ = param_listener_->get_params();
+  try
+  {
+    params_ = param_listener_->get_params();
+    // https://eigen.tuxfamily.org/dox-devel/group__TutorialGeometry.html
+    // Z-Y'-X'' convention
+    r_ = Eigen::AngleAxisd(params_.calibration.roll, Eigen::Vector3d::UnitX()) *
+         Eigen::AngleAxisd(params_.calibration.pitch, Eigen::Vector3d::UnitY()) *
+         Eigen::AngleAxisd(params_.calibration.yaw, Eigen::Vector3d::UnitZ());
+  }
+  catch (const std::exception & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during config stage with message: %s \n",
+      e.what());
+    return CallbackReturn::ERROR;
+  }
 
   imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
     semantic_components::IMUSensor(params_.sensor_name));
@@ -107,17 +123,70 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type IMUSensorBroadcaster::update(
+controller_interface::return_type IMUSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  imu_sensor_->get_values_as_message(state_message_);
+  doTransform(state_message_, state_message_, r_);
+
   if (realtime_publisher_)
   {
     state_message_.header.stamp = time;
-    imu_sensor_->get_values_as_message(state_message_);
     realtime_publisher_->try_publish(state_message_);
   }
 
   return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type IMUSensorBroadcaster::update_reference_from_subscribers(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+{
+  return controller_interface::return_type::OK;
+}
+
+std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_state_interfaces()
+{
+  std::vector<hardware_interface::StateInterface> exported_state_interfaces;
+
+  std::string export_prefix = get_node()->get_name();
+  if (!params_.sensor_name.empty())
+  {
+    // Update the prefix and get the proper force and torque names
+    export_prefix = export_prefix + "/" + params_.sensor_name;
+  }
+
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "orientation.x", &state_message_.orientation.x));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "orientation.y", &state_message_.orientation.y));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "orientation.z", &state_message_.orientation.z));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "orientation.w", &state_message_.orientation.w));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "angular_velocity.x", &state_message_.angular_velocity.x));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "angular_velocity.y", &state_message_.angular_velocity.y));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "angular_velocity.z", &state_message_.angular_velocity.x));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "linear_acceleration.x", &state_message_.linear_acceleration.x));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "linear_acceleration.y", &state_message_.linear_acceleration.y));
+  exported_state_interfaces.emplace_back(
+    hardware_interface::StateInterface(
+      export_prefix, "linear_acceleration.x", &state_message_.linear_acceleration.z));
+
+  return exported_state_interfaces;
 }
 
 }  // namespace imu_sensor_broadcaster
@@ -125,4 +194,4 @@ controller_interface::return_type IMUSensorBroadcaster::update(
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  imu_sensor_broadcaster::IMUSensorBroadcaster, controller_interface::ControllerInterface)
+  imu_sensor_broadcaster::IMUSensorBroadcaster, controller_interface::ChainableControllerInterface)

@@ -7,6 +7,7 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
+  Eigen3
   generate_parameter_library
   hardware_interface
   pluginlib
@@ -37,6 +38,7 @@ target_include_directories(imu_sensor_broadcaster PUBLIC
 target_link_libraries(imu_sensor_broadcaster PUBLIC
                       imu_sensor_broadcaster_parameters
                       controller_interface::controller_interface
+                      Eigen3::Eigen
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
