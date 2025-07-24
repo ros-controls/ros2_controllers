@@ -47,11 +47,8 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   try
   {
     params_ = param_listener_->get_params();
-    // https://eigen.tuxfamily.org/dox-devel/group__TutorialGeometry.html
-    // Z-Y'-X'' convention
-    r_ = Eigen::AngleAxisd(params_.calibration.roll, Eigen::Vector3d::UnitX()) *
-         Eigen::AngleAxisd(params_.calibration.pitch, Eigen::Vector3d::UnitY()) *
-         Eigen::AngleAxisd(params_.calibration.yaw, Eigen::Vector3d::UnitZ());
+    r_ =
+      quat_from_euler(params_.calibration.roll, params_.calibration.pitch, params_.calibration.yaw);
   }
   catch (const std::exception & e)
   {

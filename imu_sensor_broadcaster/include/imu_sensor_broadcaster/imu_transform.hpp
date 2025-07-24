@@ -26,6 +26,17 @@
 
 namespace imu_sensor_broadcaster
 {
+/**
+ * @brief Euler to quaternion Z-Y'-X'' convention
+ * https://eigen.tuxfamily.org/dox-devel/group__TutorialGeometry.html
+ */
+Eigen::Quaternion<double> quat_from_euler(double roll, double pitch, double yaw)
+{
+  return Eigen::Quaternion<double>(
+    Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
+    Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()));
+}
 
 /**
  * @brief Transforms a covariance array from one frame to another

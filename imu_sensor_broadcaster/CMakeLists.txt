@@ -71,6 +71,15 @@ if(BUILD_TESTING)
   target_link_libraries(test_imu_sensor_broadcaster
     imu_sensor_broadcaster
   )
+
+  find_package(tf2 REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
+  ament_add_gmock(test_imu_transform test/test_imu_transform.cpp)
+  target_link_libraries(test_imu_transform
+    imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
+  )
 endif()
 
 install(
