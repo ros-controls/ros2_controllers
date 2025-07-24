@@ -24,7 +24,7 @@
 
   <depend>backward_ros</depend>
   <depend>controller_interface</depend>
-  <depend>Eigen3</depend>
+  <depend>eigen</depend>
   <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
