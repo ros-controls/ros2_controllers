@@ -172,7 +172,7 @@ std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_
       export_prefix, "angular_velocity.y", &state_message_.angular_velocity.y));
   exported_state_interfaces.emplace_back(
     hardware_interface::StateInterface(
-      export_prefix, "angular_velocity.z", &state_message_.angular_velocity.x));
+      export_prefix, "angular_velocity.z", &state_message_.angular_velocity.z));
   exported_state_interfaces.emplace_back(
     hardware_interface::StateInterface(
       export_prefix, "linear_acceleration.x", &state_message_.linear_acceleration.x));
@@ -181,7 +181,7 @@ std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_
       export_prefix, "linear_acceleration.y", &state_message_.linear_acceleration.y));
   exported_state_interfaces.emplace_back(
     hardware_interface::StateInterface(
-      export_prefix, "linear_acceleration.x", &state_message_.linear_acceleration.z));
+      export_prefix, "linear_acceleration.z", &state_message_.linear_acceleration.z));
 
   return exported_state_interfaces;
 }
