@@ -27,6 +27,11 @@
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/convert.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
+#include "imu_sensor_broadcaster/imu_transform.hpp"
 
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
@@ -50,10 +55,14 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
-void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
+void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  const auto result = imu_broadcaster_->init(
-    "test_imu_sensor_broadcaster", "", 0, "", imu_broadcaster_->define_custom_node_options());
+  auto node_options = imu_broadcaster_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
+
+  const auto result =
+    imu_broadcaster_->init("test_imu_sensor_broadcaster", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -204,6 +213,48 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   EXPECT_EQ(imu_msg.linear_acceleration.x, sensor_values_[7]);
   EXPECT_EQ(imu_msg.linear_acceleration.y, sensor_values_[8]);
   EXPECT_EQ(imu_msg.linear_acceleration.z, sensor_values_[9]);
+
+  for (size_t i = 0; i < 9; ++i)
+  {
+    EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
+}
+
+TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_Calibration)
+{
+  SetUpIMUBroadcaster(
+    {// set the params 'sensor_name' and 'frame_id'
+     rclcpp::Parameter("sensor_name", sensor_name_), rclcpp::Parameter("frame_id", frame_id_),
+     // use Q = ENU->NED transform, same as in test_imu_transform.cpp
+     rclcpp::Parameter("calibration.roll", M_PI), rclcpp::Parameter("calibration.pitch", 0.),
+     rclcpp::Parameter("calibration.yaw", M_PI_2)});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+
+  // Transforming orientation means expressing the attitude of the new frame in the same world frame
+  // (i.e. you have data in imu frame and want to ask what is the world-referenced orientation of
+  // the base_link frame that is attached to this IMU). This is why the orientation change goes the
+  // other way than the transform.
+  tf2::Quaternion rot;
+  tf2::Quaternion tf_quat;
+  tf_quat.setRPY(M_PI, 0., M_PI_2);
+  tf2::convert(imu_msg.orientation, rot);
+  tf2::Quaternion init(0.1826, 0.3651, 0.5477, 0.7303);  // see sensor_values_[0-3]
+  EXPECT_NEAR(0, rot.angleShortestPath(init * tf_quat.inverse()), 1e-6);
+  EXPECT_NEAR(imu_msg.angular_velocity.x, sensor_values_[5], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.y, sensor_values_[4], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.z, -sensor_values_[6], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.x, sensor_values_[8], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.y, sensor_values_[7], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.z, -sensor_values_[9], 1e-5);
 
   for (size_t i = 0; i < 9; ++i)
   {

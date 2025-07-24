@@ -52,25 +52,16 @@ imu_sensor_broadcaster:
       default_value: 0.0,
       read_only: true,
       description: "Roll calibration value in radians. (Z-Y'-X'' convention)",
-      validation: {
-        bounds<>: [-3.14, 3.14]
-      }
     }
     pitch: {
       type: double,
       default_value: 0.0,
       read_only: true,
       description: "Pitch calibration value in radians. (Z-Y'-X'' convention)",
-      validation: {
-        bounds<>: [-3.14, 3.14]
-      }
     }
     yaw: {
       type: double,
       default_value: 0.0,
       read_only: true,
       description: "Yaw calibration value in radians. (Z-Y'-X'' convention)",
-      validation: {
-        bounds<>: [-3.14, 3.14]
-      }
     }

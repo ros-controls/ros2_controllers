@@ -70,6 +70,8 @@ if(BUILD_TESTING)
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
     imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
   )
 
   find_package(tf2 REQUIRED)

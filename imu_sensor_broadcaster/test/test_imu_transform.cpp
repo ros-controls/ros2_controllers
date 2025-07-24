@@ -81,6 +81,18 @@ TEST(Covariance, Transform)
   compareCovariances(expectedOut, out);
 }
 
+// check if we use the same euler angle definition as tf2
+TEST(Quat, quatFromEuler)
+{
+  tf2::Quaternion tf_quat;
+  tf_quat.setRPY(M_PI, 0., M_PI_2);
+  const auto q = quat_from_euler(M_PI, 0., M_PI_2);
+  EXPECT_NEAR(tf_quat.x(), q.x(), 1e-6);
+  EXPECT_NEAR(tf_quat.y(), q.y(), 1e-6);
+  EXPECT_NEAR(tf_quat.z(), q.z(), 1e-6);
+  EXPECT_NEAR(tf_quat.w(), q.w(), 1e-6);
+}
+
 void prepareImuMsg(sensor_msgs::msg::Imu & msg)
 {
   msg.header.frame_id = "test";
