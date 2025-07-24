@@ -40,7 +40,7 @@
   <test_depend>hardware_interface_testing</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
   <test_depend>tf2</test_depend>
-  <test_depend>tf2_geometry</test_depend>
+  <test_depend>tf2_geometry_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
