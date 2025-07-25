@@ -126,7 +126,7 @@ controller_interface::return_type IMUSensorBroadcaster::update_and_write_command
 {
   sensor_msgs::msg::Imu input_imu{state_message_};
   imu_sensor_->get_values_as_message(input_imu);
-  doTransform(state_message_, input_imu, r_);
+  do_transform(state_message_, input_imu, r_);
 
   if (realtime_publisher_)
   {

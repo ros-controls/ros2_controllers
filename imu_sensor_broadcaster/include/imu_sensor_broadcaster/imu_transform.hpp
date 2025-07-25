@@ -41,7 +41,7 @@ Eigen::Quaterniond quat_from_euler(double roll, double pitch, double yaw)
 /**
  * @brief Transforms a covariance array from one frame to another
  */
-inline void transformCovariance(
+inline void transform_covariance(
   std::array<double, 9> & out, const std::array<double, 9> & in, Eigen::Quaterniond r)
 {
   Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > cov_in(in.data());
@@ -52,7 +52,7 @@ inline void transformCovariance(
 /**
  * @brief Transforms sensor_msgs::Imu data from one frame to another
  */
-inline void doTransform(
+inline void do_transform(
   sensor_msgs::msg::Imu & imu_out, const sensor_msgs::msg::Imu & imu_in, const Eigen::Quaterniond r)
 {
   imu_out.header = imu_in.header;
@@ -66,7 +66,7 @@ inline void doTransform(
   imu_out.angular_velocity.y = vel.y();
   imu_out.angular_velocity.z = vel.z();
 
-  transformCovariance(imu_out.angular_velocity_covariance, imu_in.angular_velocity_covariance, r);
+  transform_covariance(imu_out.angular_velocity_covariance, imu_in.angular_velocity_covariance, r);
 
   Eigen::Vector3d accel =
     t * Eigen::Vector3d(
@@ -76,7 +76,7 @@ inline void doTransform(
   imu_out.linear_acceleration.y = accel.y();
   imu_out.linear_acceleration.z = accel.z();
 
-  transformCovariance(
+  transform_covariance(
     imu_out.linear_acceleration_covariance, imu_in.linear_acceleration_covariance, r);
 
   // Orientation expresses attitude of the new frame_id in a fixed world frame. This is why the
