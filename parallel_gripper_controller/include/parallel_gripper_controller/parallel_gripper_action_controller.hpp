@@ -36,8 +36,8 @@
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 
 // Project
 #include "parallel_gripper_controller/parallel_gripper_action_controller_parameters.hpp"
@@ -93,10 +93,6 @@ public:
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  realtime_tools::RealtimeBuffer<Commands> command_;
-  // pre-allocated memory that is reused to set the realtime buffer
-  Commands command_struct_, command_struct_rt_;
-
 protected:
   using GripperCommandAction = control_msgs::action::ParallelGripperCommand;
   using ActionServer = rclcpp_action::Server<GripperCommandAction>;
@@ -105,12 +101,16 @@ protected:
   using RealtimeGoalHandle =
     realtime_tools::RealtimeServerGoalHandle<control_msgs::action::ParallelGripperCommand>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
-  using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
+  using RealtimeGoalHandleBox = realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr>;
 
-  bool update_hold_position_;
+  // the realtime container to exchange the reference from subscriber
+  realtime_tools::RealtimeThreadSafeBox<Commands> command_;
+  // pre-allocated memory that is reused
+  Commands command_struct_;
+  // save the last reference in case of unable to get value from box
+  Commands command_struct_rt_;
 
-  bool verbose_ = false;  ///< Hard coded verbose flag to help in debugging
-  std::string name_;      ///< Controller name.
+  std::string name_;  ///< Controller name.
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
     joint_command_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
@@ -125,7 +125,7 @@ protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
-  RealtimeGoalHandleBuffer
+  RealtimeGoalHandleBox
     rt_active_goal_;  ///< Container for the currently active action goal, if any.
   control_msgs::action::ParallelGripperCommand::Result::SharedPtr pre_alloc_result_;
 
