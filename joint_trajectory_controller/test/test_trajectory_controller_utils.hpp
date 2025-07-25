@@ -387,15 +387,15 @@ public:
           joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
           separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
-      // Add to export lists and set initial values
+      // Add to export lists and set initial values (explicitly discarding return value)
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_pos_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_vel_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_vel_joints[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_acc_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_acc_joints[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_eff_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_eff_joints[i]);
       if (separate_cmd_and_state_values)
       {
         joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
