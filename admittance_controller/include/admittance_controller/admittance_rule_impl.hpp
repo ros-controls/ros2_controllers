@@ -102,8 +102,6 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.wrench_base.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
-  state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;
-  state_message_.admittance_position.child_frame_id = "admittance_offset";
 
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
@@ -392,10 +390,12 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
     admittance_state_.admittance_acceleration[5];
 
   state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
+  state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_position.child_frame_id = "admittance_offset";
 
-  state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
-  state_message_.ref_trans_base_ft.header.frame_id = "ft_reference";
   state_message_.ref_trans_base_ft = tf2::eigenToTransform(admittance_state_.ref_trans_base_ft);
+  state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
+  state_message_.ref_trans_base_ft.child_frame_id = parameters_.ft_sensor.frame.id;
 
   Eigen::Quaterniond quat(admittance_state_.rot_base_control);
   state_message_.rot_base_control.w = quat.w();
