@@ -222,14 +222,15 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   }
 }
 
-TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_Calibration)
+TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset)
 {
   SetUpIMUBroadcaster(
     {// set the params 'sensor_name' and 'frame_id'
      rclcpp::Parameter("sensor_name", sensor_name_), rclcpp::Parameter("frame_id", frame_id_),
      // use Q = ENU->NED transform, same as in test_imu_transform.cpp
-     rclcpp::Parameter("calibration.roll", M_PI), rclcpp::Parameter("calibration.pitch", 0.),
-     rclcpp::Parameter("calibration.yaw", M_PI_2)});
+     rclcpp::Parameter("rotation_offset.roll", M_PI),
+     rclcpp::Parameter("rotation_offset.pitch", 0.),
+     rclcpp::Parameter("rotation_offset.yaw", M_PI_2)});
 
   ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);

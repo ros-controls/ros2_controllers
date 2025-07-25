@@ -47,8 +47,8 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
   try
   {
     params_ = param_listener_->get_params();
-    r_ =
-      quat_from_euler(params_.calibration.roll, params_.calibration.pitch, params_.calibration.yaw);
+    r_ = quat_from_euler(
+      params_.rotation_offset.roll, params_.rotation_offset.pitch, params_.rotation_offset.yaw);
     r_.normalize();
   }
   catch (const std::exception & e)
@@ -124,9 +124,9 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_deactivate(
 controller_interface::return_type IMUSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  sensor_msgs::msg::Imu input_imu;
+  sensor_msgs::msg::Imu input_imu{state_message_};
   imu_sensor_->get_values_as_message(input_imu);
-  doTransform(input_imu, r_, state_message_);
+  doTransform(state_message_, input_imu, r_);
 
   if (realtime_publisher_)
   {

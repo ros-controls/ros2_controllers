@@ -39,7 +39,7 @@ class FriendIMUSensorBroadcaster : public imu_sensor_broadcaster::IMUSensorBroad
   FRIEND_TEST(IMUSensorBroadcasterTest, ActivateSuccess);
   FRIEND_TEST(IMUSensorBroadcasterTest, UpdateTest);
   FRIEND_TEST(IMUSensorBroadcasterTest, SensorStatePublishTest);
-  FRIEND_TEST(IMUSensorBroadcasterTest, SensorStatePublishTest_with_Calibration);
+  FRIEND_TEST(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset);
 };
 
 class IMUSensorBroadcasterTest : public ::testing::Test

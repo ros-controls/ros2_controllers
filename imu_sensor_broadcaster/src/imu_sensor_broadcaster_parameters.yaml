@@ -46,22 +46,22 @@ imu_sensor_broadcaster:
       fixed_size<>: [9],
     }
   }
-  calibration:
+  rotation_offset:
     roll: {
       type: double,
       default_value: 0.0,
       read_only: true,
-      description: "Roll calibration value in radians. (Z-Y'-X'' convention)",
+      description: "Roll offset value in radians. (Z-Y'-X'' convention)",
     }
     pitch: {
       type: double,
       default_value: 0.0,
       read_only: true,
-      description: "Pitch calibration value in radians. (Z-Y'-X'' convention)",
+      description: "Pitch offset value in radians. (Z-Y'-X'' convention)",
     }
     yaw: {
       type: double,
       default_value: 0.0,
       read_only: true,
-      description: "Yaw calibration value in radians. (Z-Y'-X'' convention)",
+      description: "Yaw offset value in radians. (Z-Y'-X'' convention)",
     }
