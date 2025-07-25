@@ -40,44 +40,44 @@ TEST(Covariance, Transform)
   std::array<double, 9> expectedOut = {{1, 0, 0, 0, 2, 0, 0, 0, 3}};
   std::array<double, 9> out{};
   Eigen::Quaterniond q(1, 0, 0, 0);
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = Eigen::Quaterniond(Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d(0, 0, 1)));
   expectedOut = {{2, 0, 0, 0, 1, 0, 0, 0, 3}};
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = q.inverse();
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = Eigen::Quaterniond(Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d(1, 0, 0)));
   expectedOut = {{1, 0, 0, 0, 3, 0, 0, 0, 2}};
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = q.inverse();
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = Eigen::Quaterniond(Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d(0, 1, 0)));
   expectedOut = {{3, 0, 0, 0, 2, 0, 0, 0, 1}};
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = q.inverse();
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = Eigen::Quaterniond(Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d(1, 1, 1)));
   expectedOut = {{2.5, -0.5, 3, 1, 0, -1, -1.5, 2, 0.5}};
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 
   q = q.inverse();
   expectedOut = {{1.5, -1, 1, 2, 2, -1.5, -0.5, 3, -0.5}};
-  transformCovariance(in, out, q);
+  transformCovariance(out, in, q);
   compareCovariances(expectedOut, out);
 }
 
@@ -119,7 +119,7 @@ TEST(Imu, DoTransformYaw)
   const auto q = quat_from_euler(0, 0, M_PI_2);
   tf2::Quaternion tf_quat(q.x(), q.y(), q.z(), q.w());
   sensor_msgs::msg::Imu out;
-  doTransform(msg, out, q);
+  doTransform(out, msg, q);
 
   EXPECT_EQ("test", out.header.frame_id);
   EXPECT_EQ(msg.header.stamp, out.header.stamp);
@@ -153,7 +153,7 @@ TEST(Imu, DoTransformEnuNed)
   const auto q = quat_from_euler(M_PI, 0, M_PI_2);
   tf2::Quaternion tf_quat(q.x(), q.y(), q.z(), q.w());
   sensor_msgs::msg::Imu out;
-  doTransform(msg, out, q);
+  doTransform(out, msg, q);
 
   EXPECT_EQ("test", out.header.frame_id);
   EXPECT_EQ(msg.header.stamp, out.header.stamp);
