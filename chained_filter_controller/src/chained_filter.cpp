@@ -128,7 +128,7 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
         state_interfaces_[0].get_name().c_str());
       continue;
     }
-    if (!std::isnan(sensor_op.value()))
+    if (std::isfinite(sensor_op.value()))
     {
       filters_[i]->update(sensor_op.value(), output_state_values_[i]);
     }
