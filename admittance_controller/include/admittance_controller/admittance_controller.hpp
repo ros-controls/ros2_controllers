@@ -132,11 +132,8 @@ protected:
   // filter chain for Wrench data
   std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
-  // ROS messages
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
-
   // real-time boxes
-  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
+  realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
     input_joint_command_;
   realtime_tools::RealtimeThreadSafeBox<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
