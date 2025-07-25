@@ -275,7 +275,8 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   Eigen::Matrix<double, 6, 1> F_control = rot_base_control_6d.transpose() * F_base;
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
 
-  // Compute admittance control law in the base frame: F = M*x_ddot + D*x_dot + K*x
+  // Compute admittance control law in the base frame: F_control = M*R^T*x_ddot + D*R^T*x_dot + K*R^T*x
+  // with R being the rotation matrix from base to control frame
   Eigen::Matrix<double, 6, 1> X_ddot = rot_base_control_6d * M_inv *
                                        (F_control - D * rot_base_control_6d.transpose() * X_dot -
                                         K * rot_base_control_6d.transpose() * X);
