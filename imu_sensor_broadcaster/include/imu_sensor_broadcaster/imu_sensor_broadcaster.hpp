@@ -62,7 +62,7 @@ public:
 protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
-  Eigen::Quaternion<double> r_;
+  Eigen::Quaterniond r_;
 
   std::unique_ptr<semantic_components::IMUSensor> imu_sensor_;
 

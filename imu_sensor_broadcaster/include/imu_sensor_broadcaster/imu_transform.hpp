@@ -30,9 +30,9 @@ namespace imu_sensor_broadcaster
  * @brief Euler to quaternion Z-Y'-X'' convention
  * https://eigen.tuxfamily.org/dox-devel/group__TutorialGeometry.html
  */
-Eigen::Quaternion<double> quat_from_euler(double roll, double pitch, double yaw)
+Eigen::Quaterniond quat_from_euler(double roll, double pitch, double yaw)
 {
-  return Eigen::Quaternion<double>(
+  return Eigen::Quaterniond(
     Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
     Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
     Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()));
@@ -42,7 +42,7 @@ Eigen::Quaternion<double> quat_from_euler(double roll, double pitch, double yaw)
  * @brief Transforms a covariance array from one frame to another
  */
 inline void transformCovariance(
-  const std::array<double, 9> & in, std::array<double, 9> & out, Eigen::Quaternion<double> r)
+  const std::array<double, 9> & in, std::array<double, 9> & out, Eigen::Quaterniond r)
 {
   Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > cov_in(in.data());
   Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > cov_out(out.data());
@@ -53,8 +53,7 @@ inline void transformCovariance(
  * @brief Transforms sensor_msgs::Imu data from one frame to another
  */
 inline void doTransform(
-  const sensor_msgs::msg::Imu & imu_in, sensor_msgs::msg::Imu & imu_out,
-  const Eigen::Quaternion<double> r)
+  const sensor_msgs::msg::Imu & imu_in, sensor_msgs::msg::Imu & imu_out, const Eigen::Quaterniond r)
 {
   imu_out.header = imu_in.header;
 
@@ -82,8 +81,8 @@ inline void doTransform(
 
   // Orientation expresses attitude of the new frame_id in a fixed world frame. This is why the
   // transform here applies in the opposite direction.
-  Eigen::Quaternion<double> orientation =
-    Eigen::Quaternion<double>(
+  Eigen::Quaterniond orientation =
+    Eigen::Quaterniond(
       imu_in.orientation.w, imu_in.orientation.x, imu_in.orientation.y, imu_in.orientation.z) *
     r.inverse();
 
