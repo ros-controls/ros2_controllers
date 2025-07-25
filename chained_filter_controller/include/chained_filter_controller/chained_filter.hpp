@@ -47,8 +47,6 @@ public:
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  rclcpp::NodeOptions define_custom_node_options() const override;
-
 protected:
   std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
 

@@ -154,13 +154,6 @@ controller_interface::return_type ChainedFilter::update_reference_from_subscribe
   return controller_interface::return_type::OK;
 }
 
-rclcpp::NodeOptions ChainedFilter::define_custom_node_options() const
-{
-  return rclcpp::NodeOptions()
-    .allow_undeclared_parameters(true)
-    .automatically_declare_parameters_from_overrides(false);
-}
-
 }  // namespace chained_filter_controller
 
 PLUGINLIB_EXPORT_CLASS(
