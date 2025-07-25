@@ -20,7 +20,7 @@ package_name = "ros2_controllers_test_nodes"
 
 setup(
     name=package_name,
-    version="4.23.0",
+    version="5.4.0",
     packages=[package_name],
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),

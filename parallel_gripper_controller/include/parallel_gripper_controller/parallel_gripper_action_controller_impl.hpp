@@ -30,12 +30,14 @@ namespace parallel_gripper_action_controller
 void GripperActionController::preempt_active_goal()
 {
   // Cancels the currently active goal
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
   if (active_goal)
   {
     // Marks the current goal as canceled
     active_goal->setCanceled(std::make_shared<GripperCommandAction::Result>());
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                        { stored_value = RealtimeGoalHandlePtr(); });
   }
 }
 
@@ -57,22 +59,50 @@ controller_interface::CallbackReturn GripperActionController::on_init()
 controller_interface::return_type GripperActionController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  command_struct_rt_ = *(command_.readFromRT());
-
-  const double current_position = joint_position_state_interface_->get().get_value();
-  const double current_velocity = joint_velocity_state_interface_->get().get_value();
-  const double error_position = command_struct_rt_.position_cmd_ - current_position;
-
-  check_for_success(get_node()->now(), error_position, current_position, current_velocity);
-
-  joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_);
-  if (speed_interface_.has_value())
+  auto logger = get_node()->get_logger();
+  auto command_struct_rt_op = command_.try_get();
+  if (command_struct_rt_op.has_value())
   {
-    speed_interface_->get().set_value(command_struct_rt_.max_velocity_);
+    command_struct_rt_ = command_struct_rt_op.value();
   }
-  if (effort_interface_.has_value())
+  const auto current_position_op = joint_position_state_interface_->get().get_optional();
+  if (!current_position_op.has_value())
   {
-    effort_interface_->get().set_value(command_struct_rt_.max_effort_);
+    RCLCPP_DEBUG(logger, "Unable to retrieve current position value");
+    return controller_interface::return_type::OK;
+  }
+  const auto current_velocity_op = joint_velocity_state_interface_->get().get_optional();
+  if (!current_velocity_op.has_value())
+  {
+    RCLCPP_DEBUG(logger, "Unable to retrieve current velocity value");
+    return controller_interface::return_type::OK;
+  }
+
+  const double error_position = command_struct_rt_.position_cmd_ - current_position_op.value();
+
+  check_for_success(
+    get_node()->now(), error_position, current_position_op.value(), current_velocity_op.value());
+
+  if (!joint_command_interface_->get().set_value(command_struct_rt_.position_cmd_))
+  {
+    RCLCPP_WARN(
+      logger, "Unable to set the joint position command to: %f", command_struct_rt_.position_cmd_);
+    return controller_interface::return_type::OK;
+  }
+  if (
+    speed_interface_.has_value() &&
+    !speed_interface_->get().set_value(command_struct_rt_.max_velocity_))
+  {
+    RCLCPP_WARN(logger, "Unable to set the speed command to: %f", command_struct_rt_.max_velocity_);
+
+    return controller_interface::return_type::OK;
+  }
+  if (
+    effort_interface_.has_value() &&
+    !effort_interface_->get().set_value(command_struct_rt_.max_effort_))
+  {
+    RCLCPP_WARN(logger, "Unable to set the effort command to: %f", command_struct_rt_.max_effort_);
+    return controller_interface::return_type::OK;
   }
 
   return controller_interface::return_type::OK;
@@ -124,14 +154,14 @@ void GripperActionController::accepted_callback(
   {
     command_struct_.max_effort_ = params_.max_effort;
   }
-  command_.writeFromNonRT(command_struct_);
+  command_.set(command_struct_);
 
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
 
   last_movement_time_ = get_node()->now();
   rt_goal->execute();
-  rt_active_goal_.writeFromNonRT(rt_goal);
+  rt_active_goal_.set([rt_goal](RealtimeGoalHandlePtr & stored_value) { stored_value = rt_goal; });
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
   goal_handle_timer_.reset();
@@ -148,7 +178,8 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
 
   // Check that cancel request refers to currently active goal (if any)
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
   if (active_goal && active_goal->gh_ == goal_handle)
   {
     // Enter hold current position mode
@@ -161,24 +192,31 @@ rclcpp_action::CancelResponse GripperActionController::cancel_callback(
     auto action_res = std::make_shared<GripperCommandAction::Result>();
     active_goal->setCanceled(action_res);
     // Reset current goal
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                        { stored_value = RealtimeGoalHandlePtr(); });
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void GripperActionController::set_hold_position()
 {
-  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
+  const auto position_op = joint_position_state_interface_->get().get_optional();
+  if (!position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
+  }
+  command_struct_.position_cmd_ = position_op.value();
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
-  command_.writeFromNonRT(command_struct_);
+  command_.set(command_struct_);
 }
 
 void GripperActionController::check_for_success(
   const rclcpp::Time & time, double error_position, double current_position,
   double current_velocity)
 {
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
   if (!active_goal)
   {
     return;
@@ -192,7 +230,8 @@ void GripperActionController::check_for_success(
     pre_alloc_result_->stalled = false;
     RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
     active_goal->setSucceeded(pre_alloc_result_);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                        { stored_value = RealtimeGoalHandlePtr(); });
   }
   else
   {
@@ -217,7 +256,8 @@ void GripperActionController::check_for_success(
         RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
         active_goal->setAborted(pre_alloc_result_);
       }
-      rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+      rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                          { stored_value = RealtimeGoalHandlePtr(); });
     }
   }
 }
@@ -317,10 +357,18 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   }
 
   // Command - non RT version
-  command_struct_.position_cmd_ = joint_position_state_interface_->get().get_value();
+  const auto position_op = joint_position_state_interface_->get().get_optional();
+  if (!position_op.has_value())
+  {
+    RCLCPP_DEBUG(get_node()->get_logger(), "Unable to retrieve data of joint position");
+  }
+  else
+  {
+    command_struct_.position_cmd_ = position_op.value();
+  }
   command_struct_.max_effort_ = params_.max_effort;
   command_struct_.max_velocity_ = params_.max_velocity;
-  command_.initRT(command_struct_);
+  command_.try_set(command_struct_);
 
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::ParallelGripperCommand::Result>();

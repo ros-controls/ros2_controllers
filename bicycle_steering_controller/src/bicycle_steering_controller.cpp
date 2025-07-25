@@ -32,18 +32,9 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
   bicycle_params_ = bicycle_param_listener_->get_params();
 
   const double wheelbase = bicycle_params_.wheelbase;
-  const double front_wheel_radius = bicycle_params_.front_wheel_radius;
-  const double rear_wheel_radius = bicycle_params_.rear_wheel_radius;
+  const double traction_wheel_radius = bicycle_params_.traction_wheel_radius;
 
-  if (params_.front_steering)
-  {
-    odometry_.set_wheel_params(rear_wheel_radius, wheelbase);
-  }
-  else
-  {
-    odometry_.set_wheel_params(front_wheel_radius, wheelbase);
-  }
-
+  odometry_.set_wheel_params(traction_wheel_radius, wheelbase);
   odometry_.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
@@ -54,14 +45,27 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
 
 bool BicycleSteeringController::update_odometry(const rclcpp::Duration & period)
 {
+  auto logger = get_node()->get_logger();
+
   if (params_.open_loop)
   {
     odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
-    const double traction_wheel_value = state_interfaces_[STATE_TRACTION_WHEEL].get_value();
-    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    const auto traction_wheel_value_op = state_interfaces_[STATE_TRACTION_WHEEL].get_optional();
+    const auto steering_position_op = state_interfaces_[STATE_STEER_AXIS].get_optional();
+
+    if (!traction_wheel_value_op.has_value() || !steering_position_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        logger, "Unable to retrieve the data from the traction wheel or steering position!");
+      return true;
+    }
+
+    const double traction_wheel_value = traction_wheel_value_op.value();
+    const double steering_position = steering_position_op.value();
+
     if (std::isfinite(traction_wheel_value) && std::isfinite(steering_position))
     {
       if (params_.position_feedback)

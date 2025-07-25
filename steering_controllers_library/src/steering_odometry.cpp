@@ -33,8 +33,9 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
   heading_(0.0),
   linear_(0.0),
   angular_(0.0),
-  wheel_track_(0.0),
-  wheelbase_(0.0),
+  wheel_track_traction_(0.0),
+  wheel_track_steering_(0.0),
+  wheel_base_(0.0),
   wheel_radius_(0.0),
   traction_wheel_old_pos_(0.0),
   traction_right_wheel_old_pos_(0.0),
@@ -125,7 +126,7 @@ bool SteeringOdometry::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
-  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheel_base_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -134,7 +135,7 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos)
 {
-  double turning_radius = wheelbase_ / std::tan(steer_pos);
+  double turning_radius = wheel_base_ / std::tan(steer_pos);
   const double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
   const double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
 
@@ -144,8 +145,10 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   }
 
   // overdetermined, we take the average
-  const double vel_r = vel_wheel_r * turning_radius / (turning_radius + wheel_track_ * 0.5);
-  const double vel_l = vel_wheel_l * turning_radius / (turning_radius - wheel_track_ * 0.5);
+  const double vel_r =
+    vel_wheel_r * turning_radius / (turning_radius + wheel_track_traction_ * 0.5);
+  const double vel_l =
+    vel_wheel_l * turning_radius / (turning_radius - wheel_track_traction_ * 0.5);
   return (vel_r + vel_l) * 0.5;
 }
 
@@ -157,7 +160,7 @@ bool SteeringOdometry::update_from_velocity(
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
 
-  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheel_base_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -168,16 +171,16 @@ bool SteeringOdometry::update_from_velocity(
 {
   // overdetermined, we take the average
   const double right_steer_pos_est = std::atan(
-    wheelbase_ * std::tan(right_steer_pos) /
-    (wheelbase_ - wheel_track_ / 2 * std::tan(right_steer_pos)));
+    wheel_base_ * std::tan(right_steer_pos) /
+    (wheel_base_ - wheel_track_steering_ / 2 * std::tan(right_steer_pos)));
   const double left_steer_pos_est = std::atan(
-    wheelbase_ * std::tan(left_steer_pos) /
-    (wheelbase_ + wheel_track_ / 2 * std::tan(left_steer_pos)));
+    wheel_base_ * std::tan(left_steer_pos) /
+    (wheel_base_ + wheel_track_steering_ / 2 * std::tan(left_steer_pos)));
   steer_pos_ = (right_steer_pos_est + left_steer_pos_est) * 0.5;
 
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
-  const double angular_velocity = steer_pos_ * linear_velocity / wheelbase_;
+  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheel_base_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
@@ -192,11 +195,21 @@ void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz
   integrate_fk(v_bx, omega_bz, dt);
 }
 
-void SteeringOdometry::set_wheel_params(double wheel_radius, double wheelbase, double wheel_track)
+void SteeringOdometry::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
 {
   wheel_radius_ = wheel_radius;
-  wheelbase_ = wheelbase;
-  wheel_track_ = wheel_track;
+  wheel_base_ = wheel_base;
+  wheel_track_traction_ = wheel_track;
+  wheel_track_steering_ = wheel_track;
+}
+
+void SteeringOdometry::set_wheel_params(
+  double wheel_radius, double wheel_base, double wheel_track_steering, double wheel_track_traction)
+{
+  wheel_radius_ = wheel_radius;
+  wheel_base_ = wheel_base;
+  wheel_track_traction_ = wheel_track_traction;
+  wheel_track_steering_ = wheel_track_steering;
 }
 
 void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
@@ -214,7 +227,7 @@ void SteeringOdometry::set_odometry_type(const unsigned int type)
 double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
   // phi can be nan if both v_bx and omega_bz are zero
-  const auto phi = std::atan(omega_bz * wheelbase_ / v_bx);
+  const auto phi = std::atan(omega_bz * wheel_base_ / v_bx);
   return std::isfinite(phi) ? phi : 0.0;
 }
 
@@ -288,9 +301,9 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(phi_IK);
-      const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
-      const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      const double turning_radius = wheel_base_ / std::tan(phi_IK);
+      const double Wr = Ws * (turning_radius + wheel_track_traction_ * 0.5) / turning_radius;
+      const double Wl = Ws * (turning_radius - wheel_track_traction_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
     }
     // simple steering
@@ -310,14 +323,14 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     }
     else
     {
-      const double turning_radius = wheelbase_ / std::tan(phi_IK);
-      const double Wr = Ws * (turning_radius + wheel_track_ * 0.5) / turning_radius;
-      const double Wl = Ws * (turning_radius - wheel_track_ * 0.5) / turning_radius;
+      const double turning_radius = wheel_base_ / std::tan(phi_IK);
+      const double Wr = Ws * (turning_radius + wheel_track_traction_ * 0.5) / turning_radius;
+      const double Wl = Ws * (turning_radius - wheel_track_traction_ * 0.5) / turning_radius;
       traction_commands = {Wr, Wl};
 
-      const double numerator = 2 * wheelbase_ * std::sin(phi);
-      const double denominator_first_member = 2 * wheelbase_ * std::cos(phi);
-      const double denominator_second_member = wheel_track_ * std::sin(phi);
+      const double numerator = 2 * wheel_base_ * std::sin(phi);
+      const double denominator_first_member = 2 * wheel_base_ * std::cos(phi);
+      const double denominator_second_member = wheel_track_steering_ * std::sin(phi);
 
       const double alpha_r =
         std::atan2(numerator, denominator_first_member + denominator_second_member);

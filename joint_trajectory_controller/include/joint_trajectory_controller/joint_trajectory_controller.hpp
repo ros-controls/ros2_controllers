@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__JOINT_TRAJECTORY_CONTROLLER_HPP_
 
+#include <atomic>
 #include <functional>  // for std::reference_wrapper
 #include <memory>
 #include <string>
@@ -22,9 +23,11 @@
 
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
+#include "control_msgs/msg/speed_scaling_factor.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
@@ -128,6 +131,10 @@ protected:
 
   InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
   InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
+  std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+    scaling_state_interface_;
+  std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
+    scaling_command_interface_;
 
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;
@@ -149,12 +156,16 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
+  // Things around speed scaling
+  std::atomic<double> scaling_factor_{1.0};
+  std::atomic<double> scaling_factor_cmd_{1.0};
+
   // Timeout to consider commands old
   double cmd_timeout_;
   // True if holding position or repeating last trajectory point in case of success
-  realtime_tools::RealtimeBuffer<bool> rt_is_holding_;
+  std::atomic<bool> rt_is_holding_{false};
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported
-  bool subscriber_is_active_ = false;
+  std::atomic<bool> subscriber_is_active_{false};
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_command_subscriber_ =
     nullptr;
 
@@ -178,8 +189,8 @@ protected:
   using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
-  realtime_tools::RealtimeBuffer<bool> rt_has_pending_goal_;  ///< Is there a pending action goal?
+  RealtimeGoalHandleBuffer rt_active_goal_;       ///< Currently active action goal, if any.
+  std::atomic<bool> rt_has_pending_goal_{false};  ///< Is there a pending action goal?
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
@@ -274,6 +285,27 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
 
   /**
+   * @brief Set scaling factor used for speed scaling trajectory execution
+   *
+   * If the hardware supports and has configured setting speed scaling, that will be sent to the
+   * hardware's command interface.
+   *
+   * If the hardware doesn't support a command interface for speed scaling, but a state interface
+   * for reading speed scaling, calling this function will have no effect, as the factor will be
+   * overwritten by the state interface.
+   *
+   * @param scaling_factor has to be >= 0
+   *
+   * @return True if the value was valid and set, false if the value is < 0
+   * interval
+   *
+   */
+  bool set_scaling_factor(double scaling_factor);
+
+  using SpeedScalingMsg = control_msgs::msg::SpeedScalingFactor;
+  rclcpp::Subscription<SpeedScalingMsg>::SharedPtr scaling_factor_sub_;
+
+  /**
    * @brief Assigns the values from a trajectory point interface to a joint interface.
    *
    * @tparam T The type of the joint interface.
@@ -287,7 +319,15 @@ private:
   {
     for (size_t index = 0; index < num_cmd_joints_; ++index)
     {
-      joint_interface[index].get().set_value(trajectory_point_interface[map_cmd_to_joints_[index]]);
+      if (!joint_interface[index].get().set_value(
+            trajectory_point_interface[map_cmd_to_joints_[index]]))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "Failed to set value for joint '%s' in command interface '%s'. ",
+          command_joint_names_[index].c_str(), joint_interface[index].get().get_name().c_str());
+        return;
+      }
     }
   }
 };
