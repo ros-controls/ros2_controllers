@@ -387,15 +387,15 @@ public:
           joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
           separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
-      // Add to export lists and set initial values
+      // Add to export lists and set initial values (explicitly discarding return value)
       cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_pos_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_pos_joints[i]);
       cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_vel_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_vel_joints[i]);
       cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_acc_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_acc_joints[i]);
       cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      cmd_interfaces.back().set_value(initial_eff_joints[i]);
+      (void)cmd_interfaces.back().set_value(initial_eff_joints[i]);
       if (separate_cmd_and_state_values)
       {
         joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
@@ -406,6 +406,19 @@ public:
       state_interfaces.emplace_back(vel_state_interfaces_.back());
       state_interfaces.emplace_back(acc_state_interfaces_.back());
     }
+
+    speed_scaling_factor_ = 1.0;
+    target_speed_scaling_factor_ = 1.0;
+    gpio_state_interfaces.emplace_back(
+      hardware_interface::StateInterface(
+        "speed_scaling", "speed_scaling_factor",
+        separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
+    state_interfaces.emplace_back(gpio_state_interfaces.back());
+
+    gpio_command_interfaces_.emplace_back(
+      hardware_interface::CommandInterface(
+        "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
+    cmd_interfaces.emplace_back(gpio_command_interfaces_.back());
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
     return traj_controller_->get_node()->activate();
@@ -685,9 +698,10 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_value(), joint_vel_[i]))
+            position.at(i) - pos_state_interfaces_[i].get_optional().value(), joint_vel_[i]))
             << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_value() << ", velocity command is " << joint_vel_[i];
+            << pos_state_interfaces_[i].get_optional().value() << ", velocity command is "
+            << joint_vel_[i];
         }
       }
       if (traj_controller_->has_effort_command_interface())
@@ -695,9 +709,11 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_value() + effort.at(i), joint_eff_[i]))
+            position.at(i) - pos_state_interfaces_[i].get_optional().value() + effort.at(i),
+            joint_eff_[i]))
             << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_value() << ", effort command is " << joint_eff_[i];
+            << pos_state_interfaces_[i].get_optional().value() << ", effort command is "
+            << joint_eff_[i];
         }
       }
     }
@@ -801,13 +817,17 @@ public:
   std::vector<double> joint_state_pos_;
   std::vector<double> joint_state_vel_;
   std::vector<double> joint_state_acc_;
+  double speed_scaling_factor_;
+  double target_speed_scaling_factor_;
   std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> vel_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> acc_cmd_interfaces_;
   std::vector<hardware_interface::CommandInterface> eff_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface> gpio_command_interfaces_;
   std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
   std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
   std::vector<hardware_interface::StateInterface> acc_state_interfaces_;
+  std::vector<hardware_interface::StateInterface> gpio_state_interfaces;
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest

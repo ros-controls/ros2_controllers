@@ -133,12 +133,12 @@ public:
 
   void assert_default_command_and_state_values()
   {
-    ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands.at(0));
-    ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands.at(1));
-    ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands.at(2));
-    ASSERT_EQ(gpio_1_1_dig_state.get_value(), gpio_states.at(0));
-    ASSERT_EQ(gpio_1_2_dig_state.get_value(), gpio_states.at(1));
-    ASSERT_EQ(gpio_2_ana_state.get_value(), gpio_states.at(2));
+    ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), gpio_commands.at(0));
+    ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), gpio_commands.at(1));
+    ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands.at(2));
+    ASSERT_EQ(gpio_1_1_dig_state.get_optional().value(), gpio_states.at(0));
+    ASSERT_EQ(gpio_1_2_dig_state.get_optional().value(), gpio_states.at(1));
+    ASSERT_EQ(gpio_2_ana_state.get_optional().value(), gpio_states.at(2));
   }
 
   void update_controller_loop()
@@ -445,7 +445,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0, 1.0}),
                          createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::ERROR);
@@ -467,7 +467,7 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"},
     {createInterfaceValue({"dig.1", "dig.2"}, {0.0}), createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::ERROR);
@@ -489,12 +489,12 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
                          createInterfaceValue({"ana.1"}, {30.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
 }
 
 TEST_F(
@@ -513,12 +513,12 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio2", "gpio1"}, {createInterfaceValue({"ana.1"}, {30.0}),
                          createInterfaceValue({"dig.2", "dig.1"}, {1.0, 0.0})});
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
 }
 
 TEST_F(
@@ -536,13 +536,12 @@ TEST_F(
 
   const auto command =
     createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0})});
-
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands[2]);
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands[2]);
 }
 
 TEST_F(
@@ -561,13 +560,12 @@ TEST_F(
   const auto command = createGpioCommand(
     {"gpio1", "gpio3"}, {createInterfaceValue({"dig.3", "dig.4"}, {20.0, 25.0}),
                          createInterfaceValue({"ana.1"}, {21.0})});
-
-  controller_->rt_command_ptr_.writeFromNonRT(std::make_shared<CmdType>(command));
+  controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), gpio_commands.at(0));
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), gpio_commands.at(1));
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), gpio_commands.at(2));
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), gpio_commands.at(0));
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), gpio_commands.at(1));
+  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands.at(2));
 }
 
 TEST_F(
@@ -592,9 +590,9 @@ TEST_F(
   wait_one_miliseconds_for_timeout();
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
 }
 
 TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurrentValues)

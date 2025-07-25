@@ -69,17 +69,12 @@ If controller parameter ``use_external_measured_states`` is true:
 
 - <controller_name>/measured_state  [control_msgs/msg/MultiDOFCommand]
 
-Services
-,,,,,,,,,,,
-
-- <controller_name>/set_feedforward_control  [std_srvs/srv/SetBool]
-
-.. warning::
-   This service is being deprecated in favour of setting the ``feedforward_gain`` parameter to a non-zero value.
-
 Publishers
 ,,,,,,,,,,,
 - <controller_name>/controller_state  [control_msgs/msg/MultiDOFStateStamped]
+- <controller_name>/<dof>/pid_state  [control_msgs/msg/PidState]
+
+Initially the PidState publisher is turned off. It can be turned on by using  ``gains.<dof>.activate_state_publisher`` parameter.
 
 Parameters
 ,,,,,,,,,,,
@@ -88,10 +83,6 @@ The PID controller uses the `generate_parameter_library <https://github.com/Pick
 
 List of parameters
 =========================
-.. warning::
-   The parameter ``enable_feedforward`` is being deprecated in favor of setting the ``feedforward_gain`` parameter to a non-zero value.
-   This might cause different behavior in the future if currently the ``feedforward_gain`` is set to a non-zero value and not activated.
-
 .. generate_parameter_library_details:: ../src/pid_controller.yaml
 
 

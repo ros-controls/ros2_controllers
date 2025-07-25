@@ -408,6 +408,31 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   subscribe_and_get_messages(msg);
 }
 
+TEST_F(AdmittanceControllerTest, check_frame_ids_in_controller_state)
+{
+  SetUpController();
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  broadcast_tfs();  // force torque sensor
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & msg = controller_->admittance_->get_controller_state();
+
+  // Ensure correct frame IDs
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.child_frame_id, controller_->admittance_->parameters_.ft_sensor.frame.id);
+  ASSERT_EQ(
+    msg.admittance_position.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(msg.admittance_position.child_frame_id, "admittance_offset");
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -35,8 +35,8 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 
 namespace admittance_controller
@@ -135,11 +135,15 @@ protected:
   // ROS messages
   std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
 
-  // real-time buffer
-  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
+  // real-time boxes
+  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
     input_joint_command_;
-  realtime_tools::RealtimeBuffer<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
+  realtime_tools::RealtimeThreadSafeBox<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
+
+  // save the last commands in case of unable to get value from box
+  trajectory_msgs::msg::JointTrajectoryPoint joint_command_msg_;
+  geometry_msgs::msg::WrenchStamped wrench_command_msg_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
   trajectory_msgs::msg::JointTrajectoryPoint last_reference_;
