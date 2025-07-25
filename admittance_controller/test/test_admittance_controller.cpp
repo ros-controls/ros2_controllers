@@ -378,6 +378,9 @@ TEST_F(AdmittanceControllerTest, check_frame_ids_in_controller_state)
     msg.ref_trans_base_ft.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
   ASSERT_EQ(
     msg.ref_trans_base_ft.child_frame_id, controller_->admittance_->parameters_.ft_sensor.frame.id);
+  ASSERT_EQ(
+    msg.admittance_position.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(msg.admittance_position.child_frame_id, "admittance_offset");
 }
 
 int main(int argc, char ** argv)
