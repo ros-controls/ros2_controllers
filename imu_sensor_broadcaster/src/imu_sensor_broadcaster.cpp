@@ -49,6 +49,7 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
     params_ = param_listener_->get_params();
     r_ =
       quat_from_euler(params_.calibration.roll, params_.calibration.pitch, params_.calibration.yaw);
+    r_.normalize();
   }
   catch (const std::exception & e)
   {
@@ -123,8 +124,9 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_deactivate(
 controller_interface::return_type IMUSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  imu_sensor_->get_values_as_message(state_message_);
-  doTransform(state_message_, state_message_, r_);
+  sensor_msgs::msg::Imu input_imu;
+  imu_sensor_->get_values_as_message(input_imu);
+  doTransform(input_imu, r_, state_message_);
 
   if (realtime_publisher_)
   {
@@ -148,7 +150,7 @@ std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_
   std::string export_prefix = get_node()->get_name();
   if (!params_.sensor_name.empty())
   {
-    // Update the prefix and get the proper force and torque names
+    // Update the prefix and get the proper IMU sensor naming
     export_prefix = export_prefix + "/" + params_.sensor_name;
   }
 
