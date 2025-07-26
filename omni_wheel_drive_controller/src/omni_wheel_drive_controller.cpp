@@ -277,7 +277,8 @@ controller_interface::return_type OmniWheelDriveController::update_reference_fro
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
-      logger, *get_node()->get_clock(), cmd_vel_timeout_.seconds() * 1000,
+      logger, *get_node()->get_clock(),
+      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.seconds() * 1000),
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
