@@ -49,9 +49,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_init()
 {
   try
   {
-    // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
-    params_ = param_listener_->get_params();
   }
   catch (const std::exception & e)
   {
@@ -66,12 +64,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
 {
   auto logger = get_node()->get_logger();
 
-  // Update parameters if they have changed
-  if (param_listener_->is_old(params_))
-  {
-    params_ = param_listener_->get_params();
-    RCLCPP_INFO(logger, "Parameters were updated");
-  }
+  params_ = param_listener_->get_params();
 
   if (params_.wheel_names.size() < 3)
   {
@@ -295,13 +288,6 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   rclcpp::Logger logger = get_node()->get_logger();
-
-  // Update parameters if they have changed
-  if (param_listener_->is_old(params_))
-  {
-    params_ = param_listener_->get_params();
-    RCLCPP_INFO(logger, "Parameters were updated");
-  }
 
   if (
     !std::isfinite(reference_interfaces_[0]) || !std::isfinite(reference_interfaces_[1]) ||
