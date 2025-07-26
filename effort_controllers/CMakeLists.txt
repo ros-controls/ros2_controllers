@@ -38,6 +38,8 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+
   ament_add_gmock(test_load_joint_group_effort_controller
     test/test_load_joint_group_effort_controller.cpp
   )
