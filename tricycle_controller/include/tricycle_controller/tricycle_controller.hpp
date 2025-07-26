@@ -106,17 +106,20 @@ protected:
   std::shared_ptr<rclcpp::Publisher<AckermannDrive>> ackermann_command_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<AckermannDrive>>
     realtime_ackermann_command_publisher_ = nullptr;
+  AckermannDrive ackermann_command_msg_;
 
   Odometry odometry_;
 
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
     realtime_odometry_publisher_ = nullptr;
+  nav_msgs::msg::Odometry odometry_msg_;
 
   std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>> odometry_transform_publisher_ =
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
+  tf2_msgs::msg::TFMessage tf_msg_;
 
   // Timeout to consider cmd_vel commands old
   std::chrono::milliseconds cmd_vel_timeout_{500};
