@@ -253,7 +253,16 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       const bool before_last_point = end_segment_itr != current_trajectory_->end();
-      auto active_tol = active_tolerances_.readFromRT();
+      auto active_tol_op = goal_tolerances_.try_get();
+      if (active_tol_op.has_value())
+      {
+        active_tol_ = active_tol_op.value();
+      }
+      else
+      {
+        // fallback if try_get fails
+        active_tol_ = default_tolerances_;
+      }
 
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
@@ -278,7 +287,7 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->state_tolerance[index], true /* show_errors */))
+            state_error_, index, active_tol_.state_tolerance[index], true /* show_errors */))
         {
           tolerance_violated_while_moving = true;
         }
@@ -286,14 +295,14 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
+            state_error_, index, active_tol_.goal_state_tolerance[index], false /* show_errors */))
         {
           outside_goal_tolerance = true;
 
-          if (active_tol->goal_time_tolerance != 0.0)
+          if (active_tol_.goal_time_tolerance != 0.0)
           {
             // if we exceed goal_time_tolerance set it to aborted
-            if (time_difference > active_tol->goal_time_tolerance)
+            if (time_difference > active_tol_.goal_time_tolerance)
             {
               within_goal_time = false;
               // print once, goal will be aborted afterwards
@@ -925,7 +934,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
-  active_tolerances_.initRT(default_tolerances_);
+  goal_tolerances_.set(default_tolerances_);
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
@@ -1412,7 +1421,7 @@ void JointTrajectoryController::goal_accepted_callback(
 
   // Update tolerances if specified in the goal
   auto logger = this->get_node()->get_logger();
-  active_tolerances_.writeFromNonRT(get_segment_tolerances(
+  goal_tolerances_.set(get_segment_tolerances(
     logger, default_tolerances_, *(goal_handle->get_goal()), params_.joints));
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list

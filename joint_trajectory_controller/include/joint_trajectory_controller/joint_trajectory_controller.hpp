@@ -41,6 +41,7 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -235,7 +236,9 @@ protected:
   // the tolerances from the node parameter
   SegmentTolerances default_tolerances_;
   // the tolerances used for the current goal
-  realtime_tools::RealtimeBuffer<SegmentTolerances> active_tolerances_;
+  realtime_tools::RealtimeThreadSafeBox<SegmentTolerances> goal_tolerances_;
+  // preallocated memory for tolerances used in RT loop
+  SegmentTolerances active_tol_;
 
   void preempt_active_goal();
 
