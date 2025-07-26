@@ -734,7 +734,7 @@ void JointTrajectoryController::query_state_service(
     response->success = false;
     return;
   }
-  const auto active_goal = *rt_active_goal_.readFromRT();
+
   response->name = params_.joints;
   trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
   if (has_active_trajectory())
