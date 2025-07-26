@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MULTI_OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_
-#define MULTI_OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_
+#ifndef OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_
+#define OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
 #include <Eigen/Dense>
 #include <vector>
 
 #include "rclcpp/time.hpp"
 
-namespace multi_omni_wheel_drive_controller
+namespace omni_wheel_drive_controller
 {
 class Odometry
 {
@@ -71,6 +71,6 @@ private:
   std::vector<double> wheels_old_pos_;
 };
 
-}  // namespace multi_omni_wheel_drive_controller
+}  // namespace omni_wheel_drive_controller
 
-#endif  // MULTI_OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_
+#endif  // OMNI_WHEEL_DRIVE_CONTROLLER__ODOMETRY_HPP_

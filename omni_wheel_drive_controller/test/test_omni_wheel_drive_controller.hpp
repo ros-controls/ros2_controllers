@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_MULTI_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
-#define TEST_MULTI_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
+#ifndef TEST_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
+#define TEST_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
 
 #include <gmock/gmock.h>
 #include <gtest/gtest_prod.h>
@@ -27,7 +27,7 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "multi_omni_wheel_drive_controller/multi_omni_wheel_drive_controller.hpp"
+#include "omni_wheel_drive_controller/omni_wheel_drive_controller.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/parameter_value.hpp"
@@ -46,31 +46,24 @@ std::vector<std::string> wheel_names_ = {
 }  // namespace
 
 // subclassing and friending so we can access member variables
-class TestableMultiOmniWheelDriveController
-: public multi_omni_wheel_drive_controller::MultiOmniWheelDriveController
+class TestableOmniWheelDriveController
+: public omni_wheel_drive_controller::OmniWheelDriveController
 {
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, cleanup);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, deactivate_then_activate);
-  FRIEND_TEST(
-    MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 3_wheel_test);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 3_wheel_rot_test);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 4_wheel_rot_test);
-  FRIEND_TEST(MultiOmniWheelDriveControllerTest, 5_wheel_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, cleanup);
+  FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_unchained_mode);
+  FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_chained_mode);
+  FRIEND_TEST(OmniWheelDriveControllerTest, deactivate_then_activate);
+  FRIEND_TEST(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning);
+  FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_rot_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, 4_wheel_rot_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, 5_wheel_test);
 
   /**
    * @brief wait_for_twist block until a new twist is received.
@@ -92,7 +85,7 @@ class TestableMultiOmniWheelDriveController
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class MultiOmniWheelDriveControllerFixture : public ::testing::Test
+class OmniWheelDriveControllerFixture : public ::testing::Test
 {
 public:
   void SetUp()
@@ -103,7 +96,7 @@ public:
     cmd_vel_publisher_node_ = std::make_shared<rclcpp::Node>("cmd_vel_publisher");
     cmd_vel_publisher_ =
       cmd_vel_publisher_node_->create_publisher<geometry_msgs::msg::TwistStamped>(
-        "/test_multi_omni_wheel_drive_controller/cmd_vel", rclcpp::SystemDefaultsQoS());
+        "/test_omni_wheel_drive_controller/cmd_vel", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -248,7 +241,7 @@ protected:
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_publisher_;
 
   const std::string urdf_ = "";
-  std::string controller_name_ = "test_multi_omni_wheel_drive_controller";
+  std::string controller_name_ = "test_omni_wheel_drive_controller";
 };
 
-#endif  // TEST_MULTI_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_
+#endif  // TEST_OMNI_WHEEL_DRIVE_CONTROLLER_HPP_

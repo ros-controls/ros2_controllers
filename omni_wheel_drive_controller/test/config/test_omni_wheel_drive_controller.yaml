@@ -1,4 +1,4 @@
-test_multi_omni_wheel_drive_controller:
+test_omni_wheel_drive_controller:
   ros__parameters:
     wheel_offset: 0.0
     wheel_names:

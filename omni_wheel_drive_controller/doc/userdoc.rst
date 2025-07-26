@@ -1,8 +1,8 @@
-:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/doc/userdoc.rst
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/omni_wheel_drive_controller/doc/userdoc.rst
 
-.. _multi_omni_wheel_drive_controller_userdoc:
+.. _omni_wheel_drive_controller_userdoc:
 
-multi_omni_wheel_drive_controller
+omni_wheel_drive_controller
 =================================
 
 Controller for mobile robots with omnidirectional drive.
@@ -68,11 +68,11 @@ Publishers
 Parameters
 ,,,,,,,,,,
 
-This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/src/multi_omni_wheel_drive_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/omni_wheel_drive_controller/src/multi_omni_wheel_drive_controller_parameters.yaml>`_ contains descriptions for all the parameters used by the controller.
 
-.. generate_parameter_library_details:: ../src/multi_omni_wheel_drive_controller_parameters.yaml
+.. generate_parameter_library_details:: ../src/omni_wheel_drive_controller_parameters.yaml
 
-An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/multi_omni_wheel_drive_controller/test/config/test_multi_omni_wheel_drive_controller.yaml>`_:
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/omni_wheel_drive_controller/test/config/test_multi_omni_wheel_drive_controller.yaml>`_:
 
-.. literalinclude:: ../test/config/test_multi_omni_wheel_drive_controller.yaml
+.. literalinclude:: ../test/config/test_omni_wheel_drive_controller.yaml
    :language: yaml

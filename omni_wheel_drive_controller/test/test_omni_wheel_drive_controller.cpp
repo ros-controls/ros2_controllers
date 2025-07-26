@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test_multi_omni_wheel_drive_controller.hpp"
+#include "test_omni_wheel_drive_controller.hpp"
 #include <gtest/gtest.h>
 #include "controller_interface/controller_interface_base.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
 using lifecycle_msgs::msg::State;
 
-class MultiOmniWheelDriveControllerTest
-: public MultiOmniWheelDriveControllerFixture<TestableMultiOmniWheelDriveController>
+class OmniWheelDriveControllerTest
+: public OmniWheelDriveControllerFixture<TestableOmniWheelDriveController>
 {
 };
 
-TEST_F(MultiOmniWheelDriveControllerTest, init_fails_without_parameters)
+TEST_F(OmniWheelDriveControllerTest, init_fails_without_parameters)
 {
   const auto ret =
     controller_->init(controller_name_, urdf_, 0, "", controller_->define_custom_node_options());
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_fails_with_less_than_three_wheels)
+TEST_F(OmniWheelDriveControllerTest, configure_fails_with_less_than_three_wheels)
 {
   ASSERT_EQ(
     InitController({"first_wheel_joint", "second_wheel_joint"}),
@@ -40,8 +40,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_fails_with_less_than_three_w
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(
-  MultiOmniWheelDriveControllerTest, when_controller_configured_expect_properly_exported_interfaces)
+TEST_F(OmniWheelDriveControllerTest, when_controller_configured_expect_properly_exported_interfaces)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -82,7 +81,7 @@ TEST_F(
   }
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -107,7 +106,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_fals
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -134,7 +133,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -160,7 +159,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_tru
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -188,7 +187,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_fals
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -218,7 +217,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
@@ -247,7 +246,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_tru
   ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_without_resources_assigned)
+TEST_F(OmniWheelDriveControllerTest, activate_fails_without_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -255,7 +254,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_without_resources_assig
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, activate_succeeds_with_pos_resources_assigned)
+TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_pos_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
   // We implicitly test that by default position feedback is required
@@ -264,7 +263,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_succeeds_with_pos_resources_a
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_assigned)
+TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_assigned)
 {
   ASSERT_EQ(
     InitController(
@@ -276,7 +275,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_a
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_1)
+TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_1)
 {
   ASSERT_EQ(
     InitController(
@@ -288,7 +287,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_as
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_2)
+TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_2)
 {
   ASSERT_EQ(
     InitController(
@@ -305,7 +304,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, activate_fails_with_wrong_resources_as
 // 2. command_interfaces are set to 0.0 when cmd_vel_timeout_ is exceeded and on deactivation
 // 3. command_interfaces are set to correct command values the command messages are not timed-out.
 // In particular, make sure that the command_interface is not set to NaN right when it starts up.
-TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
+TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -393,7 +392,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_unchained_mode)
 // 1. The controller is configurable and all lifecycle functions work properly
 // 2. command_interfaces are set to 0.0 on deactivation
 // 3. command_interfaces are set to correct command values (not set to NaN right when it starts up)
-TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
+TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -462,7 +461,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, chainable_controller_chained_mode)
 
 // Make sure that the controller is properly reset when deactivated
 // and accepts new commands as expected when it is activated again.
-TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
+TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
   // choose radius = 1 so that the command values (rev/s) are the same as the linear velocity (m/s)
@@ -557,7 +556,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, deactivate_then_activate)
   executor.cancel();
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning)
+TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -598,7 +597,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepte
   executor.cancel();
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_test)
+TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
 {
   ASSERT_EQ(
     InitController({"wheel_1", "wheel_2", "wheel_3"}, 0.0), controller_interface::return_type::OK);
@@ -665,7 +664,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_test)
   executor.cancel();
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_rot_test)
+TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
 {
   ASSERT_EQ(
     InitController({"wheel_1", "wheel_2", "wheel_3"}, 1.0471975512),
@@ -733,7 +732,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, 3_wheel_rot_test)
   executor.cancel();
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, 4_wheel_rot_test)
+TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
 {
   ASSERT_EQ(
     InitController({"wheel_1", "wheel_2", "wheel_3", "wheel_4"}, 0.7853981634),
@@ -801,7 +800,7 @@ TEST_F(MultiOmniWheelDriveControllerTest, 4_wheel_rot_test)
   executor.cancel();
 }
 
-TEST_F(MultiOmniWheelDriveControllerTest, 5_wheel_test)
+TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
 {
   ASSERT_EQ(
     InitController({"wheel_1", "wheel_2", "wheel_3", "wheel_4", "wheel_5"}, 0.0),

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "multi_omni_wheel_drive_controller/odometry.hpp"
+#include "omni_wheel_drive_controller/odometry.hpp"
 
 #include <cmath>
 
-namespace multi_omni_wheel_drive_controller
+namespace omni_wheel_drive_controller
 {
 Odometry::Odometry()
 : timestamp_(0.0),
@@ -157,4 +157,4 @@ void Odometry::integrate(const double & dx, const double & dy, const double & dh
   }
 }
 
-}  // namespace multi_omni_wheel_drive_controller
+}  // namespace omni_wheel_drive_controller

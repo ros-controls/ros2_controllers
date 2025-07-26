@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(multi_omni_wheel_drive_controller)
+project(omni_wheel_drive_controller)
 
 find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
@@ -53,7 +53,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${nav_msgs_TARGETS}
   ${tf2_msgs_TARGETS}
 )
-pluginlib_export_plugin_description_file(controller_interface multi_omni_wheel_drive_plugin.xml)
+pluginlib_export_plugin_description_file(controller_interface omni_wheel_drive_plugin.xml)
 
 # Install
 install(

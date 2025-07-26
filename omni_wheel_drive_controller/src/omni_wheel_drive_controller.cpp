@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "multi_omni_wheel_drive_controller/multi_omni_wheel_drive_controller.hpp"
+#include "omni_wheel_drive_controller/omni_wheel_drive_controller.hpp"
 
 #include <cmath>
 #include <memory>
@@ -32,7 +32,7 @@ constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 }  // namespace
 
-namespace multi_omni_wheel_drive_controller
+namespace omni_wheel_drive_controller
 {
 using controller_interface::interface_configuration_type;
 using controller_interface::InterfaceConfiguration;
@@ -40,12 +40,12 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using lifecycle_msgs::msg::State;
 
-MultiOmniWheelDriveController::MultiOmniWheelDriveController()
+OmniWheelDriveController::OmniWheelDriveController()
 : controller_interface::ChainableControllerInterface()
 {
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_init()
+controller_interface::CallbackReturn OmniWheelDriveController::on_init()
 {
   try
   {
@@ -59,7 +59,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure(
+controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
   const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
@@ -190,7 +190,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_configure
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-InterfaceConfiguration MultiOmniWheelDriveController::command_interface_configuration() const
+InterfaceConfiguration OmniWheelDriveController::command_interface_configuration() const
 {
   std::vector<std::string> conf_names;
   for (const auto & joint_name : params_.wheel_names)
@@ -200,7 +200,7 @@ InterfaceConfiguration MultiOmniWheelDriveController::command_interface_configur
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-InterfaceConfiguration MultiOmniWheelDriveController::state_interface_configuration() const
+InterfaceConfiguration OmniWheelDriveController::state_interface_configuration() const
 {
   if (params_.open_loop)
   {
@@ -215,7 +215,7 @@ InterfaceConfiguration MultiOmniWheelDriveController::state_interface_configurat
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_activate(
+controller_interface::CallbackReturn OmniWheelDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
   // Register wheel handles and check if any errors happen
@@ -232,7 +232,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_activate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_deactivate(
+controller_interface::CallbackReturn OmniWheelDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
@@ -242,12 +242,12 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_deactivat
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-const char * MultiOmniWheelDriveController::feedback_type() const
+const char * OmniWheelDriveController::feedback_type() const
 {
   return params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
 }
 
-controller_interface::return_type MultiOmniWheelDriveController::update_reference_from_subscribers(
+controller_interface::return_type OmniWheelDriveController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   auto logger = get_node()->get_logger();
@@ -284,7 +284,7 @@ controller_interface::return_type MultiOmniWheelDriveController::update_referenc
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type MultiOmniWheelDriveController::update_and_write_commands(
+controller_interface::return_type OmniWheelDriveController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration &)
 {
   rclcpp::Logger logger = get_node()->get_logger();
@@ -374,7 +374,7 @@ controller_interface::return_type MultiOmniWheelDriveController::update_and_writ
   return controller_interface::return_type::OK;
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_cleanup(
+controller_interface::CallbackReturn OmniWheelDriveController::on_cleanup(
   const rclcpp_lifecycle::State &)
 {
   if (!reset())
@@ -385,7 +385,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_cleanup(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::on_error(
+controller_interface::CallbackReturn OmniWheelDriveController::on_error(
   const rclcpp_lifecycle::State &)
 {
   if (!reset())
@@ -395,7 +395,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::on_error(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void MultiOmniWheelDriveController::compute_and_set_wheel_velocities()
+void OmniWheelDriveController::compute_and_set_wheel_velocities()
 {
   bool set_command_result = true;
 
@@ -416,7 +416,7 @@ void MultiOmniWheelDriveController::compute_and_set_wheel_velocities()
     logger, !set_command_result, "Unable to set the command to one of the command handles!");
 }
 
-bool MultiOmniWheelDriveController::reset()
+bool OmniWheelDriveController::reset()
 {
   odometry_.resetOdometry();
 
@@ -430,7 +430,7 @@ bool MultiOmniWheelDriveController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wheel_handles(
+controller_interface::CallbackReturn OmniWheelDriveController::configure_wheel_handles(
   const std::vector<std::string> & wheel_names, std::vector<WheelHandle> & registered_handles)
 {
   rclcpp::Logger logger = get_node()->get_logger();
@@ -481,7 +481,7 @@ controller_interface::CallbackReturn MultiOmniWheelDriveController::configure_wh
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-void MultiOmniWheelDriveController::halt()
+void OmniWheelDriveController::halt()
 {
   bool set_command_result = true;
   for (const WheelHandle & wheel_handle : registered_wheel_handles_)
@@ -493,7 +493,7 @@ void MultiOmniWheelDriveController::halt()
     logger, !set_command_result, "Unable to set the command to one of the command handles!");
 }
 
-void MultiOmniWheelDriveController::reset_buffers()
+void OmniWheelDriveController::reset_buffers()
 {
   std::fill(
     reference_interfaces_.begin(), reference_interfaces_.end(),
@@ -511,10 +511,10 @@ void MultiOmniWheelDriveController::reset_buffers()
   received_velocity_msg_.set(command_msg_);
 }
 
-bool MultiOmniWheelDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
+bool OmniWheelDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface>
-MultiOmniWheelDriveController::on_export_reference_interfaces()
+OmniWheelDriveController::on_export_reference_interfaces()
 {
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(reference_interfaces_.size());
@@ -531,10 +531,10 @@ MultiOmniWheelDriveController::on_export_reference_interfaces()
 
   return reference_interfaces;
 }
-}  // namespace multi_omni_wheel_drive_controller
+}  // namespace omni_wheel_drive_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  multi_omni_wheel_drive_controller::MultiOmniWheelDriveController,
+  omni_wheel_drive_controller::OmniWheelDriveController,
   controller_interface::ChainableControllerInterface)

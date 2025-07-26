@@ -22,7 +22,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadMultiOmniWheelDriveController, load_controller)
+TEST(TestLoadOmniWheelDriveController, load_controller)
 {
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
@@ -30,14 +30,14 @@ TEST(TestLoadMultiOmniWheelDriveController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
   const std::string test_file_path =
-    std::string(TEST_FILES_DIRECTORY) + "/config/test_multi_omni_wheel_drive_controller.yaml";
+    std::string(TEST_FILES_DIRECTORY) + "/config/test_omni_wheel_drive_controller.yaml";
 
-  cm.set_parameter({"test_multi_omni_wheel_drive_controller.params_file", test_file_path});
+  cm.set_parameter({"test_omni_wheel_drive_controller.params_file", test_file_path});
   cm.set_parameter(
-    {"test_multi_omni_wheel_drive_controller.type",
-     "multi_omni_wheel_drive_controller/MultiOmniWheelDriveController"});
+    {"test_omni_wheel_drive_controller.type",
+     "omni_wheel_drive_controller/OmniWheelDriveController"});
 
-  ASSERT_NE(cm.load_controller("test_multi_omni_wheel_drive_controller"), nullptr);
+  ASSERT_NE(cm.load_controller("test_omni_wheel_drive_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)

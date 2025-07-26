@@ -1,4 +1,4 @@
-multi_omni_wheel_drive_controller:
+omni_wheel_drive_controller:
   wheel_offset:
     {
       type: double,
@@ -90,8 +90,7 @@ multi_omni_wheel_drive_controller:
       description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
       read_only: true,
     }
-  cmd_vel_timeout:
-    {
+  cmd_vel_timeout: {
       type: double,
       default_value: 0.5, # seconds
       description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered stale.",
