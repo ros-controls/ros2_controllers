@@ -173,13 +173,14 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   rt_odom_state_publisher_->msg_.child_frame_id = base_frame_id;
   rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
 
-  auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
+  auto & pose_covariance = rt_odom_state_publisher_->msg_.pose.covariance;
+  auto & twist_covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
   {
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+    pose_covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
+    twist_covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
   rt_odom_state_publisher_->unlock();
 
@@ -411,10 +412,26 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   // FORWARD KINEMATICS (odometry).
-  const double wheel_front_left_state_vel = state_interfaces_[FRONT_LEFT].get_value();
-  const double wheel_front_right_state_vel = state_interfaces_[FRONT_RIGHT].get_value();
-  const double wheel_rear_right_state_vel = state_interfaces_[REAR_RIGHT].get_value();
-  const double wheel_rear_left_state_vel = state_interfaces_[REAR_LEFT].get_value();
+  const auto wheel_front_left_state_vel_op = state_interfaces_[FRONT_LEFT].get_optional();
+  const auto wheel_front_right_state_vel_op = state_interfaces_[FRONT_RIGHT].get_optional();
+  const auto wheel_rear_right_state_vel_op = state_interfaces_[REAR_RIGHT].get_optional();
+  const auto wheel_rear_left_state_vel_op = state_interfaces_[REAR_LEFT].get_optional();
+
+  if (
+    !wheel_front_left_state_vel_op.has_value() || !wheel_front_right_state_vel_op.has_value() ||
+    !wheel_rear_right_state_vel_op.has_value() || !wheel_rear_left_state_vel_op.has_value())
+  {
+    RCLCPP_DEBUG(
+      get_node()->get_logger(),
+      "Unable to retrieve data from front left wheel or front right wheel or rear left wheel or "
+      "rear right wheel");
+    return controller_interface::return_type::OK;
+  }
+
+  const double wheel_front_left_state_vel = wheel_front_left_state_vel_op.value();
+  const double wheel_front_right_state_vel = wheel_front_right_state_vel_op.value();
+  const double wheel_rear_right_state_vel = wheel_rear_right_state_vel_op.value();
+  const double wheel_rear_left_state_vel = wheel_rear_left_state_vel_op.value();
 
   if (
     !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
@@ -533,14 +550,12 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.header.stamp = get_node()->now();
-    controller_state_publisher_->msg_.front_left_wheel_velocity =
-      state_interfaces_[FRONT_LEFT].get_value();
-    controller_state_publisher_->msg_.front_right_wheel_velocity =
-      state_interfaces_[FRONT_RIGHT].get_value();
-    controller_state_publisher_->msg_.back_right_wheel_velocity =
-      state_interfaces_[REAR_RIGHT].get_value();
-    controller_state_publisher_->msg_.back_left_wheel_velocity =
-      state_interfaces_[REAR_LEFT].get_value();
+
+    controller_state_publisher_->msg_.front_left_wheel_velocity = wheel_front_left_state_vel;
+    controller_state_publisher_->msg_.front_right_wheel_velocity = wheel_front_right_state_vel;
+    controller_state_publisher_->msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
+    controller_state_publisher_->msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
+
     controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
     controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
     controller_state_publisher_->msg_.reference_velocity.angular.z = reference_interfaces_[2];

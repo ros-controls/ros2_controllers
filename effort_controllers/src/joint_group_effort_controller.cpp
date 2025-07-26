@@ -55,11 +55,14 @@ controller_interface::CallbackReturn JointGroupEffortController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
   auto ret = ForwardCommandController::on_deactivate(previous_state);
-
   // stop all joints
   for (auto & command_interface : command_interfaces_)
   {
-    command_interface.set_value(0.0);
+    if (!command_interface.set_value(0.0))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Unable to set command interface value to 0.0");
+      return controller_interface::CallbackReturn::SUCCESS;
+    }
   }
 
   return ret;
