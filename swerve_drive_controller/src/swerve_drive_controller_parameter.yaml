@@ -3,42 +3,50 @@ swerve_drive_controller:
   front_left_wheel_joint: {
     type: string,
     default_value: "",
-    description: "Name of the front left wheel joint."
+    description: "Name of the front left wheel joint.",
+    read_only: true
   }
   front_right_wheel_joint: {
     type: string,
     default_value: "",
-    description: "Name of the rear left wheel joint."
+    description: "Name of the rear left wheel joint.",
+    read_only: true
   }
   rear_left_wheel_joint: {
     type: string,
     default_value: "",
-    description: "Name of the rear left wheel joint."
+    description: "Name of the rear left wheel joint.",
+    read_only: true
   }
   rear_right_wheel_joint: {
     type: string,
     default_value: "",
-    description: "Name of the rear right wheel joint."
+    description: "Name of the rear right wheel joint.",
+    read_only: true
   }
   front_left_axle_joint: {
     type: string,
     default_value: "",
-    description: "Name of the front left axle joint."
+    description: "Name of the front left axle joint.",
+    read_only: true
   }
   front_right_axle_joint: {
     type: string,
     default_value: "",
-    description: "Name of the front right axle joint."
+    description: "Name of the front right axle joint.",
+    read_only: true
   }
   rear_left_axle_joint: {
     type: string,
     default_value: "",
-    description: "Name of the rear left axle joint."
+    description: "Name of the rear left axle joint.",
+    read_only: true,
   }
   rear_right_axle_joint: {
     type: string,
     default_value: "",
-    description: "Name of the rear right axle joint."
+    description: "Name of the rear right axle joint.",
+    read_only: true
   }
   chassis_length: {
     type: double,
@@ -46,7 +54,8 @@ swerve_drive_controller:
     description: "Length of the robot chassis.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }
+    },
+    read_only: true
   }
   chassis_width: {
     type: double,
@@ -54,7 +63,8 @@ swerve_drive_controller:
     description: "Width of the robot chassis.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }
+    },
+    read_only: true
   }
   wheel_radius: {
     type: double,
@@ -62,7 +72,8 @@ swerve_drive_controller:
     description: "Radius of the wheels.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }
+    },
+    read_only: true
   }
   center_of_rotation: {
     type: double,
@@ -70,7 +81,8 @@ swerve_drive_controller:
     description: "Center of rotation of robot",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }
+    },
+    read_only: true
   }
   cmd_vel_timeout: {
     type: double,
@@ -78,37 +90,44 @@ swerve_drive_controller:
     description: "Timeout in seconds before velocity commands are considered stale.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }
+    },
+    read_only: true
   }
   use_stamped_vel: {
     type: bool,
     default_value: false,
-    description: "If true, velocity commands will be expected to have a timestamp."
+    description: "If true, velocity commands will be expected to have a timestamp.",
+    read_only: true
   }
   odom: {
     type: string,
     default_value: "odom",
-    description: "Name of the frame for odometry."
+    description: "Name of the frame for odometry.",
+    read_only: true
   }
   base_footprint: {
     type: string,
     default_value: "base_footprint",
-    description: "Name of the frame for base footprint."
+    description: "Name of the frame for base footprint.",
+    read_only: true
   }
   publishe_rate: {
     type: double,
     default_value: 50.0, # Hz
-    description: "Publishing rate (Hz) of the odometry and TF messages."
+    description: "Publishing rate (Hz) of the odometry and TF messages.",
+    read_only: true
   }
   enable_odom_tf: {
     type: bool,
     default_value: true,
     description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+    read_only: true
   }
   open_loop: {
     type: bool,
     default_value: false,
     description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    read_only: true
   }
   front_left_velocity_threshold: {
     type: double,
@@ -116,7 +135,8 @@ swerve_drive_controller:
     description: "Max velocity for front left wheel",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }      
+    },
+    read_only: true      
   }
   front_right_velocity_threshold: {
     type: double,
@@ -124,7 +144,8 @@ swerve_drive_controller:
     description: "Max velocity for front right wheel",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }      
+    },
+    read_only: true      
   }
   rear_left_velocity_threshold: {
     type: double,
@@ -132,7 +153,8 @@ swerve_drive_controller:
     description: "Max velocity for rear left wheel",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }      
+    },
+    read_only: true      
   }
   rear_right_velocity_threshold: {
     type: double,
@@ -140,15 +162,18 @@ swerve_drive_controller:
     description: "Max velocity for rear right wheel",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
-    }      
+    },
+    read_only: true      
   }
   pose_covariance_diagonal: {
     type: double_array,
     default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true
   }
   twist_covariance_diagonal: {
     type: double_array,
     default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true
   }
