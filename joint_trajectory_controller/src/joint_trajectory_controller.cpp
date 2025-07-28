@@ -176,14 +176,15 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   // don't update goal after we sampled the trajectory to avoid any racecondition
-  const auto active_goal = *rt_active_goal_.readFromRT();
+  rt_active_goal_.try_get([&](const auto goal) { rt_active_goal_local_ = goal; });
 
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   auto new_external_msg = new_trajectory_msg_.readFromRT();
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
+    current_trajectory_msg != *new_external_msg &&
+    (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -372,7 +373,7 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_time_ = time;
       }
 
-      if (active_goal)
+      if (rt_active_goal_local_)
       {
         // send feedback
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
@@ -382,7 +383,7 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
-        active_goal->setFeedback(feedback);
+        rt_active_goal_local_->setFeedback(feedback);
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -390,10 +391,8 @@ controller_interface::return_type JointTrajectoryController::update(
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
           result->set__error_string("Aborted due to path tolerance violation");
-          active_goal->setAborted(result);
-          // TODO(matthew-reynolds): Need a lock-free write here
-          // See https://github.com/ros-controls/ros2_controllers/issues/168
-          rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          rt_active_goal_local_->setAborted(result);
+          rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
           rt_has_pending_goal_ = false;
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
@@ -409,10 +408,8 @@ controller_interface::return_type JointTrajectoryController::update(
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
             result->set__error_string("Goal successfully reached!");
-            active_goal->setSucceeded(result);
-            // TODO(matthew-reynolds): Need a lock-free write here
-            // See https://github.com/ros-controls/ros2_controllers/issues/168
-            rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_active_goal_local_->setSucceeded(result);
+            rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_INFO(logger, "Goal reached, success!");
@@ -428,10 +425,8 @@ controller_interface::return_type JointTrajectoryController::update(
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             result->set__error_string(error_string);
-            active_goal->setAborted(result);
-            // TODO(matthew-reynolds): Need a lock-free write here
-            // See https://github.com/ros-controls/ros2_controllers/issues/168
-            rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_active_goal_local_->setAborted(result);
+            rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
@@ -1209,8 +1204,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
   auto logger = get_node()->get_logger();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
   {
     rt_has_pending_goal_ = false;
@@ -1218,7 +1214,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
     active_goal->setAborted(action_res);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
   }
 
   for (size_t index = 0; index < num_cmd_joints_; ++index)
@@ -1379,7 +1375,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
 
   // Check that cancel request refers to currently active goal (if any)
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal && active_goal->gh_ == goal_handle)
   {
     RCLCPP_INFO(
@@ -1389,7 +1386,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
 
     // Enter hold current position mode
     add_new_trajectory_msg(set_hold_position());
@@ -1417,7 +1414,7 @@ void JointTrajectoryController::goal_accepted_callback(
   RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
   rt_goal->preallocated_feedback_->joint_names = params_.joints;
   rt_goal->execute();
-  rt_active_goal_.writeFromNonRT(rt_goal);
+  rt_active_goal_.set([&](auto & goal) { goal = rt_goal; });
 
   // Update tolerances if specified in the goal
   auto logger = this->get_node()->get_logger();
@@ -1765,14 +1762,15 @@ void JointTrajectoryController::add_new_trajectory_msg(
 
 void JointTrajectoryController::preempt_active_goal()
 {
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
   {
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");
     active_goal->setCanceled(action_res);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
   }
 }
 

@@ -187,12 +187,18 @@ protected:
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
-  using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  RealtimeGoalHandleBuffer rt_active_goal_;       ///< Currently active action goal, if any.
-  std::atomic<bool> rt_has_pending_goal_{false};  ///< Is there a pending action goal?
+  // Currently active action goal, if any. Needs to be a shared_ptr for processing the goal inside
+  // the goal_handle_timer_ in the non-rt loop
+  realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
+  // local copy for the RT loop
+  RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
+  // Is there a pending action goal?
+  std::atomic<bool> rt_has_pending_goal_{false};
+  // Timer for processing the goal in the non-rt loop
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
+  // Timer period for goal_handle_timer_
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
