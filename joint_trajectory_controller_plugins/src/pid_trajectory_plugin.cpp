@@ -133,11 +133,12 @@ void PidTrajectoryPlugin::compute_commands(
   // Update PIDs
   for (auto i = 0ul; i < num_cmd_joints_; ++i)
   {
-    tmp_command[map_cmd_to_joints_[i]] =
-      (desired.velocities[map_cmd_to_joints_[i]] * ff_velocity_scale_[i]) +
+    const auto map_cmd_to_joint = map_cmd_to_joints_[i];
+    tmp_command[map_cmd_to_joint] =
+      (desired.velocities[map_cmd_to_joint] * ff_velocity_scale_[i]) +
       (has_effort_command_interface ? desired.effort[i] : 0.0) +
       pids_[i]->compute_command(
-        error.positions[map_cmd_to_joints_[i]], error.velocities[map_cmd_to_joints_[i]], period);
+        error.positions[map_cmd_to_joint], error.velocities[map_cmd_to_joint], period);
   }
 }
 

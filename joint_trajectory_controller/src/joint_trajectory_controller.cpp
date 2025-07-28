@@ -1835,7 +1835,6 @@ void JointTrajectoryController::add_new_trajectory_msg_nonRT(
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
   }
-  RCLCPP_INFO(get_node()->get_logger(), "Called add_new_trajectory_msg_nonRT.");
 }
 
 void JointTrajectoryController::add_new_trajectory_msg_RT(
@@ -1855,7 +1854,6 @@ void JointTrajectoryController::add_new_trajectory_msg_RT(
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
   }
-  RCLCPP_INFO(get_node()->get_logger(), "Called add_new_trajectory_msg_RT.");
 }
 
 void JointTrajectoryController::preempt_active_goal()
