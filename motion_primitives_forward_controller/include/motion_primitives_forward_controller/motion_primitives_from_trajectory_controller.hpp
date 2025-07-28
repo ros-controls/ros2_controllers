@@ -163,13 +163,11 @@ protected:
     motion_primitive_publisher_;
 
   // ############ Function copied from JointTrajectoryController ############
-  // TODO(mathias31415): Is there a cleaner solution?
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
 };
 
 // ############ Function copied from JointTrajectoryController ############
-// TODO(mathias31415): Is there a cleaner solution?
 /**
  * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \p t2
  * indices. If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated
