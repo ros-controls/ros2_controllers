@@ -15,6 +15,7 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER_PLUGINS__TRAJECTORY_CONTROLLER_BASE_HPP_
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -74,9 +75,9 @@ public:
   bool compute_control_law_non_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
-    rt_control_law_ready_.writeFromNonRT(false);
+    rt_control_law_ready_ = false;
     auto ret = on_compute_control_law_non_rt(trajectory);
-    rt_control_law_ready_.writeFromNonRT(true);
+    rt_control_law_ready_ = true;
     return ret;
   }
 
@@ -93,10 +94,9 @@ public:
   bool compute_control_law_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
-    // TODO(christophfroehlich): Need a lock-free write here
-    rt_control_law_ready_.writeFromNonRT(false);
+    rt_control_law_ready_ = false;
     auto ret = on_compute_control_law_rt(trajectory);
-    rt_control_law_ready_.writeFromNonRT(true);
+    rt_control_law_ready_ = true;
     return ret;
   }
 
@@ -143,15 +143,13 @@ public:
   /**
    * @return true if the control law is ready (updated with the trajectory)
    */
-  bool is_ready() { return rt_control_law_ready_.readFromRT(); }
+  bool is_ready() { return rt_control_law_ready_; }
 
 protected:
   // the node handle for parameter handling
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   // map from joints in the message to command joints
   std::vector<size_t> map_cmd_to_joints_;
-  // Are we computing the control law or is it valid?
-  realtime_tools::RealtimeBuffer<bool> rt_control_law_ready_;
 
   /**
    * @brief Get the logger for this plugin
@@ -200,6 +198,8 @@ protected:
 private:
   // child logger for this plugin
   rclcpp::Logger logger_ = rclcpp::get_logger("joint_trajectory_controller_plugins");
+  // Are we computing the control law or is it valid?
+  std::atomic<bool> rt_control_law_ready_;
 };
 
 }  // namespace joint_trajectory_controller_plugins
