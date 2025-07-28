@@ -11,7 +11,6 @@ force_torque_sensor_broadcaster
 joint_trajectory_controller
 *******************************
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
-
 * Scaling support was added in `#1191
   <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
   "stretches the time" with which it progresses in the trajectory. Scaling can either be set
