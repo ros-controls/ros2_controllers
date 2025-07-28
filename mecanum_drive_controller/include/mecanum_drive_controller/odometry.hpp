@@ -15,9 +15,10 @@
 #ifndef MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 #define MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
-#include "geometry_msgs/msg/twist.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
-#include "realtime_tools/realtime_publisher.hpp"
+#include <array>
+#include <functional>
+
+#include "rclcpp/time.hpp"
 
 #define PLANAR_POINT_DIM 3
 
@@ -66,6 +67,11 @@ public:
   {
     return velocity_in_base_frame_angular_z;
     ;
+  }
+
+  const std::array<double, PLANAR_POINT_DIM> & getBaseFrameOffset() const
+  {
+    return base_frame_offset_;
   }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius

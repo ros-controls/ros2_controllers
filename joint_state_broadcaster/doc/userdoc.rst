@@ -38,3 +38,25 @@ An example parameter file
 
 .. generate_parameter_library_default::
   ../src/joint_state_broadcaster_parameters.yaml
+
+
+Order of the joints in the message
+----------------------------------
+
+The order of the joints in the message can determined by 3 different parameter settings:
+
+1. No defined ``joints`` parameter and ``use_urdf_to_filter`` set to ``false``:
+    The order of the joints in the message is the same as the order of the joints' state interfaces registered in the resource manager. This is typically the order in which the hardware components are loaded and configured.
+
+2. No defined ``joints`` parameter and ``use_urdf_to_filter`` set to ``true``:
+    The order of the joints in the message is the same as the order of the joints in the URDF file, which is inherited from the loaded URDF model and independent of the order in the `ros2_control` tag.
+
+3. Defined ``joints`` parameter along with ``interfaces`` parameter:
+    The order of the joints in the message is the same as the order of the joints in the ``joints`` parameter.
+
+    If the ``joints`` parameter is a subset of the total available joints in the URDF (or) the total available state interfaces, then only the joints in the ``joints`` parameter are published in the message.
+
+    If any of the combinations of the defined ``joints`` parameter and ``interfaces`` parameter are not in the available state interfaces, the controller will fail to activate.
+
+.. note::
+    If the ``extra_joints`` parameter is set, the joints in the ``extra_joints`` parameter are appended to the end of the joint names in the message.

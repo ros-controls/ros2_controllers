@@ -2,6 +2,51 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.4.0 (2025-07-23)
+------------------
+
+5.3.0 (2025-07-14)
+------------------
+
+5.2.0 (2025-06-23)
+------------------
+
+5.1.0 (2025-06-11)
+------------------
+* Added frame_id to Joint State Broadcaster (`#1746 <https://github.com/ros-controls/ros2_controllers/issues/1746>`_)
+* Fix RST syntax (`#1715 <https://github.com/ros-controls/ros2_controllers/issues/1715>`_)
+* Contributors: Christoph Fröhlich, Jakub "Deli" Delicat
+
+5.0.2 (2025-05-26)
+------------------
+* Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)
+* Contributors: Christoph Fröhlich
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Fix joint_state_broadcaster performance issues (`#1640 <https://github.com/ros-controls/ros2_controllers/issues/1640>`_)
+* Contributors: Christoph Fröhlich, Jordan Palacios
+
+4.23.0 (2025-04-10)
+-------------------
+* [JSB] added fixes to mantain the joint names order (`#1572 <https://github.com/ros-controls/ros2_controllers/issues/1572>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
+4.22.0 (2025-03-17)
+-------------------
+* [JSB] cleanup the activation error message (`#1584 <https://github.com/ros-controls/ros2_controllers/issues/1584>`_)
+* Contributors: Sai Kishor Kothakota
+
 4.21.0 (2025-03-01)
 -------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)

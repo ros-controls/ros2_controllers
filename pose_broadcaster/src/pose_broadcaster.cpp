@@ -78,10 +78,6 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
   params_ = param_listener_->get_params();
 
   pose_sensor_ = std::make_unique<semantic_components::PoseSensor>(params_.pose_name);
-  tf_publish_period_ =
-    params_.tf.publish_rate == 0.0
-      ? std::nullopt
-      : std::optional{rclcpp::Duration::from_seconds(1.0 / params_.tf.publish_rate)};
 
   try
   {
@@ -172,39 +168,19 @@ controller_interface::return_type PoseBroadcaster::update(
   }
   else if (realtime_tf_publisher_ && realtime_tf_publisher_->trylock())
   {
-    bool do_publish = false;
-    // rlcpp::Time comparisons throw if clock types are not the same
-    if (tf_last_publish_time_.get_clock_type() != time.get_clock_type())
-    {
-      do_publish = true;
-    }
-    else if (!tf_publish_period_ || (tf_last_publish_time_ + *tf_publish_period_ <= time))
-    {
-      do_publish = true;
-    }
+    auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
+    tf_transform.header.stamp = time;
 
-    if (do_publish)
-    {
-      auto & tf_transform = realtime_tf_publisher_->msg_.transforms[0];
-      tf_transform.header.stamp = time;
+    tf_transform.transform.translation.x = pose.position.x;
+    tf_transform.transform.translation.y = pose.position.y;
+    tf_transform.transform.translation.z = pose.position.z;
 
-      tf_transform.transform.translation.x = pose.position.x;
-      tf_transform.transform.translation.y = pose.position.y;
-      tf_transform.transform.translation.z = pose.position.z;
+    tf_transform.transform.rotation.x = pose.orientation.x;
+    tf_transform.transform.rotation.y = pose.orientation.y;
+    tf_transform.transform.rotation.z = pose.orientation.z;
+    tf_transform.transform.rotation.w = pose.orientation.w;
 
-      tf_transform.transform.rotation.x = pose.orientation.x;
-      tf_transform.transform.rotation.y = pose.orientation.y;
-      tf_transform.transform.rotation.z = pose.orientation.z;
-      tf_transform.transform.rotation.w = pose.orientation.w;
-
-      realtime_tf_publisher_->unlockAndPublish();
-
-      tf_last_publish_time_ = time;
-    }
-    else
-    {
-      realtime_tf_publisher_->unlock();
-    }
+    realtime_tf_publisher_->unlockAndPublish();
   }
 
   return controller_interface::return_type::OK;

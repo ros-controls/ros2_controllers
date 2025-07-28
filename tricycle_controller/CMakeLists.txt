@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(tricycle_controller)
 
-include(../ros2_controllers.cmake)
+find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 
@@ -46,8 +46,22 @@ target_include_directories(tricycle_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/tricycle_controller>
 )
-target_link_libraries(tricycle_controller PUBLIC tricycle_controller_parameters)
-ament_target_dependencies(tricycle_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(tricycle_controller PUBLIC
+                      tricycle_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      tf2::tf2
+                      rcpputils::rcpputils
+                      ${ackermann_msgs_TARGETS}
+                      ${nav_msgs_TARGETS}
+                      ${geometry_msgs_TARGETS}
+                      ${tf2_msgs_TARGETS}
+                      ${std_srvs_TARGETS}
+                      ${builtin_interfaces_TARGETS})
 
 pluginlib_export_plugin_description_file(controller_interface tricycle_controller.xml)
 
@@ -61,25 +75,15 @@ if(BUILD_TESTING)
   target_link_libraries(test_tricycle_controller
     tricycle_controller
   )
-  ament_target_dependencies(test_tricycle_controller
-    geometry_msgs
-    hardware_interface
-    nav_msgs
-    rclcpp
-    rclcpp_lifecycle
-    realtime_tools
-    tf2
-    tf2_msgs
-  )
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_tricycle_controller test/test_load_tricycle_controller.cpp)
   target_link_libraries(test_load_tricycle_controller
     tricycle_controller
   )
-  ament_target_dependencies(test_load_tricycle_controller
-    controller_manager
-    ros2_control_test_assets
+  target_link_libraries(test_load_tricycle_controller
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_traction_limiter

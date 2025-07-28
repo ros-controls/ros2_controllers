@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(pid_controller)
 
-include(../ros2_controllers.cmake)
+find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 
@@ -49,9 +49,19 @@ target_include_directories(pid_controller PUBLIC
   $<INSTALL_INTERFACE:include/pid_controller>
 )
 target_link_libraries(pid_controller PUBLIC
-  pid_controller_parameters
-)
-ament_target_dependencies(pid_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      pid_controller_parameters
+                      angles::angles
+                      control_toolbox::control_toolbox
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${std_srvs_TARGETS}
+                      ${control_msgs_TARGETS}
+                      ${parameter_traits_TARGETS}
+                      ${std_srvs_TARGETS})
 
 pluginlib_export_plugin_description_file(controller_interface pid_controller.xml)
 
@@ -67,11 +77,6 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_pid_controller PRIVATE include)
   target_link_libraries(test_pid_controller pid_controller)
-  ament_target_dependencies(
-    test_pid_controller
-    controller_interface
-    hardware_interface
-  )
 
   add_rostest_with_parameters_gmock(
     test_pid_controller_preceding
@@ -80,11 +85,6 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_pid_controller_preceding PRIVATE include)
   target_link_libraries(test_pid_controller_preceding pid_controller)
-  ament_target_dependencies(
-    test_pid_controller_preceding
-    controller_interface
-    hardware_interface
-  )
 
   add_rostest_with_parameters_gmock(
     test_pid_controller_dual_interface
@@ -93,18 +93,12 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_pid_controller_dual_interface PRIVATE include)
   target_link_libraries(test_pid_controller_dual_interface pid_controller)
-  ament_target_dependencies(
-    test_pid_controller_dual_interface
-    controller_interface
-    hardware_interface
-  )
 
   ament_add_gmock(test_load_pid_controller test/test_load_pid_controller.cpp)
   target_include_directories(test_load_pid_controller PRIVATE include)
-  ament_target_dependencies(
-    test_load_pid_controller
-    controller_manager
-    ros2_control_test_assets
+  target_link_libraries(test_load_pid_controller
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 

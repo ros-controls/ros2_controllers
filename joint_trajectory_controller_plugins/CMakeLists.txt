@@ -32,9 +32,13 @@ target_compile_features(pid_trajectory_plugin PUBLIC cxx_std_17)
 target_include_directories(pid_trajectory_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
-ament_target_dependencies(pid_trajectory_plugin PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 target_link_libraries(pid_trajectory_plugin PUBLIC
-  pid_trajectory_plugin_parameters
+                      pid_trajectory_plugin_parameters
+                      control_toolbox::control_toolbox
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      ${trajectory_msgs_TARGETS}
 )
 pluginlib_export_plugin_description_file(joint_trajectory_controller_plugins plugins.xml)
 
@@ -53,11 +57,9 @@ install(
 if(BUILD_TESTING)
   ament_add_gmock(test_load_pid_trajectory test/test_load_pid_trajectory.cpp)
   target_link_libraries(test_load_pid_trajectory pid_trajectory_plugin)
-  ament_target_dependencies(test_load_pid_trajectory ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
   ament_add_gmock(test_pid_trajectory test/test_pid_trajectory.cpp)
   target_link_libraries(test_pid_trajectory pid_trajectory_plugin)
-  ament_target_dependencies(test_pid_trajectory ${THIS_PACKAGE_INCLUDE_DEPENDS})
 endif()
 
 ament_export_include_directories(

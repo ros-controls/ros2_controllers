@@ -2,6 +2,49 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.4.0 (2025-07-23)
+------------------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
+5.3.0 (2025-07-14)
+------------------
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Contributors: Kenta Kato
+
+5.2.0 (2025-06-23)
+------------------
+
+5.1.0 (2025-06-11)
+------------------
+
+5.0.2 (2025-05-26)
+------------------
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+* Deprecating tf2 C Headers (`#1325 <https://github.com/ros-controls/ros2_controllers/issues/1325>`_)
+* Contributors: Lucas Wendland
+
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Contributors: Christoph Fröhlich
+
+4.23.0 (2025-04-10)
+-------------------
+* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, github-actions[bot]
+
+4.22.0 (2025-03-17)
+-------------------
+
 4.21.0 (2025-03-01)
 -------------------
 * Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)

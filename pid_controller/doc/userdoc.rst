@@ -69,14 +69,12 @@ If controller parameter ``use_external_measured_states`` is true:
 
 - <controller_name>/measured_state  [control_msgs/msg/MultiDOFCommand]
 
-Services
-,,,,,,,,,,,
-
-- <controller_name>/set_feedforward_control  [std_srvs/srv/SetBool]
-
 Publishers
 ,,,,,,,,,,,
 - <controller_name>/controller_state  [control_msgs/msg/MultiDOFStateStamped]
+- <controller_name>/<dof>/pid_state  [control_msgs/msg/PidState]
+
+Initially the PidState publisher is turned off. It can be turned on by using  ``gains.<dof>.activate_state_publisher`` parameter.
 
 Parameters
 ,,,,,,,,,,,

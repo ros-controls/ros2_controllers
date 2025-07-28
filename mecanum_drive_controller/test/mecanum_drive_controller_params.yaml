@@ -1,19 +1,41 @@
-test_mecanum_drive_controller:
-  ros__parameters:
-    reference_timeout: 0.9
+/**:
+  test_mecanum_drive_controller:
+    ros__parameters:
+      reference_timeout: 0.9
 
-    front_left_wheel_command_joint_name: "front_left_wheel_joint"
-    front_right_wheel_command_joint_name: "front_right_wheel_joint"
-    rear_right_wheel_command_joint_name: "back_right_wheel_joint"
-    rear_left_wheel_command_joint_name: "back_left_wheel_joint"
+      front_left_wheel_command_joint_name: "front_left_wheel_joint"
+      front_right_wheel_command_joint_name: "front_right_wheel_joint"
+      rear_right_wheel_command_joint_name: "back_right_wheel_joint"
+      rear_left_wheel_command_joint_name: "back_left_wheel_joint"
 
-    kinematics:
-      base_frame_offset: { x: 0.0, y: 0.0, theta: 0.0 }
-      wheels_radius: 0.5
-      sum_of_robot_center_projection_on_X_Y_axis: 1.0
+      kinematics:
+        base_frame_offset: { x: 0.0, y: 0.0, theta: 0.0 }
+        wheels_radius: 0.5
+        sum_of_robot_center_projection_on_X_Y_axis: 1.0
 
-    base_frame_id: "base_link"
-    odom_frame_id: "odom"
-    enable_odom_tf: true
-    twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
-    pose_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
+      base_frame_id: "base_link"
+      odom_frame_id: "odom"
+      enable_odom_tf: true
+      twist_covariance_diagonal: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0]
+      pose_covariance_diagonal: [0.0, 6.0, 12.0, 18.0, 24.0, 30.0]
+
+
+  test_mecanum_drive_controller_with_rotation:
+    ros__parameters:
+      reference_timeout: 5.0
+
+      front_left_wheel_command_joint_name: "front_left_wheel_joint"
+      front_right_wheel_command_joint_name: "front_right_wheel_joint"
+      rear_right_wheel_command_joint_name: "rear_right_wheel_joint"
+      rear_left_wheel_command_joint_name: "rear_left_wheel_joint"
+
+      kinematics:
+        base_frame_offset: { x: 1.0, y: 2.0, theta: 3.0 }
+        wheels_radius: 0.05
+        sum_of_robot_center_projection_on_X_Y_axis: 0.2925
+
+      base_frame_id: "base_link"
+      odom_frame_id: "odom"
+      enable_odom_tf: true
+      pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
+      twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]

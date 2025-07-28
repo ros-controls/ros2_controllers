@@ -1,3 +1,5 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/mecanum_drive_controller/doc/userdoc.rst
+
 .. _mecanum_drive_controller_userdoc:
 
 mecanum_drive_controller

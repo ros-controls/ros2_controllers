@@ -85,26 +85,30 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.joints.empty());
   ASSERT_TRUE(controller_->admittance_->parameters_.joints.size() == joint_names_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.joints.begin(),
-    controller_->admittance_->parameters_.joints.end(), joint_names_.begin(), joint_names_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.joints.begin(),
+      controller_->admittance_->parameters_.joints.end(), joint_names_.begin(),
+      joint_names_.end()));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.command_interfaces.empty());
   ASSERT_TRUE(
     controller_->admittance_->parameters_.command_interfaces.size() ==
     command_interface_types_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.command_interfaces.begin(),
-    controller_->admittance_->parameters_.command_interfaces.end(),
-    command_interface_types_.begin(), command_interface_types_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.command_interfaces.begin(),
+      controller_->admittance_->parameters_.command_interfaces.end(),
+      command_interface_types_.begin(), command_interface_types_.end()));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.state_interfaces.empty());
   ASSERT_TRUE(
     controller_->admittance_->parameters_.state_interfaces.size() == state_interface_types_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.state_interfaces.begin(),
-    controller_->admittance_->parameters_.state_interfaces.end(), state_interface_types_.begin(),
-    state_interface_types_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.state_interfaces.begin(),
+      controller_->admittance_->parameters_.state_interfaces.end(), state_interface_types_.begin(),
+      state_interface_types_.end()));
 
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.name, ft_sensor_name_);
   ASSERT_EQ(controller_->admittance_->parameters_.kinematics.base, ik_base_frame_);
@@ -114,36 +118,40 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_TRUE(
     controller_->admittance_->parameters_.admittance.selected_axes.size() ==
     admittance_selected_axes_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.admittance.selected_axes.begin(),
-    controller_->admittance_->parameters_.admittance.selected_axes.end(),
-    admittance_selected_axes_.begin(), admittance_selected_axes_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.admittance.selected_axes.begin(),
+      controller_->admittance_->parameters_.admittance.selected_axes.end(),
+      admittance_selected_axes_.begin(), admittance_selected_axes_.end()));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.mass.empty());
   ASSERT_TRUE(
     controller_->admittance_->parameters_.admittance.mass.size() == admittance_mass_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.admittance.mass.begin(),
-    controller_->admittance_->parameters_.admittance.mass.end(), admittance_mass_.begin(),
-    admittance_mass_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.admittance.mass.begin(),
+      controller_->admittance_->parameters_.admittance.mass.end(), admittance_mass_.begin(),
+      admittance_mass_.end()));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.damping_ratio.empty());
   ASSERT_TRUE(
     controller_->admittance_->parameters_.admittance.damping_ratio.size() ==
     admittance_damping_ratio_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.admittance.damping_ratio.begin(),
-    controller_->admittance_->parameters_.admittance.damping_ratio.end(),
-    admittance_damping_ratio_.begin(), admittance_damping_ratio_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.admittance.damping_ratio.begin(),
+      controller_->admittance_->parameters_.admittance.damping_ratio.end(),
+      admittance_damping_ratio_.begin(), admittance_damping_ratio_.end()));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.stiffness.empty());
   ASSERT_TRUE(
     controller_->admittance_->parameters_.admittance.stiffness.size() ==
     admittance_stiffness_.size());
-  ASSERT_TRUE(std::equal(
-    controller_->admittance_->parameters_.admittance.stiffness.begin(),
-    controller_->admittance_->parameters_.admittance.stiffness.end(), admittance_stiffness_.begin(),
-    admittance_stiffness_.end()));
+  ASSERT_TRUE(
+    std::equal(
+      controller_->admittance_->parameters_.admittance.stiffness.begin(),
+      controller_->admittance_->parameters_.admittance.stiffness.end(),
+      admittance_stiffness_.begin(), admittance_stiffness_.end()));
 }
 
 TEST_F(AdmittanceControllerTest, check_interfaces)
@@ -348,6 +356,31 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
+}
+
+TEST_F(AdmittanceControllerTest, check_frame_ids_in_controller_state)
+{
+  SetUpController();
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  broadcast_tfs();  // force torque sensor
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & msg = controller_->admittance_->get_controller_state();
+
+  // Ensure correct frame IDs
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.child_frame_id, controller_->admittance_->parameters_.ft_sensor.frame.id);
+  ASSERT_EQ(
+    msg.admittance_position.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(msg.admittance_position.child_frame_id, "admittance_offset");
 }
 
 int main(int argc, char ** argv)

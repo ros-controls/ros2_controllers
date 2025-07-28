@@ -63,6 +63,13 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
   ASSERT_EQ(
+    controller_->params_.pose_covariance_diagonal,
+    std::vector<double>({0.0, 6.0, 12.0, 18.0, 24.0, 30.0}));
+  ASSERT_EQ(
+    controller_->params_.twist_covariance_diagonal,
+    std::vector<double>({0.0, 7.0, 14.0, 21.0, 28.0, 35.0}));
+
+  ASSERT_EQ(
     controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
   ASSERT_EQ(
     controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
@@ -118,6 +125,177 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
   }
 }
 
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
+{
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(false));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
+  ASSERT_EQ(test_odom_frame_id, odom_id);
+  ASSERT_EQ(test_base_frame_id, base_link_id);
+
+  std::array<double, 36> pose_covariance = {
+    {0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 18.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 24.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 30.0}};
+
+  std::array<double, 36> twist_covariance = {
+    {0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 7.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 14.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 21.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 28.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 35.0}};
+
+  ASSERT_EQ(odometry_message.pose.covariance, pose_covariance);
+  ASSERT_EQ(odometry_message.twist.covariance, twist_covariance);
+}
+
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
+{
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(true));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+
+  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the
+  frame
+   * id's */
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+}
+
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+{
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(true));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+  /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the
+  frame
+   * id's */
+  ASSERT_EQ(test_odom_frame_id, odom_id);
+  ASSERT_EQ(test_base_frame_id, base_link_id);
+}
+
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(false));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
+  ASSERT_EQ(test_odom_frame_id, odom_id);
+  ASSERT_EQ(test_base_frame_id, base_link_id);
+}
+
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(true));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+
+  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the
+  frame
+   * id's instead of the namespace*/
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+}
+
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(true));
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+  std::string ns_prefix = test_namespace.erase(0, 1) + "/";
+  /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to
+  the
+   * frame id's */
+  ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
+  ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
+}
+
 TEST_F(MecanumDriveControllerTest, when_controller_is_activated_expect_reference_reset)
 {
   SetUpController();
@@ -126,10 +304,9 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_activated_expect_reference
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // check that the message is reset
-  auto msg = controller_->input_ref_.readFromNonRT();
-  EXPECT_TRUE(std::isnan((*msg)->twist.linear.x));
-
-  ASSERT_TRUE(std::isnan((*msg)->twist.angular.z));
+  auto msg = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(msg.twist.linear.x));
+  ASSERT_TRUE(std::isnan(msg.twist.angular.z));
 }
 
 TEST_F(MecanumDriveControllerTest, when_controller_active_and_update_called_expect_success)
@@ -161,11 +338,11 @@ TEST_F(
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -247,11 +424,11 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = *(controller_->input_ref_.readFromNonRT());
-  auto old_timestamp = reference->header.stamp;
-  EXPECT_TRUE(std::isnan(reference->twist.linear.x));
-  EXPECT_TRUE(std::isnan(reference->twist.linear.y));
-  EXPECT_TRUE(std::isnan(reference->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  auto old_timestamp = reference.header.stamp;
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -260,10 +437,10 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
     controller_->get_node()->now() - controller_->ref_timeout_ -
     rclcpp::Duration::from_seconds(0.1));
   controller_->wait_for_commands(executor);
-  ASSERT_EQ(old_timestamp, (*(controller_->input_ref_.readFromNonRT()))->header.stamp);
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((reference)->twist.angular.z));
+  ASSERT_EQ(old_timestamp, reference.header.stamp);
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 }
 
 // when time stamp is zero expect that time stamp is set to current time stamp
@@ -278,11 +455,11 @@ TEST_F(
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = controller_->input_ref_.readFromNonRT();
-  auto old_timestamp = (*reference)->header.stamp;
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  auto old_timestamp = reference.header.stamp;
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -290,13 +467,15 @@ TEST_F(
   publish_commands(rclcpp::Time(0));
 
   controller_->wait_for_commands(executor);
-  ASSERT_EQ(old_timestamp.sec, (*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec);
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
-  EXPECT_NE((*(controller_->input_ref_.readFromNonRT()))->header.stamp.sec, 0.0);
+  reference = controller_->input_ref_.get();
+
+  ASSERT_EQ(old_timestamp.sec, reference.header.stamp.sec);
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
+  EXPECT_NE(reference.header.stamp.sec, 0.0);
 }
 
 // when the reference_msg has valid timestamp then the timeout check in reference_callback()
@@ -311,9 +490,9 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto reference = controller_->input_ref_.readFromNonRT();
-  EXPECT_TRUE(std::isnan((*reference)->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*reference)->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -321,11 +500,12 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   publish_commands(controller_->get_node()->now());
 
   controller_->wait_for_commands(executor);
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+  reference = controller_->input_ref_.get();
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
 }
 
 // when not in chainable mode and ref_msg_timedout expect
@@ -354,23 +534,24 @@ TEST_F(
   // set command statically
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg, msg_2;
 
-  msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
-                      rclcpp::Duration::from_seconds(0.1);
-  msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg);
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg.header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
+                     rclcpp::Duration::from_seconds(0.1);
+  msg.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg);
+
+  auto reference = controller_->input_ref_.get();
+  const auto age_of_last_command = controller_->get_node()->now() - reference.header.stamp;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -383,24 +564,24 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 0.0);
   }
 
-  std::shared_ptr<ControllerReferenceMsg> msg_2 = std::make_shared<ControllerReferenceMsg>();
-  msg_2->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
-  msg_2->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg_2->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg_2->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg_2->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg_2);
-  const auto age_of_last_command_2 =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg_2.header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
+  msg_2.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg_2.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg_2.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg_2.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg_2);
+
+  reference = controller_->input_ref_.get();
+  const auto age_of_last_command_2 = controller_->get_node()->now() - reference.header.stamp;
 
   // age_of_last_command_2 < ref_timeout_
   ASSERT_TRUE(age_of_last_command_2 <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -414,7 +595,7 @@ TEST_F(
   //  joint_command_values_[controller_->get_rear_left_wheel_index()] = 1.0 / 0.5 * (1.5 - 0.0 - 1 *
   //  0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -422,7 +603,7 @@ TEST_F(
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 3.0);
   }
 }
 
@@ -481,7 +662,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 6.0);
   }
 }
 
@@ -501,21 +682,22 @@ TEST_F(
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
 
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
-  std::shared_ptr<ControllerReferenceMsg> msg = std::make_shared<ControllerReferenceMsg>();
+  ControllerReferenceMsg msg;
 
-  msg->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.0);
-  msg->twist.linear.x = TEST_LINEAR_VELOCITY_X;
-  msg->twist.linear.y = TEST_LINEAR_VELOCITY_y;
-  msg->twist.linear.z = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.x = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.y = std::numeric_limits<double>::quiet_NaN();
-  msg->twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
-  controller_->input_ref_.writeFromNonRT(msg);
-  const auto age_of_last_command =
-    controller_->get_node()->now() - (*(controller_->input_ref_.readFromNonRT()))->header.stamp;
+  msg.header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.0);
+  msg.twist.linear.x = TEST_LINEAR_VELOCITY_X;
+  msg.twist.linear.y = TEST_LINEAR_VELOCITY_y;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
+  controller_->input_ref_.set(msg);
+  auto reference = controller_->input_ref_.get();
+
+  const auto age_of_last_command = controller_->get_node()->now() - reference.header.stamp;
 
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ((*(controller_->input_ref_.readFromRT()))->twist.linear.x, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -529,7 +711,8 @@ TEST_F(
   // velocity_in_center_frame_angular_z_);
   //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
-  ASSERT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
+  reference = controller_->input_ref_.get();
+  ASSERT_TRUE(std::isnan(reference.twist.linear.x));
 }
 
 TEST_F(
@@ -542,9 +725,10 @@ TEST_F(
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y));
-  EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
+  auto reference = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reference.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reference.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reference.twist.angular.z));
   controller_->ref_timeout_ = rclcpp::Duration::from_seconds(0.0);
 
   // reference_callback() is called implicitly when publish_commands() is called.
@@ -553,13 +737,104 @@ TEST_F(
   publish_commands(controller_->get_node()->now());
 
   controller_->wait_for_commands(executor);
+  reference = controller_->input_ref_.get();
 
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y));
-  EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z));
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.x, 1.5);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.linear.y, 0.0);
-  EXPECT_EQ((*(controller_->input_ref_.readFromNonRT()))->twist.angular.z, 0.0);
+  EXPECT_FALSE(std::isnan(reference.twist.linear.x));
+  EXPECT_FALSE(std::isnan(reference.twist.linear.y));
+  EXPECT_FALSE(std::isnan(reference.twist.angular.z));
+  EXPECT_EQ(reference.twist.linear.x, 1.5);
+  EXPECT_EQ(reference.twist.linear.y, 0.0);
+  EXPECT_EQ(reference.twist.angular.z, 0.0);
+}
+
+TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
+{
+  // Initialize controller
+  SetUpController("test_mecanum_drive_controller_with_rotation");
+
+  // Configure
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // Check on the base frame offset is set by the params
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[0], 1.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[1], 2.0);
+  EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[2], 3.0);
+
+  // Activate in chained mode
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->is_in_chained_mode(), true);
+
+  // Setup reference interfaces for side to side motion
+  auto side_to_side_motion = [this](double linear_y)
+  {
+    controller_->reference_interfaces_[0] = 0;         // linear x
+    controller_->reference_interfaces_[1] = linear_y;  // linear y
+    controller_->reference_interfaces_[2] = 0;         // angular z
+  };
+
+  // Setup reference interfaces for rotation
+  auto rotation_motion = [this](double rotation_velocity)
+  {
+    controller_->reference_interfaces_[0] = 0;                  // linear x
+    controller_->reference_interfaces_[1] = 0;                  // linear y
+    controller_->reference_interfaces_[2] = rotation_velocity;  // angular z
+  };
+
+  const double update_rate = 50.0;  // 50 Hz
+  const double dt = 1.0 / update_rate;
+  const double test_duration = 1.0;  // 1 second test
+  auto current_time = controller_->get_node()->now();
+
+  auto count = 0;
+  for (double t = 0; t < test_duration; t += dt)
+  {
+    switch (count % 4)
+    {
+      case 0:
+        side_to_side_motion(2.0);
+        break;
+      case 1:
+        rotation_motion(-0.5);
+        break;
+      case 2:
+        side_to_side_motion(-2.0);
+        break;
+      case 3:
+        rotation_motion(0.5);
+    }
+
+    // Call update method
+    ASSERT_EQ(
+      controller_->update(current_time, rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+
+    current_time += rclcpp::Duration::from_seconds(dt);
+    count++;
+
+    // Update the state of the wheels for subsequent loop
+    size_t fl_index = controller_->get_front_left_wheel_index();
+    size_t fr_index = controller_->get_front_right_wheel_index();
+    size_t rl_index = controller_->get_rear_left_wheel_index();
+    size_t rr_index = controller_->get_rear_right_wheel_index();
+    joint_state_values_[fl_index] =
+      controller_->command_interfaces_[fl_index].get_optional().value();
+    joint_state_values_[fr_index] =
+      controller_->command_interfaces_[fr_index].get_optional().value();
+    joint_state_values_[rl_index] =
+      controller_->command_interfaces_[rl_index].get_optional().value();
+    joint_state_values_[rr_index] =
+      controller_->command_interfaces_[rr_index].get_optional().value();
+  }
+
+  RCLCPP_INFO(
+    controller_->get_node()->get_logger(), "odometry: %f, %f, %f", controller_->odometry_.getX(),
+    controller_->odometry_.getY(), controller_->odometry_.getRz());
+
+  // Verify odometry remains bounded
+  EXPECT_LT(std::abs(controller_->odometry_.getX()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getY()), 1.0);
+  EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
 int main(int argc, char ** argv)
