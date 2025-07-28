@@ -4,8 +4,13 @@
   <name>swerve_drive_controller</name>
   <version>0.0.0</version>
   <description>Controller for a 4 wheel swerve drive robot base.</description>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
   <maintainer email="nitinmaurya2606@gmail.com">Nitin Maurya</maintainer>
-  <maintainer email="christophfroehlich@users.noreply.github.com">Christoph Fröhlich</maintainer>
+
+  <author email="nitinmaurya2606@gmail.com">Nitin Maurya</author>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
