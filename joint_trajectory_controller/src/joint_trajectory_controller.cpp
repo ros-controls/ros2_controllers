@@ -1144,7 +1144,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     }
   }
 
-  current_trajectory_ = std::make_shared<Trajectory>();
+  current_trajectory_ = std::make_unique<Trajectory>();
   new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
   subscriber_is_active_ = true;
