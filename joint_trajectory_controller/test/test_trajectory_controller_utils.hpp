@@ -698,7 +698,7 @@ public:
         EXPECT_EQ(effort.at(2), joint_eff_[2]);
       }
     }
-    else  // traj_controller_->use_closed_loop_pid_adapter() == true
+    else  // traj_controller_->use_external_control_law() == true
     {
       // velocity or effort PID?
       // --> set kp > 0.0 in test

@@ -328,8 +328,6 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         if (traj_contr_)
         {
-          // TODO(christophfroehlich) add has_effort_command_interface_ ?
-          // command_next_.effort[index_cmd_joint] : 0.0)
           traj_contr_->compute_commands(
             tmp_command_, state_current_, state_error_, command_next_,
             time - current_trajectory_->time_from_start(), period);
@@ -1837,6 +1835,7 @@ void JointTrajectoryController::add_new_trajectory_msg_nonRT(
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
   }
+  RCLCPP_INFO(get_node()->get_logger(), "Called add_new_trajectory_msg_nonRT.");
 }
 
 void JointTrajectoryController::add_new_trajectory_msg_RT(
@@ -1856,6 +1855,7 @@ void JointTrajectoryController::add_new_trajectory_msg_RT(
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
   }
+  RCLCPP_INFO(get_node()->get_logger(), "Called add_new_trajectory_msg_RT.");
 }
 
 void JointTrajectoryController::preempt_active_goal()
