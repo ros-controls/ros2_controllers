@@ -37,25 +37,28 @@ public:
 
   /**
    * @brief initialize the controller plugin.
-   * declare parameters
    * @param node the node handle to use for parameter handling
    * @param map_cmd_to_joints a mapping from the joint names in the trajectory messages to the
    * command joints
    */
-  virtual bool initialize(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints) = 0;
+  bool initialize(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints)
+  {
+    node_ = node;
+    map_cmd_to_joints_ = map_cmd_to_joints;
+    logger_ = this->set_logger();
+    return on_initialize();
+  };
 
   /**
    * @brief configure the controller plugin.
-   * parse read-only parameters, pre-allocate memory for the controller
    */
-  virtual bool configure() = 0;
+  bool configure() { return on_configure(); }
 
   /**
    * @brief activate the controller plugin.
-   * parse parameters
    */
-  virtual bool activate() = 0;
+  bool activate() { return on_activate(); }
 
   /**
    * @brief compute the control law for the given trajectory
@@ -64,7 +67,7 @@ public:
    * of the trajectory until it finishes
    *
    * this method is not virtual, any overrides won't be called by JTC. Instead, override
-   * compute_control_law_non_rt_impl for your implementation
+   * on_compute_control_law_non_rt for your implementation
    *
    * @return true if the gains were computed, false otherwise
    */
@@ -72,7 +75,7 @@ public:
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
   {
     rt_control_law_ready_.writeFromNonRT(false);
-    auto ret = compute_control_law_non_rt_impl(trajectory);
+    auto ret = on_compute_control_law_non_rt(trajectory);
     rt_control_law_ready_.writeFromNonRT(true);
     return ret;
   }
@@ -83,7 +86,7 @@ public:
    * this method must finish quickly (within one controller-update rate)
    *
    * this method is not virtual, any overrides won't be called by JTC. Instead, override
-   * compute_control_law_rt_impl for your implementation
+   * on_compute_control_law_rt for your implementation
    *
    * @return true if the gains were computed, false otherwise
    */
@@ -92,7 +95,7 @@ public:
   {
     // TODO(christophfroehlich): Need a lock-free write here
     rt_control_law_ready_.writeFromNonRT(false);
-    auto ret = compute_control_law_rt_impl(trajectory);
+    auto ret = on_compute_control_law_rt(trajectory);
     rt_control_law_ready_.writeFromNonRT(true);
     return ret;
   }
@@ -145,22 +148,58 @@ public:
 protected:
   // the node handle for parameter handling
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  // map from joints in the message to command joints
+  std::vector<size_t> map_cmd_to_joints_;
   // Are we computing the control law or is it valid?
   realtime_tools::RealtimeBuffer<bool> rt_control_law_ready_;
+
+  /**
+   * @brief Get the logger for this plugin
+   */
+  rclcpp::Logger get_logger() const { return logger_; }
+  /**
+   * @brief Get the logger for this plugin
+   */
+  virtual rclcpp::Logger set_logger() const = 0;
 
   /**
    * @brief compute the control law from the given trajectory (in the non-RT loop)
    * @return true if the gains were computed, false otherwise
    */
-  virtual bool compute_control_law_non_rt_impl(
+  virtual bool on_compute_control_law_non_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
 
   /**
    * @brief compute the control law for a single point (in the RT loop)
    * @return true if the gains were computed, false otherwise
    */
-  virtual bool compute_control_law_rt_impl(
+  virtual bool on_compute_control_law_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
+
+  /**
+   * @brief initialize the controller plugin.
+   *
+   * declare parameters
+   */
+  virtual bool on_initialize(void) = 0;
+
+  /**
+   * @brief configure the controller plugin.
+   *
+   * parse read-only parameters, pre-allocate memory for the controller
+   */
+  virtual bool on_configure() = 0;
+
+  /**
+   * @brief activate the controller plugin.
+   *
+   * parse parameters
+   */
+  virtual bool on_activate() = 0;
+
+private:
+  // child logger for this plugin
+  rclcpp::Logger logger_ = rclcpp::get_logger("joint_trajectory_controller_plugins");
 };
 
 }  // namespace joint_trajectory_controller_plugins

@@ -32,28 +32,6 @@ namespace joint_trajectory_controller_plugins
 class PidTrajectoryPlugin : public TrajectoryControllerBase
 {
 public:
-  bool initialize(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-    std::vector<size_t> map_cmd_to_joints) override;
-
-  bool configure() override;
-
-  bool activate() override;
-
-  bool compute_control_law_non_rt_impl(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
-  {
-    // nothing to do
-    return true;
-  }
-
-  bool compute_control_law_rt_impl(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
-  {
-    // nothing to do
-    return true;
-  }
-
   bool update_gains_rt() override;
 
   void compute_commands(
@@ -70,6 +48,35 @@ public:
   }
 
 protected:
+  // Parameters from ROS for joint_trajectory_controller_plugins
+  std::shared_ptr<ParamListener> param_listener_;
+
+  bool on_initialize(void) override;
+
+  rclcpp::Logger set_logger() const override
+  {
+    return node_->get_logger().get_child("PidTrajectoryPlugin");
+  }
+
+  bool on_configure() override;
+
+  bool on_activate() override;
+
+  bool on_compute_control_law_non_rt(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+  {
+    // nothing to do
+    return true;
+  }
+
+  bool on_compute_control_law_rt(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+  {
+    // nothing to do
+    return true;
+  }
+
+private:
   /**
    * @brief parse PID gains from parameter struct
    */
@@ -77,15 +84,12 @@ protected:
 
   // number of command joints
   size_t num_cmd_joints_;
-  // map from joints in the message to command joints
-  std::vector<size_t> map_cmd_to_joints_;
   // PID controllers
   std::vector<PidPtr> pids_;
   // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
   std::vector<double> ff_velocity_scale_;
 
   // Parameters from ROS for joint_trajectory_controller_plugins
-  std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 };
 

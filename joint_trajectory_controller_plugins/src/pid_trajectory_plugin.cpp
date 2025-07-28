@@ -17,12 +17,8 @@
 namespace joint_trajectory_controller_plugins
 {
 
-bool PidTrajectoryPlugin::initialize(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node, std::vector<size_t> map_cmd_to_joints)
+bool PidTrajectoryPlugin::on_initialize()
 {
-  node_ = node;
-  map_cmd_to_joints_ = map_cmd_to_joints;
-
   try
   {
     // Create the parameter listener and get the parameters
@@ -37,7 +33,7 @@ bool PidTrajectoryPlugin::initialize(
   return true;
 }
 
-bool PidTrajectoryPlugin::configure()
+bool PidTrajectoryPlugin::on_configure()
 {
   try
   {
@@ -53,14 +49,12 @@ bool PidTrajectoryPlugin::configure()
   num_cmd_joints_ = params_.command_joints.size();
   if (num_cmd_joints_ == 0)
   {
-    RCLCPP_ERROR(node_->get_logger(), "[PidTrajectoryPlugin] No command joints specified.");
+    RCLCPP_ERROR(get_logger(), "No command joints specified.");
     return false;
   }
   if (num_cmd_joints_ != map_cmd_to_joints_.size())
   {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "[PidTrajectoryPlugin] map_cmd_to_joints has to be of size num_cmd_joints.");
+    RCLCPP_ERROR(get_logger(), "map_cmd_to_joints has to be of size num_cmd_joints.");
     return false;
   }
   pids_.resize(num_cmd_joints_);  // memory for the shared pointers, will be nullptr
@@ -74,7 +68,7 @@ bool PidTrajectoryPlugin::configure()
   return true;
 }
 
-bool PidTrajectoryPlugin::activate()
+bool PidTrajectoryPlugin::on_activate()
 {
   params_ = param_listener_->get_params();
   parse_gains();
@@ -97,8 +91,7 @@ void PidTrajectoryPlugin::parse_gains()
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     RCLCPP_DEBUG(
-      node_->get_logger(), "[PidTrajectoryPlugin] params_.command_joints %lu : %s", i,
-      params_.command_joints[i].c_str());
+      get_logger(), "params_.command_joints %lu : %s", i, params_.command_joints[i].c_str());
 
     const auto & gains = params_.gains.command_joints_map.at(params_.command_joints[i]);
     control_toolbox::AntiWindupStrategy antiwindup_strat;
@@ -111,15 +104,12 @@ void PidTrajectoryPlugin::parse_gains()
       gains.p, gains.i, gains.d, gains.u_clamp_max, gains.u_clamp_min, antiwindup_strat);
     ff_velocity_scale_[i] = gains.ff_velocity_scale;
 
-    RCLCPP_DEBUG(node_->get_logger(), "[PidTrajectoryPlugin] gains.p: %f", gains.p);
-    RCLCPP_DEBUG(
-      node_->get_logger(), "[PidTrajectoryPlugin] ff_velocity_scale_: %f", ff_velocity_scale_[i]);
+    RCLCPP_DEBUG(get_logger(), "gains.p: %f", gains.p);
+    RCLCPP_DEBUG(get_logger(), "ff_velocity_scale_: %f", ff_velocity_scale_[i]);
   }
 
   RCLCPP_INFO(
-    node_->get_logger(),
-    "[PidTrajectoryPlugin] Loaded PID gains from ROS parameters for %lu joint(s).",
-    num_cmd_joints_);
+    get_logger(), "Loaded PID gains from ROS parameters for %lu joint(s).", num_cmd_joints_);
 }
 
 void PidTrajectoryPlugin::compute_commands(
