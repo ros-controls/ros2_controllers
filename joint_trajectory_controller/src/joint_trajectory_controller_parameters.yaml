@@ -17,7 +17,7 @@ joint_trajectory_controller:
         * JTC is used in a controller chain where command and state interfaces don't have same names.
 
         * If the number of command joints is smaller than the degrees-of-freedom. For example to track the state and error of passive joints. ``command_joints`` must then be a subset of ``joints``.",
-    read_only: true,
+    read_only: false, # should be set to true after configuration of the controller
     validation: {
       unique<>: null,
     }
