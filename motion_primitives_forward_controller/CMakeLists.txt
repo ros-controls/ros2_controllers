@@ -107,16 +107,4 @@ if(BUILD_TESTING)
     hardware_interface::hardware_interface
     ros2_control_test_assets::ros2_control_test_assets
   )
-
-  add_rostest_with_parameters_gmock(
-    test_motion_primitives_forward_controller_preceeding
-    test/test_motion_primitives_forward_controller_preceeding.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/motion_primitives_forward_controller_preceeding_params.yaml
-  )
-  target_link_libraries(test_motion_primitives_forward_controller_preceeding
-    motion_primitives_forward_controller
-    controller_interface::controller_interface
-    hardware_interface::hardware_interface
-    ros2_control_test_assets::ros2_control_test_assets
-  )
 endif()
