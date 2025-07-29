@@ -2,6 +2,13 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.4.0 (2025-07-23)
+------------------
+* Apply API change of PidROS (`#1823 <https://github.com/ros-controls/ros2_controllers/issues/1823>`_)
+* Change the tests to work without deprecated PID settings (`#1824 <https://github.com/ros-controls/ros2_controllers/issues/1824>`_)
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
 5.3.0 (2025-07-14)
 ------------------
 * Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
