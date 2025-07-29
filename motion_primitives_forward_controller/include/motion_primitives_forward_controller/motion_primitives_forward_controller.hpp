@@ -44,7 +44,8 @@ enum class ExecutionState : uint8_t
   EXECUTING = 1,
   SUCCESS = 2,
   ERROR = 3,
-  STOPPED = 4
+  STOPPING = 4,
+  STOPPED = 5
 };
 
 using MotionType = control_msgs::msg::MotionPrimitive;
