@@ -189,6 +189,12 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 
       break;
 
+    case ExecutionState::STOPPING:
+      RCLCPP_DEBUG(get_node()->get_logger(), "Execution state: STOPPING");
+      print_error_once_ = true;
+      was_executing_ = false;
+      break;
+
     case ExecutionState::STOPPED:
       print_error_once_ = true;
       was_executing_ = false;
