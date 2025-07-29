@@ -19,7 +19,7 @@ The action interface also allows stopping the current execution of motion primit
 
 ![Action Image](doc/Moprim_Controller_ExecuteMotion_Action.drawio.png)
 
-This can be done, for example, via a Python script as demonstrated in the [`example python script`](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives_hka_ur10e.py) in the `Universal_Robots_ROS2_Driver` package.
+This can be done, for example, via a Python script as demonstrated in the [`example python script`](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives_ur10e.py) in the `Universal_Robots_ROS2_Driver` package.
 
 ## Architecture Overview
 The following diagram shows the architecture for a UR robot.
