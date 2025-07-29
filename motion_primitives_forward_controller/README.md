@@ -5,7 +5,7 @@ Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ)
 
 [![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**This package contains two controllers:**  
+**This package contains two controllers:**
 1. [motion_primitives_forward_controller](#moprim_forward_controller)
 2. [motion_primitives_from_trajectory_controller](#moprim_from_traj_controller)
 
