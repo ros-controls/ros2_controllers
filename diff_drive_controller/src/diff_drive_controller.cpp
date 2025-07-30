@@ -107,6 +107,37 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
 {
   auto logger = get_node()->get_logger();
 
+  // update parameters if they have changed
+  if (param_listener_->try_update_params(params_))
+  {
+    RCLCPP_INFO(logger, "Parameters were updated");
+  }
+  
+  cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
+  publish_limited_velocity_ = params_.publish_limited_velocity;
+    // limit the publication on the topics /odom and /tf
+    publish_rate_ = params_.publish_rate;
+    publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
+  const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
+  const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
+  const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
+
+  odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
+  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
+
+  limiter_linear_ = std::make_unique<SpeedLimiter>(
+    params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+    params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+    params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+    params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+
+  limiter_angular_ = std::make_unique<SpeedLimiter>(
+    params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+    params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+    params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+    params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+
+
   auto current_ref_op = received_velocity_msg_.try_get();
   if (current_ref_op.has_value())
   {
@@ -310,12 +341,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 {
   auto logger = get_node()->get_logger();
 
-  // update parameters if they have changed
-  if (param_listener_->try_update_params(params_))
-  {
-    RCLCPP_INFO(logger, "Parameters were updated");
-  }
-
   if (params_.left_wheel_names.size() != params_.right_wheel_names.size())
   {
     RCLCPP_ERROR(
@@ -324,31 +349,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
-  const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
-  const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
-
-  odometry_.setWheelParams(wheel_separation, left_wheel_radius, right_wheel_radius);
-  odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
-
-  cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
-  publish_limited_velocity_ = params_.publish_limited_velocity;
-
   // Allocate reference interfaces if needed
   const int nr_ref_itfs = 2;
   reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
-
-  limiter_linear_ = std::make_unique<SpeedLimiter>(
-    params_.linear.x.min_velocity, params_.linear.x.max_velocity,
-    params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
-    params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
-    params_.linear.x.min_jerk, params_.linear.x.max_jerk);
-
-  limiter_angular_ = std::make_unique<SpeedLimiter>(
-    params_.angular.z.min_velocity, params_.angular.z.max_velocity,
-    params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
-    params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
-    params_.angular.z.min_jerk, params_.angular.z.max_jerk);
 
   if (!reset())
   {
@@ -443,9 +446,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_message.header.frame_id = odom_frame_id;
   odometry_message.child_frame_id = base_frame_id;
 
-  // limit the publication on the topics /odom and /tf
-  publish_rate_ = params_.publish_rate;
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
+
 
   // initialize odom values zeros
   odometry_message.twist =
