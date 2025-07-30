@@ -1,4 +1,4 @@
-motion_primitives_forward_controller
+motion_primitive_controllers
 ==========================================
 
 Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ), LINEAR_CARTESIAN (LIN/ MOVEL) and CIRCULAR_CARTESIAN (CIRC/ MOVEC)
@@ -22,10 +22,19 @@ The action interface also allows stopping the current execution of motion primit
 This can be done, for example, via a Python script as demonstrated in the [`example python script`](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives_ur10e.py) in the `Universal_Robots_ROS2_Driver` package.
 
 ## Architecture Overview
-The following diagram shows the architecture for a UR robot.
-For this setup, the [motion primitives mode of the `Universal_Robots_ROS2_Driver`](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver) is used.
+Architecture for a UR robot with [`Universal_Robots_ROS2_Driver` in motion primitives mode](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver).
 
-![UR Robot Architecture](doc/ros2_control_motion_primitives_ur_integrated.drawio.png)
+![UR Robot Architecture](doc/ros2_control_motion_primitives_ur.drawio.png)
+
+Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver/kuka_eki_motion_primitives_hw_interface).
+
+![KUKA Robot Architecture](doc/ros2_control_motion_primitives_kuka.drawio.png)
+
+## Demo-Video with UR10e
+[![UR demo video](doc/moprim_forward_controller_ur_demo_thumbnail.png)](https://youtu.be/SKz6LFvJmhQ)
+
+## Demo-Video with KR3
+[![KUKA demo video](doc/moprim_forward_controller_kuka_demo_thumbnail.png)](https://youtu.be/_BWCO36j9bg)
 
 
 # TODOs/ improvements
