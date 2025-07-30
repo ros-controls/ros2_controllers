@@ -160,7 +160,8 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
-      logger, *get_node()->get_clock(), cmd_vel_timeout_.seconds() * 1000,
+      logger, *get_node()->get_clock(),
+      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.seconds() * 1000),
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
@@ -578,11 +579,15 @@ void DiffDriveController::reset_buffers()
 
 void DiffDriveController::halt()
 {
-  const auto halt_wheels = [](auto & wheel_handles)
+  auto logger = get_node()->get_logger();
+  const auto halt_wheels = [&](auto & wheel_handles)
   {
     for (const auto & wheel_handle : wheel_handles)
     {
-      wheel_handle.velocity.get().set_value(0.0);
+      if (!wheel_handle.velocity.get().set_value(0.0))
+      {
+        RCLCPP_WARN(logger, "Failed to set wheel velocity to value 0.0");
+      }
     }
   };
 

@@ -72,7 +72,21 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
 
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_.set(*msg); });
+    [this](const CmdType::SharedPtr msg)
+    {
+      const auto cmd = *msg;
+
+      if (!std::all_of(
+            cmd.data.cbegin(), cmd.data.cend(),
+            [](const auto & value) { return std::isfinite(value); }))
+      {
+        RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "Non-finite value received. Dropping message");
+        return;
+      }
+      rt_command_.set(cmd);
+    });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -162,10 +176,17 @@ controller_interface::return_type ForwardControllersBase::update(
 
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value(joint_commands_.data[index]);
+    const auto & value = joint_commands_.data[index];
+
+    if (!command_interfaces_[index].set_value(value))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Unable to set the command interface value %s: value = %f",
+        command_interfaces_[index].get_name().c_str(), value);
+      return controller_interface::return_type::OK;
+    }
   }
 
   return controller_interface::return_type::OK;
 }
-
 }  // namespace forward_command_controller
