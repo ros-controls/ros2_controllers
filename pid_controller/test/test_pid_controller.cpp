@@ -45,7 +45,6 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 1.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i, 2.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].d, 3.0);
-    ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].antiwindup);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_max, 5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_min, -5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);
@@ -238,10 +237,10 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
     // check the command value:
     // ref = 101.101, state = 1.1, ds = 0.01
     // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-    // p_term = 100.001 * 1, i_term = 0.0 at first update call, d_term = error/ds = 10000.1 * 3
+    // p_term = 100.001 * 1, i_term = 100.001 * 0.01 * 2, d_term = error/ds = 10000.1 * 3
     // feedforward ON, feedforward_gain = 0
-    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30100.3 + 0 * 101.101 = 30102.3
-    const double expected_command_value = 30100.301000;
+    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.30102 + 0 * 101.101 = 30102.30102
+    const double expected_command_value = 30102.30102;
 
     double actual_value =
       std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
@@ -294,11 +293,11 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   // ref = 5.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
   // error = ref - state =  5.0 - 1.1 = 3.9, error_dot = error/ds = 3.9/0.01 = 390.0,
   // p_term = error * p_gain = 3.9 * 1.0 = 3.9,
-  // i_term = zero at first update
+  // i_term = error * ds * i_gain = 3.9 * 0.01 * 2.0 = 0.078,
   // d_term = error_dot * d_gain = 390.0 * 3.0 = 1170.0
   // feedforward OFF -> cmd = p_term + i_term + d_term = 3.9 + 0.078 + 1170.0 = 1173.978
   {
-    const double expected_command_value = 1173.9;
+    const double expected_command_value = 1173.978;
     EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
   }
 }
@@ -328,10 +327,10 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
   // ref = 10.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
   // error = ref - state =  10.0 - 1.1 = 8.9, error_dot = error/ds = 8.9/0.01 = 890.0,
   // p_term = error * p_gain = 8.9 * 1.0 = 8.9,
-  // i_term = zero at first update
+  // i_term = error * ds * i_gain = 8.9 * 0.01 * 2.0 = 0.178,
   // d_term = error_dot * d_gain = 890.0 * 3.0 = 2670.0
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 8.9 + 0.0 + 2670.0 = 2678.9
-  const double expected_command_value = 2678.9;
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 8.9 + 0.178 + 2670.0 = 2679.078
+  const double expected_command_value = 2679.078;
   EXPECT_NEAR(
     controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
 }
@@ -364,10 +363,12 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
   // Check the command value with wrapped error
   // ref = 10.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
   // error = ref - state =  wrap(10.0 - 1.1) = 8.9-2*pi = 2.616814, error_dot = error/ds
-  // = 2.6168/0.01 = 261.6814, p_term = error * p_gain = 2.6168 * 1.0 = 2.6168, i_term = zero at
-  // first update d_term = error_dot * d_gain = 261.6814 * 3.0 = 785.0444079 feedforward OFF -> cmd
-  // = p_term + i_term + d_term = 2.616814, + 0.0 + 785.0444079 = 787.6612219
-  const double expected_command_value = 787.6612219;
+  // = 2.6168/0.01 = 261.6814, 
+  // p_term = error * p_gain = 2.6168 * 1.0 = 2.6168, 
+  // i_term = error * ds * i_gain = 2.6168 * 0.01 * 2.0 = 0.05233628,
+  // d_term = error_dot * d_gain = 261.6814 * 3.0 = 785.0444079 feedforward OFF -> 
+  // cmd = p_term + i_term + d_term = 2.616814, + 0.05233628 + 785.0444079 = 787.71355818
+  const double expected_command_value = 787.71355818;
   EXPECT_NEAR(
     controller_->command_interfaces_[0].get_optional().value(), expected_command_value, 1e-5);
 }
@@ -619,9 +620,9 @@ TEST_F(PidControllerTest, test_save_i_term_off)
 
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-  // p_term = 100.001 * 1, i_term = zero at first update, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30100.301
-  const double expected_command_value = 30100.3010;
+  // p_term = 100.001 * 1, i_term = 100.001 * 0.01 * 2, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.30102
+  const double expected_command_value = 30102.30102;
 
   double actual_value =
     std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
@@ -669,9 +670,9 @@ TEST_F(PidControllerTest, test_save_i_term_on)
 
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
-  // p_term = 100.001 * 1, i_term = zero at first update, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.301
-  const double expected_command_value = 30100.3010;
+  // p_term = 100.001 * 1, i_term = 100.001 * 0.01 * 2, d_term = error/ds = 10000.1 * 3
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.30102
+  const double expected_command_value = 30102.30102;
 
   double actual_value =
     std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
