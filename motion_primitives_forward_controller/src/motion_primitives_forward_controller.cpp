@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include "controller_interface/helpers.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 namespace motion_primitives_forward_controller
 {
@@ -372,8 +373,10 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
-    RCLCPP_ERROR(get_node()->get_logger(), "Can't accept new trajectories. Controller is not running.");
+  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Can't accept new trajectories. Controller is not running.");
     return rclcpp_action::GoalResponse::REJECT;
   }
 
