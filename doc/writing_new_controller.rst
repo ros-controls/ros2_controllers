@@ -12,9 +12,8 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
    If the package for the controller does not exist, then create it first.
    The package should have ``ament_cmake`` as a build type.
-   The easiest way is to search online for the most recent manual.
-   A helpful command to support this process is ``ros2 pkg create``.
-   Use the ``--help`` flag for more information on how to use it.
+   Generally, you can use ``ros2 pkg create <controller_name_package> --build-type ament_cmake``.
+   Use the ``--help`` flag for more information on how to use this command.
    There is also an option to create library source files and compile rules to help you in the following steps.
 
 2. **Preparing source files**
@@ -25,17 +24,32 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
 3. **Adding declarations into header file (.hpp)**
 
-   1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives. (For more information on this, a search engine is your friend :) ).
+   1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives. 
 
    2. include ``"controller_interface/controller_interface.hpp"``.
 
    3. Define a unique namespace for your controller. This is usually a package name written in ``snake_case``.
 
-   4. Define the class of the controller, extending ``ControllerInterface``, e.g.,
+   4. Define the class of the controller, extending ``ControllerInterface``. Now, your code should look similar to this:
 
       .. code:: c++
+         
+         #ifndef <CONTROLLER_NAME>_HPP_
+         #define <CONTROLLER_NAME>_HPP_
+
+         #include "controller_interface/controller_interface.hpp"
+
+         namespace <controller_name>
+         {
 
          class ControllerName : public controller_interface::ControllerInterface
+         {
+           // ...
+         };
+
+         }  // namespace <controller_name>
+         
+         #endif  // <CONTROLLER_NAME>_HPP_
 
    5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``on_init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
       For exact definitions check the ``controller_interface/controller_interface.hpp`` header or one of the controllers from `ros2_controllers <https://github.com/ros-controls/ros2_controllers>`_.
@@ -53,7 +67,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
       This could also be done in the ``on_init`` method.
 
    3. Implement the ``on_init`` method. The first line usually calls the parent ``on_init`` method.
-      Here is the best place to initialize the variables, reserve memory, and most importantly, declare node parameters used by the controller. If everything works fine return ``controller_interface::return_type::OK`` or ``controller_interface::return_type::ERROR`` otherwise.
+      Here is the best place to initialize the variables, reserve memory, and most importantly, declare node parameters used by the controller. If everything works fine return ``controller_interface::CallbackReturn::SUCCESS`` or ``controller_interface::CallbackReturn::ERROR`` otherwise.
 
    4. Write the ``on_configure`` method. Parameters are usually read here, and everything is prepared so that the controller can be started.
 
@@ -64,7 +78,6 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
    6. Implement the ``on_activate`` method with checking, and potentially sorting, the interfaces and assigning members' initial values.
       This method is part of the real-time loop, therefore avoid any reservation of memory and, in general, keep it as short as possible.
-
 
    7. Implement the ``on_deactivate`` method, which does the opposite of ``on_activate``.
       In many cases, this method is empty.
@@ -129,10 +142,10 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
 9. **Compiling and testing the controller**
 
-   1. Now everything is ready to compile the controller using the ``colcon build <controller_name_package>`` command.
+   1. Now everything is ready to compile the controller using the ``colcon build --packages-select <controller_name_package>`` command.
       Remember to go into the root of your workspace before executing this command.
 
-   2. If compilation was successful, source the ``setup.bash`` file from the install folder and execute ``colcon test <controller_name_package>`` to check if the new controller can be found through ``pluginlib`` library and be loaded by the controller manager.
+   2. If compilation was successful, source the ``setup.bash`` file from the install folder and execute ``colcon test --packages-select <controller_name_package>`` to check if the new controller can be found through ``pluginlib`` library and be loaded by the controller manager.
 
 
 That's it! Enjoy writing great controllers!
