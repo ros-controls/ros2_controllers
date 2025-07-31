@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.5.0 (2025-07-31)
+------------------
 * Reset JTC PID's to zero on_activate() (`#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_)
 * Fix `-Wunused-result` warnings in JTC (`#1831 <https://github.com/ros-controls/ros2_controllers/issues/1831>`_)
 * Contributors: Christoph Fröhlich, Marq Rasmussen
