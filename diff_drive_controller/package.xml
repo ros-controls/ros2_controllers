@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>diff_drive_controller</name>
-  <version>4.29.0</version>
+  <version>4.30.0</version>
   <description>Controller for a differential-drive mobile base.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
