@@ -239,7 +239,8 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
     // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
     // p_term = 100.001 * 1, i_term = 100.001 * 0.01 * 2, d_term = error/ds = 10000.1 * 3
     // feedforward ON, feedforward_gain = 0
-    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.30102 + 0 * 101.101 = 30102.30102
+    // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30102.30102 + 0 * 101.101 =
+    // 30102.30102
     const double expected_command_value = 30102.30102;
 
     double actual_value =
@@ -363,10 +364,10 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
   // Check the command value with wrapped error
   // ref = 10.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
   // error = ref - state =  wrap(10.0 - 1.1) = 8.9-2*pi = 2.616814, error_dot = error/ds
-  // = 2.6168/0.01 = 261.6814, 
-  // p_term = error * p_gain = 2.6168 * 1.0 = 2.6168, 
+  // = 2.6168/0.01 = 261.6814,
+  // p_term = error * p_gain = 2.6168 * 1.0 = 2.6168,
   // i_term = error * ds * i_gain = 2.6168 * 0.01 * 2.0 = 0.05233628,
-  // d_term = error_dot * d_gain = 261.6814 * 3.0 = 785.0444079 feedforward OFF -> 
+  // d_term = error_dot * d_gain = 261.6814 * 3.0 = 785.0444079 feedforward OFF ->
   // cmd = p_term + i_term + d_term = 2.616814, + 0.05233628 + 785.0444079 = 787.71355818
   const double expected_command_value = 787.71355818;
   EXPECT_NEAR(
