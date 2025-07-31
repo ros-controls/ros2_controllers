@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add omni_wheel_drive_controller (backport `#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_) (`#1836 <https://github.com/ros-controls/ros2_controllers/issues/1836>`_)
+* Contributors: mergify[bot]
+
 4.29.0 (2025-07-23)
 -------------------
 

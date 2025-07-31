@@ -1,9 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package parallel_gripper_controller
+Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Add omni_wheel_drive_controller (backport `#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_) (`#1836 <https://github.com/ros-controls/ros2_controllers/issues/1836>`_)
+* Contributors: mergify[bot]
 
 4.29.0 (2025-07-23)
 -------------------
@@ -19,8 +21,6 @@ Forthcoming
 
 4.26.0 (2025-06-06)
 -------------------
-* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
-* Contributors: mergify[bot]
 
 4.25.0 (2025-05-17)
 -------------------
@@ -30,38 +30,24 @@ Forthcoming
 
 4.23.0 (2025-04-10)
 -------------------
-* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
-* Replace RCLCPP\_*_STREAM macros with RCLCPP\_* (`#1600 <https://github.com/ros-controls/ros2_controllers/issues/1600>`_)
-* Contributors: Christoph Fröhlich, Vedant Randive
 
 4.22.0 (2025-03-17)
 -------------------
 
 4.21.0 (2025-03-01)
 -------------------
-* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
-* Bump version of pre-commit hooks (`#1514 <https://github.com/ros-controls/ros2_controllers/issues/1514>`_)
-* Contributors: Christoph Fröhlich, github-actions[bot]
 
 4.20.0 (2025-01-29)
 -------------------
-* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
-* Contributors: Christoph Fröhlich
 
 4.19.0 (2025-01-13)
 -------------------
-* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
-* Contributors: Bence Magyar
 
 4.18.0 (2024-12-19)
 -------------------
 
 4.17.0 (2024-12-07)
 -------------------
-* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
-* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
 
 4.16.0 (2024-11-08)
 -------------------
@@ -74,18 +60,12 @@ Forthcoming
 
 4.13.0 (2024-08-22)
 -------------------
-* Fixes tests to work with use_global_arguments NodeOptions parameter  (`#1256 <https://github.com/ros-controls/ros2_controllers/issues/1256>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.12.1 (2024-08-14)
 -------------------
 
 4.12.0 (2024-07-23)
 -------------------
-* [GripperController] Fix failing tests (`#1210 <https://github.com/ros-controls/ros2_controllers/issues/1210>`_)
-* Fix parallel gripper controller CI (`#1202 <https://github.com/ros-controls/ros2_controllers/issues/1202>`_)
-* Add parallel_gripper_controller, configure gripper speed and effort with hardware interface (`#1002 <https://github.com/ros-controls/ros2_controllers/issues/1002>`_)
-* Contributors: Paul Gesel, Sai Kishor Kothakota
 
 4.11.0 (2024-07-09)
 -------------------
