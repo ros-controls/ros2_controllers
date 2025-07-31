@@ -30,7 +30,7 @@ This can be done, for example, via a Python script as demonstrated in the [`exam
 ## Architecture Overview
 Architecture for a UR robot with [`Universal_Robots_ROS2_Driver` in motion primitives mode](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver).
 
-![UR Robot Architecture](doc/ros2_control_motion_primitives_ur_integrated.drawio.png)
+![UR Robot Architecture](doc/ros2_control_motion_primitives_ur.drawio.png)
 
 Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver/kuka_eki_motion_primitives_hw_interface).
 
@@ -45,9 +45,6 @@ Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](h
 <a name="moprim_from_traj_controller"/>
 
 # motion_primitives_from_trajectory_controller
-
-### motion_primitives_from_trajectory_controller
-
 The `motion_primitives_from_trajectory_controller` builds on the same architecture as the `motion_primitives_forward_controller` and uses the same command and state interfaces, making it compatible with the same hardware interfaces. However, instead of receiving motion primitives directly, it takes a `FollowJointTrajectory` action as input and approximates the trajectory using either `PTP` (`LINEAR_JOINT`) or `LIN` (`LINEAR_CARTESIAN`) motion primitives.
 
 The approximation mode can be selected via the `approximate_mode` parameter, with options `"RDP_PTP"` or `"RDP_LIN"`, using the Ramer-Douglas-Peucker algorithm to reduce the trajectory points. Tolerances for the approximation are defined by:
