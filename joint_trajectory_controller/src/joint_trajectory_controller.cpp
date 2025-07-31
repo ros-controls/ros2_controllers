@@ -1008,6 +1008,15 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
+<<<<<<< HEAD
+=======
+  // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
+  for (auto & pid : pids_)
+  {
+    pid->reset();
+  }
+  last_commanded_time_ = rclcpp::Time();
+>>>>>>> 18c9f1f (Reset JTC PID's to zero on_activate() (#1840))
 
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
