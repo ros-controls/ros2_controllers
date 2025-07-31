@@ -2,6 +2,9 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.49.0 (2025-07-21)
 -------------------
 * Fix format (`#1821 <https://github.com/ros-controls/ros2_controllers/issues/1821>`_)
