@@ -1,9 +1,11 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package pose_broadcaster
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package omni_wheel_drive_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Add omni_wheel_drive_controller (`#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_)
+* Contributors: Aarav Gupta
 
 5.4.0 (2025-07-23)
 ------------------
@@ -16,29 +18,21 @@ Forthcoming
 
 5.1.0 (2025-06-11)
 ------------------
-* Remove deprecated parameter from pose_broadcaster (`#1685 <https://github.com/ros-controls/ros2_controllers/issues/1685>`_)
-* Contributors: Christoph Fröhlich
 
 5.0.2 (2025-05-26)
 ------------------
 
 5.0.1 (2025-05-24)
 ------------------
-* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
-* Contributors: Sai Kishor Kothakota
 
 5.0.0 (2025-05-17)
 ------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Deprecate tf.publish_rate parameter for pose_broadcaster (`#1614 <https://github.com/ros-controls/ros2_controllers/issues/1614>`_)
-* Contributors: Aarav Gupta
 
 4.23.0 (2025-04-10)
 -------------------
-* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
-* Contributors: Christoph Fröhlich
 
 4.22.0 (2025-03-17)
 -------------------
@@ -48,30 +42,18 @@ Forthcoming
 
 4.20.0 (2025-01-29)
 -------------------
-* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
-* Contributors: Christoph Fröhlich
 
 4.19.0 (2025-01-13)
 -------------------
-* [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (`#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_)
-* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
-* Contributors: Bence Magyar, Felix Exner
 
 4.18.0 (2024-12-19)
 -------------------
 
 4.17.0 (2024-12-07)
 -------------------
-* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
-* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
 
 4.16.0 (2024-11-08)
 -------------------
-* Add hardware_interface_testing dependency (`#1335 <https://github.com/ros-controls/ros2_controllers/issues/1335>`_)
-* Implement new PoseBroadcaster controller (`#1311 <https://github.com/ros-controls/ros2_controllers/issues/1311>`_)
-* Contributors: Christoph Fröhlich, RobertWilbrandt
 
 4.15.0 (2024-10-07)
 -------------------
