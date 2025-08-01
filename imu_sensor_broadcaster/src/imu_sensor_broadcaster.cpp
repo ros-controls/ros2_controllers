@@ -62,18 +62,15 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
+  state_message_.header.frame_id = params_.frame_id;
   // convert double vector to fixed-size array in the message
   for (size_t i = 0; i < 9; ++i)
   {
-    realtime_publisher_->msg_.orientation_covariance[i] = params_.static_covariance_orientation[i];
-    realtime_publisher_->msg_.angular_velocity_covariance[i] =
-      params_.static_covariance_angular_velocity[i];
-    realtime_publisher_->msg_.linear_acceleration_covariance[i] =
+    state_message_.orientation_covariance[i] = params_.static_covariance_orientation[i];
+    state_message_.angular_velocity_covariance[i] = params_.static_covariance_angular_velocity[i];
+    state_message_.linear_acceleration_covariance[i] =
       params_.static_covariance_linear_acceleration[i];
   }
-  realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
@@ -113,11 +110,11 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_deactivate(
 controller_interface::return_type IMUSensorBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  if (realtime_publisher_)
   {
-    realtime_publisher_->msg_.header.stamp = time;
-    imu_sensor_->get_values_as_message(realtime_publisher_->msg_);
-    realtime_publisher_->unlockAndPublish();
+    state_message_.header.stamp = time;
+    imu_sensor_->get_values_as_message(state_message_);
+    realtime_publisher_->try_publish(state_message_);
   }
 
   return controller_interface::return_type::OK;

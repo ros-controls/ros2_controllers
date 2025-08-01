@@ -167,14 +167,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
   const auto base_frame_id = tf_prefix + params_.base_frame_id;
 
-  rt_odom_state_publisher_->lock();
-  rt_odom_state_publisher_->msg_.header.stamp = get_node()->now();
-  rt_odom_state_publisher_->msg_.header.frame_id = odom_frame_id;
-  rt_odom_state_publisher_->msg_.child_frame_id = base_frame_id;
-  rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
+  odom_state_msg_.header.stamp = get_node()->now();
+  odom_state_msg_.header.frame_id = odom_frame_id;
+  odom_state_msg_.child_frame_id = base_frame_id;
+  odom_state_msg_.pose.pose.position.z = 0;
 
-  auto & pose_covariance = rt_odom_state_publisher_->msg_.pose.covariance;
-  auto & twist_covariance = rt_odom_state_publisher_->msg_.twist.covariance;
+  auto & pose_covariance = odom_state_msg_.pose.covariance;
+  auto & twist_covariance = odom_state_msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
   {
@@ -182,7 +181,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     pose_covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
     twist_covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
-  rt_odom_state_publisher_->unlock();
 
   try
   {
@@ -199,13 +197,11 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  rt_tf_odom_state_publisher_->lock();
-  rt_tf_odom_state_publisher_->msg_.transforms.resize(1);
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.stamp = get_node()->now();
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = odom_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = base_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
-  rt_tf_odom_state_publisher_->unlock();
+  tf_odom_state_msg_.transforms.resize(1);
+  tf_odom_state_msg_.transforms[0].header.stamp = get_node()->now();
+  tf_odom_state_msg_.transforms[0].header.frame_id = odom_frame_id;
+  tf_odom_state_msg_.transforms[0].child_frame_id = base_frame_id;
+  tf_odom_state_msg_.transforms[0].transform.translation.z = 0.0;
 
   try
   {
@@ -225,10 +221,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  controller_state_publisher_->lock();
-  controller_state_publisher_->msg_.header.stamp = get_node()->now();
-  controller_state_publisher_->msg_.header.frame_id = odom_frame_id;
-  controller_state_publisher_->unlock();
+  controller_state_msg_.header.stamp = get_node()->now();
+  controller_state_msg_.header.frame_id = odom_frame_id;
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
@@ -524,42 +518,41 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   orientation.setRPY(0.0, 0.0, odometry_.getRz());
 
   // Populate odom message and publish
-  if (rt_odom_state_publisher_->trylock())
+  if (rt_odom_state_publisher_)
   {
-    rt_odom_state_publisher_->msg_.header.stamp = time;
-    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.getX();
-    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.getY();
-    rt_odom_state_publisher_->msg_.pose.pose.orientation = tf2::toMsg(orientation);
-    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.getVx();
-    rt_odom_state_publisher_->msg_.twist.twist.linear.y = odometry_.getVy();
-    rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.getWz();
-    rt_odom_state_publisher_->unlockAndPublish();
+    odom_state_msg_.header.stamp = time;
+    odom_state_msg_.pose.pose.position.x = odometry_.getX();
+    odom_state_msg_.pose.pose.position.y = odometry_.getY();
+    odom_state_msg_.pose.pose.orientation = tf2::toMsg(orientation);
+    odom_state_msg_.twist.twist.linear.x = odometry_.getVx();
+    odom_state_msg_.twist.twist.linear.y = odometry_.getVy();
+    odom_state_msg_.twist.twist.angular.z = odometry_.getWz();
+    rt_odom_state_publisher_->try_publish(odom_state_msg_);
   }
 
   // Publish tf /odom frame
-  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_)
   {
-    rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x = odometry_.getX();
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y = odometry_.getY();
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
-      tf2::toMsg(orientation);
-    rt_tf_odom_state_publisher_->unlockAndPublish();
+    tf_odom_state_msg_.transforms.front().header.stamp = time;
+    tf_odom_state_msg_.transforms.front().transform.translation.x = odometry_.getX();
+    tf_odom_state_msg_.transforms.front().transform.translation.y = odometry_.getY();
+    tf_odom_state_msg_.transforms.front().transform.rotation = tf2::toMsg(orientation);
+    rt_tf_odom_state_publisher_->try_publish(tf_odom_state_msg_);
   }
 
-  if (controller_state_publisher_->trylock())
+  if (controller_state_publisher_)
   {
-    controller_state_publisher_->msg_.header.stamp = get_node()->now();
+    controller_state_msg_.header.stamp = get_node()->now();
 
-    controller_state_publisher_->msg_.front_left_wheel_velocity = wheel_front_left_state_vel;
-    controller_state_publisher_->msg_.front_right_wheel_velocity = wheel_front_right_state_vel;
-    controller_state_publisher_->msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
-    controller_state_publisher_->msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
+    controller_state_msg_.front_left_wheel_velocity = wheel_front_left_state_vel;
+    controller_state_msg_.front_right_wheel_velocity = wheel_front_right_state_vel;
+    controller_state_msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
+    controller_state_msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
 
-    controller_state_publisher_->msg_.reference_velocity.linear.x = reference_interfaces_[0];
-    controller_state_publisher_->msg_.reference_velocity.linear.y = reference_interfaces_[1];
-    controller_state_publisher_->msg_.reference_velocity.angular.z = reference_interfaces_[2];
-    controller_state_publisher_->unlockAndPublish();
+    controller_state_msg_.reference_velocity.linear.x = reference_interfaces_[0];
+    controller_state_msg_.reference_velocity.linear.y = reference_interfaces_[1];
+    controller_state_msg_.reference_velocity.angular.z = reference_interfaces_[2];
+    controller_state_publisher_->try_publish(controller_state_msg_);
   }
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
