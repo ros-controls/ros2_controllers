@@ -175,7 +175,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
-  // don't update goal after we sampled the trajectory to avoid any racecondition
+  // don't update goal after we sampled the trajectory to avoid any race condition
   const auto active_goal = *rt_active_goal_.readFromRT();
 
   // Check if a new trajectory message has been received from Non-RT threads
@@ -235,6 +235,8 @@ controller_interface::return_type JointTrajectoryController::update(
     const bool valid_point = current_trajectory_->sample(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
+
+    const size_t next_point_index = std::distance(current_trajectory_->begin(), end_segment_itr);
 
     state_current_.time_from_start = time - current_trajectory_->time_from_start();
 
@@ -373,6 +375,7 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
+        feedback->index = static_cast<int32_t>(next_point_index);
         active_goal->setFeedback(feedback);
 
         // check abort
