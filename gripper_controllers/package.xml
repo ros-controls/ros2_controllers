@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>gripper_controllers</name>
-  <version>4.30.0</version>
+  <version>4.30.1</version>
   <description>The gripper_controllers package</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
