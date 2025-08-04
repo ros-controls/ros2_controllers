@@ -236,7 +236,7 @@ controller_interface::return_type JointTrajectoryController::update(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
 
-    const size_t next_point_index = std::distance(current_trajectory_->begin(), end_segment_itr);
+    const auto next_point_index = std::distance(current_trajectory_->begin(), end_segment_itr);
 
     state_current_.time_from_start = time - current_trajectory_->time_from_start();
 
