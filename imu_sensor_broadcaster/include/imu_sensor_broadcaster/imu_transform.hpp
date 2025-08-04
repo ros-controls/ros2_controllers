@@ -57,9 +57,8 @@ inline void do_transform(
 {
   imu_out.header = imu_in.header;
 
-  Eigen::Transform<double, 3, Eigen::Affine> t(r);
   Eigen::Vector3d vel =
-    t * Eigen::Vector3d(
+    r * Eigen::Vector3d(
           imu_in.angular_velocity.x, imu_in.angular_velocity.y, imu_in.angular_velocity.z);
 
   imu_out.angular_velocity.x = vel.x();
@@ -69,7 +68,7 @@ inline void do_transform(
   transform_covariance(imu_out.angular_velocity_covariance, imu_in.angular_velocity_covariance, r);
 
   Eigen::Vector3d accel =
-    t * Eigen::Vector3d(
+    r * Eigen::Vector3d(
           imu_in.linear_acceleration.x, imu_in.linear_acceleration.y, imu_in.linear_acceleration.z);
 
   imu_out.linear_acceleration.x = accel.x();
