@@ -147,8 +147,8 @@ protected:
 
   void set_hold_position();
 
-  rclcpp::Time last_movement_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);  ///< Store stall time
-  double computed_command_;                                             ///< Computed command
+  realtime_tools::RealtimeThreadSafeBox<rclcpp::Time> last_movement_time_;  ///< Store stall time
+  double computed_command_;                                                 ///< Computed command
 
   /**
    * \brief Check for success and publish appropriate result and feedback.
