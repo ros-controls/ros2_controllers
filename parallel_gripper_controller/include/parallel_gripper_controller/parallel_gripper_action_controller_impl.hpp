@@ -216,7 +216,7 @@ void GripperActionController::check_for_success(
   double current_velocity)
 {
   RealtimeGoalHandlePtr active_goal;
-  rt_active_goal_.get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
+  rt_active_goal_.try_get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
   if (!active_goal)
   {
     return;
@@ -230,8 +230,8 @@ void GripperActionController::check_for_success(
     pre_alloc_result_->stalled = false;
     RCLCPP_DEBUG(get_node()->get_logger(), "Successfully moved to goal.");
     active_goal->setSucceeded(pre_alloc_result_);
-    rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
-                        { stored_value = RealtimeGoalHandlePtr(); });
+    rt_active_goal_.try_set([](RealtimeGoalHandlePtr & stored_value)
+                            { stored_value = RealtimeGoalHandlePtr(); });
   }
   else
   {
@@ -262,8 +262,8 @@ void GripperActionController::check_for_success(
           RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
           active_goal->setAborted(pre_alloc_result_);
         }
-        rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
-                            { stored_value = RealtimeGoalHandlePtr(); });
+        rt_active_goal_.try_set([](RealtimeGoalHandlePtr & stored_value)
+                                { stored_value = RealtimeGoalHandlePtr(); });
       }
     }
   }
