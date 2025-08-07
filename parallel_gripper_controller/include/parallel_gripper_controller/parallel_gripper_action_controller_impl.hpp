@@ -159,7 +159,7 @@ void GripperActionController::accepted_callback(
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
 
-  last_movement_time_ = get_node()->now();
+  last_movement_time_.set(get_node()->now());
   rt_goal->execute();
   rt_active_goal_.set([rt_goal](RealtimeGoalHandlePtr & stored_value) { stored_value = rt_goal; });
 
@@ -237,27 +237,34 @@ void GripperActionController::check_for_success(
   {
     if (fabs(current_velocity) > params_.stall_velocity_threshold)
     {
-      last_movement_time_ = time;
+      last_movement_time_.try_set(time);
     }
-    else if ((time - last_movement_time_).seconds() > params_.stall_timeout)
+    else
     {
-      pre_alloc_result_->state.effort[0] = computed_command_;
-      pre_alloc_result_->state.position[0] = current_position;
-      pre_alloc_result_->reached_goal = false;
-      pre_alloc_result_->stalled = true;
+      auto last_time_opt = last_movement_time_.try_get();
+      if (
+        last_time_opt.has_value() &&
+        (time - last_time_opt.value()).seconds() > params_.stall_timeout)
+      {
+        pre_alloc_result_->state.effort[0] = computed_command_;
+        pre_alloc_result_->state.position[0] = current_position;
+        pre_alloc_result_->reached_goal = false;
+        pre_alloc_result_->stalled = true;
 
-      if (params_.allow_stalling)
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
-        active_goal->setSucceeded(pre_alloc_result_);
+        if (params_.allow_stalling)
+        {
+          RCLCPP_DEBUG(
+            get_node()->get_logger(), "Stall detected moving to goal. Returning success.");
+          active_goal->setSucceeded(pre_alloc_result_);
+        }
+        else
+        {
+          RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
+          active_goal->setAborted(pre_alloc_result_);
+        }
+        rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                            { stored_value = RealtimeGoalHandlePtr(); });
       }
-      else
-      {
-        RCLCPP_DEBUG(get_node()->get_logger(), "Stall detected moving to goal. Aborting action!");
-        active_goal->setAborted(pre_alloc_result_);
-      }
-      rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
-                          { stored_value = RealtimeGoalHandlePtr(); });
     }
   }
 }
@@ -377,6 +384,9 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   pre_alloc_result_->state.position[0] = command_struct_.position_cmd_;
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
+
+  // Initialize last movement time
+  last_movement_time_.set(rclcpp::Time(0, 0, RCL_ROS_TIME));
 
   // Action interface
   action_server_ = rclcpp_action::create_server<control_msgs::action::ParallelGripperCommand>(
