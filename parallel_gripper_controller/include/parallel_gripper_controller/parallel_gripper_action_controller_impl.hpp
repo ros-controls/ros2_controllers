@@ -385,8 +385,7 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
 
-  // Initialize last movement time
-  last_movement_time_.set(rclcpp::Time(0, 0, RCL_ROS_TIME));
+  last_movement_time_.try_set(rclcpp::Time(0, 0, RCL_ROS_TIME));
 
   // Action interface
   action_server_ = rclcpp_action::create_server<control_msgs::action::ParallelGripperCommand>(
