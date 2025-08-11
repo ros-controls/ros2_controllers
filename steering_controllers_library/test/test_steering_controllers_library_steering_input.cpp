@@ -107,16 +107,27 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   std::shared_ptr<ControllerSteeringReferenceMsg> msg =
     std::make_shared<ControllerSteeringReferenceMsg>();
 
-  // adjusting to achieve age_of_last_command > ref_timeout
+  // First send a valid (non-timeout) message to establish command interface values
+  msg->header.stamp = controller_->get_node()->now();
+  msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
+  msg->steering_angle = TEST_STEERING_ANGLE;
+  controller_->input_ref_steering_.set(*msg);
+  
+  // Process the valid message
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // Now send the timeout message to test timeout behavior
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
                       rclcpp::Duration::from_seconds(0.1);
   msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
   msg->steering_angle = TEST_STEERING_ANGLE;
-  controller_->input_ref_steering_.writeFromNonRT(msg);
+  controller_->input_ref_steering_.set(*msg);
 
   const auto age_of_last_command =
     controller_->get_node()->now() -
-    (*(controller_->input_ref_steering_.readFromNonRT()))->header.stamp;
+    controller_->input_ref_steering_.get().header.stamp;
 
   // case 1 position_feedback = false
   controller_->params_.position_feedback = false;
@@ -124,7 +135,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
+    controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -135,10 +146,8 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle, TEST_STEERING_ANGLE);
+  ASSERT_TRUE(std::isnan(controller_->input_ref_steering_.get().linear_velocity));
+  ASSERT_TRUE(std::isnan(controller_->input_ref_steering_.get().steering_angle));
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
@@ -157,17 +166,28 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   // case 2 position_feedback = true
   controller_->params_.position_feedback = true;
 
-  // adjusting to achieve age_of_last_command > ref_timeout
+  // First send a valid message for the position_feedback=true case
+  msg->header.stamp = controller_->get_node()->now();
+  msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
+  msg->steering_angle = TEST_STEERING_ANGLE;
+  controller_->input_ref_steering_.set(*msg);
+  
+  // Process the valid message
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // Now send the timeout message to test timeout behavior with position_feedback=true
   msg->header.stamp = controller_->get_node()->now() - controller_->ref_timeout_ -
                       rclcpp::Duration::from_seconds(0.1);
   msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
   msg->steering_angle = TEST_STEERING_ANGLE;
-  controller_->input_ref_steering_.writeFromNonRT(msg);
+  controller_->input_ref_steering_.set(*msg);
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
+    controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -178,10 +198,8 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   {
     EXPECT_TRUE(std::isnan(interface));
   }
-  ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->linear_velocity, TEST_LINEAR_VELOCITY_X);
-  ASSERT_EQ(
-    (*(controller_->input_ref_steering_.readFromNonRT()))->steering_angle, TEST_STEERING_ANGLE);
+  ASSERT_TRUE(std::isnan(controller_->input_ref_steering_.get().linear_velocity));
+  ASSERT_TRUE(std::isnan(controller_->input_ref_steering_.get().steering_angle));
 
   EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
   for (const auto & interface : controller_->reference_interfaces_)
