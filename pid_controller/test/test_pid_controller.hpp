@@ -106,15 +106,15 @@ public:
 
   void set_reference(const std::vector<double> & target_value)
   {
-    std::shared_ptr<ControllerCommandMsg> msg = std::make_shared<ControllerCommandMsg>();
-    msg->dof_names = params_.dof_names;
-    msg->values.resize(msg->dof_names.size(), 0.0);
-    for (size_t i = 0; i < msg->dof_names.size(); ++i)
+    ControllerCommandMsg msg;
+    msg.dof_names = params_.dof_names;
+    msg.values.resize(msg.dof_names.size(), 0.0);
+    for (size_t i = 0; i < msg.dof_names.size(); ++i)
     {
-      msg->values[i] = target_value[i];
+      msg.values[i] = target_value[i];
     }
-    msg->values_dot.resize(msg->dof_names.size(), std::numeric_limits<double>::quiet_NaN());
-    input_ref_.writeFromNonRT(msg);
+    msg.values_dot.resize(msg.dof_names.size(), std::numeric_limits<double>::quiet_NaN());
+    input_ref_.set(msg);
   }
 };
 
@@ -137,9 +137,8 @@ public:
     // initialize controller
     controller_ = std::make_unique<CtrlType>();
 
+    // create a publisher node, publisher will be created in SetUpController
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
-      "/test_pid_controller/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -149,6 +148,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_pid_controller")
   {
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
+      "/" + controller_name + "/reference", rclcpp::SystemDefaultsQoS());
+
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
       controller_interface::return_type::OK);

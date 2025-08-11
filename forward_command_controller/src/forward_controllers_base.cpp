@@ -14,6 +14,8 @@
 
 #include "forward_command_controller/forward_controllers_base.hpp"
 
+#include <algorithm>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,12 +25,24 @@
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 
+namespace
+{  // utility
+
+// called from RT control loop
+void reset_controller_reference_msg(forward_command_controller::CmdType & msg)
+{
+  for (auto & data : msg.data)
+  {
+    data = std::numeric_limits<double>::quiet_NaN();
+  }
+}
+
+}  // namespace
+
 namespace forward_command_controller
 {
 ForwardControllersBase::ForwardControllersBase()
-: controller_interface::ControllerInterface(),
-  rt_command_ptr_(nullptr),
-  joints_command_subscriber_(nullptr)
+: controller_interface::ControllerInterface(), joints_command_subscriber_(nullptr)
 {
 }
 
@@ -58,7 +72,21 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
 
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_ptr_.writeFromNonRT(msg); });
+    [this](const CmdType::SharedPtr msg)
+    {
+      const auto cmd = *msg;
+
+      if (!std::all_of(
+            cmd.data.cbegin(), cmd.data.cend(),
+            [](const auto & value) { return std::isfinite(value); }))
+      {
+        RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "Non-finite value received. Dropping message");
+        return;
+      }
+      rt_command_.set(cmd);
+    });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -101,7 +129,10 @@ controller_interface::CallbackReturn ForwardControllersBase::on_activate(
   }
 
   // reset command buffer if a command came through callback when controller was inactive
-  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
+  // Try to set default value in command.
+  // If this fails, then another command will be received soon anyways.
+  reset_controller_reference_msg(joint_commands_);
+  rt_command_.try_set(joint_commands_);
 
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -110,37 +141,52 @@ controller_interface::CallbackReturn ForwardControllersBase::on_activate(
 controller_interface::CallbackReturn ForwardControllersBase::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // reset command buffer
-  rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
+  // Try to set default value in command.
+  reset_controller_reference_msg(joint_commands_);
+  rt_command_.try_set(joint_commands_);
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ForwardControllersBase::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  auto joint_commands = rt_command_ptr_.readFromRT();
+  auto joint_commands_op = rt_command_.try_get();
+  if (joint_commands_op.has_value())
+  {
+    joint_commands_ = joint_commands_op.value();
+  }
 
   // no command received yet
-  if (!joint_commands || !(*joint_commands))
+  if (std::all_of(
+        joint_commands_.data.cbegin(), joint_commands_.data.cend(),
+        [](const auto & value) { return std::isnan(value); }))
   {
     return controller_interface::return_type::OK;
   }
 
-  if ((*joint_commands)->data.size() != command_interfaces_.size())
+  if (joint_commands_.data.size() != command_interfaces_.size())
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *(get_node()->get_clock()), 1000,
-      "command size (%zu) does not match number of interfaces (%zu)",
-      (*joint_commands)->data.size(), command_interfaces_.size());
+      "command size (%zu) does not match number of interfaces (%zu)", joint_commands_.data.size(),
+      command_interfaces_.size());
     return controller_interface::return_type::ERROR;
   }
 
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value((*joint_commands)->data[index]);
+    const auto & value = joint_commands_.data[index];
+
+    if (!command_interfaces_[index].set_value(value))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Unable to set the command interface value %s: value = %f",
+        command_interfaces_[index].get_name().c_str(), value);
+      return controller_interface::return_type::OK;
+    }
   }
 
   return controller_interface::return_type::OK;
 }
-
 }  // namespace forward_command_controller

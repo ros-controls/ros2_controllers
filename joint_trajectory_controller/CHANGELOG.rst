@@ -2,6 +2,29 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.5.0 (2025-07-31)
+------------------
+* Reset JTC PID's to zero on_activate() (`#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_)
+* Fix `-Wunused-result` warnings in JTC (`#1831 <https://github.com/ros-controls/ros2_controllers/issues/1831>`_)
+* Contributors: Christoph Fröhlich, Marq Rasmussen
+
+5.4.0 (2025-07-23)
+------------------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
+5.3.0 (2025-07-14)
+------------------
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Add speed scaling support to JTC (`#1191 <https://github.com/ros-controls/ros2_controllers/issues/1191>`_)
+* Contributors: Felix Exner (fexner), Kenta Kato
+
+5.2.0 (2025-06-23)
+------------------
+* Fix atomic variables in JTC (`#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_)
+* Add new AntiWindup parameters to JTC (`#1759 <https://github.com/ros-controls/ros2_controllers/issues/1759>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 5.1.0 (2025-06-11)
 ------------------
 * [JTC] [Doc] Update PID documentation for effort related command interface support (`#1748 <https://github.com/ros-controls/ros2_controllers/issues/1748>`_)
