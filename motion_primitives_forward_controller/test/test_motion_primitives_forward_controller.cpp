@@ -32,29 +32,9 @@ TEST_F(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_succe
 {
   SetUpController();
 
-  ASSERT_TRUE(controller_->params_.command_interfaces.empty());
-  ASSERT_TRUE(controller_->params_.state_interfaces.empty());
+  ASSERT_TRUE(controller_->params_.tf_prefix.empty());
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  std::vector<std::string> full_command_interface_names;
-  std::vector<std::string> full_state_interface_names;
-
-  std::transform(
-    command_interface_names_.begin(), command_interface_names_.end(),
-    std::back_inserter(full_command_interface_names),
-    [&](const std::string & name) { return interface_namespace_ + "/" + name; });
-
-  std::transform(
-    state_interface_names_.begin(), state_interface_names_.end(),
-    std::back_inserter(full_state_interface_names),
-    [&](const std::string & name) { return interface_namespace_ + "/" + name; });
-
-  ASSERT_THAT(
-    controller_->params_.command_interfaces,
-    testing::ElementsAreArray(full_command_interface_names));
-  ASSERT_THAT(
-    controller_->params_.state_interfaces, testing::ElementsAreArray(full_state_interface_names));
 }
 
 TEST_F(MotionPrimitivesForwardControllerTest, check_exported_interfaces)

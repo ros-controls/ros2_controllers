@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(motion_primitives_forward_controller)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
@@ -27,7 +27,7 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
 endforeach()
 
 generate_parameter_library(motion_primitives_forward_controller_parameters
-  src/motion_primitives_forward_controller.yaml
+  src/motion_primitives_forward_controller_parameter.yaml
 )
 generate_parameter_library(motion_primitives_from_trajectory_controller_parameters
   src/motion_primitives_from_trajectory_controller.yaml
