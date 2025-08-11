@@ -33,9 +33,3 @@ Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](h
 ## Demo-Video with KR3
 [![KUKA demo video](doc/moprim_forward_controller_kuka_demo_thumbnail.png)](https://youtu.be/_BWCO36j9bg)
 
-
-# TODOs/ improvements
-- Use references for command and state interfaces to improve code readability and less error-prone.
-- Extend the tests
-   - Test for a sequence of multiple primitives
-   - Test for canceling movement
