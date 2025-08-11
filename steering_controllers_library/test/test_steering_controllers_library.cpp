@@ -149,7 +149,8 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_twist_.set(msg);
 
-  age_of_last_command = controller_->get_node()->now() - controller_->input_ref_twist_.get().header.stamp;
+  age_of_last_command =
+    controller_->get_node()->now() - controller_->input_ref_twist_.get().header.stamp;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
@@ -244,7 +245,8 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_twist_.set(msg);
 
-  age_of_last_command = controller_->get_node()->now() - controller_->input_ref_twist_.get().header.stamp;
+  age_of_last_command =
+    controller_->get_node()->now() - controller_->input_ref_twist_.get().header.stamp;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);

@@ -112,7 +112,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
   msg->steering_angle = TEST_STEERING_ANGLE;
   controller_->input_ref_steering_.set(*msg);
-  
+
   // Process the valid message
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -126,16 +126,14 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   controller_->input_ref_steering_.set(*msg);
 
   const auto age_of_last_command =
-    controller_->get_node()->now() -
-    controller_->input_ref_steering_.get().header.stamp;
+    controller_->get_node()->now() - controller_->input_ref_steering_.get().header.stamp;
 
   // case 1 position_feedback = false
   controller_->params_.position_feedback = false;
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ(
-    controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -171,7 +169,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
   msg->linear_velocity = TEST_LINEAR_VELOCITY_X;
   msg->steering_angle = TEST_STEERING_ANGLE;
   controller_->input_ref_steering_.set(*msg);
-  
+
   // Process the valid message
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -186,8 +184,7 @@ TEST_F(SteeringControllersLibrarySteeringInputTest, test_both_update_methods_for
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
-  ASSERT_EQ(
-    controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
+  ASSERT_EQ(controller_->input_ref_steering_.get().linear_velocity, TEST_LINEAR_VELOCITY_X);
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);

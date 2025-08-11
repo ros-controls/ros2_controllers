@@ -552,7 +552,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
     // accept message only if there is no timeout
     if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
     {
-      if (!std::isnan(current_ref_twist_.twist.linear.x) && !std::isnan(current_ref_twist_.twist.angular.z))
+      if (
+        !std::isnan(current_ref_twist_.twist.linear.x) &&
+        !std::isnan(current_ref_twist_.twist.angular.z))
       {
         reference_interfaces_[0] = current_ref_twist_.twist.linear.x;
         reference_interfaces_[1] = current_ref_twist_.twist.angular.z;
@@ -568,7 +570,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
     }
     else
     {
-      if (!std::isnan(current_ref_twist_.twist.linear.x) && !std::isnan(current_ref_twist_.twist.angular.z))
+      if (
+        !std::isnan(current_ref_twist_.twist.linear.x) &&
+        !std::isnan(current_ref_twist_.twist.angular.z))
       {
         reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
         reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
@@ -593,7 +597,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
     // accept message only if there is no timeout
     if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
     {
-      if (!std::isnan(current_ref_steering_.linear_velocity) && !std::isnan(current_ref_steering_.steering_angle))
+      if (
+        !std::isnan(current_ref_steering_.linear_velocity) &&
+        !std::isnan(current_ref_steering_.steering_angle))
       {
         reference_interfaces_[0] = current_ref_steering_.linear_velocity;
         reference_interfaces_[1] = current_ref_steering_.steering_angle;
@@ -609,7 +615,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
     }
     else
     {
-      if (!std::isnan(current_ref_steering_.linear_velocity) && !std::isnan(current_ref_steering_.steering_angle))
+      if (
+        !std::isnan(current_ref_steering_.linear_velocity) &&
+        !std::isnan(current_ref_steering_.steering_angle))
       {
         reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
         reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
