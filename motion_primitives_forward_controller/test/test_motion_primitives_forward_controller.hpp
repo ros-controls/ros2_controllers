@@ -200,12 +200,12 @@ protected:
 
   std::string interface_namespace_ = "motion_primitive";
   std::array<double, 2> state_values_ = {
-    static_cast<uint8_t>(motion_primitives_forward_controller::ExecutionState::IDLE),
-    static_cast<uint8_t>(motion_primitives_forward_controller::ReadyForNewPrimitive::READY)};
+    {static_cast<uint8_t>(motion_primitives_forward_controller::ExecutionState::IDLE),
+     static_cast<uint8_t>(motion_primitives_forward_controller::ReadyForNewPrimitive::READY)}};
   std::array<double, 25> command_values_ = {
-    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
-    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
-    101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101};
+    {101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
+     101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
+     101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101}};
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
