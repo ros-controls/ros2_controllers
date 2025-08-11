@@ -32,7 +32,6 @@ MotionPrimitivesForwardController::MotionPrimitivesForwardController()
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init()
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "Initializing Motion Primitives Forward Controller");
-
   try
   {
     param_listener_ =
@@ -55,21 +54,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
   RCLCPP_DEBUG(get_node()->get_logger(), "Configuring Motion Primitives Forward Controller");
 
   params_ = param_listener_->get_params();
-
-  // Check if there are exactly 25 command interfaces
-  if (params_.command_interfaces.size() != 25)
-  {  // motion_type + 6 joints + 2*7 positions + blend_radius + velocity + acceleration + move_time
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Error: Exactly 25 command interfaces must be provided!");
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  // Check if there are exactly 2 state interfaces
-  if (params_.state_interfaces.size() != 2)
-  {  // execution_status + ready_for_new_primitive
-    RCLCPP_ERROR(get_node()->get_logger(), "Error: Exactly two state interfaces must be provided!");
-    return controller_interface::CallbackReturn::ERROR;
-  }
+  tf_prefix_ = params_.tf_prefix;
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<ExecuteMotionAction>(
@@ -89,14 +74,32 @@ MotionPrimitivesForwardController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-
-  command_interfaces_config.names.reserve(params_.command_interfaces.size());
-
-  // Iterate over all command interfaces from the config yaml file
-  for (const auto & interface_name : params_.command_interfaces)
-  {
-    command_interfaces_config.names.push_back(interface_name);
-  }
+  command_interfaces_config.names.reserve(25);
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/motion_type");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q1");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q2");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q3");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q4");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q5");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q6");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_x");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_y");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_z");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qx");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qy");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qz");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qw");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_x");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_y");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_z");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qx");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qy");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qz");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qw");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/blend_radius");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/velocity");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/acceleration");
+  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/move_time");
   return command_interfaces_config;
 }
 
@@ -105,14 +108,9 @@ MotionPrimitivesForwardController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-
-  state_interfaces_config.names.reserve(params_.state_interfaces.size());
-
-  // Iterate over all state interfaces from the config yaml file
-  for (const auto & interface_name : params_.state_interfaces)
-  {
-    state_interfaces_config.names.push_back(interface_name);
-  }
+  state_interfaces_config.names.reserve(2);
+  state_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/execution_status");
+  state_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/ready_for_new_primitive");
   return state_interfaces_config;
 }
 

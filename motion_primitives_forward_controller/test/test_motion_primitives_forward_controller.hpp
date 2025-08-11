@@ -111,8 +111,7 @@ public:
   }
 
 protected:
-  void SetUpController(
-    const std::string controller_name = "test_motion_primitives_forward_controller")
+  void SetUpController()
   {
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;

@@ -23,7 +23,7 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
 endforeach()
 
 generate_parameter_library(motion_primitives_forward_controller_parameters
-  src/motion_primitives_forward_controller.yaml
+  src/motion_primitives_forward_controller_parameter.yaml
 )
 add_library(
   motion_primitives_forward_controller
