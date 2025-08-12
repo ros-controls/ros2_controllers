@@ -71,7 +71,6 @@ if(BUILD_TESTING)
   target_include_directories(test_force_torque_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_force_torque_sensor_broadcaster
     force_torque_sensor_broadcaster
-    force_torque_sensor_broadcaster_parameters
   )
 
   add_library(dummy_filter SHARED
