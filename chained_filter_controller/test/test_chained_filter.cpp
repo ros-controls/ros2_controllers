@@ -107,8 +107,10 @@ TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are
 
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(1));
-  EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "wheel_left/filtered_position");
-  EXPECT_EQ(state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter");
+  EXPECT_EQ(
+    state_if_exported_conf[0]->get_name(), "test_chained_filter/wheel_left/filtered_position");
+  EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "filtered_position");
+  EXPECT_EQ(state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter/wheel_left");
 }
 
 TEST_F(ChainedFilterTest, UpdateFilter)

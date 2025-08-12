@@ -91,12 +91,21 @@ TEST_F(
 
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(2));
-  EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "wheel_left/filtered_position");
   EXPECT_EQ(
-    state_if_exported_conf[0]->get_prefix_name(), "test_chained_filter_multiple_interfaces");
-  EXPECT_EQ(state_if_exported_conf[1]->get_interface_name(), "wheel_right/filtered_position");
+    state_if_exported_conf[0]->get_name(),
+    "test_chained_filter_multiple_interfaces/wheel_left/filtered_position");
   EXPECT_EQ(
-    state_if_exported_conf[1]->get_prefix_name(), "test_chained_filter_multiple_interfaces");
+    state_if_exported_conf[0]->get_prefix_name(),
+    "test_chained_filter_multiple_interfaces/wheel_left");
+  EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "filtered_position");
+
+  EXPECT_EQ(
+    state_if_exported_conf[1]->get_name(),
+    "test_chained_filter_multiple_interfaces/wheel_right/filtered_position");
+  EXPECT_EQ(
+    state_if_exported_conf[1]->get_prefix_name(),
+    "test_chained_filter_multiple_interfaces/wheel_right");
+  EXPECT_EQ(state_if_exported_conf[1]->get_interface_name(), "filtered_position");
 }
 
 TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)

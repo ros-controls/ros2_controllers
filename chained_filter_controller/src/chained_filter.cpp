@@ -14,6 +14,7 @@
 
 #include "chained_filter_controller/chained_filter.hpp"
 
+#include <algorithm>
 #include <limits>
 
 #include "pluginlib/class_list_macros.hpp"
@@ -141,10 +142,21 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
 std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
+  state_interfaces.reserve(params_.output_interfaces.size());
   for (size_t i = 0; i < params_.output_interfaces.size(); ++i)
   {
+    // Split the output interface name by the last "/" if present
+    const std::string & full_name = params_.output_interfaces.at(i);
+    auto pos = full_name.rfind('/');
+    const std::string iface_name =
+      (pos != std::string::npos) ? full_name.substr(pos + 1) : full_name;
+    const std::string iface_prefix =
+      (pos != std::string::npos) ? "/" + full_name.substr(0, pos) : "";
+    std::cout << "Exporting state interface with prefix: " << get_node()->get_name() + iface_prefix
+              << " and interface " << iface_name << std::endl;
+
     state_interfaces.emplace_back(
-      get_node()->get_name(), params_.output_interfaces.at(i), &output_state_values_.at(i));
+      get_node()->get_name() + iface_prefix, iface_name, &output_state_values_.at(i));
   }
   return state_interfaces;
 }
