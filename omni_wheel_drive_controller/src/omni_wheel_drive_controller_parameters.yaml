@@ -1,0 +1,98 @@
+omni_wheel_drive_controller:
+  wheel_offset:
+    {
+      type: double,
+      description: "Angular offset (radians) of the first wheel from the positive direction of the x-axis of the robot.",
+      read_only: true,
+    }
+  wheel_names:
+    {
+      type: string_array,
+      description: "Names of the wheels' joints, given in an anti-clockwise order starting from the wheel aligned with the positive direction of the x-axis of the robot / offset from it by the value specified in ``wheel_offset``.",
+      validation: { not_empty<>: [] },
+      read_only: true,
+    }
+  robot_radius:
+    {
+      type: double,
+      description: "Radius of the robot, distance between the center of the robot and the wheels. If this parameter is wrong, the robot will not behave correctly in curves.",
+      validation: { gt<>: [0.0] },
+      read_only: true,
+    }
+  wheel_radius:
+    {
+      type: double,
+      description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower than expected.",
+      validation: { gt<>: [0.0] },
+      read_only: true,
+    }
+  tf_frame_prefix_enable:
+    {
+      type: bool,
+      default_value: true,
+      description: "Enables or disables appending tf_prefix to tf frame id's.",
+      read_only: true,
+    }
+  tf_frame_prefix:
+    {
+      type: string,
+      default_value: "",
+      description: "(optional) Prefix to be appended to the tf frames, will be added to odom_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+      read_only: true,
+    }
+  odom_frame_id:
+    {
+      type: string,
+      default_value: "odom",
+      description: "Name of the frame for odometry. This frame is parent of ``base_frame_id`` when controller publishes odometry.",
+      read_only: true,
+    }
+  base_frame_id:
+    {
+      type: string,
+      default_value: "base_link",
+      description: "Name of the robot's base frame that is child of the odometry frame.",
+      read_only: true,
+    }
+  diagonal_covariance:
+    pose:
+      {
+        type: double_array,
+        default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+        read_only: true,
+      }
+    twist:
+      {
+        type: double_array,
+        default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+        read_only: true,
+      }
+  open_loop:
+    {
+      type: bool,
+      default_value: false,
+      description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+      read_only: true,
+    }
+  position_feedback:
+    {
+      type: bool,
+      default_value: true,
+      description: "Only valid if ``open_loop`` is set to false. If there is position feedback from the hardware, set the parameter to ``true``, else set it to ``false``.",
+      read_only: true,
+    }
+  enable_odom_tf:
+    {
+      type: bool,
+      default_value: true,
+      description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+      read_only: true,
+    }
+  cmd_vel_timeout: {
+      type: double,
+      default_value: 0.5, # seconds
+      description: "Timeout in seconds, after which input command on ``~/cmd_vel`` topic is considered stale.",
+      read_only: true,
+    }

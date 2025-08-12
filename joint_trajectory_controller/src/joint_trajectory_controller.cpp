@@ -1167,6 +1167,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
+  // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
+  for (auto & pid : pids_)
+  {
+    pid->reset();
+  }
   last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state

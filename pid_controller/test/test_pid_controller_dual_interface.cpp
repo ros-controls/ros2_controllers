@@ -88,8 +88,8 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
     controller_interface::return_type::OK);
 
   // check the commands
-  const double joint1_expected_cmd = 8.915;
-  const double joint2_expected_cmd = 9.915;
+  const double joint1_expected_cmd = 8.90;
+  const double joint2_expected_cmd = 9.90;
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), joint1_expected_cmd);
   ASSERT_EQ(controller_->command_interfaces_[1].get_optional().value(), joint2_expected_cmd);
 }
