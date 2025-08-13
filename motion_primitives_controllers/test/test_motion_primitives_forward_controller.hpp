@@ -157,8 +157,7 @@ protected:
 
     auto goal_msg = ExecuteMotion::Goal();
     MotionPrimitive primitive;
-    primitive.type =
-      static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+    primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
     primitive.joint_positions = joint_positions;
     primitive.blend_radius = blend_radius;
 
