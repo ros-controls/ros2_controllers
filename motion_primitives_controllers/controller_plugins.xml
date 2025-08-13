@@ -5,4 +5,10 @@
     MotionPrimitivesForwardController ros2_control controller.
   </description>
   </class>
+  <class name="motion_primitives_controllers/MotionPrimitivesFromTrajectoryController"
+         type="motion_primitives_controllers::MotionPrimitivesFromTrajectoryController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    MotionPrimitivesFromTrajectoryController ros2_control controller.
+  </description>
+  </class>
 </library>
