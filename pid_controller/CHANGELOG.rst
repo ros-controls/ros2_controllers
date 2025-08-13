@@ -2,6 +2,9 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.5.0 (2025-07-31)
+------------------
+
 5.4.0 (2025-07-23)
 ------------------
 * Apply API change of PidROS (`#1823 <https://github.com/ros-controls/ros2_controllers/issues/1823>`_)
