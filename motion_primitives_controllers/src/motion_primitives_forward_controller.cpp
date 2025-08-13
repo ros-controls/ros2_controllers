@@ -70,7 +70,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
 }
 
 controller_interface::return_type MotionPrimitivesForwardController::update(
-  [[maybe_unused]] const rclcpp::Time & time, [[maybe_unused]] const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   if (cancel_requested_)
   {
