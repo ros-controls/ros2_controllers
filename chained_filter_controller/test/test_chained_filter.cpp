@@ -99,14 +99,14 @@ TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   auto state_if_conf = controller_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, SizeIs(1));
+  ASSERT_THAT(state_if_conf.names, SizeIs(1u));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   auto cmd_if_conf = controller_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, SizeIs(0));
+  ASSERT_THAT(cmd_if_conf.names, SizeIs(0u));
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(
     state_if_exported_conf[0]->get_name(), "test_chained_filter/wheel_left/filtered_position");
   EXPECT_EQ(state_if_exported_conf[0]->get_interface_name(), "filtered_position");
@@ -126,7 +126,7 @@ TEST_F(ChainedFilterTest, UpdateFilter)
   EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1));
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 
   ASSERT_TRUE(joint_1_pos_.set_value(2.0));
