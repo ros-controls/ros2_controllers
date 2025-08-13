@@ -152,8 +152,6 @@ std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_i
       (pos != std::string::npos) ? full_name.substr(pos + 1) : full_name;
     const std::string iface_prefix =
       (pos != std::string::npos) ? "/" + full_name.substr(0, pos) : "";
-    std::cout << "Exporting state interface with prefix: " << get_node()->get_name() + iface_prefix
-              << " and interface " << iface_name << std::endl;
 
     state_interfaces.emplace_back(
       get_node()->get_name() + iface_prefix, iface_name, &output_state_values_.at(i));
