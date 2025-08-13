@@ -20,6 +20,10 @@ gripper_action_controller
 *****************************
 The ``effort_controllers/GripperActionController`` and ``position_controllers/GripperActionController`` will be removed. The ``parallel_gripper_action_controller/GripperActionController`` should be used instead. `(#1652 <https://github.com/ros-controls/ros2_controllers/pull/1652>`__).
 
+chained_filter_controller
+*******************************
+* The chained_filter_controller was added to use generic filter plugins (`#1634 <https://github.com/ros-controls/ros2_controllers/pull/1634>`__).
+
 joint_trajectory_controller
 *****************************
 

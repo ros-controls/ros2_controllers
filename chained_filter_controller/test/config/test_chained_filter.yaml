@@ -1,0 +1,10 @@
+test_chained_filter:
+  ros__parameters:
+    filter_chain:
+      filter1:
+        name: filter1
+        type: "filters/MeanFilterDouble"
+        params:
+          number_of_observations: 2
+    input_interfaces: ["wheel_left/position"]
+    output_interfaces: ["wheel_left/filtered_position"]
