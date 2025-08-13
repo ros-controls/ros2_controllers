@@ -76,8 +76,22 @@ TEST(TestSteeringOdometry, ackermann_odometry_openloop_angular_right)
   odom.update_open_loop(1., -1., 1.);
   EXPECT_DOUBLE_EQ(odom.get_linear(), 1.);
   EXPECT_DOUBLE_EQ(odom.get_angular(), -1.);
+
   EXPECT_GT(odom.get_x(), 0);  // pos x
-  EXPECT_LT(odom.get_y(), 0);  // neg y ie. right
+  EXPECT_LT(odom.get_y(), 0);  // neg y, ie. right
+}
+
+TEST(TestSteeringOdometry, ackermann_odometry_openloop_ackermanndrive_angular_left)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+  odom.update_open_loop(1., 1., 1., false);
+  EXPECT_DOUBLE_EQ(odom.get_linear(), 1.);
+  double expected_angular = (1.0 / 2.0) * std::tan(1.0);
+  EXPECT_NEAR(odom.get_angular(), expected_angular, 1e-6);
+  EXPECT_GT(odom.get_x(), 0);  // pos x
+  EXPECT_GT(odom.get_y(), 0);  // pos y, ie. left
 }
 
 TEST(TestSteeringOdometry, ackermann_IK_linear)
