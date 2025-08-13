@@ -32,10 +32,15 @@ TEST(TestLoadJointGroupVelocityController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_joint_group_velocity_controller", "velocity_controllers/JointGroupVelocityController"),
-    nullptr);
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/config/test_joint_group_velocity_controller.yaml";
+
+  cm.set_parameter({"test_joint_group_velocity_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_joint_group_velocity_controller.type",
+     "velocity_controllers/JointGroupVelocityController"});
+
+  ASSERT_NE(cm.load_controller("test_joint_group_velocity_controller"), nullptr);
 
   rclcpp::shutdown();
 }
