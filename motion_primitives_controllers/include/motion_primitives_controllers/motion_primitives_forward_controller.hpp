@@ -14,15 +14,15 @@
 //
 // Authors: Mathias Fuhrer
 
-#ifndef MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
-#define MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#ifndef MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#define MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
 
 #include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <motion_primitives_forward_controller/motion_primitives_forward_controller_parameters.hpp>
+#include <motion_primitives_controllers/motion_primitives_forward_controller_parameters.hpp>
 #include <realtime_tools/lock_free_queue.hpp>
 #include <realtime_tools/realtime_server_goal_handle.hpp>
 #include "controller_interface/controller_interface.hpp"
@@ -36,7 +36,7 @@
 #include "control_msgs/msg/motion_primitive.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace motion_primitives_forward_controller
+namespace motion_primitives_controllers
 {
 enum class ExecutionState : uint8_t
 {
@@ -123,6 +123,6 @@ protected:
   MotionPrimitive current_moprim_;
 };
 
-}  // namespace motion_primitives_forward_controller
+}  // namespace motion_primitives_controllers
 
-#endif  // MOTION_PRIMITIVES_FORWARD_CONTROLLER__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#endif  // MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_CONTROLLERS_HPP_

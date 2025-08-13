@@ -14,7 +14,7 @@
 //
 // Authors: Mathias Fuhrer
 
-#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
+#include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
 #include <limits>
 #include <memory>
 #include <string>
@@ -22,7 +22,7 @@
 #include "controller_interface/helpers.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
-namespace motion_primitives_forward_controller
+namespace motion_primitives_controllers
 {
 MotionPrimitivesForwardController::MotionPrimitivesForwardController()
 : controller_interface::ControllerInterface()
@@ -536,10 +536,10 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
     get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
 }
 
-}  // namespace motion_primitives_forward_controller
+}  // namespace motion_primitives_controllers
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  motion_primitives_forward_controller::MotionPrimitivesForwardController,
+  motion_primitives_controllers::MotionPrimitivesForwardController,
   controller_interface::ControllerInterface)

@@ -142,7 +142,7 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
   EXPECT_EQ(
     command_values_[0],
     static_cast<uint8_t>(
-      motion_primitives_forward_controller::MotionType::LINEAR_JOINT));  // motion type
+      motion_primitives_controllers::MotionType::LINEAR_JOINT));  // motion type
   EXPECT_EQ(command_values_[1], 0.1);                                    // q1 - q6
   EXPECT_EQ(command_values_[2], 0.2);
   EXPECT_EQ(command_values_[3], 0.3);
