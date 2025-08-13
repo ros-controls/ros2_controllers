@@ -4,7 +4,6 @@ Release Notes: Humble to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Humble (previous) and Jazzy (current) releases.
 
-<<<<<<< HEAD
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
@@ -20,15 +19,10 @@ diff_drive_controller
 gripper_action_controller
 *****************************
 The ``effort_controllers/GripperActionController`` and ``position_controllers/GripperActionController`` will be removed. The ``parallel_gripper_action_controller/GripperActionController`` should be used instead. `(#1652 <https://github.com/ros-controls/ros2_controllers/pull/1652>`__).
-=======
+
 chained_filter_controller
 *******************************
 * The chained_filter_controller was added to use generic filter plugins (`#1634 <https://github.com/ros-controls/ros2_controllers/pull/1634>`__).
-
-force_torque_sensor_broadcaster
-*******************************
-* Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
->>>>>>> 228c586 (Add a generic chained_filter_controller (#1634))
 
 joint_trajectory_controller
 *****************************
