@@ -106,7 +106,7 @@ controller_interface::CallbackReturn MotionPrimitivesBaseController::on_deactiva
 }
 
 controller_interface::return_type MotionPrimitivesBaseController::update(
-  [[maybe_unused]] const rclcpp::Time & time, [[maybe_unused]] const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   // This method should be implemented in derived classes
   RCLCPP_ERROR(get_node()->get_logger(), "Update method not implemented in derived class");
