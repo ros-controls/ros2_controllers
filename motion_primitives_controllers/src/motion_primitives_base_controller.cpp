@@ -14,7 +14,7 @@
 //
 // Authors: Mathias Fuhrer
 
-#include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
+#include "motion_primitives_controllers/motion_primitives_base_controller.hpp"
 #include <limits>
 #include <memory>
 #include <string>
@@ -24,14 +24,14 @@
 
 namespace motion_primitives_controllers
 {
-MotionPrimitivesForwardController::MotionPrimitivesForwardController()
+MotionPrimitivesBaseController::MotionPrimitivesBaseController()
 : controller_interface::ControllerInterface()
 {
 }
 
-controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init()
+controller_interface::CallbackReturn MotionPrimitivesBaseController::on_init()
 {
-  RCLCPP_DEBUG(get_node()->get_logger(), "Initializing Motion Primitives Forward Controller");
+  RCLCPP_DEBUG(get_node()->get_logger(), "Initializing Motion Primitives Controller");
   try
   {
     param_listener_ =
@@ -48,7 +48,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn MotionPrimitivesForwardController::on_configure(
+controller_interface::CallbackReturn MotionPrimitivesBaseController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "Configuring Motion Primitives Forward Controller");
@@ -61,16 +61,16 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     get_node()->get_node_base_interface(), get_node()->get_node_clock_interface(),
     get_node()->get_node_logging_interface(), get_node()->get_node_waitables_interface(),
     std::string(get_node()->get_name()) + "/motion_sequence",
-    std::bind(&MotionPrimitivesForwardController::goal_received_callback, this, _1, _2),
-    std::bind(&MotionPrimitivesForwardController::goal_cancelled_callback, this, _1),
-    std::bind(&MotionPrimitivesForwardController::goal_accepted_callback, this, _1));
+    std::bind(&MotionPrimitivesBaseController::goal_received_callback, this, _1, _2),
+    std::bind(&MotionPrimitivesBaseController::goal_cancelled_callback, this, _1),
+    std::bind(&MotionPrimitivesBaseController::goal_accepted_callback, this, _1));
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
-MotionPrimitivesForwardController::command_interface_configuration() const
+MotionPrimitivesBaseController::command_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -104,7 +104,7 @@ MotionPrimitivesForwardController::command_interface_configuration() const
 }
 
 controller_interface::InterfaceConfiguration
-MotionPrimitivesForwardController::state_interface_configuration() const
+MotionPrimitivesBaseController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -114,7 +114,7 @@ MotionPrimitivesForwardController::state_interface_configuration() const
   return state_interfaces_config;
 }
 
-controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activate(
+controller_interface::CallbackReturn MotionPrimitivesBaseController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
@@ -122,7 +122,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deactivate(
+controller_interface::CallbackReturn MotionPrimitivesBaseController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   reset_command_interfaces();
@@ -130,7 +130,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type MotionPrimitivesForwardController::update(
+controller_interface::return_type MotionPrimitivesBaseController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   if (cancel_requested_)
@@ -281,7 +281,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
 }
 
 // Reset Command-Interfaces to nan
-void MotionPrimitivesForwardController::reset_command_interfaces()
+void MotionPrimitivesBaseController::reset_command_interfaces()
 {
   for (size_t i = 0; i < command_interfaces_.size(); ++i)
   {
@@ -293,7 +293,7 @@ void MotionPrimitivesForwardController::reset_command_interfaces()
 }
 
 // Set command interfaces from the message, gets called in the update function
-bool MotionPrimitivesForwardController::set_command_interfaces()
+bool MotionPrimitivesBaseController::set_command_interfaces()
 {
   // Get the oldest message from the queue
   if (!moprim_queue_.pop(current_moprim_))
@@ -365,7 +365,7 @@ bool MotionPrimitivesForwardController::set_command_interfaces()
   return true;
 }
 
-rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_callback(
+rclcpp_action::GoalResponse MotionPrimitivesBaseController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const ExecuteMotionAction::Goal> goal)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
@@ -469,7 +469,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_callback(
+rclcpp_action::CancelResponse MotionPrimitivesBaseController::goal_cancelled_callback(
   const std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>>)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
@@ -477,7 +477,7 @@ rclcpp_action::CancelResponse MotionPrimitivesForwardController::goal_cancelled_
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void MotionPrimitivesForwardController::goal_accepted_callback(
+void MotionPrimitivesBaseController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>> goal_handle)
 {
   const auto & primitives = goal_handle->get_goal()->trajectory.motions;
@@ -541,5 +541,5 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  motion_primitives_controllers::MotionPrimitivesForwardController,
+  motion_primitives_controllers::MotionPrimitivesBaseController,
   controller_interface::ControllerInterface)

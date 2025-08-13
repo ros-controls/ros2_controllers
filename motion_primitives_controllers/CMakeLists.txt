@@ -28,6 +28,7 @@ generate_parameter_library(motion_primitives_forward_controller_parameters
 add_library(
   ${PROJECT_NAME}
   SHARED
+  src/motion_primitives_base_controller.cpp
   src/motion_primitives_forward_controller.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC

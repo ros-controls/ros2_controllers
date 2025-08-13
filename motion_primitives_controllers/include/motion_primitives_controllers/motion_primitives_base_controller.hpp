@@ -14,8 +14,8 @@
 //
 // Authors: Mathias Fuhrer
 
-#ifndef MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
-#define MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#ifndef MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_BASE_CONTROLLER_HPP_
+#define MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_BASE_CONTROLLER_HPP_
 
 #include <chrono>
 #include <memory>
@@ -64,10 +64,10 @@ enum class ReadyForNewPrimitive : uint8_t
   READY = 1
 };
 
-class MotionPrimitivesForwardController : public controller_interface::ControllerInterface
+class MotionPrimitivesBaseController : public controller_interface::ControllerInterface
 {
 public:
-  MotionPrimitivesForwardController();
+  MotionPrimitivesBaseController();
 
   controller_interface::CallbackReturn on_init() override;
 
@@ -125,4 +125,4 @@ protected:
 
 }  // namespace motion_primitives_controllers
 
-#endif  // MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FORWARD_CONTROLLER_HPP_
+#endif  // MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_BASE_CONTROLLER_HPP_
