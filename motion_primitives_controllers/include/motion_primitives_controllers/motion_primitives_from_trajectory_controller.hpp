@@ -17,74 +17,33 @@
 #ifndef MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FROM_TRAJECTORY_CONTROLLER_HPP_
 #define MOTION_PRIMITIVES_CONTROLLERS__MOTION_PRIMITIVES_FROM_TRAJECTORY_CONTROLLER_HPP_
 
-#include <chrono>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include <motion_primitives_controllers/motion_primitives_from_trajectory_controller_parameters.hpp>
-#include <realtime_tools/lock_free_queue.hpp>
-#include <realtime_tools/realtime_server_goal_handle.hpp>
-#include "control_msgs/action/follow_joint_trajectory.hpp"
-#include "controller_interface/controller_interface.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
-#include "realtime_tools/realtime_publisher.hpp"
-#include "realtime_tools/realtime_thread_safe_box.hpp"
+#include "motion_primitives_controllers/motion_primitives_base_controller.hpp"
 
-#include "control_msgs/action/execute_motion_primitive_sequence.hpp"
-#include "control_msgs/msg/motion_primitive.hpp"
+#include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 
 #include "motion_primitives_controllers/approx_primitives_with_rdp.hpp"
 #include "motion_primitives_controllers/fk_client.hpp"
 
 namespace motion_primitives_controllers
 {
-enum class ExecutionState : uint8_t
-{
-  IDLE = 0,
-  EXECUTING = 1,
-  SUCCESS = 2,
-  ERROR = 3,
-  STOPPING = 4,
-  STOPPED = 5
-};
-
-using MotionType = control_msgs::msg::MotionPrimitive;
-enum class MotionHelperType : uint8_t
-{
-  STOP_MOTION = 66,
-  RESET_STOP = 67,
-
-  MOTION_SEQUENCE_START = 100,
-  MOTION_SEQUENCE_END = 101
-};
-
-enum class ReadyForNewPrimitive : uint8_t
-{
-  NOT_READY = 0,
-  READY = 1
-};
-
 enum class ApproxMode
 {
   RDP_PTP,
   RDP_LIN
 };
 
-class MotionPrimitivesFromTrajectoryController : public controller_interface::ControllerInterface
+class MotionPrimitivesFromTrajectoryController : public MotionPrimitivesBaseController
 {
 public:
-  MotionPrimitivesFromTrajectoryController();
+  MotionPrimitivesFromTrajectoryController() = default;
+  ~MotionPrimitivesFromTrajectoryController() override = default;
 
   controller_interface::CallbackReturn on_init() override;
-
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
-
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
@@ -101,10 +60,6 @@ public:
 protected:
   std::shared_ptr<motion_primitives_from_trajectory_controller::ParamListener> param_listener_;
   motion_primitives_from_trajectory_controller::Params params_;
-  std::string tf_prefix_;
-
-  using MotionPrimitive = control_msgs::msg::MotionPrimitive;
-  realtime_tools::LockFreeSPSCQueue<MotionPrimitive, 1024> moprim_queue_;
 
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
@@ -116,23 +71,6 @@ protected:
     std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle);
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<RealtimeGoalHandle>> rt_goal_handle_;
-  std::atomic<bool> has_active_goal_ = false;
-  rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(std::chrono::milliseconds(20));
-
-  void reset_command_interfaces();
-  bool set_command_interfaces();
-
-  bool print_error_once_ = true;
-  // cancel requested by the action server
-  std::atomic<bool> cancel_requested_ = false;
-  // robot stop command sent to the hardware interface
-  std::atomic<bool> robot_stop_requested_ = false;
-  bool was_executing_ = false;
-  ExecutionState execution_status_;
-  ReadyForNewPrimitive ready_for_new_primitive_;
-
-  MotionPrimitive current_moprim_;
 
   std::shared_ptr<FKClient> fk_client_;
 

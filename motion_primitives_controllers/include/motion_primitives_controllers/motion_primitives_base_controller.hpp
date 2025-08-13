@@ -31,6 +31,7 @@
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_thread_safe_box.hpp"
 
+#include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "control_msgs/msg/motion_primitive.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
