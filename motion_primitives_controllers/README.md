@@ -3,6 +3,8 @@ motion_primitive_controllers
 
 Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ), LINEAR_CARTESIAN (LIN/ MOVEL) and CIRCULAR_CARTESIAN (CIRC/ MOVEC)
 
+> [!WARNING]
+> There is no guarantee that the motion defined by the motion primitive will actually be executed exactly as planned. In particular, for motions in Cartesian space such as LIN primitives, it is not necessarily ensured that the robot will execute the motion exactly in that way, since the inverse kinematics is not always unique.
 
 **This package contains two controllers:**
 1. [motion_primitives_forward_controller](#moprim_forward_controller)
@@ -80,6 +82,7 @@ Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](h
 <a name="moprim_from_traj_controller"/>
 
 # motion_primitives_from_trajectory_controller
+
 The `motion_primitives_from_trajectory_controller` builds on the same architecture as the `motion_primitives_forward_controller` and uses the same command and state interfaces, making it compatible with the same hardware interfaces. However, instead of receiving motion primitives directly, it takes a `FollowJointTrajectory` action as input and approximates the trajectory using either `PTP` (`LINEAR_JOINT`) or `LIN` (`LINEAR_CARTESIAN`) motion primitives.
 
 The approximation mode can be selected via the `approximate_mode` parameter, with options `"RDP_PTP"` or `"RDP_LIN"`, using the Ramer-Douglas-Peucker algorithm to reduce the trajectory points. Tolerances for the approximation are defined by:
