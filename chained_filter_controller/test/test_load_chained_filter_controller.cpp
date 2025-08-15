@@ -22,25 +22,27 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadJointGroupVelocityController, load_controller)
+TEST(TestLoadChainedFilter, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
-    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
-
+    executor, ros2_control_test_assets::diffbot_urdf, true, "test_controller_manager");
   const std::string test_file_path =
-    std::string(TEST_FILES_DIRECTORY) + "/config/test_joint_group_velocity_controller.yaml";
+    std::string(TEST_FILES_DIRECTORY) + "/config/test_chained_filter.yaml";
 
-  cm.set_parameter({"test_joint_group_velocity_controller.params_file", test_file_path});
-  cm.set_parameter(
-    {"test_joint_group_velocity_controller.type",
-     "velocity_controllers/JointGroupVelocityController"});
+  cm.set_parameter({"test_chained_filter.params_file", test_file_path});
+  cm.set_parameter({"test_chained_filter.type", "chained_filter_controller/ChainedFilter"});
 
-  ASSERT_NE(cm.load_controller("test_joint_group_velocity_controller"), nullptr);
+  ASSERT_NE(cm.load_controller("test_chained_filter"), nullptr);
+}
 
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }
