@@ -57,3 +57,26 @@ The controller expects at least one GPIO interface and the corresponding command
               - ana.2
 
 With the above-defined controller configuration, the controller will accept commands for all gpios' interfaces and will only publish the state of Gpio2.
+
+
+
+### gpio_tool_controller
+
+The controller enables control of tools connected to the robot or components of a robot via general-purpose inputs and outputs (GPIO), digital or analog.
+Concretely the controller is made for controlling the custom-made industrial grippers or tools, or components like lifts or breaks.
+The IOs might even be virtual, like controlling the state machine of a robot that is implemented on a PLC.
+
+The controller provides high-level interface for engaging or disengaging a tool or a component, as well as for reconfiguring it.
+The reconfiguration is possible only in *disengaged* state.
+In the example of gripper this would be *open* state.
+
+
+
+The controller implements state machine for the transition between states and
+
+
+1. Tool Actions
+
+1. Tool state machine
+
+2. Transitions

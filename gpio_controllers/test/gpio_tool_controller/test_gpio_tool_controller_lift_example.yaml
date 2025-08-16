@@ -3,7 +3,7 @@ test_io_gripper_controller:
     use_action: true
     timeout: 5.0
     tolerance: 0.05
-    engaged_joints: [gripper_clamp_jaw]
+    engaged_joints: [lift_joint]
 
     disengaged:
       name: 'low'

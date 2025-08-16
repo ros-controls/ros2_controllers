@@ -116,6 +116,11 @@ controller_interface::CallbackReturn GpioToolController::on_configure(
     }
   }
 
+  // Initialize storage of joint state values
+  joint_states_values_.resize(
+    params_.engaged_joints.size() + params_.configuration_joints.size(),
+    std::numeric_limits<double>::quiet_NaN());
+
   auto check_parameter_pairs = [this](const std::vector<std::string> & interfaces, const std::vector<double> & values, const std::string & parameter_name) {
     if (interfaces.size() != values.size()) {
       RCLCPP_FATAL(
@@ -205,7 +210,12 @@ controller_interface::CallbackReturn GpioToolController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  prepare_command_and_state_ios();
+  if (!prepare_command_and_state_ios())
+  {
+    RCLCPP_FATAL(
+      get_node()->get_logger(), "Failed to prepare command and state GPIOs. See above messages for details.");
+    return CallbackReturn::FAILURE;
+  }
 
   auto result = prepare_publishers_and_services();
   if (result != controller_interface::CallbackReturn::SUCCESS)
@@ -221,8 +231,8 @@ controller_interface::InterfaceConfiguration GpioToolController::command_interfa
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  command_interfaces_config.names.reserve(command_if_ios.size());
-  for (const auto & command_io : command_if_ios)
+  command_interfaces_config.names.reserve(command_if_ios_.size());
+  for (const auto & command_io : command_if_ios_)
   {
     command_interfaces_config.names.push_back(command_io);
   }
@@ -236,8 +246,8 @@ controller_interface::InterfaceConfiguration GpioToolController::state_interface
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
-  state_interfaces_config.names.reserve(state_if_ios.size());
-  for (const auto & state_io : state_if_ios)
+  state_interfaces_config.names.reserve(state_if_ios_.size());
+  for (const auto & state_io : state_if_ios_)
   {
     state_interfaces_config.names.push_back(state_io);
   }
@@ -248,7 +258,14 @@ controller_interface::InterfaceConfiguration GpioToolController::state_interface
 controller_interface::CallbackReturn GpioToolController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  check_tool_state(get_node()->now());
+  state_change_start_ = get_node()->now();
+  check_tool_state(state_change_start_);
+  // TODO(denis): update ros2_control and then enable this in this version the interfaces are not released when controller fails to activate
+  // if (current_state_.empty() || current_configuration_.empty())
+  // {
+  //   RCLCPP_FATAL(get_node()->get_logger(), "Controller can not be started as tool state can not be determined! Make sure the hardware is connected properly and controller's configuration is correct, than try to activate the controller again.");
+  //   return controller_interface::CallbackReturn::FAILURE;
+  // }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -263,129 +280,141 @@ controller_interface::CallbackReturn GpioToolController::on_deactivate(
 
 controller_interface::return_type GpioToolController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+{
+  switch (current_tool_action_.load())
   {
-    switch (current_tool_action_.load())
+    case ToolAction::IDLE:
     {
-      case ToolAction::IDLE:
-      {
-        // do nothing
-        break;
-      }
-      case ToolAction::DISENGAGING:
-      {
-        handle_tool_state_transition(
-          time, disengaged_gpios_, params_.disengaged.name, joint_states_values_, 0, current_state_);
-        break;
-      }
-      case ToolAction::ENGAGING:
-      {
-        handle_tool_state_transition(
-          time, engaged_gpios_, params_.engaged.name, joint_states_values_, 0, current_state_);
-        break;
-      }
-      case ToolAction::RECONFIGURING:
-      {
-        handle_tool_state_transition(
-          time, reconfigure_gpios_, *(target_configuration_.load()), joint_states_values_, params_.engaged_joints.size(), current_configuration_);
-        break;
-      }
-      case ToolAction::CANCELING:
-      {
-        RCLCPP_ERROR(
-          get_node()->get_logger(), "%s - CANCELING: Tool action is being canceled, "
-          "going to HALTED. Reset the tool using '~/reset_halted' service. After that set sensible state.", current_state_.c_str());
-        current_tool_transition_.store(GPIOToolTransition::HALTED);
-        check_tool_state(time);
-        std::vector<double> tmp_vec;
-        std::string tmp_str;
-        handle_tool_state_transition(
-          time, ToolTransitionIOs(), "", tmp_vec, 0,
-          tmp_str);  // parameters don't matter as end up processing only the halted state
-        break;
-      }
-      default:
-      {
-        break;
-      }
+      // do nothing
+      break;
     }
-
+    case ToolAction::DISENGAGING:
+    {
+      handle_tool_state_transition(
+        time, disengaged_gpios_, params_.disengaged.name, joint_states_values_, 0, current_state_);
+      break;
+    }
+    case ToolAction::ENGAGING:
+    {
+      handle_tool_state_transition(
+        time, engaged_gpios_, params_.engaged.name, joint_states_values_, 0, current_state_);
+      break;
+    }
+    case ToolAction::RECONFIGURING:
+    {
+      handle_tool_state_transition(
+        time, reconfigure_gpios_, *(target_configuration_.load()), joint_states_values_, params_.engaged_joints.size(), current_configuration_);
+      break;
+    }
+    case ToolAction::CANCELING:
+    {
+      RCLCPP_ERROR_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "%s - CANCELING: Tool action is being canceled, "
+        "going to HALTED. Reset the tool using '~/reset_halted' service. After that set sensible state.", current_state_.c_str());
+      current_tool_transition_.store(GPIOToolTransition::HALTED);
+      check_tool_state(time, true);
+      std::vector<double> tmp_vec;
+      std::string tmp_str;
+      handle_tool_state_transition(
+        time, ToolTransitionIOs(), "", tmp_vec, 0,
+        tmp_str);  // parameters don't matter as end up processing only the halted state
+      break;
+    }
+    default:
+    {
+      break;
+    }
+  }
   publish_topics(time);
 
   return controller_interface::return_type::OK;
 }
 
 bool GpioToolController::set_commands(
-  const std::unordered_map<std::string, double> & commands, const size_t start_index, const std::string & transition_name, const uint8_t next_transition)
+  const std::unordered_map<std::string, std::pair<double, size_t>> & commands, const std::string & output_prefix, const uint8_t next_transition)
 {
   bool all_successful = true;
-  if (commands.empty())
+  if (!commands.empty())  // only set commands if present
   {
-    return all_successful;  // nothing to set, return true
-  }
-  for (size_t i = start_index; i < (start_index + commands.size()); ++i)
-  {
-    if (!command_interfaces_[i].set_value(commands.at(command_interfaces_[i].get_name())))
+    for (const auto & [name, pair] : commands)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "%s: Failed to set the command state for %s",
-        transition_name.c_str(), command_interfaces_[i].get_name().c_str());
-      all_successful = false;
+      const auto & [value, index] = pair;
+      if (!command_interfaces_[index].set_value(value))
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "%s: Failed to set the command state for %s",
+          output_prefix.c_str(), command_interfaces_[index].get_name().c_str());
+        all_successful = false;
+      }
     }
   }
 
   if (all_successful)
   {
-    RCLCPP_INFO(
-      get_node()->get_logger(), "%s: Setting the before command states",
-      transition_name.c_str());
-    current_tool_transition_.store(next_transition);
+    RCLCPP_DEBUG(
+      get_node()->get_logger(), "%s: Transitioning after setting commands to: %d",
+      output_prefix.c_str(), next_transition);
+    // when canceling we don't continue the transition
+    if (current_tool_action_.load() != ToolAction::CANCELING)
+    {
+      current_tool_transition_.store(next_transition);
+    }
   }
   else
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "%s: Error occured when setting commands - see above for details.",
-      transition_name.c_str());
+      output_prefix.c_str());
+    current_tool_transition_.store(GPIOToolTransition::HALTED);
   }
 
   return all_successful;
 }
 
 bool GpioToolController::check_states(
-  const rclcpp::Time & current_time, const std::unordered_map<std::string, double> & states, const size_t start_index, const std::string & transition_name, const uint8_t next_transition)
+  const rclcpp::Time & current_time, const std::unordered_map<std::string, std::pair<double, size_t>> & states, const std::string & output_prefix, const uint8_t next_transition, const bool warning_output)
 {
   bool all_correct = true;
-  if (states.empty())
+  if (!states.empty())  // only check the states if they are present
   {
-    return all_correct;  // nothing to check, return true
-  }
-  for (size_t i = start_index; i < (start_index + states.size()); ++i)
-  {
-    const double current_state_value = state_interfaces_.at(i).get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN());
-    if (
-      abs(current_state_value - states.at(state_interfaces_.at(i).get_name())) > params_.tolerance)
+    for (const auto& [name, pair] : states)
     {
-      RCLCPP_INFO(
-        get_node()->get_logger(), "%s: State value for %s doesn't match",
-        transition_name.c_str(), state_interfaces_[i].get_name().c_str());
-      all_correct = false;
+      const auto & [value, index] = pair;
+      RCLCPP_DEBUG(
+        get_node()->get_logger(), "%s: Looking for state interface '%s' on index %zu, and state size is %zu, and state_interface size is %zu",
+        output_prefix.c_str(), state_interfaces_.at(index).get_name().c_str(), index, states.size(), state_interfaces_.size());
+      const double current_state_value = state_interfaces_.at(index).get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN());
+      if (std::isnan(current_state_value) ||
+        abs(current_state_value - value) > params_.tolerance)
+      {
+        RCLCPP_WARN_EXPRESSION(
+          get_node()->get_logger(), warning_output, "%s: State value for %s doesn't match. Is %.2f, expected %.2f",
+          output_prefix.c_str(), state_interfaces_.at(index).get_name().c_str(),
+          current_state_value, value);
+        all_correct = false;
+      }
     }
   }
 
   if (all_correct)
   {
-    RCLCPP_INFO(
-      get_node()->get_logger(), "%s: Tool reached target state.",
-      transition_name.c_str());
-    // if the Tool is in the correct state, we can set the command
-    current_tool_transition_.store(next_transition);
+    RCLCPP_DEBUG(
+      get_node()->get_logger(), "%s: Transitionning after reaching state to: %d",
+      output_prefix.c_str(), next_transition);
+    // when canceling we don't continue transition
+    if (current_tool_action_.load() != ToolAction::CANCELING)
+    {
+      current_tool_transition_.store(next_transition);
+    }
   }
-  if ((current_time - state_change_start_).seconds() > params_.timeout)
+  else if ((current_time - state_change_start_).seconds() > params_.timeout)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "%s: Tool didin't reached target state within %.2f seconds.",
-      transition_name.c_str(), params_.timeout);
+      output_prefix.c_str(), params_.timeout);
     current_tool_transition_.store(GPIOToolTransition::HALTED);
   }
 
@@ -393,20 +422,33 @@ bool GpioToolController::check_states(
 }
 
 void GpioToolController::check_tool_state_and_switch(
-  const rclcpp::Time & current_time, const ToolTransitionIOs & ios, std::vector<double> & joint_states, const size_t joint_states_start_index, const std::string & output_prefix, const uint8_t next_transition, std::string & found_state_name)
+  const rclcpp::Time & current_time, const ToolTransitionIOs & ios, std::vector<double> & joint_states, const size_t joint_states_start_index, const std::string & output_prefix, const uint8_t next_transition, std::string & found_state_name, const bool warning_output)
 {
   for (const auto & [state_name, states] : ios.states)
   {
-    bool state_exists = ios.states_start_index.find(state_name) != ios.states_start_index.end();
-    RCLCPP_INFO(
-      get_node()->get_logger(), "%s - CHECK_COMMAND: Checking state '%s' for tool. State exists %s",
-      output_prefix.c_str(), state_name.c_str(), (state_exists ? "true" : "false"));
+    bool state_exists = states.size() > 0;
+    RCLCPP_DEBUG(
+      get_node()->get_logger(), "%s - CHECK_STATE: Checking state '%s' for tool. States _%s_ exist. Used number of state interfaces %zu",
+      output_prefix.c_str(), state_name.c_str(), (state_exists ? "do" : "do not"), states.size());
 
-    if (check_states(current_time, states, ios.states_start_index.at(state_name), output_prefix, next_transition))
+    if (check_states(current_time, states, output_prefix, next_transition, warning_output))
     {
-      const auto new_joint_states = ios.states_joint_states.at(state_name);
-      std::copy(new_joint_states.begin(), new_joint_states.end(), joint_states.begin() + joint_states_start_index);
       found_state_name = state_name;
+      const auto & js_val = ios.states_joint_states.at(state_name);
+      if (joint_states_start_index + js_val.size() <= joint_states.size())
+      {
+        std::copy(
+          js_val.begin(),
+          js_val.end(),
+          joint_states.begin() + joint_states_start_index);
+      }
+      else
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(),
+          "%s - CHECK_STATE: Joint states size (%zu) is not enough to copy the values for state '%s' (size: %zu) from starting index %zu.",
+          output_prefix.c_str(), joint_states.size(), state_name.c_str(), js_val.size(), joint_states_start_index);
+      }
       break;
     }
   }
@@ -424,9 +466,6 @@ void GpioToolController::handle_tool_state_transition(
       break;
 
     case GPIOToolTransition::HALTED:
-      RCLCPP_DEBUG(
-        get_node()->get_logger(), "%s - HALTED: Tool aborted in HALTED state - don't ",
-        target_state.c_str());
       if (reset_halted_.load())
       {
         // check here the state of the tool if you can figure it out. If not - set unknown.
@@ -436,35 +475,37 @@ void GpioToolController::handle_tool_state_transition(
       break;
 
     case GPIOToolTransition::SET_BEFORE_COMMAND:
+      RCLCPP_DEBUG(
+        get_node()->get_logger(), "%s - SET_BEFORE_COMMAND: Tool action is being set before command.",
+        target_state.c_str());
       if (!transition_time_updated_.load())
       {
         state_change_start_ = current_time;
         transition_time_updated_.store(true);
       }
       set_commands(
-        ios.set_before_commands.at(target_state), ios.set_before_commands_start_index.at(target_state),
+        ios.set_before_commands.at(target_state),
         target_state + " - SET_BEFORE_COMMAND", GPIOToolTransition::CHECK_BEFORE_COMMAND);
       break;
     case GPIOToolTransition::CHECK_BEFORE_COMMAND:
       check_states(
         current_time, ios.set_before_states.at(target_state),
-        ios.set_before_states_start_index.at(target_state),
         target_state + " - CHECK_BEFORE_COMMAND", GPIOToolTransition::SET_COMMAND);
       break;
     case GPIOToolTransition::SET_COMMAND:
-      set_commands(ios.commands.at(target_state), ios.commands_start_index.at(target_state), target_state + " - SET_COMMAND", GPIOToolTransition::CHECK_COMMAND);
+      set_commands(ios.commands.at(target_state), target_state + " - SET_COMMAND", GPIOToolTransition::CHECK_COMMAND);
       break;
     case GPIOToolTransition::CHECK_COMMAND:
       check_tool_state_and_switch(current_time, ios, joint_states, joint_states_start_index, target_state + " - CHECK_COMMAND", GPIOToolTransition::SET_AFTER_COMMAND, end_state);
       break;
     case GPIOToolTransition::SET_AFTER_COMMAND:
       set_commands(
-        ios.set_after_commands.at(end_state), ios.set_after_commands_start_index.at(end_state),
+        ios.set_after_commands.at(end_state),
         target_state + " - SET_AFTER_COMMAND", GPIOToolTransition::CHECK_AFTER_COMMAND);
       break;
 
     case GPIOToolTransition::CHECK_AFTER_COMMAND:
-      if (check_states(current_time, ios.set_after_states.at(end_state), ios.set_after_states_start_index.at(end_state), target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
+      if (check_states(current_time, ios.set_after_states.at(end_state), target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
       {
         finish_transition_to_state = true;
       }
@@ -481,20 +522,20 @@ void GpioToolController::handle_tool_state_transition(
     transition_time_updated_.store(false);  // resetting the flag
 
     RCLCPP_INFO(
-      get_node()->get_logger(), "%s: Transitions finished!",
+      get_node()->get_logger(), "%s: Tool state or configuration change finished!",
       target_state.c_str());
   }
 }
 
-void GpioToolController::prepare_command_and_state_ios()
+bool GpioToolController::prepare_command_and_state_ios()
 {
   auto parse_interfaces_from_params = [&](
                                         const std::vector<std::string> & interfaces,
                                         const std::vector<double> & values,
                                         const std::string & param_name,
-                                        std::unordered_map<std::string, double> & ios,
-                                        std::unordered_set<std::string> & interface_list,
-                                        size_t & ios_start_index)
+                                        std::unordered_map<std::string, std::pair<double, size_t>> & ios,
+                                        std::unordered_set<std::string> & interface_list
+                                        ) -> void
   {
     if (interfaces.size() != values.size())
     {
@@ -506,13 +547,6 @@ void GpioToolController::prepare_command_and_state_ios()
       return;
     }
 
-    if (interfaces.empty())
-    {
-      ios_start_index = -1;
-      return;
-    }
-
-    ios_start_index = interface_list.size();
     ios.reserve(interfaces.size());
     interface_list.reserve(interface_list.size() + interfaces.size());
 
@@ -520,7 +554,8 @@ void GpioToolController::prepare_command_and_state_ios()
     {
       if (!interfaces[i].empty())
       {
-        ios[interfaces[i]] = values[i];
+        ios[interfaces[i]].first = values[i];
+        ios[interfaces[i]].second = -1;  // -1 means not set yet
         interface_list.insert(interfaces[i]);
       }
     }
@@ -530,85 +565,82 @@ void GpioToolController::prepare_command_and_state_ios()
   disengaged_gpios_.possible_states.push_back(params_.disengaged.name);
 
   disengaged_gpios_.set_before_commands[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
-    params_.disengaged.set_before_command.interfaces, params_.disengaged.set_before_command.values, "disengaged.set_before_command", disengaged_gpios_.set_before_commands[params_.disengaged.name], command_if_ios, disengaged_gpios_.set_before_commands_start_index[params_.disengaged.name]);
+    params_.disengaged.set_before_command.interfaces, params_.disengaged.set_before_command.values,
+    "disengaged.set_before_command", disengaged_gpios_.set_before_commands[params_.disengaged.name],
+    command_if_ios_);
 
   disengaged_gpios_.set_before_states[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
-    params_.disengaged.set_before_state.interfaces, params_.disengaged.set_before_state.values, "disengaged.set_before_state", disengaged_gpios_.set_before_states[params_.disengaged.name], state_if_ios, disengaged_gpios_.set_before_states_start_index[params_.disengaged.name]);
+    params_.disengaged.set_before_state.interfaces, params_.disengaged.set_before_state.values, "disengaged.set_before_state", disengaged_gpios_.set_before_states[params_.disengaged.name], state_if_ios_);
 
   disengaged_gpios_.commands[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
-    params_.disengaged.command.interfaces, params_.disengaged.command.values, "disengaged.command", disengaged_gpios_.commands[params_.disengaged.name], command_if_ios, disengaged_gpios_.commands_start_index[params_.disengaged.name]);
+    params_.disengaged.command.interfaces, params_.disengaged.command.values, "disengaged.command", disengaged_gpios_.commands[params_.disengaged.name], command_if_ios_);
 
   disengaged_gpios_.states[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
-
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
-    params_.disengaged.state.interfaces, params_.disengaged.state.values, "disengaged.state", disengaged_gpios_.states[params_.disengaged.name], state_if_ios, disengaged_gpios_.states_start_index[params_.disengaged.name]);
+    params_.disengaged.state.interfaces, params_.disengaged.state.values, "disengaged.state", disengaged_gpios_.states[params_.disengaged.name], state_if_ios_);
 
   disengaged_gpios_.states_joint_states[params_.disengaged.name] =
     params_.disengaged.joint_states;
 
   disengaged_gpios_.set_after_commands[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   disengaged_gpios_.set_after_states[params_.disengaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
 
   parse_interfaces_from_params(
     params_.disengaged.set_after_command.interfaces, params_.disengaged.set_after_command.values,
-    "disengaged.set_after_command", disengaged_gpios_.set_after_commands[params_.disengaged.name], command_if_ios,
-    disengaged_gpios_.set_after_commands_start_index[params_.disengaged.name]);
+    "disengaged.set_after_command", disengaged_gpios_.set_after_commands[params_.disengaged.name], command_if_ios_);
   parse_interfaces_from_params(
     params_.disengaged.set_after_state.interfaces, params_.disengaged.set_after_state.values,
-    "disengaged.set_after_state", disengaged_gpios_.set_after_states[params_.disengaged.name], state_if_ios,
-    disengaged_gpios_.set_after_states_start_index[params_.disengaged.name]);
+    "disengaged.set_after_state", disengaged_gpios_.set_after_states[params_.disengaged.name], state_if_ios_);
 
   // Engaged IOs
   engaged_gpios_.set_before_commands[params_.engaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
     params_.engaged.set_before_command.interfaces, params_.engaged.set_before_command.values,
-    "engaged.set_before_command", engaged_gpios_.set_before_commands[params_.engaged.name], command_if_ios, engaged_gpios_.set_before_commands_start_index[params_.engaged.name]);
+    "engaged.set_before_command", engaged_gpios_.set_before_commands[params_.engaged.name], command_if_ios_);
   engaged_gpios_.set_before_states[params_.engaged.name] =
-    std::unordered_map<std::string, double>();
+    std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
     params_.engaged.set_before_state.interfaces, params_.engaged.set_before_state.values,
-    "engaged.set_before_state", engaged_gpios_.set_before_states[params_.engaged.name], state_if_ios, engaged_gpios_.set_before_states_start_index[params_.engaged.name]);
-  engaged_gpios_.commands[params_.engaged.name] = std::unordered_map<std::string, double>();
+    "engaged.set_before_state", engaged_gpios_.set_before_states[params_.engaged.name], state_if_ios_);
+  engaged_gpios_.commands[params_.engaged.name] = std::unordered_map<std::string, std::pair<double, size_t>>();
   parse_interfaces_from_params(
     params_.engaged.command.interfaces, params_.engaged.command.values, "engaged.command",
-    engaged_gpios_.commands[params_.engaged.name], command_if_ios, engaged_gpios_.commands_start_index[params_.engaged.name]);
+    engaged_gpios_.commands[params_.engaged.name], command_if_ios_);
 
   engaged_gpios_.possible_states = params_.possible_engaged_states;
   for (const auto & state : params_.possible_engaged_states)
   {
-    engaged_gpios_.states[state] = std::unordered_map<std::string, double>();
+    engaged_gpios_.states[state] = std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.engaged.states.possible_engaged_states_map.at(state).interfaces,
       params_.engaged.states.possible_engaged_states_map.at(state).values, "engaged.states." + state,
-      engaged_gpios_.states[state], state_if_ios, engaged_gpios_.states_start_index[state]);
+      engaged_gpios_.states[state], state_if_ios_);
 
     engaged_gpios_.states_joint_states[state] =
       params_.engaged.states.possible_engaged_states_map.at(state).joint_states;
 
     engaged_gpios_.set_after_commands[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     engaged_gpios_.set_after_states[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.engaged.states.possible_engaged_states_map.at(state).set_after_command_interfaces,
       params_.engaged.states.possible_engaged_states_map.at(state).set_after_command_values,
-      "engaged.set_after_command." + state, engaged_gpios_.set_after_commands[state], command_if_ios,
-      engaged_gpios_.set_after_commands_start_index[state]);
+      "engaged.set_after_command." + state, engaged_gpios_.set_after_commands[state], command_if_ios_);
     parse_interfaces_from_params(
       params_.engaged.states.possible_engaged_states_map.at(state).set_after_state_interfaces,
       params_.engaged.states.possible_engaged_states_map.at(state).set_after_state_values,
-      "engaged.set_after_state." + state, engaged_gpios_.set_after_states[state], state_if_ios,
-      engaged_gpios_.set_after_states_start_index[state]);
+      "engaged.set_after_state." + state, engaged_gpios_.set_after_states[state], state_if_ios_);
   }
 
   // Configurations IOs
@@ -616,60 +648,125 @@ void GpioToolController::prepare_command_and_state_ios()
   for (const auto & state : reconfigure_gpios_.possible_states)
   {
     reconfigure_gpios_.set_before_commands[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).set_before_command_interfaces,
       params_.configuration_setup.configurations_map.at(state).set_before_command_values,
       "reconfigure.set_before_command." + state, reconfigure_gpios_.set_before_commands[state],
-      command_if_ios, reconfigure_gpios_.set_before_commands_start_index[state]);
+      command_if_ios_);
 
     reconfigure_gpios_.set_before_states[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).set_before_state_interfaces,
       params_.configuration_setup.configurations_map.at(state).set_before_state_values,
-      "reconfigure.set_before_state." + state, reconfigure_gpios_.set_before_states[state], state_if_ios,
-      reconfigure_gpios_.set_before_states_start_index[state]);
+      "reconfigure.set_before_state." + state, reconfigure_gpios_.set_before_states[state], state_if_ios_);
 
     reconfigure_gpios_.commands[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).command_interfaces,
       params_.configuration_setup.configurations_map.at(state).command_values,
-      "reconfigure.command." + state, reconfigure_gpios_.commands[state], command_if_ios,
-      reconfigure_gpios_.commands_start_index[state]);
+      "reconfigure.command." + state, reconfigure_gpios_.commands[state], command_if_ios_);
 
     reconfigure_gpios_.states[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).state_interfaces,
       params_.configuration_setup.configurations_map.at(state).state_values,
-      "reconfigure.state." + state, reconfigure_gpios_.states[state], state_if_ios,
-      reconfigure_gpios_.states_start_index[state]);
+      "reconfigure.state." + state, reconfigure_gpios_.states[state], state_if_ios_);
 
     reconfigure_gpios_.states_joint_states[state] =
       params_.configuration_setup.configurations_map.at(state).joint_states;
 
     reconfigure_gpios_.set_after_commands[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).set_after_command_interfaces,
       params_.configuration_setup.configurations_map.at(state).set_after_command_values,
       "reconfigure.set_after_command." + state, reconfigure_gpios_.set_after_commands[state],
-      command_if_ios, reconfigure_gpios_.set_after_commands_start_index[state]);
+      command_if_ios_);
     reconfigure_gpios_.set_after_states[state] =
-      std::unordered_map<std::string, double>();
+      std::unordered_map<std::string, std::pair<double, size_t>>();
     parse_interfaces_from_params(
       params_.configuration_setup.configurations_map.at(state).set_after_state_interfaces,
       params_.configuration_setup.configurations_map.at(state).set_after_state_values,
-      "reconfigure.set_after_state." + state, reconfigure_gpios_.set_after_states[state], state_if_ios,
-      reconfigure_gpios_.set_after_states_start_index[state]);
+      "reconfigure.set_after_state." + state, reconfigure_gpios_.set_after_states[state], state_if_ios_);
   }
 
   for (const auto & [name, data] : params_.sensors_interfaces.tool_specific_sensors_map)
   {
-    state_if_ios.insert(data.interface);
+    state_if_ios_.insert(data.interface);
   }
+
+  auto store_indices_of_interfaces = [&](std::unordered_map<std::string, std::pair<double, size_t>> & ios_map, const std::unordered_set<std::string> & interfaces) -> bool {
+    for (auto & [itf_name, pair] : ios_map)
+    {
+      auto & [value, index] = pair;
+      auto it = std::find(interfaces.begin(), interfaces.end(), itf_name);
+      if (it != interfaces.end())
+      {
+        index = std::distance(interfaces.begin(), it);
+      }
+      else
+      {
+        RCLCPP_ERROR(get_node()->get_logger(), "Interface '%s' not found in the list of interfaces.", itf_name.c_str());
+        return false;
+      }
+    }
+    return true;
+  };
+
+  bool ret = true;
+
+  // Disengaged IOs
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.set_before_commands[params_.disengaged.name], command_if_ios_);
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.set_before_states[params_.disengaged.name], state_if_ios_);
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.commands[params_.disengaged.name], command_if_ios_);
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.states[params_.disengaged.name], state_if_ios_);
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.set_after_commands[params_.disengaged.name], command_if_ios_);
+  ret &= store_indices_of_interfaces(
+    disengaged_gpios_.set_after_states[params_.disengaged.name], state_if_ios_);
+
+  // Engaged IOs
+  ret &= store_indices_of_interfaces(
+    engaged_gpios_.set_before_commands[params_.engaged.name], command_if_ios_);
+  ret &= store_indices_of_interfaces(
+    engaged_gpios_.set_before_states[params_.engaged.name], state_if_ios_);
+  ret &= store_indices_of_interfaces(
+    engaged_gpios_.commands[params_.engaged.name], command_if_ios_);
+  for (const auto & state : params_.possible_engaged_states)
+  {
+    ret &= store_indices_of_interfaces(engaged_gpios_.states[state], state_if_ios_);
+    ret &= store_indices_of_interfaces(
+      engaged_gpios_.set_after_commands[state], command_if_ios_);
+    ret &= store_indices_of_interfaces(
+      engaged_gpios_.set_after_states[state], state_if_ios_);
+  }
+
+  // Reconfigure IOs
+  for (const auto & state : reconfigure_gpios_.possible_states)
+  {
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.set_before_commands[state], command_if_ios_);
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.set_before_states[state], state_if_ios_);
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.commands[state], command_if_ios_);
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.states[state], state_if_ios_);
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.set_after_commands[state], command_if_ios_);
+    ret &= store_indices_of_interfaces(
+      reconfigure_gpios_.set_after_states[state], state_if_ios_);
+  }
+
+  return ret;
 }
 
 GpioToolController::EngagingSrvType::Response GpioToolController::process_engaging_request(
@@ -732,12 +829,18 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_reconf
                         + params_.engaged.name + "' or '" + params_.disengaged.name
                         + "' action.Please wait until it finishes.";
   }
+  // This is OK to access `current_state_` as we are in the IDLE state and it is not being modified
+  if (response.success && current_state_ != params_.disengaged.name)
+  {
+    response.success = false;
+    response.message = "Tool can be reconfigured only in '" + params_.disengaged.name + "' state. Current state is '" + current_state_ + "'.";
+  }
   if (response.success)
   {
     current_tool_action_.store(ToolAction::RECONFIGURING);
     current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
     target_configuration_.store(std::make_shared<std::string>(config_name));
-    response.message = "Tool reconfigfuration to '" + config_name + "' has started.";
+    response.message = "Tool reconfiguration to '" + config_name + "' has started.";
     RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
   }
   else
@@ -886,9 +989,19 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
       e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
-  const size_t nr_joints = params_.engaged_joints.size() + params_.configuration_joints.size();
-  tool_joint_state_publisher_->msg_.name.reserve(nr_joints);
-  tool_joint_state_publisher_->msg_.position.resize(nr_joints, std::numeric_limits<double>::quiet_NaN());
+
+  if (joint_states_values_.size() == 0)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Joint states values are empty, resizing to match the number of engaged and configuration joints. This should not happen here, as the joint states should be set in the configure method.");
+    joint_states_values_.resize(
+      params_.engaged_joints.size() + params_.configuration_joints.size(),
+      std::numeric_limits<double>::quiet_NaN());
+  }
+
+  tool_joint_state_publisher_->msg_.name.reserve(joint_states_values_.size());
+  tool_joint_state_publisher_->msg_.position = joint_states_values_;
 
   for (const auto & joint_name : params_.engaged_joints)
   {
@@ -899,13 +1012,17 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
     tool_joint_state_publisher_->msg_.name.push_back(joint_name);
   }
 
-  interface_publisher_->msg_.states.interface_names.resize(state_interfaces_.size());
-  interface_publisher_->msg_.states.values.resize(state_interfaces_.size());
-  interface_publisher_->msg_.commands.interface_names.resize(command_interfaces_.size());
-  interface_publisher_->msg_.commands.values.resize(command_interfaces_.size());
-  for (size_t i = 0; i < state_interfaces_.size(); ++i)
+  interface_publisher_->msg_.states.interface_names.reserve(state_if_ios_.size());
+  interface_publisher_->msg_.states.values.resize(state_if_ios_.size());
+  interface_publisher_->msg_.commands.interface_names.reserve(command_if_ios_.size());
+  interface_publisher_->msg_.commands.values.resize(command_if_ios_.size());
+  for (const auto & state_io : state_if_ios_)
   {
-    interface_publisher_->msg_.states.interface_names[i] = state_interfaces_[i].get_name();
+    interface_publisher_->msg_.states.interface_names.push_back(state_io);
+  }
+  for (const auto & command_io : command_if_ios_)
+  {
+    interface_publisher_->msg_.commands.interface_names.push_back(command_io);
   }
 
   controller_state_publisher_->msg_.state = current_state_;
@@ -930,18 +1047,17 @@ void GpioToolController::publish_topics(const rclcpp::Time & time)
     for (size_t i = 0; i < state_interfaces_.size(); ++i)
     {
       interface_publisher_->msg_.states.values.at(i) =
-        static_cast<float>(state_interfaces_.at(i).get_optional<double>().value_or(
-          std::numeric_limits<double>::quiet_NaN()));
-    }
-    for (size_t i = 0; i < command_interfaces_.size(); ++i)
-    {
-      interface_publisher_->msg_.commands.values.at(i) =
-        static_cast<float>(command_interfaces_.at(i).get_optional<double>().value_or(
-          std::numeric_limits<double>::quiet_NaN()));
-    }
+      static_cast<float>(state_interfaces_.at(i).get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN()));
+      }
+      for (size_t i = 0; i < command_interfaces_.size(); ++i)
+      {
+        interface_publisher_->msg_.commands.values.at(i) =
+          static_cast<float>(command_interfaces_.at(i).get_optional<double>().value_or(
+            std::numeric_limits<double>::quiet_NaN()));
+      }
     interface_publisher_->unlockAndPublish();
   }
-
   if (controller_state_publisher_ && controller_state_publisher_->trylock())
   {
     controller_state_publisher_->msg_.state = current_state_;
@@ -1045,30 +1161,30 @@ void GpioToolController::handle_action_accepted(
   }
 }
 
-void GpioToolController::check_tool_state(const rclcpp::Time & current_time)
+void GpioToolController::check_tool_state(const rclcpp::Time & current_time, const bool warning_output)
 {
   current_state_ = "";
-  check_tool_state_and_switch(current_time, disengaged_gpios_, joint_states_values_, 0, params_.disengaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_);
+  check_tool_state_and_switch(current_time, disengaged_gpios_, joint_states_values_, 0, params_.disengaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_, warning_output);
   if (current_state_.empty())
   {
-    check_tool_state_and_switch(current_time, engaged_gpios_, joint_states_values_, 0, params_.engaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_);
+    check_tool_state_and_switch(current_time, engaged_gpios_, joint_states_values_, 0, params_.engaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_, warning_output);
   }
   if (current_state_.empty())
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
-      "Tool state can not be determined, triggering CANCELING action sand HALTED transition.");
+      "Tool state can not be determined, triggering CANCELING action and HALTED transition.");
     current_tool_action_.store(ToolAction::CANCELING);
   }
 
   current_configuration_ = "";
-  check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration_);
+  check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration_, warning_output);
   if (current_configuration_.empty())
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Tool configuration can not be determined, triggering CANCELING action and HALTED transition.");
-    current_tool_action_.store(ToolAction::CANCELING);
+      current_tool_action_.store(ToolAction::CANCELING);
   }
 }
 
