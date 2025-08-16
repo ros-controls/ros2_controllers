@@ -1,0 +1,9 @@
+<class_libraries>
+    <library path="dummy_filter">
+        <class name="filters/IncrementFilterWrench" type="filters::IncrementFilter&lt;geometry_msgs::msg::WrenchStamped&gt;" base_class_type="filters::FilterBase&lt;geometry_msgs::msg::WrenchStamped&gt;">
+            <description>
+                This is a increment filter which works on a wrench message.
+            </description>
+        </class>
+    </library>
+</class_libraries>
