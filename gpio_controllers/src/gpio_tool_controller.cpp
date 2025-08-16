@@ -259,7 +259,7 @@ controller_interface::CallbackReturn GpioToolController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   state_change_start_ = get_node()->now();
-  check_tool_state(state_change_start_);
+  check_tool_state(state_change_start_, true);
   // TODO(denis): update ros2_control and then enable this in this version the interfaces are not released when controller fails to activate
   // if (current_state_.empty() || current_configuration_.empty())
   // {
