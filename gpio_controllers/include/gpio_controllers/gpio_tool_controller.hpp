@@ -132,33 +132,28 @@ protected:
   {
     std::vector<std::string> possible_states;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> set_before_commands;
-    std::unordered_map<std::string, size_t> set_before_commands_start_index;
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> set_before_states;
-    std::unordered_map<std::string, size_t> set_before_states_start_index;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_before_commands;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_before_states;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> commands;
-    std::unordered_map<std::string, size_t> commands_start_index;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> commands;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> states;
-    std::unordered_map<std::string, size_t> states_start_index;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> states;
     std::unordered_map<std::string, std::vector<double>> states_joint_states;
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> set_after_commands;
-    std::unordered_map<std::string, size_t> set_after_commands_start_index;
-    std::unordered_map<std::string, std::unordered_map<std::string, double>> set_after_states;
-    std::unordered_map<std::string, size_t> set_after_states_start_index;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_after_commands;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_after_states;
   };
 
   ToolTransitionIOs disengaged_gpios_;
   ToolTransitionIOs engaged_gpios_;
   ToolTransitionIOs reconfigure_gpios_;
 
+  // Not needed to be atomic or protected as used only in the RT loop
   rclcpp::Time state_change_start_;
   std::string current_configuration_;
   std::string current_state_;
 
-  std::unordered_set<std::string> command_if_ios;
-  std::unordered_set<std::string> state_if_ios;
+  std::unordered_set<std::string> command_if_ios_;
+  std::unordered_set<std::string> state_if_ios_;
 
   using EngagingSrvType = example_interfaces::srv::Trigger;
   using ResetSrvType = example_interfaces::srv::Trigger;
@@ -218,12 +213,13 @@ private:
     const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
     std::vector<double> & joint_states, const size_t joint_states_start_index,
     const std::string & output_prefix, const uint8_t next_transition,
-    std::string & found_state_name);
+    std::string & found_state_name, const bool warning_output = false);
 
   /**
    * @brief Prepares the command and state IOs.
+   * \returns true if successful, false otherwise. Check the output if error has happend.
    */
-  void prepare_command_and_state_ios();
+  bool prepare_command_and_state_ios();
 
   /**
    * @brief Prepares the publishers and services.
@@ -239,15 +235,14 @@ private:
   /**
    * @brief Checks the tools state.
    */
-  void check_tool_state(const rclcpp::Time & current_time);
+  void check_tool_state(const rclcpp::Time & current_time, const bool warning_output = false);
 
   bool set_commands(
-    const std::unordered_map<std::string, double> & commands,
-    const size_t start_index,
-    const std::string & transition_name,
+    const std::unordered_map<std::string, std::pair<double, size_t>> & commands,
+    const std::string & output_prefix,
     const uint8_t next_transition);
   bool check_states(
-    const rclcpp::Time & current_time, const std::unordered_map<std::string, double> & states, const size_t start_index, const std::string & transition_name, const uint8_t next_transition);
+    const rclcpp::Time & current_time, const std::unordered_map<std::string, std::pair<double, size_t>> & states, const std::string & output_prefix, const uint8_t next_transition, const bool warning_output = false);
 
   std::vector<std::string> configurations_list_;
   std::vector<gpio_tool_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;
