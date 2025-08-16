@@ -46,7 +46,7 @@ It follows the coordinate conventions defined in `ROS REP 103 <https://www.ros.o
 
 .. math::
 
-   θ = \frac{2\pi}{n}
+   \theta = \frac{2\pi}{n}
 
 **Inverse Kinematics**
 
@@ -423,8 +423,8 @@ The turning radius of the robot is
 Then the steering angles of the front wheels must satisfy these conditions to avoid skidding
 
 .. math::
-  \phi_{left} &= \arctan\left(\frac{l}{R_b - w_f/2}\right) &= \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) - w_f\sin(\phi)}\right)\\
-  \phi_{right} &= \arctan\left(\frac{l}{R_b + w_f/2}\right) &= \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) + w_f\sin(\phi)}\right)
+  \phi_{left} &= \arctan\left(\frac{l}{R_b - w_f/2}\right) = \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) - w_f\sin(\phi)}\right)\\
+  \phi_{right} &= \arctan\left(\frac{l}{R_b + w_f/2}\right) = \arctan\left(\frac{2l\sin(\phi)}{2l\cos(\phi) + w_f\sin(\phi)}\right)
 
 **Odometry**
 
