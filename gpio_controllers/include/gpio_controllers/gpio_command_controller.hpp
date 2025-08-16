@@ -100,6 +100,7 @@ protected:
 
   std::shared_ptr<rclcpp::Publisher<StateType>> gpio_state_publisher_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<StateType>> realtime_gpio_state_publisher_{};
+  StateType gpio_state_msg_;
 
   std::shared_ptr<gpio_command_controller_parameters::ParamListener> param_listener_{};
   gpio_command_controller_parameters::Params params_;
