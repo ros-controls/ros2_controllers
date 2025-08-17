@@ -127,11 +127,11 @@ InterfaceConfiguration SwerveController::state_interface_configuration() const
   std::vector<std::string> conf_names;
   conf_names.push_back(params_.front_left_wheel_joint + "/" + HW_IF_VELOCITY);
   conf_names.push_back(params_.front_right_wheel_joint + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(params_.rear_left_wheel_joint  + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(params_.rear_left_wheel_joint + "/" + HW_IF_VELOCITY);
   conf_names.push_back(params_.rear_right_wheel_joint + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(params_.front_left_axle_joint  + "/" + HW_IF_POSITION);
-  conf_names.push_back(params_.front_right_axle_joint  + "/" + HW_IF_POSITION);
-  conf_names.push_back(params_.rear_left_axle_joint  + "/" + HW_IF_POSITION);
+  conf_names.push_back(params_.front_left_axle_joint + "/" + HW_IF_POSITION);
+  conf_names.push_back(params_.front_right_axle_joint + "/" + HW_IF_POSITION);
+  conf_names.push_back(params_.rear_left_axle_joint + "/" + HW_IF_POSITION);
   conf_names.push_back(params_.rear_right_axle_joint + "/" + HW_IF_POSITION);
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
@@ -203,8 +203,8 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
     axle_joint_names[1] = params_.front_right_axle_joint;
     axle_joint_names[2] = params_.rear_left_axle_joint;
     axle_joint_names[3] = params_.rear_right_axle_joint;
-    cmd_vel_timeout_ = std::chrono::milliseconds(
-      static_cast<int>(params_.cmd_vel_timeout * 1000.0));
+    cmd_vel_timeout_ =
+      std::chrono::milliseconds(static_cast<int>(params_.cmd_vel_timeout * 1000.0));
     if (!reset())
     {
       return CallbackReturn::ERROR;

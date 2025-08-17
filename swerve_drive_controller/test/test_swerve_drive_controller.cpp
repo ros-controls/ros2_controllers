@@ -154,8 +154,8 @@ TEST_F(SwerveDriveControllerTest, test_on_init_success)
   SetUpController();
   RCLCPP_INFO(node_->get_logger(), "Calling on_init");
   auto result = controller_->on_init();
-  EXPECT_EQ(result, controller_interface::CallbackReturn::SUCCESS)
-    << "on_init returned " << static_cast<int>(result);
+  EXPECT_EQ(result, controller_interface::CallbackReturn::SUCCESS);
+  RCLCPP_INFO(node_->get_logger(), "on_init returned %d", static_cast<int>(result));
   RCLCPP_INFO(node_->get_logger(), "on_init completed with result: %d", static_cast<int>(result));
   init_successful_ = (result == controller_interface::CallbackReturn::SUCCESS);
 }
