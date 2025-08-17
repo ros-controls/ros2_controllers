@@ -23,12 +23,10 @@ Description of controller's interfaces
 Subscribers
 ,,,,,,,,,,,,
 
-If ``use_stamped_vel=true``:
-~/cmd_vel [geometry_msgs/msg/TwistStamped]  
+~/cmd_vel [geometry_msgs/msg/TwistStamped] (If ``use_stamped_vel=true``)
   Velocity command for the controller. The controller extracts the x and y component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
-If ``use_stamped_vel=false``:
-~/cmd_vel [geometry_msgs/msg/Twist]  
+~/cmd_vel [geometry_msgs/msg/Twist] (If ``use_stamped_vel=false``)
   Velocity command for the controller. The controller extracts the x and y component of the linear velocity and the z component of the angular velocity. Velocities on other components are ignored.
 
 Publishers
