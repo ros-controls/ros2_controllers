@@ -68,7 +68,6 @@ pluginlib_export_plugin_description_file(controller_interface swerve_drive_plugi
 if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ament_cmake_gmock REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gtest(test_swerve_drive_controller
