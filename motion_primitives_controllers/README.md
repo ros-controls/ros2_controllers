@@ -13,7 +13,7 @@ Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ)
 <a name="moprim_forward_controller"/>
 
 ## Command and State Interfaces
-Both controllers use the following command and state interfaces to transmit the motion primitives.
+TBoth controllers use the following command and state interfaces to transmit the motion primitives. All interfaces use the naming scheme `tf_prefix_ + "motion_primitive/<interface name>"` where the `tf_prefix` is provided to the controller as a parameter.
 
 ### Command Interfaces
 These interfaces are used to send motion primitive data to the hardware interface:
