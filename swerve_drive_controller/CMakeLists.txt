@@ -70,7 +70,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  ament_add_gtest(test_swerve_drive_controller
+  ament_add_gmock(test_swerve_drive_controller
     test/test_swerve_drive_controller.cpp
   )
 
