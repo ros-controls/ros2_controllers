@@ -14,7 +14,7 @@
 #ifndef TEST_SWERVE_DRIVE_CONTROLLER_HPP_
 #define TEST_SWERVE_DRIVE_CONTROLLER_HPP_
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <memory>
 #include <string>
