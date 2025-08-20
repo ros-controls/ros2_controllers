@@ -232,16 +232,16 @@ void Odometry::integrate(const double & dx, const double & dheading)
   if (fabs(dheading) < 1e-6)
   {
     // For very small dheading, approximate to linear motion
-    x_ = x_ + (dx * std::cos(heading_));
-    y_ = y_ + (dx * std::sin(heading_));
-    heading_ = heading_ + dheading;
+    x_ += (dx * std::cos(heading_));
+    y_ += (dx * std::sin(heading_));
+    heading_ += dheading;
   }
   else
   {
     const double heading_old = heading_;
-    heading_ = heading_ + dheading;
-    x_ = x_ + ((dx / dheading) * (std::sin(heading_) - std::sin(heading_old)));
-    y_ = y_ - (dx / dheading) * (std::cos(heading_) - std::cos(heading_old));
+    heading_ += dheading;
+    x_ += ((dx / dheading) * (std::sin(heading_) - std::sin(heading_old)));
+    y_ += -(dx / dheading) * (std::cos(heading_) - std::cos(heading_old));
   }
 }
 

@@ -40,23 +40,23 @@ public:
   [[deprecated]]
   void init(const rclcpp::Time & time);
   [[deprecated(
-    "Replaced by bool updateFromPos(const double & left_pos, const double & right_pos, const "
+    "Replaced by bool updateFromPos(const double left_pos, const double right_pos, const "
     "rclcpp::Time & time).")]]
   bool update(double left_pos, double right_pos, const rclcpp::Time & time);
   [[deprecated(
-    "Replaced by bool updateFromVel(const double & left_vel, const double & right_vel, const "
+    "Replaced by bool updateFromVel(const double left_vel, const double right_vel, const "
     "rclcpp::Time & time).")]]
   bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
   [[deprecated(
-    "Replaced by bool updateOpenLoop(const double & linear_vel, const double & angular_vel, const "
+    "Replaced by bool updateOpenLoop(const double linear_vel, const double angular_vel, const "
     "rclcpp::Time "
     "& time).")]]
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
 
-  bool updateFromPos(const double & left_pos, const double & right_pos, const rclcpp::Time & time);
-  bool updateFromVel(const double & left_vel, const double & right_vel, const rclcpp::Time & time);
+  bool updateFromPos(const double left_pos, const double right_pos, const rclcpp::Time & time);
+  bool updateFromVel(const double left_vel, const double right_vel, const rclcpp::Time & time);
   bool tryUpdateOpenLoop(
-    const double & linear_vel, const double & angular_vel, const rclcpp::Time & time);
+    const double linear_vel, const double angular_vel, const rclcpp::Time & time);
   void resetOdometry();
 
   double getX() const { return x_; }
@@ -81,7 +81,7 @@ private:
   [[deprecated("Replaced by void integrate(const double & dx, const double & dheading).")]]
   void integrateExact(double linear, double angular);
 
-  void integrate(const double & dx, const double & dheading);
+  void integrate(const double dx, const double dheading);
   void resetAccumulators();
 
   // Current timestamp:
