@@ -48,7 +48,7 @@ public:
     "rclcpp::Time & time).")]]
   bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
   [[deprecated(
-    "Replaced by bool updateOpenLoop(const double linear_vel, const double angular_vel, const "
+    "Replaced by bool tryUpdateOpenLoop(const double linear_vel, const double angular_vel, const "
     "rclcpp::Time "
     "& time).")]]
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
