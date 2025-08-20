@@ -131,8 +131,8 @@ bool Odometry::updateFromVel(
   const double dt = time.seconds() - timestamp_.seconds();
 
   // Compute linear and angular velocities of the robot:
-  const double linear_vel = (left_vel + right_vel) * 0.5;
-  const double angular_vel = (right_vel - left_vel) / wheel_separation_;
+  const double linear_vel = (left_vel*left_wheel_radius_ + right_vel*right_wheel_radius_) * 0.5;
+  const double angular_vel = (right_vel*right_wheel_radius_ - left_vel*left_wheel_radius_) / wheel_separation_;
 
   // Integrate odometry:
   integrate(linear_vel * dt, angular_vel * dt);
