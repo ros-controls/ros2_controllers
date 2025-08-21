@@ -79,6 +79,9 @@ controller_interface::CallbackReturn MotionPrimitivesFromTrajectoryController::o
   epsilon_joint_angle_ = params_.epsilon_joint_angle;
   epsilon_cart_position_ = params_.epsilon_cart_position;
   epsilon_cart_angle_ = params_.epsilon_cart_angle;
+  blend_radius_percentage_ = params_.blend_radius_percentage;
+  blend_radius_lower_limit_ = params_.blend_radius_lower_limit;
+  blend_radius_upper_limit_ = params_.blend_radius_upper_limit;
   joint_vel_overwrite_ = params_.joint_vel_overwrite;
   joint_acc_overwrite_ = params_.joint_acc_overwrite;
   cart_vel_overwrite_ = params_.cart_vel_overwrite;
@@ -402,7 +405,8 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       }
       motion_sequence = approxPtpPrimitivesWithRDP(
         planned_trajectory_data, epsilon_joint_angle_, max_traj_joint_vel_, max_traj_joint_acc_,
-        use_time_not_vel_and_acc_, blend_radius_overwrite_);
+        use_time_not_vel_and_acc_, blend_radius_overwrite_, blend_radius_percentage_,
+        blend_radius_lower_limit_, blend_radius_upper_limit_);
       break;
     }
     case ApproxMode::RDP_LIN:
@@ -429,7 +433,8 @@ void MotionPrimitivesFromTrajectoryController::goal_accepted_callback(
       }
       motion_sequence = approxLinPrimitivesWithRDP(
         planned_trajectory_data, epsilon_cart_position_, epsilon_cart_angle_, max_traj_cart_vel_,
-        max_traj_cart_acc_, use_time_not_vel_and_acc_, blend_radius_overwrite_);
+        max_traj_cart_acc_, use_time_not_vel_and_acc_, blend_radius_overwrite_,
+        blend_radius_percentage_, blend_radius_lower_limit_, blend_radius_upper_limit_);
       break;
     }
     default:

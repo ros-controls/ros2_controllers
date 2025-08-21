@@ -48,6 +48,24 @@ motion_primitives_from_trajectory_controller:
     description: "Epsilon for RDP simplification in Cartesian space (orientation angle threshold).",
     read_only: false
   }
+  blend_radius_percentage: {
+    type: double,
+    default_value: 0.1,
+    description: "Relative blend radius (percentage of the smaller distance to the previous or next point).",
+    read_only: false
+  }
+  blend_radius_lower_limit: {
+    type: double,
+    default_value: 0.01,
+    description: "Lower limit for the blend radius in meters.",
+    read_only: false
+  }
+  blend_radius_upper_limit: {
+    type: double,
+    default_value: 0.1,
+    description: "Upper limit for the blend radius in meters.",
+    read_only: false
+  }
   blend_radius_overwrite: {
     type: double,
     default_value: -1.0,

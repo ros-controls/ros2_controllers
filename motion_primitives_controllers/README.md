@@ -91,7 +91,11 @@ The approximation mode can be selected via the `approximate_mode` parameter, wit
 
 The `use_time_not_vel_and_acc` parameter determines whether motion duration is calculated based on time stamps or if velocity and acceleration values are used instead. For PTP primitives, joint velocity and acceleration are taken as the maximum values from the original trajectory. For LIN primitives, Cartesian velocity and acceleration are estimated numerically from the end-effector path.
 
-A blending radius is also calculated automatically, based on the distance to neighboring target points, and clamped between 0.01 m and 0.1 m.
+The blend radius is automatically computed based on the smaller of the distances to the previous and next target points, scaled by a user-configurable blend_radius_percentage. The resulting value is then clamped between a lower and upper limit, specified by blend_radius_lower_clamp and blend_radius_upper_clamp.
+All three parameters can be configured by the user:
+- blend_radius_percentage (default: 0.1) – relative scale factor applied to the smaller neighboring distance
+- blend_radius_lower_clamp (default: 0.01 m) – minimum allowable blend radius
+- blend_radius_upper_clamp (default: 0.1 m) – maximum allowable blend radius
 
 Alternatively, users can override velocity, acceleration, and blend radius values with the following parameters:
 - PTP: `joint_vel_overwrite`, `joint_acc_overwrite`

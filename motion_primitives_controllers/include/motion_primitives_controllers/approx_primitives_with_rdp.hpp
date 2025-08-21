@@ -41,16 +41,19 @@ struct PlannedTrajectoryPoint
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon_position,
   double epsilon_angle, double cart_vel, double cart_acc, bool use_time_not_vel_and_acc = false,
-  double blend_overwrite = -1.0);
+  double blend_overwrite = -1.0, double blend_scale = 0.1, double blend_lower_limit = 0.0,
+  double blend_upper_limit = 1.0);
 
 // Approximate with PTP Primitives in Joint Space
 MotionSequence approxPtpPrimitivesWithRDP(
   const std::vector<PlannedTrajectoryPoint> & trajectory, double epsilon, double joint_vel,
-  double joint_acc, bool use_time_not_vel_and_acc = false, double blend_overwrite = -1.0);
+  double joint_acc, bool use_time_not_vel_and_acc = false, double blend_overwrite = -1.0,
+  double blend_scale = 0.1, double blend_lower_limit = 0.0, double blend_upper_limit = 1.0);
 
 double calculateBlendRadius(
   const rdp::Point & previous_point, const rdp::Point & current_point,
-  const rdp::Point & next_point);
+  const rdp::Point & next_point, double blend_scale, double blend_lower_limit,
+  double blend_upper_limit);
 }  // namespace approx_primitives_with_rdp
 
 #endif  // MOTION_PRIMITIVES_CONTROLLERS__APPROX_PRIMITIVES_WITH_RDP_HPP_

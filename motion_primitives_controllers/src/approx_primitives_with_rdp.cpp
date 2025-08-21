@@ -32,7 +32,8 @@ namespace approx_primitives_with_rdp
 MotionSequence approxLinPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
   double epsilon_position, double epsilon_angle, double cart_vel, double cart_acc,
-  bool use_time_not_vel_and_acc, double blend_overwrite)
+  bool use_time_not_vel_and_acc, double blend_overwrite, double blend_scale,
+  double blend_lower_limit, double blend_upper_limit)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -128,8 +129,9 @@ MotionSequence approxLinPrimitivesWithRDP(
         const auto & p0 = trajectory[start_index].pose.position;
         const auto & p1 = trajectory[end_index].pose.position;
         const auto & p2 = trajectory[sorted_final_indices[i + 1]].pose.position;
-        primitive.blend_radius =
-          calculateBlendRadius({p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, {p2.x, p2.y, p2.z});
+        primitive.blend_radius = calculateBlendRadius(
+          {p0.x, p0.y, p0.z}, {p1.x, p1.y, p1.z}, {p2.x, p2.y, p2.z}, blend_scale,
+          blend_lower_limit, blend_upper_limit);
       }
     }
 
@@ -198,7 +200,7 @@ MotionSequence approxLinPrimitivesWithRDP(
 MotionSequence approxPtpPrimitivesWithRDP(
   const std::vector<approx_primitives_with_rdp::PlannedTrajectoryPoint> & trajectory,
   double epsilon, double joint_vel, double joint_acc, bool use_time_not_vel_and_acc,
-  double blend_overwrite)
+  double blend_overwrite, double blend_scale, double blend_lower_limit, double blend_upper_limit)
 {
   MotionSequence motion_sequence;
   std::vector<MotionPrimitive> motion_primitives;
@@ -252,7 +254,8 @@ MotionSequence approxPtpPrimitivesWithRDP(
         rdp::Point next_xyz = {
           trajectory[next_index].pose.position.x, trajectory[next_index].pose.position.y,
           trajectory[next_index].pose.position.z};
-        primitive.blend_radius = calculateBlendRadius(prev_xyz, curr_xyz, next_xyz);
+        primitive.blend_radius = calculateBlendRadius(
+          prev_xyz, curr_xyz, next_xyz, blend_scale, blend_lower_limit, blend_upper_limit);
       }
     }
 
@@ -319,8 +322,16 @@ MotionSequence approxPtpPrimitivesWithRDP(
 
 double calculateBlendRadius(
   const rdp::Point & previous_point, const rdp::Point & current_point,
-  const rdp::Point & next_point)
+  const rdp::Point & next_point, const double blend_scale, const double blend_lower_limit,
+  const double blend_upper_limit)
 {
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("approx_primitives_with_rdp"),
+    "[calculateBlendRadius] Calculating blend radius with scale %.2f, lower limit %.2f, upper "
+    "limit "
+    "%.2f",
+    blend_scale, blend_lower_limit, blend_upper_limit);
+
   double dist_prev = std::sqrt(
     std::pow(current_point[0] - previous_point[0], 2) +
     std::pow(current_point[1] - previous_point[1], 2) +
@@ -331,16 +342,16 @@ double calculateBlendRadius(
     std::pow(next_point[2] - current_point[2], 2));
 
   double min_dist = std::min(dist_prev, dist_next);
-  double blend = 0.1 * min_dist;
+  double blend = blend_scale * min_dist;
 
-  // Clamp blend radius to [0.01, 0.1]
-  if (blend < 0.01)
+  // Clamp blend radius to [blend_lower_limit, blend_upper_limit]
+  if (blend < blend_lower_limit)
   {
-    blend = 0.01;
+    blend = blend_lower_limit;
   }
-  else if (blend > 0.1)
+  else if (blend > blend_upper_limit)
   {
-    blend = 0.1;
+    blend = blend_upper_limit;
   }
 
   return blend;

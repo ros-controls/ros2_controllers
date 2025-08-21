@@ -80,6 +80,9 @@ protected:
   double epsilon_cart_position_;
   double epsilon_cart_angle_;
 
+  double blend_radius_percentage_;
+  double blend_radius_lower_limit_;
+  double blend_radius_upper_limit_;
   double blend_radius_overwrite_;
 
   double joint_vel_overwrite_;
