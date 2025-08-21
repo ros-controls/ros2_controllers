@@ -84,7 +84,7 @@ public:
     const double v_bx, const double omega_bz, const bool open_loop = true,
     const bool reduce_wheel_speed_until_steering_reached = false) = 0;
 
-   /**
+  /**
    * @brief Update all joint states at once.
    * @param all_states Vector containing all measured joint states (traction first, then steering).
    */
@@ -108,6 +108,6 @@ protected:
   std::unordered_map<std::string, double> states;
 };
 
-}  // namespace generic_steering_controller
+}  // namespace kinematic_model
 
 #endif  // GENERIC_STEERING_CONTROLLER__KINEMATIC_MODEL_BASE_HPP_

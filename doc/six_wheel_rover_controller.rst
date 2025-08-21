@@ -131,4 +131,3 @@ Example Configuration
        # ---- ODOMETRY CONFIGURATION ----
        odom_frame_id: "odom"
        base_frame_id: "base_link"
-

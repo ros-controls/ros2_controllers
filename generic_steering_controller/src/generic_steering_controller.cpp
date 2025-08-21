@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
 #include "generic_steering_controller/generic_steering_controller.hpp"
+#include <memory>
 
 #include <limits>
 #include <memory>
@@ -21,9 +21,9 @@
 #include <utility>
 #include <vector>
 
+#include <pluginlib/class_list_macros.hpp>
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include <pluginlib/class_list_macros.hpp>
 
 namespace
 {  // utility
@@ -55,11 +55,14 @@ GenericSteeringController::GenericSteeringController()
 
 controller_interface::CallbackReturn GenericSteeringController::on_init()
 {
-  try {
+  try
+  {
     param_listener_ =
       std::make_shared<generic_steering_controller_parameters::ParamListener>(get_node());
     initialize_implementation_parameter_listener();
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(stderr, "Exception thrown during controller's init with message: %s \n", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -81,11 +84,13 @@ controller_interface::CallbackReturn GenericSteeringController::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (params_.traction_joints_names.empty()) {
+  if (params_.traction_joints_names.empty())
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "No traction joints specified!");
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (params_.steering_joints_names.empty()) {
+  if (params_.steering_joints_names.empty())
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "No steering joints specified!");
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -106,11 +111,14 @@ controller_interface::CallbackReturn GenericSteeringController::on_configure(
   reset_controller_reference_msg(current_ref_, get_node());
   input_ref_.set(current_ref_);
 
-  try {
+  try
+  {
     odom_s_publisher_ = get_node()->create_publisher<ControllerStateMsgOdom>(
-    "~/odometry", rclcpp::SystemDefaultsQoS());
+      "~/odometry", rclcpp::SystemDefaultsQoS());
     rt_odom_state_publisher_ = std::make_unique<ControllerStatePublisherOdom>(odom_s_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -126,21 +134,24 @@ controller_interface::CallbackReturn GenericSteeringController::on_configure(
 
   auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
-  for (size_t index = 0; index < 6; ++index) {
+  for (size_t index = 0; index < 6; ++index)
+  {
     // 0, 7, 14, 21, 28, 35
     const size_t diagonal_index = NUM_DIMENSIONS * index + index;
     covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
     covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
 
-
-  try {
+  try
+  {
     // Tf State publisher
     tf_odom_s_publisher_ = get_node()->create_publisher<ControllerStateMsgTf>(
       "~/tf_odometry", rclcpp::SystemDefaultsQoS());
     rt_tf_odom_state_publisher_ =
       std::make_unique<ControllerStatePublisherTf>(tf_odom_s_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -155,13 +166,16 @@ controller_interface::CallbackReturn GenericSteeringController::on_configure(
   rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
   rt_tf_odom_state_publisher_->unlock();
 
-  try {
+  try
+  {
     // State publisher
     controller_s_publisher_ = get_node()->create_publisher<GenericSteeringControllerStateMsg>(
       "~/controller_state", rclcpp::SystemDefaultsQoS());
     controller_state_publisher_ =
       std::make_unique<ControllerStatePublisher>(controller_s_publisher_);
-  } catch (const std::exception & e) {
+  }
+  catch (const std::exception & e)
+  {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
@@ -173,33 +187,34 @@ controller_interface::CallbackReturn GenericSteeringController::on_configure(
   controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
   controller_state_publisher_->unlock();
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
-  size_t total_state_interfaces = traction_joints_state_names_.size() +
-    steering_joints_state_names_.size();
-  size_t total_command_interfaces = params_.traction_joints_names.size() +
-    params_.steering_joints_names.size();
+  size_t total_state_interfaces =
+    traction_joints_state_names_.size() + steering_joints_state_names_.size();
+  size_t total_command_interfaces =
+    params_.traction_joints_names.size() + params_.steering_joints_names.size();
 
   set_interface_numbers(total_state_interfaces, total_command_interfaces, 2);
   open_loop_ = params_.open_loop;
-  try {
+  try
+  {
     kinematic_model_ = kinematic_loader.createSharedInstance(params_.plugin_name);
     kinematic_model_->configure(
-    std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(get_node()),
-    params_.traction_joints_names,
-    params_.steering_joints_names
-    );
-  } catch (const std::exception & e) {
+      std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(get_node()),
+      params_.traction_joints_names, params_.steering_joints_names);
+  }
+  catch (const std::exception & e)
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to load kinematic plugin: %s", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
   return controller_interface::CallbackReturn::SUCCESS;
-
 }
 
 void GenericSteeringController::reference_callback(
   const std::shared_ptr<ControllerTwistReferenceMsg> msg)
 {
-  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u) {
+  if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0u)
+  {
     RCLCPP_WARN(
       get_node()->get_logger(),
       "Timestamp in header is missing, using current time as command timestamp.");
@@ -207,9 +222,12 @@ void GenericSteeringController::reference_callback(
   }
   const auto age_of_last_command = get_node()->now() - msg->header.stamp;
 
-  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_) {
+  if (ref_timeout_ == rclcpp::Duration::from_seconds(0) || age_of_last_command <= ref_timeout_)
+  {
     input_ref_.set(*msg);
-  } else {
+  }
+  else
+  {
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Received message has timestamp %.10f older for %.10f which is more then allowed timeout "
@@ -225,17 +243,18 @@ GenericSteeringController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration command_interfaces_config;
   command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   command_interfaces_config.names.reserve(nr_cmd_itfs_);
-  for (size_t i = 0; i < params_.traction_joints_names.size(); i++) {
+  for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
+  {
     command_interfaces_config.names.push_back(
       params_.traction_joints_names[i] + "/" + hardware_interface::HW_IF_VELOCITY);
   }
 
-  for (size_t i = 0; i < params_.steering_joints_names.size(); i++) {
+  for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
+  {
     command_interfaces_config.names.push_back(
       params_.steering_joints_names[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
   return command_interfaces_config;
-
 }
 
 controller_interface::InterfaceConfiguration
@@ -246,17 +265,19 @@ GenericSteeringController::state_interface_configuration() const
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(nr_state_itfs_);
-  const auto traction_wheels_feedback = params_.position_feedback ?
-    hardware_interface::HW_IF_POSITION :
-    hardware_interface::HW_IF_VELOCITY;
+  const auto traction_wheels_feedback = params_.position_feedback
+                                          ? hardware_interface::HW_IF_POSITION
+                                          : hardware_interface::HW_IF_VELOCITY;
 
-  for (size_t i = 0; i < traction_joints_state_names_.size(); i++) {
+  for (size_t i = 0; i < traction_joints_state_names_.size(); i++)
+  {
     state_interfaces_config.names.push_back(
       traction_joints_state_names_[i] + "/" + traction_wheels_feedback);
   }
 
   // Add steering joint interfaces
-  for (size_t i = 0; i < steering_joints_state_names_.size(); ++i) {
+  for (size_t i = 0; i < steering_joints_state_names_.size(); ++i)
+  {
     state_interfaces_config.names.push_back(
       steering_joints_state_names_[i] + "/" + hardware_interface::HW_IF_POSITION);
   }
@@ -288,7 +309,7 @@ GenericSteeringController::on_export_reference_interfaces()
   return reference_interfaces;
 }
 
-bool GenericSteeringController::on_set_chained_mode(bool /*chained_mode*/) {return true;}
+bool GenericSteeringController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 controller_interface::CallbackReturn GenericSteeringController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
@@ -298,9 +319,12 @@ controller_interface::CallbackReturn GenericSteeringController::on_activate(
   input_ref_.try_set(current_ref_);
 
   // Set all command interfaces to NaN for safety
-  for (auto & command_interface : command_interfaces_) {
-    if (!command_interface.set_value(std::numeric_limits<double>::quiet_NaN())) {
-      RCLCPP_WARN(get_node()->get_logger(),
+  for (auto & command_interface : command_interfaces_)
+  {
+    if (!command_interface.set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
         "Failed to set NaN value for command interface '%s' during activation.",
         command_interface.get_name().c_str());
     }
@@ -314,9 +338,12 @@ controller_interface::CallbackReturn GenericSteeringController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // Set all command interfaces to NaN for safety
-  for (auto & command_interface : command_interfaces_) {
-    if (!command_interface.set_value(std::numeric_limits<double>::quiet_NaN())) {
-      RCLCPP_WARN(get_node()->get_logger(),
+  for (auto & command_interface : command_interfaces_)
+  {
+    if (!command_interface.set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
         "Failed to set NaN value for command interface '%s' during deactivation.",
         command_interface.get_name().c_str());
     }
@@ -330,24 +357,31 @@ controller_interface::return_type GenericSteeringController::update_reference_fr
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto current_ref_msg = input_ref_.try_get();
-  if (current_ref_msg.has_value()) {
+  if (current_ref_msg.has_value())
+  {
     current_ref_ = current_ref_msg.value();
   }
   const auto age_of_last_command = time - current_ref_.header.stamp;
 
-  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0)) {
-    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y)) {
+  if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
+  {
+    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y))
+    {
       reference_interfaces_[0] = current_ref_.twist.linear.x;
       reference_interfaces_[1] = current_ref_.twist.angular.z;
 
-      if (ref_timeout_ == rclcpp::Duration::from_seconds(0)) {
+      if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
+      {
         current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
         current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
         input_ref_.try_set(current_ref_);
       }
     }
-  } else {
-    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.angular.z)) {
+  }
+  else
+  {
+    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.angular.z))
+    {
       reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
       reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
 
@@ -364,44 +398,57 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   // Check kinematic plugin
-  if (!kinematic_model_) {
+  if (!kinematic_model_)
+  {
     RCLCPP_ERROR(get_node()->get_logger(), "Kinematic model plugin is not loaded!");
     return controller_interface::return_type::ERROR;
   }
 
   // Update kinematic model states if not open loop
-  if (!open_loop_) {
+  if (!open_loop_)
+  {
     state_map = get_state_interface_map();
     kinematic_model_->update_states(state_map);
   }
 
   // If reference is valid, compute and send commands
-  if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1])) {
+  if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
+  {
     auto [traction_commands, steering_commands] = kinematic_model_->get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
 
     // Write traction commands
-    for (size_t i = 0; i < params_.traction_joints_names.size(); i++) {
-      if (!command_interfaces_[i].set_value(traction_commands[i])) {
-        RCLCPP_WARN(get_node()->get_logger(),
-          "Unable to set traction command at index %zu: value = %f", i, traction_commands[i]);
+    for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
+    {
+      if (!command_interfaces_[i].set_value(traction_commands[i]))
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Unable to set traction command at index %zu: value = %f", i,
+          traction_commands[i]);
       }
     }
     // Write steering commands
-    for (size_t i = 0; i < params_.steering_joints_names.size(); i++) {
+    for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
+    {
       size_t idx = i + params_.traction_joints_names.size();
-      if (!command_interfaces_[idx].set_value(steering_commands[i])) {
-        RCLCPP_WARN(get_node()->get_logger(),
-          "Unable to set steering command at index %zu: value = %f", i, steering_commands[i]);
+      if (!command_interfaces_[idx].set_value(steering_commands[i]))
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Unable to set steering command at index %zu: value = %f", i,
+          steering_commands[i]);
       }
     }
-  } else {
+  }
+  else
+  {
     // Reference is invalid: zero traction commands
-    for (size_t i = 0; i < params_.traction_joints_names.size(); i++) {
-      if (!command_interfaces_[i].set_value(0.0)) {
-        RCLCPP_WARN(get_node()->get_logger(),
-          "Unable to set traction command to zero at index %zu", i);
+    for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
+    {
+      if (!command_interfaces_[i].set_value(0.0))
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Unable to set traction command to zero at index %zu", i);
       }
     }
     // Optionally zero steering commands (uncomment if desired)
@@ -415,7 +462,8 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
   }
 
   // Publish controller state message
-  if (controller_state_publisher_->trylock()) {
+  if (controller_state_publisher_->trylock())
+  {
     controller_state_publisher_->msg_.header.stamp = time;
     controller_state_publisher_->msg_.traction_wheels_position.clear();
     controller_state_publisher_->msg_.traction_wheels_velocity.clear();
@@ -427,36 +475,46 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
     auto number_of_steering_wheels = params_.steering_joints_names.size();
 
     // Read state interfaces using get_optional and log missing values
-    for (size_t i = 0; i < number_of_traction_wheels; ++i) {
+    for (size_t i = 0; i < number_of_traction_wheels; ++i)
+    {
       auto value_op = state_interfaces_[i].get_optional();
-      if (params_.position_feedback) {
-        controller_state_publisher_->msg_.traction_wheels_position.push_back(value_op.value_or(
-            0.0));
-      } else {
-        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(value_op.value_or(
-            0.0));
+      if (params_.position_feedback)
+      {
+        controller_state_publisher_->msg_.traction_wheels_position.push_back(
+          value_op.value_or(0.0));
       }
-      if (!value_op.has_value()) {
-        RCLCPP_DEBUG(get_node()->get_logger(),
-          "Unable to retrieve %s feedback data for traction wheel %zu",
+      else
+      {
+        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
+          value_op.value_or(0.0));
+      }
+      if (!value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "Unable to retrieve %s feedback data for traction wheel %zu",
           params_.position_feedback ? "position" : "velocity", i);
       }
     }
 
-    for (size_t i = 0; i < number_of_steering_wheels; ++i) {
+    for (size_t i = 0; i < number_of_steering_wheels; ++i)
+    {
       size_t steering_base_index = number_of_traction_wheels;
       auto steer_state_op = state_interfaces_[steering_base_index + i].get_optional();
       controller_state_publisher_->msg_.steer_positions.push_back(steer_state_op.value_or(0.0));
-      if (!steer_state_op.has_value()) {
-        RCLCPP_DEBUG(get_node()->get_logger(),
+      if (!steer_state_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(),
           "Unable to retrieve position feedback data for steering wheel %zu", i);
       }
 
       auto steer_cmd_op = command_interfaces_[number_of_traction_wheels + i].get_optional();
-      controller_state_publisher_->msg_.steering_angle_command.push_back(steer_cmd_op.value_or(
-          0.0));
-      if (!steer_cmd_op.has_value()) {
-        RCLCPP_DEBUG(get_node()->get_logger(),
+      controller_state_publisher_->msg_.steering_angle_command.push_back(
+        steer_cmd_op.value_or(0.0));
+      if (!steer_cmd_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(),
           "Unable to retrieve command interface value for steering wheel %zu", i);
       }
     }
@@ -474,13 +532,15 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, yaw);
 
-  if (rt_odom_state_publisher_->trylock()) {
+  if (rt_odom_state_publisher_->trylock())
+  {
     rt_odom_state_publisher_->msg_.header = odom_msg->header;
     rt_odom_state_publisher_->msg_.pose = odom_msg->pose;
     rt_odom_state_publisher_->unlockAndPublish();
   }
 
-  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock()) {
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
+  {
     rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
     rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x =
       odom_msg->pose.pose.position.x;
@@ -500,11 +560,10 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
 
 void GenericSteeringController::initialize_implementation_parameter_listener()
 {
-
   RCLCPP_DEBUG(get_node()->get_logger(), "Generic steering controller parameters initialized");
 }
 
-}
+}  // namespace generic_steering_controller
 
 #include "pluginlib/class_list_macros.hpp"
 

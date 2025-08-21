@@ -23,15 +23,15 @@
 #include <utility>
 #include <vector>
 
+#include "generic_steering_controller/generic_steering_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/time.hpp"
-#include "rclcpp_lifecycle/state.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "generic_steering_controller/generic_steering_controller.hpp"
-#include "pluginlib/class_list_macros.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 
 using ControllerStateMsg =
   generic_steering_controller::GenericSteeringController::GenericSteeringControllerStateMsg;
@@ -65,12 +65,12 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 // subclassing and friending so we can access member variables
 class TestableGenericSteeringController
-  : public generic_steering_controller::GenericSteeringController
+: public generic_steering_controller::GenericSteeringController
 {
   FRIEND_TEST(GenericSteeringControllerTest, check_exported_interfaces);
   FRIEND_TEST(GenericSteeringControllerTest, CommandTimeoutSetsZeroVelocity);
-//  FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
-//  FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+  //  FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
+  //  FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -96,7 +96,8 @@ public:
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
     auto until = get_node()->get_clock()->now() + timeout;
-    while (get_node()->get_clock()->now() < until) {
+    while (get_node()->get_clock()->now() < until)
+    {
       executor.spin_some();
       std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
@@ -118,7 +119,7 @@ public:
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
-template<typename CtrlType>
+template <typename CtrlType>
 class GenericSteeringControllerFixture : public ::testing::Test
 {
 public:
@@ -126,51 +127,54 @@ public:
 
   void SetUp()
   {
-  // initialize controller
+    // initialize controller
     controller_ = std::make_unique<CtrlType>();
 
-  // Create the node for parameters (this is just for publishing commands)
+    // Create the node for parameters (this is just for publishing commands)
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
 
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-    "/test_generic_steering_controller/reference", rclcpp::SystemDefaultsQoS());
+      "/test_generic_steering_controller/reference", rclcpp::SystemDefaultsQoS());
   }
 
   void SetUpController(const std::string controller_name = "test_generic_steering_controller")
   {
     ASSERT_EQ(
-    controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
-    controller_interface::return_type::OK);
+      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_interface::return_type::OK);
 
-  // No parameter setting! Use YAML defaults.
+    // No parameter setting! Use YAML defaults.
 
-    if (position_feedback_ == true) {
+    if (position_feedback_ == true)
+    {
       traction_interface_name_ = "position";
-    } else {
+    }
+    else
+    {
       traction_interface_name_ = "velocity";
     }
 
-  // Manually create interfaces using test fixture values
+    // Manually create interfaces using test fixture values
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(
-    hardware_interface::CommandInterface(
-      traction_joints_names_[0], traction_interface_name_,
-      &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+      hardware_interface::CommandInterface(
+        traction_joints_names_[0], traction_interface_name_,
+        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(
-    hardware_interface::CommandInterface(
-      traction_joints_names_[1], traction_interface_name_,
-      &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+      hardware_interface::CommandInterface(
+        traction_joints_names_[1], traction_interface_name_,
+        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     command_itfs_.emplace_back(
-    hardware_interface::CommandInterface(
-      steering_joints_names_[0], steering_interface_name_,
-      &joint_command_values_[CMD_STEER_WHEEL]));
+      hardware_interface::CommandInterface(
+        steering_joints_names_[0], steering_interface_name_,
+        &joint_command_values_[CMD_STEER_WHEEL]));
     command_ifs.emplace_back(command_itfs_.back());
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -178,23 +182,22 @@ public:
     state_ifs.reserve(joint_state_values_.size());
 
     state_itfs_.emplace_back(
-    hardware_interface::StateInterface(
-      traction_joints_names_[0], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+      hardware_interface::StateInterface(
+        traction_joints_names_[0], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(
-    hardware_interface::StateInterface(
-      traction_joints_names_[1], traction_interface_name_,
-      &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+      hardware_interface::StateInterface(
+        traction_joints_names_[1], traction_interface_name_,
+        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
 
     state_itfs_.emplace_back(
-    hardware_interface::StateInterface(
-      steering_joints_names_[0], steering_interface_name_,
-      &joint_state_values_[STATE_STEER_WHEEL]));
+      hardware_interface::StateInterface(
+        steering_joints_names_[0], steering_interface_name_,
+        &joint_state_values_[STATE_STEER_WHEEL]));
     state_ifs.emplace_back(state_itfs_.back());
-
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -203,7 +206,7 @@ public:
     // create a new subscriber
     ControllerStateMsg::SharedPtr received_msg;
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) {received_msg = cb_msg;};
+    auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
       "/test_generic_steering_controller/controller_state", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
@@ -216,21 +219,24 @@ public:
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
     int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-    while (max_sub_check_loop_count--) {
+    while (max_sub_check_loop_count--)
+    {
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
       const auto timeout = std::chrono::milliseconds{5};
       const auto until = test_subscription_node.get_clock()->now() + timeout;
-      while (!received_msg && test_subscription_node.get_clock()->now() < until) {
+      while (!received_msg && test_subscription_node.get_clock()->now() < until)
+      {
         executor.spin_some();
         std::this_thread::sleep_for(std::chrono::microseconds(10));
       }
       // check if message has been received
-      if (received_msg.get()) {
+      if (received_msg.get())
+      {
         break;
       }
     }
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-      "controller/broadcaster update loop";
+                                              "controller/broadcaster update loop";
     ASSERT_TRUE(received_msg);
 
     // take message from subscription
@@ -240,18 +246,20 @@ public:
   void publish_commands(const double linear = 0.1, const double angular = 0.2)
   {
     auto wait_for_topic = [&](const auto topic_name)
+    {
+      size_t wait_count = 0;
+      while (command_publisher_node_->count_subscribers(topic_name) == 0)
       {
-        size_t wait_count = 0;
-        while (command_publisher_node_->count_subscribers(topic_name) == 0) {
-          if (wait_count >= 5) {
-            auto error_msg =
-              std::string("publishing to ") + topic_name + " but no node subscribes to it";
-            throw std::runtime_error(error_msg);
-          }
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          ++wait_count;
+        if (wait_count >= 5)
+        {
+          auto error_msg =
+            std::string("publishing to ") + topic_name + " but no node subscribes to it";
+          throw std::runtime_error(error_msg);
         }
-      };
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        ++wait_count;
+      }
+    };
 
     wait_for_topic(command_publisher_->get_topic_name());
 
@@ -268,10 +276,8 @@ protected:
   bool open_loop_ = false;
   unsigned int velocity_rolling_window_size_ = 10;
   bool position_feedback_ = false;
-  std::vector<std::string> traction_joints_names_ = {
-    "left_wheel_joint", "right_wheel_joint"};
-  std::vector<std::string> steering_joints_names_ = {
-    "steering_joint"};
+  std::vector<std::string> traction_joints_names_ = {"left_wheel_joint", "right_wheel_joint"};
+  std::vector<std::string> steering_joints_names_ = {"steering_joint"};
   std::vector<std::string> joint_names_ = {
     traction_joints_names_[0], traction_joints_names_[1], steering_joints_names_[0]};
 

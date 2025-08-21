@@ -16,10 +16,10 @@
 #define GENERIC_STEERING_CONTROLLER__GENERIC_STEERING_CONTROLLER_HPP_
 
 // C++ Standard Library
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
-#include <chrono>
 
 // ros2_control and controller_interface
 #include "controller_interface/chainable_controller_interface.hpp"
@@ -28,25 +28,23 @@
 // pluginlib
 #include "pluginlib/class_loader.hpp"
 
-
-#include "nav_msgs/msg/odometry.hpp"
-#include "tf2_msgs/msg/tf_message.hpp"
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "control_msgs/msg/steering_controller_status.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <tf2/LinearMath/Matrix3x3.hpp>
-
+#include "nav_msgs/msg/odometry.hpp"
+#include "tf2_msgs/msg/tf_message.hpp"
 
 // rclcpp and realtime_tools
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_box.hpp"
+#include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_thread_safe_box.hpp"
 // Project-specific
-#include "generic_steering_controller/kinematic_model_base.hpp"
 #include "generic_steering_controller/generic_steering_controller_parameters.hpp"
+#include "generic_steering_controller/kinematic_model_base.hpp"
 
 namespace generic_steering_controller
 {
@@ -94,7 +92,8 @@ public:
   inline std::unordered_map<std::string, double> get_state_interface_map() const
   {
     std::unordered_map<std::string, double> current_map;
-    for (const auto & iface : state_interfaces_) {
+    for (const auto & iface : state_interfaces_)
+    {
       current_map[iface.get_name()] = iface.get_value();
     }
     return current_map;
@@ -103,7 +102,6 @@ public:
 protected:
   controller_interface::CallbackReturn set_interface_numbers(
     size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
-
 
   std::shared_ptr<generic_steering_controller_parameters::ParamListener> param_listener_;
   generic_steering_controller_parameters::Params params_;
@@ -132,7 +130,8 @@ protected:
 
   GenericSteeringControllerStateMsg published_state_;
 
-  using ControllerStatePublisher = realtime_tools::RealtimePublisher<GenericSteeringControllerStateMsg>;
+  using ControllerStatePublisher =
+    realtime_tools::RealtimePublisher<GenericSteeringControllerStateMsg>;
   rclcpp::Publisher<GenericSteeringControllerStateMsg>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
@@ -154,7 +153,7 @@ protected:
   void reference_callback(const std::shared_ptr<ControllerTwistReferenceMsg> msg);
 
 private:
-// callback for topic interface
+  // callback for topic interface
 
   pluginlib::ClassLoader<kinematic_model::KinematicModelBase> kinematic_loader;
   std::shared_ptr<kinematic_model::KinematicModelBase> kinematic_model_;
@@ -164,4 +163,4 @@ private:
 
 }  // namespace generic_steering_controller
 
-#endif  //GENERIC_STEERING_CONTROLLER__GENERIC_STEERING_CONTROLLER_HPP_
+#endif  // GENERIC_STEERING_CONTROLLER__GENERIC_STEERING_CONTROLLER_HPP_
