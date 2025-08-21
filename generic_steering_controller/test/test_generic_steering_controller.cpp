@@ -81,21 +81,24 @@ TEST_F(GenericSteeringControllerTest, CommandTimeoutSetsZeroVelocity)
   msg->twist.linear.x = 1.0;
   msg->twist.angular.z = 0.5;
 
+  // Fresh reference (within timeout)
   controller_->reference_callback(msg);
-  controller_->update(now, rclcpp::Duration::from_seconds(0.01));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
+  controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
 
-  EXPECT_EQ(controller_->last_linear_velocity_, 1.0);
-  EXPECT_EQ(controller_->last_angular_velocity_, 0.5);
-
+  // Timeout case (older than timeout)
   msg->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(1.0);
   msg->twist.linear.x = 1.0;
   msg->twist.angular.z = 0.5;
-
   controller_->reference_callback(msg);
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
   controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
-
-  EXPECT_EQ(controller_->last_linear_velocity_, 1.0);
-  EXPECT_EQ(controller_->last_angular_velocity_, 0.5);
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[1]));
 }
 
 int main(int argc, char ** argv)

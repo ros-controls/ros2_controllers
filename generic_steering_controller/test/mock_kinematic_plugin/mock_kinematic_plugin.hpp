@@ -55,5 +55,4 @@ public:
 
 };
 
-}  // namespace mock_kinematic_plugi
-n
+}  // namespace mock_kinematic_plugin

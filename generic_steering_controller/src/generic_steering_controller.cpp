@@ -329,31 +329,21 @@ controller_interface::CallbackReturn GenericSteeringController::on_deactivate(
 controller_interface::return_type GenericSteeringController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  // Get the latest reference message from the subscriber
   auto current_ref_msg = input_ref_.try_get();
   if (current_ref_msg.has_value()) {
     current_ref_ = current_ref_msg.value();
   }
-  const auto age_of_last_command = time - current_ref_msg.value().header.stamp;
+  const auto age_of_last_command = time - current_ref_.header.stamp;
 
-  // Check if the reference is fresh and valid
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0)) {
-    if (!std::isnan(current_ref_.twist.linear.x) &&
-        !std::isnan(current_ref_.twist.angular.z)
-        /* && !std::isnan(current_ref_.twist.linear.y) */) // Uncomment if needed
-    {
+    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y)) {
       reference_interfaces_[0] = current_ref_.twist.linear.x;
       reference_interfaces_[1] = current_ref_.twist.angular.z;
-
-      RCLCPP_DEBUG(get_node()->get_logger(),
-        "Accepted reference: linear.x=%.3f angular.z=%.3f age=%.3f",
-        current_ref_.twist.linear.x, current_ref_.twist.angular.z, age_of_last_command.seconds());
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0)) {
         current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
         current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
         input_ref_.try_set(current_ref_);
-        RCLCPP_DEBUG(get_node()->get_logger(), "Cleared reference after use (timeout==0)");
       }
     }
   } else {
@@ -364,10 +354,6 @@ controller_interface::return_type GenericSteeringController::update_reference_fr
       current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
       current_ref_.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
       input_ref_.try_set(current_ref_);
-
-      RCLCPP_WARN(get_node()->get_logger(),
-        "Reference timed out (age=%.3f > timeout=%.3f), clearing reference.",
-        age_of_last_command.seconds(), ref_timeout_.seconds());
     }
   }
   return controller_interface::return_type::OK;
@@ -444,9 +430,11 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
     for (size_t i = 0; i < number_of_traction_wheels; ++i) {
       auto value_op = state_interfaces_[i].get_optional();
       if (params_.position_feedback) {
-        controller_state_publisher_->msg_.traction_wheels_position.push_back(value_op.value_or(0.0));
+        controller_state_publisher_->msg_.traction_wheels_position.push_back(value_op.value_or(
+            0.0));
       } else {
-        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(value_op.value_or(0.0));
+        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(value_op.value_or(
+            0.0));
       }
       if (!value_op.has_value()) {
         RCLCPP_DEBUG(get_node()->get_logger(),
@@ -465,7 +453,8 @@ controller_interface::return_type GenericSteeringController::update_and_write_co
       }
 
       auto steer_cmd_op = command_interfaces_[number_of_traction_wheels + i].get_optional();
-      controller_state_publisher_->msg_.steering_angle_command.push_back(steer_cmd_op.value_or(0.0));
+      controller_state_publisher_->msg_.steering_angle_command.push_back(steer_cmd_op.value_or(
+          0.0));
       if (!steer_cmd_op.has_value()) {
         RCLCPP_DEBUG(get_node()->get_logger(),
           "Unable to retrieve command interface value for steering wheel %zu", i);
