@@ -1,0 +1,4 @@
+test_multi_interface_forward_command_controller:
+  ros__parameters:
+    joint: "joint1"
+    interface_names: ["position"]

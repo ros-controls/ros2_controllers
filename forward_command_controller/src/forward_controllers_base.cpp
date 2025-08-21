@@ -112,22 +112,6 @@ controller_interface::InterfaceConfiguration ForwardControllersBase::state_inter
 controller_interface::CallbackReturn ForwardControllersBase::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  //  check if we have all resources defined in the "points" parameter
-  //  also verify that we *only* have the resources defined in the "points" parameter
-  // ATTENTION(destogl): Shouldn't we use ordered interface all the time?
-  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    ordered_interfaces;
-  if (
-    !controller_interface::get_ordered_interfaces(
-      command_interfaces_, command_interface_types_, std::string(""), ordered_interfaces) ||
-    command_interface_types_.size() != ordered_interfaces.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
-      command_interface_types_.size(), ordered_interfaces.size());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // reset command buffer if a command came through callback when controller was inactive
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
