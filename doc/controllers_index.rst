@@ -58,6 +58,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
+   Motion Primitive Controller <../motion_primitives_forward_controller/userdoc.rst>
 
 
 Broadcasters
