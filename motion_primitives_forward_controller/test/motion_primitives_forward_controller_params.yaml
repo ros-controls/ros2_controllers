@@ -1,3 +1,0 @@
-test_motion_primitives_forward_controller:
-  ros__parameters:
-    tf_prefix: ""
