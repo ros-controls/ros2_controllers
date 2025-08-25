@@ -71,6 +71,7 @@ protected:
   using StatePublisher = realtime_tools::RealtimePublisher<geometry_msgs::msg::WrenchStamped>;
   rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr sensor_state_publisher_;
   std::unique_ptr<StatePublisher> realtime_publisher_;
+  geometry_msgs::msg::WrenchStamped sensor_state_message_;
 };
 
 }  // namespace force_torque_sensor_broadcaster
