@@ -72,9 +72,14 @@ if(BUILD_TESTING)
   target_include_directories(test_steering_controllers_library PRIVATE include)
   target_link_libraries(test_steering_controllers_library steering_controllers_library)
 
+  add_rostest_with_parameters_gmock(
+    test_steering_controllers_library_steering_input test/test_steering_controllers_library_steering_input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/steering_controllers_library_steering_input_params.yaml)
+  target_include_directories(test_steering_controllers_library_steering_input PRIVATE include)
+  target_link_libraries(test_steering_controllers_library_steering_input steering_controllers_library)
+
   ament_add_gmock(test_steering_odometry test/test_steering_odometry.cpp)
   target_link_libraries(test_steering_odometry steering_controllers_library)
-
 endif()
 
 install(
