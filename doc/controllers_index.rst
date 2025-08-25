@@ -60,7 +60,6 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
    Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
 
-
 Broadcasters
 **********************
 
