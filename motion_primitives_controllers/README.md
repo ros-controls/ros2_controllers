@@ -114,8 +114,8 @@ Architecture for a KUKA robot with [`kuka_eki_motion_primitives_hw_interface`](h
 ![KUKA Robot Architecture](doc/ros2_control_motion_primitives_from_traj_kuka.drawio.png)
 
 ## Demo-Video with UR10e
-[![UR demo video](doc/moprim_from_traj_controller_ur_demo_thumbnail.png)](https://youtu.be/nsG4sW8BfLI)
+[![UR demo video](doc/moprim_from_traj_controller_ur_demo_thumbnail.png)](https://youtu.be/Z_NCaSyE-KA)
 
 
 ## Demo-Video with KR3
-[![KUKA demo video](doc/moprim_from_traj_controller_kuka_demo_thumbnail.png)](https://youtu.be/zaRkU-whyPM)
+[![KUKA demo video](doc/moprim_from_traj_controller_kuka_demo_thumbnail.png)](https://youtu.be/SvUU6PM1qRk)
