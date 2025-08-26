@@ -137,10 +137,8 @@ public:
     // initialize controller
     controller_ = std::make_unique<CtrlType>();
 
-    auto test = std::make_shared<rclcpp::Node>("command_publisher");
-    command_publisher_node_ = test;
-    command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
-      "/test_pid_controller/reference", rclcpp::SystemDefaultsQoS());
+    // create a publisher node, publisher will be created in SetUpController
+    command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -150,6 +148,9 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_pid_controller")
   {
+    command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandMsg>(
+      "/" + controller_name + "/reference", rclcpp::SystemDefaultsQoS());
+
     ASSERT_EQ(
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
       controller_interface::return_type::OK);

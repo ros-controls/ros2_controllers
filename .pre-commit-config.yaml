@@ -64,7 +64,7 @@ repos:
 
   # CPP hooks
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v20.1.7
+    rev: v20.1.8
     hooks:
       - id: clang-format
         args: ['-fallback-style=none', '-i']
@@ -113,7 +113,11 @@ repos:
     rev: v2.0.0
     hooks:
       - id: doc8
-        args: ['--max-line-length=100', '--ignore=D001']
+        args: [
+          '--max-line-length=100',
+          '--ignore=D001',
+          '--ignore-path=motion_primitives_forward_controller/userdoc.rst' # D000 fails with myst_parser
+          ]
         exclude: CHANGELOG\.rst$
 
   - repo: https://github.com/pre-commit/pygrep-hooks
@@ -134,7 +138,7 @@ repos:
         exclude: CHANGELOG\.rst|\.(svg|pyc|drawio)$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.1
+    rev: 0.33.2
     hooks:
       - id: check-github-workflows
         args: ["--verbose"]
