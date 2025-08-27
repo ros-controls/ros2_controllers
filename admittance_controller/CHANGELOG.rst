@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.31.0 (2025-08-27)
+-------------------
 * chore: tf2_ros to hpp headers (backport `#1866 <https://github.com/ros-controls/ros2_controllers/issues/1866>`_) (`#1869 <https://github.com/ros-controls/ros2_controllers/issues/1869>`_)
 * Contributors: mergify[bot]
 
