@@ -57,8 +57,11 @@ protected:
   callback_return_type setup_publisher();
 
   GPSSensorVariant gps_sensor_;
+
   rclcpp::Publisher<sensor_msgs::msg::NavSatFix>::SharedPtr sensor_state_publisher_;
   std::unique_ptr<StatePublisher> realtime_publisher_;
+  sensor_msgs::msg::NavSatFix state_message_;
+
   std::shared_ptr<gps_sensor_broadcaster::ParamListener> param_listener_{};
   gps_sensor_broadcaster::Params params_;
   std::vector<std::string> state_names_;

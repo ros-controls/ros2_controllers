@@ -122,14 +122,17 @@ protected:
   using OdomStatePublisher = realtime_tools::RealtimePublisher<OdomStateMsg>;
   rclcpp::Publisher<OdomStateMsg>::SharedPtr odom_s_publisher_;
   std::unique_ptr<OdomStatePublisher> rt_odom_state_publisher_;
+  OdomStateMsg odom_state_msg_;
 
   using TfStatePublisher = realtime_tools::RealtimePublisher<TfStateMsg>;
   rclcpp::Publisher<TfStateMsg>::SharedPtr tf_odom_s_publisher_;
   std::unique_ptr<TfStatePublisher> rt_tf_odom_state_publisher_;
+  TfStateMsg tf_odom_state_msg_;
 
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
+  ControllerStateMsg controller_state_msg_;
 
   // override methods from ChainableControllerInterface
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
