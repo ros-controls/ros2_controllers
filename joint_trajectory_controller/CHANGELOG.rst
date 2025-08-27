@@ -2,6 +2,9 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.30.1 (2025-08-03)
 -------------------
 * Reset JTC PID's to zero on_activate() (backport `#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_) (`#1844 <https://github.com/ros-controls/ros2_controllers/issues/1844>`_)

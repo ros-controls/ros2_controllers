@@ -1,9 +1,11 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package gps_sensor_broadcaster
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package chained_filter_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Add a generic chained_filter_controller (backport `#1634 <https://github.com/ros-controls/ros2_controllers/issues/1634>`_) (`#1856 <https://github.com/ros-controls/ros2_controllers/issues/1856>`_)
+* Contributors: Ankur Bodhe
 
 4.30.1 (2025-08-03)
 -------------------
@@ -25,25 +27,15 @@ Forthcoming
 
 4.26.0 (2025-06-06)
 -------------------
-* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
-* Contributors: mergify[bot]
 
 4.25.0 (2025-05-17)
 -------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
-* Fix wrong link in GPSBroadcaster doc (`#1637 <https://github.com/ros-controls/ros2_controllers/issues/1637>`_)
-* Contributors: Christoph Fröhlich, Junius Santoso
 
 4.23.0 (2025-04-10)
 -------------------
-* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
-* Contributors: Wiktor Bajor
-
-* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
-* Contributors: Wiktor Bajor
 
 4.22.0 (2025-03-17)
 -------------------
