@@ -47,8 +47,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${std_srvs_TARGETS}
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE "MOTION_PRIMITIVES_CONTROLLERS_BUILDING_DLL")
-
 pluginlib_export_plugin_description_file(
   controller_interface controller_plugins.xml)
 
