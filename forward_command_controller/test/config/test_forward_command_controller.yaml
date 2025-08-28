@@ -1,0 +1,4 @@
+test_forward_command_controller:
+  ros__parameters:
+    joints: ["joint1"]
+    interface_name: "position"
