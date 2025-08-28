@@ -75,8 +75,6 @@ install(FILES controller_plugins.xml
 
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-
 ament_export_libraries(
   ${PROJECT_NAME}
 )
