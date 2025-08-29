@@ -7,6 +7,7 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
+  Eigen3
   generate_parameter_library
   hardware_interface
   pluginlib
@@ -37,6 +38,7 @@ target_include_directories(imu_sensor_broadcaster PUBLIC
 target_link_libraries(imu_sensor_broadcaster PUBLIC
                       imu_sensor_broadcaster_parameters
                       controller_interface::controller_interface
+                      Eigen3::Eigen
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
@@ -68,6 +70,17 @@ if(BUILD_TESTING)
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
     imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
+  )
+
+  find_package(tf2 REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
+  ament_add_gmock(test_imu_transform test/test_imu_transform.cpp)
+  target_link_libraries(test_imu_transform
+    imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
   )
 endif()
 

@@ -50,6 +50,10 @@ For more information of the ros2_control framework see `control.ros.org <https:/
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/joint_trajectory_controller/>`__
     - `ROS Index <https://index.ros.org/p/joint_trajectory_controller/>`__
+  * - omni_wheel_drive_controller
+    - `Documentation <https://control.ros.org/master/doc/ros2_controllers/omni_wheel_drive_controller/doc/userdoc.html>`__
+    - `API <http://docs.ros.org/en/rolling/p/omni_wheel_drive_controller/>`__
+    - `ROS Index <https://index.ros.org/p/omni_wheel_drive_controller/>`__
   * - pid_controller
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/pid_controller/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/pid_controller/>`__

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>motion_primitives_controllers</name>
+  <version>5.5.0</version>
+  <description>Package to control robots using motion primitives like PTP, LIN and CIRC</description>
+
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
+  <author email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>generate_parameter_library</build_depend>
+
+  <depend>control_msgs</depend>
+  <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>realtime_tools</depend>
+  <depend>std_srvs</depend>
+
+  <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface</test_depend>
+  <test_depend>ros2_control_test_assets</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
