@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.6.0 (2025-08-29)
+------------------
 * tf2_ros to hpp headers (`#1866 <https://github.com/ros-controls/ros2_controllers/issues/1866>`_)
 * Remove usage of `get_ordered_interfaces` but update parameter validation instead (`#1816 <https://github.com/ros-controls/ros2_controllers/issues/1816>`_)
 * Contributors: Christoph Fröhlich, Tim Clephas

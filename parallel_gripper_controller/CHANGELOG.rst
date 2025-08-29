@@ -2,8 +2,8 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.6.0 (2025-08-29)
+------------------
 * Implement realtime-safe stall detection for parallel gripper controller (`#1855 <https://github.com/ros-controls/ros2_controllers/issues/1855>`_)
 * Contributors: Ashwin Sushil
 

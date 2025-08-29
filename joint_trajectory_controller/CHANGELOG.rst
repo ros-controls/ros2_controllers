@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.6.0 (2025-08-29)
+------------------
 * Filling `index` field in feedback message of the action interface (`#1850 <https://github.com/ros-controls/ros2_controllers/issues/1850>`_)
 * Contributors: Giuseppe Monetti
 
