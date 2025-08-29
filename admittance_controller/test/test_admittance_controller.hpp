@@ -38,7 +38,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "test_asset_6d_robot_description.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 // TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
@@ -67,6 +67,7 @@ class TestableAdmittanceController : public admittance_controller::AdmittanceCon
   FRIEND_TEST(AdmittanceControllerTest, check_interfaces);
   FRIEND_TEST(AdmittanceControllerTest, activate_success);
   FRIEND_TEST(AdmittanceControllerTest, receive_message_and_publish_updated_status);
+  FRIEND_TEST(AdmittanceControllerTest, check_frame_ids_in_controller_state);
 
 public:
   CallbackReturn on_init() override
