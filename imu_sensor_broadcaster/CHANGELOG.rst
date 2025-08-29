@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.6.0 (2025-08-29)
+------------------
+* Add calibration possibility to IMU broadcaster (`#1833 <https://github.com/ros-controls/ros2_controllers/issues/1833>`_)
+* Contributors: Christoph Fröhlich
+
 5.5.0 (2025-07-31)
 ------------------
 

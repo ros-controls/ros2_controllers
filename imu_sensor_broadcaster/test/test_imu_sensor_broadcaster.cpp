@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Authors: Subhas Das, Denis Stogl, Victor Lopez
+ * Authors: Subhas Das, Denis Stogl, Victor Lopez, Christoph Froehlich
  */
 
 #include "test_imu_sensor_broadcaster.hpp"
@@ -27,6 +27,11 @@
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/convert.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
+#include "imu_sensor_broadcaster/imu_transform.hpp"
 
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
@@ -50,10 +55,14 @@ void IMUSensorBroadcasterTest::SetUp()
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
 
-void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
+void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  const auto result = imu_broadcaster_->init(
-    "test_imu_sensor_broadcaster", "", 0, "", imu_broadcaster_->define_custom_node_options());
+  auto node_options = imu_broadcaster_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
+
+  const auto result =
+    imu_broadcaster_->init("test_imu_sensor_broadcaster", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -211,6 +220,111 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
     EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
     EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
   }
+}
+
+TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset)
+{
+  SetUpIMUBroadcaster(
+    {// set the params 'sensor_name' and 'frame_id'
+     rclcpp::Parameter("sensor_name", sensor_name_), rclcpp::Parameter("frame_id", frame_id_),
+     // use Q = ENU->NED transform, same as in test_imu_transform.cpp
+     rclcpp::Parameter("rotation_offset.roll", M_PI),
+     rclcpp::Parameter("rotation_offset.pitch", 0.),
+     rclcpp::Parameter("rotation_offset.yaw", M_PI_2)});
+
+  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+
+  // Transforming orientation means expressing the attitude of the new frame in the same world frame
+  // (i.e. you have data in imu frame and want to ask what is the world-referenced orientation of
+  // the base_link frame that is attached to this IMU). This is why the orientation change goes the
+  // other way than the transform.
+  tf2::Quaternion init(sensor_values_[0], sensor_values_[1], sensor_values_[2], sensor_values_[3]);
+  tf2::Quaternion tf_quat;
+  tf_quat.setRPY(M_PI, 0., M_PI_2);
+  tf2::Quaternion rot;
+  tf2::convert(imu_msg.orientation, rot);
+  EXPECT_NEAR(0, rot.angleShortestPath(init * tf_quat.inverse()), 1e-6);
+  EXPECT_NEAR(imu_msg.angular_velocity.x, sensor_values_[5], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.y, sensor_values_[4], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.z, -sensor_values_[6], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.x, sensor_values_[8], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.y, sensor_values_[7], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.z, -sensor_values_[9], 1e-5);
+
+  for (size_t i = 0; i < 9; ++i)
+  {
+    EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
+
+  // Check the exported state interfaces
+  const auto exported_state_interfaces = imu_broadcaster_->export_state_interfaces();
+  ASSERT_EQ(exported_state_interfaces.size(), 10u);
+  const std::string controller_name = imu_broadcaster_->get_node()->get_name();
+  ASSERT_EQ(
+    exported_state_interfaces[0]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.x");
+  ASSERT_EQ(
+    exported_state_interfaces[1]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.y");
+  ASSERT_EQ(
+    exported_state_interfaces[2]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.z");
+  ASSERT_EQ(
+    exported_state_interfaces[3]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.w");
+  ASSERT_EQ(
+    exported_state_interfaces[4]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.x");
+  ASSERT_EQ(
+    exported_state_interfaces[5]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.y");
+  ASSERT_EQ(
+    exported_state_interfaces[6]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.z");
+  ASSERT_EQ(
+    exported_state_interfaces[7]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.x");
+  ASSERT_EQ(
+    exported_state_interfaces[8]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.y");
+  ASSERT_EQ(
+    exported_state_interfaces[9]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "orientation.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "orientation.y");
+  ASSERT_EQ(exported_state_interfaces[2]->get_interface_name(), "orientation.z");
+  ASSERT_EQ(exported_state_interfaces[3]->get_interface_name(), "orientation.w");
+  ASSERT_EQ(exported_state_interfaces[4]->get_interface_name(), "angular_velocity.x");
+  ASSERT_EQ(exported_state_interfaces[5]->get_interface_name(), "angular_velocity.y");
+  ASSERT_EQ(exported_state_interfaces[6]->get_interface_name(), "angular_velocity.z");
+  ASSERT_EQ(exported_state_interfaces[7]->get_interface_name(), "linear_acceleration.x");
+  ASSERT_EQ(exported_state_interfaces[8]->get_interface_name(), "linear_acceleration.y");
+  ASSERT_EQ(exported_state_interfaces[9]->get_interface_name(), "linear_acceleration.z");
+
+  EXPECT_NEAR(imu_msg.orientation.x, exported_state_interfaces[0]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.y, exported_state_interfaces[1]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.z, exported_state_interfaces[2]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.w, exported_state_interfaces[3]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.x, exported_state_interfaces[4]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.y, exported_state_interfaces[5]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.z, exported_state_interfaces[6]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.x, exported_state_interfaces[7]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.y, exported_state_interfaces[8]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.z, exported_state_interfaces[9]->get_optional().value(), 1e-5);
 }
 
 int main(int argc, char ** argv)

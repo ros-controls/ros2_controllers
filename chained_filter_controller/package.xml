@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>chained_filter_controller</name>
+  <version>5.6.0</version>
+  <description>ros2_controller for configuring filter chains</description>
+
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
+  <author email="bence.magyar.robotics@gmail.com">Bence Magyar</author>
+  <author email="christoph.froehlich@ait.ac.at">Christoph Froehlich</author>
+  <author email="ankur-u24@todo.todo">ankur-u24</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>generate_parameter_library</build_depend>
+  <build_depend>ros2_control_cmake</build_depend>
+
+  <depend>controller_interface</depend>
+  <depend>filters</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>hardware_interface</depend>
+
+  <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
+  <test_depend>ros2_control_test_assets</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

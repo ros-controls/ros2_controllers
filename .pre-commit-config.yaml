@@ -113,7 +113,11 @@ repos:
     rev: v2.0.0
     hooks:
       - id: doc8
-        args: ['--max-line-length=100', '--ignore=D001']
+        args: [
+          '--max-line-length=100',
+          '--ignore=D001',
+          '--ignore-path=motion_primitives_controllers/userdoc.rst' # D000 fails with myst_parser
+          ]
         exclude: CHANGELOG\.rst$
 
   - repo: https://github.com/pre-commit/pygrep-hooks
@@ -130,7 +134,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        args: ['--write-changes', '--uri-ignore-words-list=ist', '-L manuel']
+        args: ['--write-changes', '--uri-ignore-words-list=ist', '-L manuel,NED']
         exclude: CHANGELOG\.rst|\.(svg|pyc|drawio)$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
