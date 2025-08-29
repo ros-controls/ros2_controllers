@@ -48,8 +48,8 @@ These interfaces are used to communicate the internal status of the hardware int
 
 
  ## Parameters
- This controller uses the [`generate_parameter_library`](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters. The parameter [definition file located in the src folder](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/src/motion_primitives_forward_controller_parameter.yaml) contains descriptions for all the parameters used by the controller.
- An example parameter file for this controller can be found in [the test directory](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/test/motion_primitives_forward_controller_params.yaml).
+ This controller uses the [`generate_parameter_library`](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters. The parameter [definition file located in the src folder](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_controllers/src/motion_primitives_forward_controller_parameter.yaml) contains descriptions for all the parameters used by the controller.
+ An example parameter file for this controller can be found in [the test directory](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_controllers/test/motion_primitives_forward_controller_params.yaml).
 
 
 # Architecture Overview
