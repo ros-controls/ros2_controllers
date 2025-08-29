@@ -1,0 +1,8 @@
+<library path="motion_primitives_controllers">
+  <class name="motion_primitives_controllers/MotionPrimitivesForwardController"
+         type="motion_primitives_controllers::MotionPrimitivesForwardController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    MotionPrimitivesForwardController ros2_control controller.
+  </description>
+  </class>
+</library>
