@@ -2,6 +2,9 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.5.0 (2025-07-31)
 ------------------
 * Add omni_wheel_drive_controller (`#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_)

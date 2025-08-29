@@ -2,6 +2,12 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add motion_primitives_controllers to metapackage
+* Add a generic chained_filter_controller (`#1634 <https://github.com/ros-controls/ros2_controllers/issues/1634>`_)
+* Contributors: Ankur Bodhe, Mathias Fuhrer, Christoph Froehlich
+
 5.5.0 (2025-07-31)
 ------------------
 * Add omni_wheel_drive_controller (`#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_)

@@ -2,6 +2,9 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.5.0 (2025-07-31)
 ------------------
 
