@@ -18,6 +18,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   rcpputils
   realtime_tools
+  angles
   tf2
   tf2_msgs
   tf2_geometry_msgs
@@ -56,6 +57,7 @@ target_link_libraries(swerve_drive_controller PUBLIC
   rcpputils::rcpputils
   realtime_tools::realtime_tools
   tf2::tf2
+  angles::angles
   tf2_geometry_msgs::tf2_geometry_msgs
   ${tf2_msgs_TARGETS}
   ${geometry_msgs_TARGETS}

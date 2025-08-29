@@ -25,19 +25,14 @@ swerve_drive_controller:
     chassis_width: 0.2
     wheel_radius: 0.04
     center_of_rotation: 0.1
-
     cmd_vel_timeout: 10.0
-    use_stamped_vel: false
     odom: odom
     base_footprint: base_footprint
-    publishe_rate: 50.0
     enable_odom_tf: true
     open_loop: false
-
     front_left_velocity_threshold: 2.0
     front_right_velocity_threshold: 2.0
     rear_left_velocity_threshold: 2.0
     rear_right_velocity_threshold: 2.0
-
     pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
     twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]

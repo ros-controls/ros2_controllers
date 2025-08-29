@@ -89,7 +89,6 @@ private:
 class SwerveController : public controller_interface::ControllerInterface
 {
   using TwistStamped = geometry_msgs::msg::TwistStamped;
-  using Twist = geometry_msgs::msg::Twist;
 
 public:
   SwerveController();
@@ -115,13 +114,78 @@ public:
 
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
-protected:
-  std::unique_ptr<Wheel> get_wheel(const std::string & wheel_name);
-  std::unique_ptr<Axle> get_axle(const std::string & axle_name);
+private:
+  template <typename T>
+  std::optional<T> get_interface_object(
+    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
+    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
+    const std::string & name, const std::string & interface_suffix, const std::string & hw_if_type)
+  {
+    auto logger = rclcpp::get_logger("SwerveController");
 
+    if (name.empty())
+    {
+      RCLCPP_ERROR(logger, "Joint name not given. Make sure all joints are specified.");
+      return std::nullopt;
+    }
+
+    const std::string expected_interface_name = name + interface_suffix;
+
+    auto command_handle = std::find_if(
+      command_interfaces.begin(), command_interfaces.end(),
+      [&expected_interface_name, &hw_if_type](const auto & interface)
+      {
+        return interface.get_name() == expected_interface_name &&
+               interface.get_interface_name() == hw_if_type;
+      });
+
+    if (command_handle == command_interfaces.end())
+    {
+      RCLCPP_ERROR(
+        logger, "Unable to find command interface for: %s (expected: %s, type: %s)", name.c_str(),
+        expected_interface_name.c_str(), hw_if_type.c_str());
+      return std::nullopt;
+    }
+    auto state_handle = std::find_if(
+      state_interfaces.begin(), state_interfaces.end(),
+      [&expected_interface_name, &hw_if_type](const auto & interface)
+      {
+        return interface.get_name() == expected_interface_name &&
+               interface.get_interface_name() == hw_if_type;
+      });
+
+    if (state_handle == state_interfaces.end())
+    {
+      RCLCPP_ERROR(
+        logger, "Unable to find state interface for: %s (expected: %s, type: %s)", name.c_str(),
+        expected_interface_name.c_str(), hw_if_type.c_str());
+      return std::nullopt;
+    }
+    return T(std::ref(*command_handle), std::ref(*state_handle), name);
+  }
+
+  inline std::optional<Wheel> get_wheel(
+    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
+    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
+    const std::string & name)
+  {
+    return get_interface_object<Wheel>(
+      command_interfaces, state_interfaces, name, "/velocity", "velocity");
+  }
+
+  inline std::optional<Axle> get_axle(
+    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
+    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
+    const std::string & name)
+  {
+    return get_interface_object<Axle>(
+      command_interfaces, state_interfaces, name, "/position", "position");
+  }
+
+protected:
   // Handles for four wheels and their axles
-  std::vector<std::unique_ptr<Wheel>> wheel_handles_;
-  std::vector<std::unique_ptr<Axle>> axle_handles_;
+  std::vector<std::optional<Wheel>> wheel_handles_;
+  std::vector<std::optional<Axle>> axle_handles_;
   std::array<std::string, 4> wheel_joint_names{};
   std::array<std::string, 4> axle_joint_names{};
 
@@ -148,7 +212,6 @@ protected:
   // Topic Subscription
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
-  rclcpp::Subscription<Twist>::SharedPtr velocity_command_unstamped_subscriber_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<TwistStamped>> received_velocity_msg_ptr_{nullptr};
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
@@ -157,6 +220,7 @@ protected:
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
+  tf2_msgs::msg::TFMessage odometry_transform_message_;
 
   bool is_halted_ = false;
   bool reset();

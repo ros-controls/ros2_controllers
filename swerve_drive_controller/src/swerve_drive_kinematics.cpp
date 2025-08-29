@@ -83,20 +83,7 @@ OdometryState SwerveDriveKinematics::update_odometry(
   // Integrate to compute new position and orientation
   odometry_.x += vx_global * dt;
   odometry_.y += vy_global * dt;
-  odometry_.theta = normalize_angle(odometry_.theta + wz_robot * dt);
+  odometry_.theta = angles::normalize_angle(odometry_.theta + wz_robot * dt);
   return odometry_;
-}
-
-double SwerveDriveKinematics::normalize_angle(double angle)
-{
-  while (angle > M_PI)
-  {
-    angle -= 2.0 * M_PI;
-  }
-  while (angle < -M_PI)
-  {
-    angle += 2.0 * M_PI;
-  }
-  return angle;
 }
 }  // namespace swerve_drive_controller

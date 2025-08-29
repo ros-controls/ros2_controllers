@@ -93,12 +93,6 @@ swerve_drive_controller:
     },
     read_only: true
   }
-  use_stamped_vel: {
-    type: bool,
-    default_value: false,
-    description: "If true, velocity commands will be expected to have a timestamp.",
-    read_only: true
-  }
   odom: {
     type: string,
     default_value: "odom",
@@ -109,12 +103,6 @@ swerve_drive_controller:
     type: string,
     default_value: "base_footprint",
     description: "Name of the frame for base footprint.",
-    read_only: true
-  }
-  publishe_rate: {
-    type: double,
-    default_value: 50.0, # Hz
-    description: "Publishing rate (Hz) of the odometry and TF messages.",
     read_only: true
   }
   enable_odom_tf: {
