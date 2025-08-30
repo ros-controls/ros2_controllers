@@ -2,8 +2,8 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.6.1 (2025-08-30)
+------------------
 * Add cmake package dependency to moprim controller (`#1876 <https://github.com/ros-controls/ros2_controllers/issues/1876>`_)
 * Contributors: Christoph Fröhlich
 
