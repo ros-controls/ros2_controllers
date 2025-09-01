@@ -1099,12 +1099,6 @@ rclcpp_action::CancelResponse GpioToolController::handle_engaging_cancel(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void GpioToolController::handle_engaging_accepted(
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<EngagingActionType>> goal_handle)
-{
-  handle_action_accepted<EngagingActionType>(goal_handle);
-}
-
 rclcpp_action::GoalResponse GpioToolController::handle_config_goal(
   const rclcpp_action::GoalUUID & /*uuid*/, std::shared_ptr<const ConfigActionType::Goal> goal)
 {
@@ -1140,6 +1134,7 @@ void GpioToolController::handle_action_accepted(
     if (current_tool_action_.load() == ToolAction::IDLE)
     {
       result->success = true;
+      result->resulting_state_name = current_state_;
       result->message = "Tool action successfully executed!";
       goal_handle->succeed(result);
       break;
@@ -1147,6 +1142,7 @@ void GpioToolController::handle_action_accepted(
     else if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
     {
       result->success = false;
+      result->resulting_state_name = current_state_;
       result->message = "Tool action canceled or halted! Check the error, reset the tool using '~/reset_halted' service and set to sensible state.";
       goal_handle->abort(result);
       break;
