@@ -155,8 +155,8 @@ protected:
   std::unordered_set<std::string> command_if_ios_;
   std::unordered_set<std::string> state_if_ios_;
 
-  using EngagingSrvType = example_interfaces::srv::Trigger;
-  using ResetSrvType = example_interfaces::srv::Trigger;
+  using EngagingSrvType = std_srvs::srv::Trigger;
+  using ResetSrvType = std_srvs::srv::Trigger;
   using ConfigSrvType = control_msgs::srv::SetGPIOToolConfig;
   using DynInterfaceMsg = control_msgs::msg::DynamicInterfaceValues;
   using EngagingActionType = control_msgs::action::GPIOToolCommand;
@@ -271,13 +271,6 @@ private:
    * @return CancelResponse indicating acceptance or rejection of the cancellation.
    */
   rclcpp_action::CancelResponse handle_engaging_cancel(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<EngagingActionType>> goal_handle);
-
-  /**
-   * @brief Handles the accepted goal for the tool action.
-   * @param goal_handle The handle of the accepted goal.
-   */
-  void handle_engaging_accepted(
     std::shared_ptr<rclcpp_action::ServerGoalHandle<EngagingActionType>> goal_handle);
 
   /**
