@@ -286,6 +286,8 @@ controller_interface::return_type GpioToolController::update(
     case ToolAction::IDLE:
     {
       // do nothing
+      state_change_start_ = time;
+      check_tool_state(time, false);
       break;
     }
     case ToolAction::DISENGAGING:
@@ -413,7 +415,7 @@ bool GpioToolController::check_states(
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
-      "%s: Tool didin't reached target state within %.2f seconds.",
+      "%s: Tool didin't reached target state within %.2f seconds. Try resetting the tool using '~/reset_halted' service. After that set sensible state.",
       output_prefix.c_str(), params_.timeout);
     current_tool_transition_.store(GPIOToolTransition::HALTED);
   }
@@ -428,11 +430,14 @@ void GpioToolController::check_tool_state_and_switch(
   {
     bool state_exists = states.size() > 0;
     RCLCPP_DEBUG(
-      get_node()->get_logger(), "%s - CHECK_STATE: Checking state '%s' for tool. States _%s_ exist. Used number of state interfaces %zu",
+      get_node()->get_logger(), "%s: Checking state '%s' for tool. States _%s_ exist. Used number of state interfaces %zu.",
       output_prefix.c_str(), state_name.c_str(), (state_exists ? "do" : "do not"), states.size());
 
     if (check_states(current_time, states, output_prefix, next_transition, warning_output))
     {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(), "%s: SUCCESS! state '%s' for tool is confirmed!",
+        output_prefix.c_str(), state_name.c_str());
       found_state_name = state_name;
       const auto & js_val = ios.states_joint_states.at(state_name);
       if (joint_states_start_index + js_val.size() <= joint_states.size())
