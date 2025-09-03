@@ -312,7 +312,7 @@ controller_interface::return_type GpioToolController::update(
     {
       // do nothing
       state_change_start_ = time;
-      check_tool_state(state_change_start_, false);
+      check_tool_state(time, false);
       break;
     }
     case ToolAction::DISENGAGING:
