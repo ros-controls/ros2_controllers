@@ -103,7 +103,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
   // As the sensor_filter_chain parameter is of type 'none', we cannot directly check if it is
   // present. Even if the sensor_filter_chain parameter is not specified, the filter chain will be
-  // correctly configured with an empty list of filters (https://github.com/ros/filters/issues/89).
+  // correctly configured with an empty list of filters.
   bool filter_chain_configured = filter_chain_->configure(
     "sensor_filter_chain", get_node()->get_node_logging_interface(),
     get_node()->get_node_parameters_interface());
@@ -113,7 +113,7 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
   RCLCPP_INFO_EXPRESSION(
     get_node()->get_logger(), has_filter_chain_, "Filter active with %zu filters!",
-    filter_chain_length);
+    filter_chain_->get_length());
 
   try
   {
