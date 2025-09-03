@@ -70,35 +70,26 @@ pid_controller:
         default_value: -.inf,
         description: "Lower output clamp."
       }
-      antiwindup: {
-        type: bool,
-        default_value: false,
-        description: "[Deprecated, see antiwindup_strategy] Anti-windup functionality. When set to true, limits
-        the integral error to prevent windup; otherwise, constrains the
-        integral contribution to the control output. i_clamp_max and
-        i_clamp_min are applied in both scenarios."
-      }
       i_clamp_max: {
         type: double,
-        default_value: 0.0,
-        description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
+        default_value: .inf,
+        description: "Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
-        default_value: 0.0,
-        description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
+        default_value: -.inf,
+        description: "Lower integral clamp."
       }
       antiwindup_strategy: {
         type: string,
         default_value: "legacy",
         description: "Specifies the anti-windup strategy. Options: 'back_calculation',
-        'conditional_integration', 'legacy' or 'none'. Note that the 'back_calculation' strategy use the
+        'conditional_integration' or 'none'. Note that the 'back_calculation' strategy use the
         tracking_time_constant parameter to tune the anti-windup behavior.",
         validation: {
           one_of<>: [[
             "back_calculation",
             "conditional_integration",
-            "legacy",
             "none"
           ]]
         }
