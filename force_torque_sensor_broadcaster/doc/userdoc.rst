@@ -20,8 +20,8 @@ This controller uses the `generate_parameter_library <https://github.com/PickNik
 The interfaces can be defined in two ways, using the ``sensor_name`` or the ``interface_names`` parameter:
 Those two parameters cannot be defined at the same time.
 
-The filter chain is configured as a sequential list of filters under the `sensor_filter_chain` parameter, where each filter is identified by the key `filterN`, with `N` representing its position in the chain (e.g., `filter1`, `filter2`, etc.). 
-Each filter entry must specify the `name` and `type` of the plugin, along with any additional parameters required by that specific filter plugin. The chain will use the `pluginlib <https://github.com/ros/pluginlib>`_ library to load each filter at runtime,
+The filter chain is configured as a sequential list of filters under the ``sensor_filter_chain`` parameter, where each filter is identified by the key ``filterN``, with ``N`` representing its position in the chain (e.g., ``filter1``, ``filter2``, etc.).
+Each filter entry must specify the ``name`` and ``type`` of the plugin, along with any additional parameters required by that specific filter plugin. The chain will use the `pluginlib <https://github.com/ros/pluginlib>`_ library to load each filter at runtime,
 passing the specified parameters.
 
 The chain processes the data sequentially, passing the output of one filter as the input to the next.
