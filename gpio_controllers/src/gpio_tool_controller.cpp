@@ -287,7 +287,7 @@ controller_interface::return_type GpioToolController::update(
     {
       // do nothing
       state_change_start_ = time;
-      check_tool_state(state_change_start_, false);
+      check_tool_state(time, false);
       break;
     }
     case ToolAction::DISENGAGING:
@@ -467,6 +467,8 @@ void GpioToolController::handle_tool_state_transition(
   switch (current_tool_transition_.load())
   {
     case GPIOToolTransition::IDLE:
+      // reset time to avoid any time-source related crashing
+      state_change_start_ = current_time;
       // do nothing
       break;
 
