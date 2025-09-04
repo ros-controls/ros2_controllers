@@ -1,0 +1,74 @@
+gravity_compensation_pd_controller:
+  joints: {
+    type: string_array,
+    description: "Specifies which joints will be used by the controller.",
+    default_value: [],
+  }
+  joint_space_reference_controller: {
+    type: string,
+    description: "Name of the joint space reference controller.",
+    default_value: "",
+    read_only: true,
+  }
+  state_interfaces_names_override:
+    position: {
+      type: string_array,
+      description: "If this parameter is set, it will override the default names for the position interface of the state interfaces.",
+      default_value: [],
+      read_only: true
+    }
+    velocity: {
+      type: string_array,
+      description: "If this parameter is set, it will override the default names for the velocity interface of the state interfaces.",
+      default_value: [],
+      read_only: true
+    }
+  command_interfaces_names_override:
+    effort: {
+      type: string_array,
+      description: "If this parameter is set, it will override the default names for the effort interface of the command interfaces.",
+      default_value: [],
+      read_only: true
+    }
+
+  p_gains: {
+    type: double_array,
+    default_value: [],
+  }
+  d_gains: {
+    type: double_array,
+    default_value: [],
+  }
+  compensate_gravity: {
+    type: bool,
+    description: "If true, the controller will compensate for gravity.",
+    default_value: true,
+  }
+  dynamics_solver:
+    dynamics_solver_plugin:
+      {
+        type: string,
+        description: "Name of the dynamics solver to use.",
+        read_only: true,
+        validation: {
+          not_empty<>: null
+        }
+      }
+    root:
+      {
+        type: string,
+        description: "Specifies the base link of the robot description used by the inverse dynamics solver.",
+        read_only: true,
+        validation: {
+          not_empty<>: null
+        }
+      }
+    tip:
+      {
+        type: string,
+        description: "Specifies the end effector link of the robot description used by the inverse dynamics solver.",
+        read_only: true,
+        validation: {
+          not_empty<>: null
+        }
+      }
