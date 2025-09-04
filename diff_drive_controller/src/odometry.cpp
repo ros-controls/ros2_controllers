@@ -74,7 +74,7 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
 }
 
 bool Odometry::updateFromPos(
-  const double & left_pos, const double & right_pos, const rclcpp::Time & time)
+  const double left_pos, const double right_pos, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
   // We cannot estimate angular velocity with very small time intervals
@@ -126,13 +126,13 @@ bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcp
 }
 
 bool Odometry::updateFromVel(
-  const double & left_vel, const double & right_vel, const rclcpp::Time & time)
+  const double left_vel, const double right_vel, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
 
   // Compute linear and angular velocities of the robot:
-  const double linear_vel = (left_vel*left_wheel_radius_ + right_vel*right_wheel_radius_) * 0.5;
-  const double angular_vel = 
+  const double linear_vel = (left_vel * left_wheel_radius_ + right_vel * right_wheel_radius_) * 0.5;
+  const double angular_vel =
     (right_vel * right_wheel_radius_ - left_vel * left_wheel_radius_) / wheel_separation_;
 
   // Integrate odometry:
@@ -163,7 +163,7 @@ void Odometry::updateOpenLoop(double linear, double angular, const rclcpp::Time 
 }
 
 bool Odometry::tryUpdateOpenLoop(
-  const double & linear_vel, const double & angular_vel, const rclcpp::Time & time)
+  const double linear_vel, const double angular_vel, const rclcpp::Time & time)
 {
   const double dt = time.seconds() - timestamp_.seconds();
 
@@ -228,7 +228,7 @@ void Odometry::integrateExact(double linear, double angular)
   }
 }
 
-void Odometry::integrate(const double & dx, const double & dheading)
+void Odometry::integrate(const double dx, const double dheading)
 {
   if (fabs(dheading) < 1e-6)
   {
