@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>battery_state_broadcaster</name>
+  <version>0.1.0</version>
+  <description>ros2 control battery state broadcaster controller</description>
+  <author email="yara.shahin@b-robotized.com">Yara Shahin</author>
+
+  <maintainer email="denis.stogl@b-robotized.com">Dr. Denis Štogl</maintainer>
+
+  <license>Apache License 2.0</license>
+
+  <url type="website">https://control.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>ros2_control_cmake</build_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>control_msgs</build_depend>
+
+  <depend>rclcpp</depend>
+  <depend>controller_interface</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+
+  <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
+  <test_depend>ros2_control_test_assets</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
