@@ -152,6 +152,8 @@ def _srv_exists(node, srv_name, srv_type):
 
     srv_list = node.get_service_names_and_types()
     srv_info = [item for item in srv_list if item[0] == srv_name]
+    if len(srv_info) == 0:
+        return False
     srv_obtained_type = srv_info[0][1][0]
     return srv_type == srv_obtained_type
 
