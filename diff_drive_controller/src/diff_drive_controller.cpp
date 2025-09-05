@@ -160,9 +160,11 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
+  // Update odometry
+  bool odometry_updated = false;
   if (params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, time);
+    odometry_updated = odometry_.tryUpdateOpenLoop(linear_command, angular_command, time);
   }
   else
   {
@@ -200,63 +202,64 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 
     if (params_.position_feedback)
     {
-      odometry_.update(left_feedback_mean, right_feedback_mean, time);
+      odometry_updated = odometry_.updateFromPos(left_feedback_mean, right_feedback_mean, time);
     }
     else
     {
-      odometry_.updateFromVelocity(
-        left_feedback_mean * left_wheel_radius * period.seconds(),
-        right_feedback_mean * right_wheel_radius * period.seconds(), time);
+      odometry_updated = odometry_.updateFromVel(left_feedback_mean, right_feedback_mean, time);
     }
   }
 
-  tf2::Quaternion orientation;
-  orientation.setRPY(0.0, 0.0, odometry_.getHeading());
-
-  bool should_publish = false;
-  try
+  if (odometry_updated)
   {
-    if (previous_publish_timestamp_ + publish_period_ < time)
+    tf2::Quaternion orientation;
+    orientation.setRPY(0.0, 0.0, odometry_.getHeading());
+
+    bool should_publish = false;
+    try
     {
-      previous_publish_timestamp_ += publish_period_;
+      if (previous_publish_timestamp_ + publish_period_ < time)
+      {
+        previous_publish_timestamp_ += publish_period_;
+        should_publish = true;
+      }
+    }
+    catch (const std::runtime_error &)
+    {
+      // Handle exceptions when the time source changes and initialize publish timestamp
+      previous_publish_timestamp_ = time;
       should_publish = true;
     }
-  }
-  catch (const std::runtime_error &)
-  {
-    // Handle exceptions when the time source changes and initialize publish timestamp
-    previous_publish_timestamp_ = time;
-    should_publish = true;
-  }
 
-  if (should_publish)
-  {
-    if (realtime_odometry_publisher_->trylock())
+    if (should_publish)
     {
-      auto & odometry_message = realtime_odometry_publisher_->msg_;
-      odometry_message.header.stamp = time;
-      odometry_message.pose.pose.position.x = odometry_.getX();
-      odometry_message.pose.pose.position.y = odometry_.getY();
-      odometry_message.pose.pose.orientation.x = orientation.x();
-      odometry_message.pose.pose.orientation.y = orientation.y();
-      odometry_message.pose.pose.orientation.z = orientation.z();
-      odometry_message.pose.pose.orientation.w = orientation.w();
-      odometry_message.twist.twist.linear.x = odometry_.getLinear();
-      odometry_message.twist.twist.angular.z = odometry_.getAngular();
-      realtime_odometry_publisher_->unlockAndPublish();
-    }
+      if (realtime_odometry_publisher_->trylock())
+      {
+        auto & odometry_message = realtime_odometry_publisher_->msg_;
+        odometry_message.header.stamp = time;
+        odometry_message.pose.pose.position.x = odometry_.getX();
+        odometry_message.pose.pose.position.y = odometry_.getY();
+        odometry_message.pose.pose.orientation.x = orientation.x();
+        odometry_message.pose.pose.orientation.y = orientation.y();
+        odometry_message.pose.pose.orientation.z = orientation.z();
+        odometry_message.pose.pose.orientation.w = orientation.w();
+        odometry_message.twist.twist.linear.x = odometry_.getLinear();
+        odometry_message.twist.twist.angular.z = odometry_.getAngular();
+        realtime_odometry_publisher_->unlockAndPublish();
+      }
 
-    if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
-    {
-      auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
-      transform.header.stamp = time;
-      transform.transform.translation.x = odometry_.getX();
-      transform.transform.translation.y = odometry_.getY();
-      transform.transform.rotation.x = orientation.x();
-      transform.transform.rotation.y = orientation.y();
-      transform.transform.rotation.z = orientation.z();
-      transform.transform.rotation.w = orientation.w();
-      realtime_odometry_transform_publisher_->unlockAndPublish();
+      if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+      {
+        auto & transform = realtime_odometry_transform_publisher_->msg_.transforms.front();
+        transform.header.stamp = time;
+        transform.transform.translation.x = odometry_.getX();
+        transform.transform.translation.y = odometry_.getY();
+        transform.transform.rotation.x = orientation.x();
+        transform.transform.rotation.y = orientation.y();
+        transform.transform.rotation.z = orientation.z();
+        transform.transform.rotation.w = orientation.w();
+        realtime_odometry_transform_publisher_->unlockAndPublish();
+      }
     }
   }
 
