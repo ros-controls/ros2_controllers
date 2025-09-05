@@ -200,6 +200,9 @@ protected:
     const std::string & requested_action_name);
 
 private:
+  bool configuration_control_enabled_ = true;
+  bool joint_states_need_publishing_ = true;
+
   /**
    * @brief Handles the state transition when enaging the tool.
    * @param state The current transition of the tool.
