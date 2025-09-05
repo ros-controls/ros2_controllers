@@ -57,6 +57,7 @@ controller_interface::CallbackReturn GpioToolController::on_init()
   current_tool_transition_.store(GPIOToolTransition::IDLE);
   target_configuration_.store(std::make_shared<std::string>(""));
   current_state_ = "";
+  current_configuration_ = "";
 
   try
   {
@@ -77,7 +78,18 @@ controller_interface::CallbackReturn GpioToolController::on_configure(
   params_ = param_listener_->get_params();
   bool all_good = true;
 
-  // TODO(destogl): this can be resolved with parameter pairs too! We can remove this method.
+  if (params_.engaged_joints.empty() && params_.configuration_joints.empty())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "No joints defined therefore no joint states publisher is created.");
+    joint_states_need_publishing_ = false;
+  }
+  else
+  {
+    joint_states_need_publishing_ = true;
+  }
+
   auto check_joint_states_sizes = [this](const size_t joint_states_size, const size_t joint_states_values_size, const std::string & param_name) {
     if (joint_states_size != joint_states_values_size)
     {
@@ -121,6 +133,7 @@ controller_interface::CallbackReturn GpioToolController::on_configure(
     params_.engaged_joints.size() + params_.configuration_joints.size(),
     std::numeric_limits<double>::quiet_NaN());
 
+  // check sizes of all other parameters
   auto check_parameter_pairs = [this](const std::vector<std::string> & interfaces, const std::vector<double> & values, const std::string & parameter_name) {
     if (interfaces.size() != values.size()) {
       RCLCPP_FATAL(
@@ -158,13 +171,25 @@ controller_interface::CallbackReturn GpioToolController::on_configure(
     }
   }
 
+  if (params_.configurations.empty())
+  {
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "No configurations defined. Configuration control will be disabled.");
+    configuration_control_enabled_ = false;
+  }
+  else
+  {
+    configuration_control_enabled_ = true;
+  }
+
   if (params_.configurations.size() != params_.configuration_setup.configurations_map.size())
   {
     RCLCPP_FATAL(
       get_node()->get_logger(),
       "Size of 'configurations' and 'configuration_setup' parameters must be equal. "
       "Configurations size: %zu, configuration joints size: %zu.",
-      params_.configurations.size(), params_.configuration_joints.size());
+      params_.configurations.size(), params_.configuration_setup.configurations_map.size());
     all_good = false;
   }
   for (const auto & [name, info] : params_.configuration_setup.configurations_map)
@@ -888,8 +913,11 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
     engaging_service_callback_group_ =
       get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-    reconfigure_service_callback_group_ =
-      get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    if (configuration_control_enabled_)
+    {
+      reconfigure_service_callback_group_ =
+        get_node()->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    }
 
     auto disengaged_service_callback = [&](
                                    const std::shared_ptr<EngagingSrvType::Request> /*request*/,
@@ -923,25 +951,28 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
     engaged_service_ = get_node()->create_service<EngagingSrvType>(
       "~/" + params_.engaged.name, engaged_service_callback, qos_services, engaging_service_callback_group_);
 
-    // configure tool service
-    auto reconfigure_tool_service_callback =
-      [&](
-        const std::shared_ptr<ConfigSrvType::Request> request,
-        std::shared_ptr<ConfigSrvType::Response> response)
+    if (configuration_control_enabled_)
     {
-      auto result = process_reconfigure_request(request->config_name);
-
-      if (result.success)
+      // configure tool service
+      auto reconfigure_tool_service_callback =
+        [&](
+          const std::shared_ptr<ConfigSrvType::Request> request,
+          std::shared_ptr<ConfigSrvType::Response> response)
       {
-        result = service_wait_for_transition_end(request->config_name);
+        auto result = process_reconfigure_request(request->config_name);
 
-      }
-      response->success = result.success;
-      response->message = result.message;
-    };
-    reconfigure_tool_service_ = get_node()->create_service<ConfigSrvType>(
-      "~/reconfigure", reconfigure_tool_service_callback, qos_services,
-      reconfigure_service_callback_group_);
+        if (result.success)
+        {
+          result = service_wait_for_transition_end(request->config_name);
+
+        }
+        response->success = result.success;
+        response->message = result.message;
+      };
+      reconfigure_tool_service_ = get_node()->create_service<ConfigSrvType>(
+        "~/reconfigure", reconfigure_tool_service_callback, qos_services,
+        reconfigure_service_callback_group_);
+    }
   }
   else
   {
@@ -953,14 +984,17 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
       std::bind(&GpioToolController::handle_engaging_cancel, this, std::placeholders::_1),
       std::bind(&GpioToolController::handle_action_accepted<EngagingActionType>, this, std::placeholders::_1));
 
-    // reconfigure action server
-    config_action_server_ = rclcpp_action::create_server<ConfigActionType>(
-      get_node(), "~/reconfigure",
-      std::bind(
-        &GpioToolController::handle_config_goal, this, std::placeholders::_1,
-        std::placeholders::_2),
-      std::bind(&GpioToolController::handle_config_cancel, this, std::placeholders::_1),
-      std::bind(&GpioToolController::handle_action_accepted<ConfigActionType>, this, std::placeholders::_1));
+    if (configuration_control_enabled_)
+    {
+      // reconfigure action server
+      config_action_server_ = rclcpp_action::create_server<ConfigActionType>(
+        get_node(), "~/reconfigure",
+        std::bind(
+          &GpioToolController::handle_config_goal, this, std::placeholders::_1,
+          std::placeholders::_2),
+        std::bind(&GpioToolController::handle_config_cancel, this, std::placeholders::_1),
+        std::bind(&GpioToolController::handle_action_accepted<ConfigActionType>, this, std::placeholders::_1));
+    }
   }
 
   reset_service_callback_group_ =
@@ -977,9 +1011,12 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
 
   try
   {
-    t_js_publisher_ =
-      get_node()->create_publisher<sensor_msgs::msg::JointState>("/joint_states", rclcpp::SystemDefaultsQoS());
-    tool_joint_state_publisher_ = std::make_unique<ToolJointStatePublisher>(t_js_publisher_);
+    if (joint_states_need_publishing_)
+    {
+      t_js_publisher_ =
+        get_node()->create_publisher<sensor_msgs::msg::JointState>("/joint_states", rclcpp::SystemDefaultsQoS());
+      tool_joint_state_publisher_ = std::make_unique<ToolJointStatePublisher>(t_js_publisher_);
+    }
 
     if_publisher_ = get_node()->create_publisher<DynInterfaceMsg>(
       "~/dynamic_interfaces", rclcpp::SystemDefaultsQoS());
@@ -997,26 +1034,38 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (joint_states_values_.size() == 0)
+  if (!params_.engaged.name.empty() || !params_.disengaged.name.empty())
   {
-    RCLCPP_WARN(
+    RCLCPP_INFO(
       get_node()->get_logger(),
-      "Joint states values are empty, resizing to match the number of engaged and configuration joints. This should not happen here, as the joint states should be set in the configure method.");
-    joint_states_values_.resize(
-      params_.engaged_joints.size() + params_.configuration_joints.size(),
-      std::numeric_limits<double>::quiet_NaN());
+      "No joints defined, so no joint states will be published, althrough the publisher is "
+      "initialized.");
   }
 
-  tool_joint_state_publisher_->msg_.name.reserve(joint_states_values_.size());
-  tool_joint_state_publisher_->msg_.position = joint_states_values_;
+  // if (joint_states_values_.size() == 0)
+  // {
+  //   RCLCPP_DEBUG(
+  //     get_node()->get_logger(),
+  //     "Joint states values are empty, resizing to match the number (%zu) of engaged and configuration joints. This should not happen here, as the joint states should be set in the configure method.",
+  //     params_.engaged_joints.size() + params_.configuration_joints.size());
+  //   joint_states_values_.resize(
+  //     params_.engaged_joints.size() + params_.configuration_joints.size(),
+  //     std::numeric_limits<double>::quiet_NaN());
+  // }
 
-  for (const auto & joint_name : params_.engaged_joints)
+  if (joint_states_need_publishing_)
   {
-    tool_joint_state_publisher_->msg_.name.push_back(joint_name);
-  }
-  for (const auto & joint_name : params_.configuration_joints)
-  {
-    tool_joint_state_publisher_->msg_.name.push_back(joint_name);
+    tool_joint_state_publisher_->msg_.name.reserve(joint_states_values_.size());
+    tool_joint_state_publisher_->msg_.position = joint_states_values_;
+
+    for (const auto & joint_name : params_.engaged_joints)
+    {
+      tool_joint_state_publisher_->msg_.name.push_back(joint_name);
+    }
+    for (const auto & joint_name : params_.configuration_joints)
+    {
+      tool_joint_state_publisher_->msg_.name.push_back(joint_name);
+    }
   }
 
   interface_publisher_->msg_.states.interface_names.reserve(state_if_ios_.size());
@@ -1041,12 +1090,15 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
 
 void GpioToolController::publish_topics(const rclcpp::Time & time)
 {
-  if (tool_joint_state_publisher_ && tool_joint_state_publisher_->trylock())
+  if (joint_states_need_publishing_)
   {
-    tool_joint_state_publisher_->msg_.header.stamp = time;
-    tool_joint_state_publisher_->msg_.position = joint_states_values_;
+    if (tool_joint_state_publisher_ && tool_joint_state_publisher_->trylock())
+    {
+      tool_joint_state_publisher_->msg_.header.stamp = time;
+      tool_joint_state_publisher_->msg_.position = joint_states_values_;
+    }
+    tool_joint_state_publisher_->unlockAndPublish();
   }
-  tool_joint_state_publisher_->unlockAndPublish();
 
   if (interface_publisher_ && interface_publisher_->trylock())
   {
@@ -1180,14 +1232,17 @@ void GpioToolController::check_tool_state(const rclcpp::Time & current_time, con
     current_tool_action_.store(ToolAction::CANCELING);
   }
 
-  current_configuration_ = "";
-  check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration_, warning_output);
-  if (current_configuration_.empty())
+  if (configuration_control_enabled_)
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Tool configuration can not be determined, triggering CANCELING action and HALTED transition.");
-      current_tool_action_.store(ToolAction::CANCELING);
+    current_configuration_ = "";
+    check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration_, warning_output);
+    if (current_configuration_.empty())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Tool configuration can not be determined, triggering CANCELING action and HALTED transition.");
+        current_tool_action_.store(ToolAction::CANCELING);
+    }
   }
 }
 
