@@ -16,8 +16,6 @@ if(CMAKE_COMPILER_IS_GNUCXX
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-    acg_control_msgs
-    acg_hardware_interface_facade
     controller_interface
     Eigen3
     generate_parameter_library
@@ -64,9 +62,7 @@ target_link_libraries(
 
 target_link_libraries(
   gravity_compensation_pd_controller
-  PUBLIC ${acg_control_msgs_TARGETS}
-         acg_hardware_interface_facade::hardware_interface_facade
-         controller_interface::controller_interface
+  PUBLIC controller_interface::controller_interface
          hardware_interface::hardware_interface
          hardware_interface::mock_components
          inverse_dynamics_solver::inverse_dynamics_solver_lib
