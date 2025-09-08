@@ -15,6 +15,9 @@
 // Authors: Mathias Fuhrer
 
 #include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
+
+#include <functional>
+
 #include "lifecycle_msgs/msg/state.hpp"
 
 namespace motion_primitives_controllers
@@ -371,10 +374,13 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   }
 
   auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal_handle_.set([rt_goal](std::shared_ptr<RealtimeGoalHandle> & stored_value)
-                      { stored_value = rt_goal; });
-
-  has_active_goal_ = true;
+  rt_goal_handle_.set(
+    std::function<void(std::shared_ptr<RealtimeGoalHandle> &)>(
+      [this, rt_goal](std::shared_ptr<RealtimeGoalHandle> & handle)
+      {
+        handle = rt_goal;
+        has_active_goal_ = true;
+      }));
 
   rt_goal->execute();
 
