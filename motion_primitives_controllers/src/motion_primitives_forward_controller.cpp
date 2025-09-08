@@ -371,12 +371,10 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
   }
 
   auto rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal_handle_.set(
-    [&](auto & handle)
-    {
-      handle = rt_goal;
-      has_active_goal_ = true;
-    });
+  rt_goal_handle_.set([rt_goal](std::shared_ptr<RealtimeGoalHandle> & stored_value)
+                      { stored_value = rt_goal; });
+
+  has_active_goal_ = true;
 
   rt_goal->execute();
 
