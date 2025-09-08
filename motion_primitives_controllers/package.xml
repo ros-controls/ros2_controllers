@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>motion_primitives_forward_controller</name>
-  <version>5.5.0</version>
+  <name>motion_primitives_controllers</name>
+  <version>5.6.1</version>
   <description>Package to control robots using motion primitives like PTP, LIN and CIRC</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -21,6 +21,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>generate_parameter_library</build_depend>
+  <build_depend>ros2_control_cmake</build_depend>
 
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>

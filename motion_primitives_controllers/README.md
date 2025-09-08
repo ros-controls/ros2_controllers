@@ -46,12 +46,6 @@ These interfaces are used to communicate the internal status of the hardware int
   - `STOPPED`: The robot was stopped using the `STOP_MOTION` command and must be reset with the `RESET_STOP` command before executing new commands.
 - `ready_for_new_primitive`: Boolean flag indicating whether the interface is ready to receive a new motion primitive
 
-
- ## Parameters
- This controller uses the [`generate_parameter_library`](https://github.com/PickNikRobotics/generate_parameter_library) to handle its parameters. The parameter [definition file located in the src folder](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/src/motion_primitives_forward_controller_parameter.yaml) contains descriptions for all the parameters used by the controller.
- An example parameter file for this controller can be found in [the test directory](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/test/motion_primitives_forward_controller_params.yaml).
-
-
 # Architecture Overview
 Architecture for a UR robot with [`Universal_Robots_ROS2_Driver` in motion primitives mode](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver).
 

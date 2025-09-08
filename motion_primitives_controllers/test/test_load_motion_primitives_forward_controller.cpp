@@ -34,7 +34,7 @@ TEST(TestLoadMotionPrimitivesForwardController, load_controller)
 
   ASSERT_NO_THROW(cm.load_controller(
     "test_motion_primitives_forward_controller",
-    "motion_primitives_forward_controller/MotionPrimitivesForwardController"));
+    "motion_primitives_controllers/MotionPrimitivesForwardController"));
 
   rclcpp::shutdown();
 }
