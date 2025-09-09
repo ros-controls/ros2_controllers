@@ -352,7 +352,7 @@ TEST_F(
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  ASSERT_TRUE(is_configure_succeeded(controller_));
+  ASSERT_TRUE(is_configure_failed(controller_));
 }
 
 TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
