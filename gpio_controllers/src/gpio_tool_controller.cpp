@@ -55,7 +55,10 @@ controller_interface::CallbackReturn GpioToolController::on_init()
 {
   current_tool_action_.store(ToolAction::IDLE);
   current_tool_transition_.store(GPIOToolTransition::IDLE);
-  target_configuration_.store(std::make_shared<std::string>(""));
+  {
+    std::lock_guard<std::mutex> lock(target_configuration_mutex_);
+    target_configuration_ = std::make_shared<std::string>("");
+  }
   current_state_ = "";
   current_configuration_ = "";
 
@@ -329,8 +332,13 @@ controller_interface::return_type GpioToolController::update(
     }
     case ToolAction::RECONFIGURING:
     {
+      std::shared_ptr<const std::string> target_config_ptr;
+      {
+        std::lock_guard<std::mutex> lock(target_configuration_mutex_);
+        target_config_ptr = target_configuration_;
+      }
       handle_tool_state_transition(
-        time, reconfigure_gpios_, *(target_configuration_.load()), joint_states_values_, params_.engaged_joints.size(), current_configuration_);
+        time, reconfigure_gpios_, *(target_config_ptr), joint_states_values_, params_.engaged_joints.size(), current_configuration_);
       break;
     }
     case ToolAction::CANCELING:
@@ -900,7 +908,10 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_reconf
   {
     current_tool_action_.store(ToolAction::RECONFIGURING);
     current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
-    target_configuration_.store(std::make_shared<std::string>(config_name));
+    {
+      std::lock_guard<std::mutex> lock(target_configuration_mutex_);
+      target_configuration_ = std::make_shared<std::string>(config_name);
+    }
     response.message = "Tool reconfiguration to '" + config_name + "' has started.";
     RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
   }

@@ -18,6 +18,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
@@ -177,7 +178,9 @@ protected:
   std::atomic<uint8_t> current_tool_transition_{GPIOToolTransition::IDLE};
   std::atomic<bool> reset_halted_{false};
   std::atomic<bool> transition_time_updated_{false};
-  std::atomic<std::shared_ptr<std::string>> target_configuration_;
+  // for complex type like shared_ptr<T>, a mutex is necessary instead of std::atomic
+  std::shared_ptr<std::string> target_configuration_;
+  std::mutex target_configuration_mutex_;
 
   using ToolJointStatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr t_js_publisher_;
