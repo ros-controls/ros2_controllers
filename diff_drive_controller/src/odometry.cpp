@@ -91,11 +91,7 @@ bool Odometry::updateFromPos(
   left_wheel_old_pos_ = left_pos;
   right_wheel_old_pos_ = right_pos;
 
-  if (updateFromVel(left_vel, right_vel, time))
-  {
-    return true;
-  }
-  return false;
+  return updateFromVel(left_vel, right_vel, time);
 }
 
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
