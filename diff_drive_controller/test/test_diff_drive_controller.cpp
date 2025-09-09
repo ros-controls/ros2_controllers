@@ -213,25 +213,28 @@ protected:
     return controller_->init(params);
   }
 
-  void expect_configure_succeeded(
-    std::unique_ptr<TestableDiffDriveController> & controller, bool succeeded)
+  bool is_configure_succeeded(const std::unique_ptr<TestableDiffDriveController> & controller)
   {
     auto state = controller->configure();
-
-    if (succeeded)
-      ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-    else
-      ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+    return State::PRIMARY_STATE_INACTIVE == state.id();
   }
 
-  void expect_activate_succeeded(
-    std::unique_ptr<TestableDiffDriveController> & controller, bool succeeded)
+  bool is_configure_failed(const std::unique_ptr<TestableDiffDriveController> & controller)
+  {
+    auto state = controller->configure();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
+  }
+
+  bool is_activate_succeeded(const std::unique_ptr<TestableDiffDriveController> & controller)
   {
     auto state = controller->get_node()->activate();
-    if (succeeded)
-      ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
-    else
-      ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+    return State::PRIMARY_STATE_ACTIVE == state.id();
+  }
+
+  bool is_activate_failed(const std::unique_ptr<TestableDiffDriveController> & controller)
+  {
+    auto state = controller->get_node()->activate();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
   }
 
   std::string controller_name;
@@ -290,7 +293,7 @@ TEST_F(TestDiffDriveController, configure_fails_with_mismatching_wheel_side_size
     InitController(left_wheel_names, {right_wheel_names[0], "extra_wheel"}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, false);
+  ASSERT_TRUE(is_configure_failed(controller_));
 }
 
 TEST_F(
@@ -299,7 +302,7 @@ TEST_F(
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(left_wheel_names.size() + right_wheel_names.size()));
@@ -344,7 +347,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_prefix_no_namespace)
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, frame_prefix + "/" + odom_id);
@@ -366,7 +369,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace)
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   // frame_prefix is blank so nothing added to the frame id's
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
@@ -391,7 +394,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_prefix_set_namespace)
       test_namespace),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, frame_prefix + "/" + odom_id);
@@ -415,7 +418,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_tilde_prefix_set_namespace
       test_namespace),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
@@ -427,9 +430,9 @@ TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
-  expect_activate_succeeded(controller_, false);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(TestDiffDriveController, expect_activate_succeededs_with_pos_resources_assigned)
@@ -437,11 +440,11 @@ TEST_F(TestDiffDriveController, expect_activate_succeededs_with_pos_resources_as
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
   // We implicitly test that by default position feedback is required
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 }
 
 TEST_F(TestDiffDriveController, expect_activate_succeededs_with_vel_resources_assigned)
@@ -452,11 +455,11 @@ TEST_F(TestDiffDriveController, expect_activate_succeededs_with_vel_resources_as
       {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesVelFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 }
 
 TEST_F(TestDiffDriveController, activate_succeeds_with_open_loop_assigned)
@@ -502,11 +505,11 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -686,11 +689,11 @@ TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_1)
       {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, false);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_2)
@@ -701,11 +704,11 @@ TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_2)
       {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesVelFeedback();
 
-  expect_activate_succeeded(controller_, false);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_1)
@@ -747,11 +750,11 @@ TEST_F(TestDiffDriveController, cleanup)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -799,7 +802,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
@@ -807,7 +810,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
   EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   // send msg
   const double linear = 1.0;
@@ -842,7 +845,7 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   executor.cancel();
 }
@@ -868,11 +871,11 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(false));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -938,7 +941,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   executor.cancel();
 }
@@ -963,11 +966,11 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(true));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -1016,7 +1019,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value())
     << "Wheels should be halted on cleanup()";
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   executor.cancel();
 }
@@ -1026,7 +1029,7 @@ TEST_F(TestDiffDriveController, reference_interfaces_are_properly_exported)
   ASSERT_EQ(
     InitController(left_wheel_names, right_wheel_names), controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   auto reference_interfaces = controller_->export_reference_interfaces();
   ASSERT_EQ(reference_interfaces.size(), 2)
@@ -1066,11 +1069,11 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -1113,7 +1116,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
     << "Wheels should be halted on deactivate()";
 
   // Activate again
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 
@@ -1162,11 +1165,11 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   assignResourcesPosFeedback();
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   waitForSetup(executor);
 

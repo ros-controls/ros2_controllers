@@ -122,11 +122,11 @@ public:
   {
     ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
 
-    expect_configure_succeeded(controller_, true);
+    ASSERT_TRUE(is_configure_succeeded(controller_));
 
     setup_command_and_state_interfaces();
 
-    expect_activate_succeeded(controller_, true);
+    ASSERT_TRUE(is_activate_succeeded(controller_));
   }
 
   void stop_test_when_message_cannot_be_published(int max_sub_check_loop_count)
@@ -201,25 +201,28 @@ public:
     return max_sub_check_loop_count;
   }
 
-  void expect_configure_succeeded(
-    std::unique_ptr<FriendGpioCommandController> & controller, bool succeeded)
+  bool is_configure_succeeded(const std::unique_ptr<FriendGpioCommandController> & controller)
   {
     auto state = controller->configure();
-
-    if (succeeded)
-      ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-    else
-      ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+    return State::PRIMARY_STATE_INACTIVE == state.id();
   }
 
-  void expect_activate_succeeded(
-    std::unique_ptr<FriendGpioCommandController> & controller, bool succeeded)
+  bool is_configure_failed(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->configure();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
+  }
+
+  bool is_activate_succeeded(const std::unique_ptr<FriendGpioCommandController> & controller)
   {
     auto state = controller->get_node()->activate();
-    if (succeeded)
-      ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
-    else
-      ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+    return State::PRIMARY_STATE_ACTIVE == state.id();
+  }
+
+  bool is_activate_failed(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->get_node()->activate();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
   }
 
   std::unique_ptr<FriendGpioCommandController> controller_;
@@ -318,7 +321,7 @@ TEST_F(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, false);
+  ASSERT_TRUE(is_configure_failed(controller_));
 }
 
 TEST_F(
@@ -334,7 +337,7 @@ TEST_F(
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 }
 
 TEST_F(
@@ -349,7 +352,7 @@ TEST_F(
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, false);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 }
 
 TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
@@ -378,7 +381,7 @@ TEST_F(
   const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
   command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
@@ -391,7 +394,7 @@ TEST_F(
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  expect_activate_succeeded(controller_, false);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(
@@ -408,7 +411,7 @@ TEST_F(
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
   command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
@@ -421,7 +424,7 @@ TEST_F(
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  expect_activate_succeeded(controller_, false);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(
@@ -666,11 +669,11 @@ TEST_F(
     controller_->init(create_ctrl_params(node_options, minimal_robot_urdf_with_gpio));
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
@@ -703,11 +706,11 @@ TEST_F(
   const auto result_of_initialization = controller_->init(create_ctrl_params(node_options));
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
 
-  expect_configure_succeeded(controller_, true);
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   controller_->assign_interfaces({}, std::move(state_interfaces));
 
-  expect_activate_succeeded(controller_, true);
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
