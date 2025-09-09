@@ -44,3 +44,4 @@ jobs:
       pixi_dependencies: typeguard jinja2 boost compilers
       windows_dependencies: ros2_controllers.windows.rolling.repos
       ninja_packages: rsl
+      cmake_args: -DBUILD_TESTING=OFF
