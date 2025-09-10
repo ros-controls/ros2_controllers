@@ -74,17 +74,15 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
 
   if (!params_.sensor_name.empty())
   {
-    force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-      semantic_components::ForceTorqueSensor(params_.sensor_name));
+    force_torque_sensor_ =
+      std::make_unique<semantic_components::ForceTorqueSensor>(params_.sensor_name);
   }
   else
   {
     auto const & force_names = params_.interface_names.force;
     auto const & torque_names = params_.interface_names.torque;
     force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-      semantic_components::ForceTorqueSensor(
-        force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y,
-        torque_names.z));
+      force_names.x, force_names.y, force_names.z, torque_names.x, torque_names.y, torque_names.z);
   }
 
   try
