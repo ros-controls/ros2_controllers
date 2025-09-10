@@ -17,8 +17,6 @@
 
 #include <atomic>
 #include <functional>
-#include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
@@ -39,6 +37,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "std_srvs/srv/trigger.hpp"
@@ -168,7 +167,7 @@ protected:
   std::shared_ptr<gpio_tool_controller::ParamListener> param_listener_;
   rclcpp::Service<EngagingSrvType>::SharedPtr disengaged_service_;
   rclcpp::Service<EngagingSrvType>::SharedPtr engaged_service_;
-  rclcpp::Service<ConfigSrvType>::SharedPtr reconfigure_tool_service_;
+  rclcpp::Service<ConfigSrvType>::SharedPtr reconfigure_tool_service_;  
   rclcpp_action::Server<EngagingActionType>::SharedPtr engaging_action_server_;
   rclcpp_action::Server<ConfigActionType>::SharedPtr config_action_server_;
   rclcpp::Service<ResetSrvType>::SharedPtr reset_service_;
@@ -178,9 +177,7 @@ protected:
   std::atomic<uint8_t> current_tool_transition_{GPIOToolTransition::IDLE};
   std::atomic<bool> reset_halted_{false};
   std::atomic<bool> transition_time_updated_{false};
-  // for complex type like shared_ptr<T>, a mutex is necessary instead of std::atomic
-  std::shared_ptr<std::string> target_configuration_;
-  std::mutex target_configuration_mutex_;
+  realtime_tools::RealtimeThreadSafeBox<std::string> target_configuration_;
 
   using ToolJointStatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr t_js_publisher_;
