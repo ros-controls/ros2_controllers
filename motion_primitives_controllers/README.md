@@ -13,7 +13,7 @@ Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ)
 <a name="moprim_forward_controller"/>
 
 ## Command and State Interfaces
-TBoth controllers use the following command and state interfaces to transmit the motion primitives. All interfaces use the naming scheme `tf_prefix_ + "motion_primitive/<interface name>"` where the `tf_prefix` is provided to the controller as a parameter.
+Both controllers use the following command and state interfaces to transmit the motion primitives. All interfaces use the naming scheme `tf_prefix_ + "motion_primitive/<interface name>"` where the `tf_prefix` is provided to the controller as a parameter.
 
 ### Command Interfaces
 These interfaces are used to send motion primitive data to the hardware interface:
@@ -38,15 +38,6 @@ These interfaces are used to communicate the internal status of the hardware int
   - `STOPPING`: The hardware interface has received the `STOP_MOTION` command, but the robot has not yet come to a stop.
   - `STOPPED`: The robot was stopped using the `STOP_MOTION` command and must be reset with the `RESET_STOP` command before executing new commands.
 - `ready_for_new_primitive`: Boolean flag indicating whether the interface is ready to receive a new motion primitive
-
-
- ## Parameters
-These controllers use the [`generate_parameter_library`](https://github.com/PickNikRobotics/generate_parameter_library) to handle their parameters.
-
-For the **motion_primitives_forward_controller**, the [parameter definition file located in the src folder](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/src/motion_primitives_forward_controller_parameter.yaml) contains descriptions for all the parameters used by the controller. An example parameter file can be found in [the test directory](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller/test/motion_primitives_forward_controller_params.yaml).
-
-For the **motion_primitives_from_trajectory_controller**, the [parameter definition file located in the src folder](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller_parameter/src/motion_primitives_from_trajectory_controller_parameter.yaml) contains descriptions for all the parameters used by the controller. An example parameter file can be found in [the test directory](https://github.com/ros-controls/ros2_controllers/blob/master/motion_primitives_forward_controller_parameter/test/motion_primitives_from_trajectory_controller_params.yaml).
-
 
 # motion_primitives_forward_controller
 This controller provides an interface for sending motion primitives to an industrial robot controller using the `ExecuteMotionPrimitiveSequence.action` action from [control_msgs](https://github.com/ros-controls/control_msgs/blob/motion_primitives/control_msgs/action/ExecuteMotionPrimitiveSequence.action). The controller receives the primitives via the action interface and forwards them through command interfaces to the robot-specific hardware interface. Currently, hardware interfaces for [Universal Robots](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver) and [KUKA Robots](https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver) are implemented.

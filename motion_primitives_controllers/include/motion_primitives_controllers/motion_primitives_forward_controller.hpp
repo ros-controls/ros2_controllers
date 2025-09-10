@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <motion_primitives_controllers/motion_primitives_forward_controller_parameters.hpp>
+#include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "motion_primitives_controllers/motion_primitives_base_controller.hpp"
 
 namespace motion_primitives_controllers

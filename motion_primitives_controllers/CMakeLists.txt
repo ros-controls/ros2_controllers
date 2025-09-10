@@ -63,21 +63,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${std_srvs_TARGETS}
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE "MOTION_PRIMITIVES_CONTROLLERS_BUILDING_DLL")
-
 pluginlib_export_plugin_description_file(
   controller_interface controller_plugins.xml)
 
 install(
   TARGETS motion_primitives_forward_controller_parameters
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(
-  TARGETS motion_primitives_from_trajectory_controller_parameters
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -95,14 +85,8 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(FILES controller_plugins.xml
-  DESTINATION share/${PROJECT_NAME}
-)
-
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-
 ament_export_libraries(
   ${PROJECT_NAME}
 )
