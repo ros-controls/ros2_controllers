@@ -74,6 +74,14 @@ install(
   RUNTIME DESTINATION bin
 )
 
+install(
+  TARGETS motion_primitives_from_trajectory_controller_parameters
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
