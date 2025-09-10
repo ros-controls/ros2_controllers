@@ -59,8 +59,7 @@ controller_interface::CallbackReturn IMUSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(
-    semantic_components::IMUSensor(params_.sensor_name));
+  imu_sensor_ = std::make_unique<semantic_components::IMUSensor>(params_.sensor_name);
   try
   {
     // register ft sensor data publisher
