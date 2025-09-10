@@ -55,10 +55,7 @@ controller_interface::CallbackReturn GpioToolController::on_init()
 {
   current_tool_action_.store(ToolAction::IDLE);
   current_tool_transition_.store(GPIOToolTransition::IDLE);
-  {
-    std::lock_guard<std::mutex> lock(target_configuration_mutex_);
-    target_configuration_ = std::make_shared<std::string>("");
-  }
+  target_configuration_.set("");
   current_state_ = "";
   current_configuration_ = "";
 
@@ -331,14 +328,15 @@ controller_interface::return_type GpioToolController::update(
       break;
     }
     case ToolAction::RECONFIGURING:
-    {
-      std::shared_ptr<const std::string> target_config_ptr;
-      {
-        std::lock_guard<std::mutex> lock(target_configuration_mutex_);
-        target_config_ptr = target_configuration_;
-      }
-      handle_tool_state_transition(
-        time, reconfigure_gpios_, *(target_config_ptr), joint_states_values_, params_.engaged_joints.size(), current_configuration_);
+    { 
+      // realtime_tools::RealtimeThreadSafeBox - only way to access box contents without copying. In the provided lambda we operate on the data.  
+      bool was_executed = target_configuration_.try_get(
+        [&](const std::string & target_config){
+          handle_tool_state_transition(
+            time, reconfigure_gpios_, target_config, joint_states_values_, params_.engaged_joints.size(), current_configuration_);
+        }
+      );
+
       break;
     }
     case ToolAction::CANCELING:
@@ -908,10 +906,7 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_reconf
   {
     current_tool_action_.store(ToolAction::RECONFIGURING);
     current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
-    {
-      std::lock_guard<std::mutex> lock(target_configuration_mutex_);
-      target_configuration_ = std::make_shared<std::string>(config_name);
-    }
+    target_configuration_.set(config_name);
     response.message = "Tool reconfiguration to '" + config_name + "' has started.";
     RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
   }
