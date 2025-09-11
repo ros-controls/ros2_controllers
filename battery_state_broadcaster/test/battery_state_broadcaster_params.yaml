@@ -1,0 +1,52 @@
+# Copyright (c) 2025, b-robotized Group
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+test_battery_state_broadcaster:
+  ros__parameters:
+    state_joints:
+      - "left_wheel"
+      - "right_wheel"
+    interfaces:
+      left_wheel:
+        battery_temperature: true
+        battery_current: false
+        battery_charge: true
+        battery_percentage: false
+        battery_power_supply_status: true
+        battery_power_supply_health: true
+        battery_present: false
+      right_wheel:
+        battery_temperature: true
+        battery_current: true
+        battery_charge: true
+        battery_percentage: true
+        battery_power_supply_status: true
+        battery_power_supply_health: true
+        battery_present: false
+    left_wheel:
+      minimum_voltage: 0.0
+      maximum_voltage: 10.0
+      capacity: 12000.0
+      design_capacity: 13000.0
+      power_supply_technology: 3
+      location: "left_slot"
+      serial_number: "left_serial_device"
+    right_wheel:
+      minimum_voltage: 0.0
+      maximum_voltage: 15.0
+      capacity: 17000.0
+      design_capacity: 18000.0
+      power_supply_technology: 3
+      location: "right_slot"
+      serial_number: "right_serial_device"
