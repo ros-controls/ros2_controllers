@@ -1,8 +1,0 @@
-<library path="io_gripper_controller">
-  <class name="io_gripper_controller/IOGripperController"
-         type="io_gripper_controller::IOGripperController" base_class_type="controller_interface::ControllerInterface">
-  <description>
-    IOGripperController ros2_control controller used to control the gripper using IOs.
-  </description>
-  </class>
-</library>
