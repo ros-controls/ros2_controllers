@@ -2,6 +2,9 @@
 Changelog for package gripper_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.31.0 (2025-08-27)
 -------------------
 * Add deprecation notice of gripper_action_controller to docs (`#1852 <https://github.com/ros-controls/ros2_controllers/issues/1852>`_)

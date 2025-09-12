@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Preallocate `std::vector` variables for interfaces (backport `#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_) (`#1899 <https://github.com/ros-controls/ros2_controllers/issues/1899>`_)
+* Contributors: mergify[bot]
+
 4.31.0 (2025-08-27)
 -------------------
 

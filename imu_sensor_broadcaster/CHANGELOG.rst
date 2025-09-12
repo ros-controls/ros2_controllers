@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1908 <https://github.com/ros-controls/ros2_controllers/issues/1908>`_)
+* Contributors: mergify[bot]
+
 4.31.0 (2025-08-27)
 -------------------
 

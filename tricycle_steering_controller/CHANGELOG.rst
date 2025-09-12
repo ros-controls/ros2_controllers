@@ -2,6 +2,9 @@
 Changelog for package tricycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.31.0 (2025-08-27)
 -------------------
 

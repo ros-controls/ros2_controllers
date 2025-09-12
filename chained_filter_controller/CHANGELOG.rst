@@ -2,6 +2,9 @@
 Changelog for package chained_filter_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.31.0 (2025-08-27)
 -------------------
 * Add a generic chained_filter_controller (backport `#1634 <https://github.com/ros-controls/ros2_controllers/issues/1634>`_) (`#1856 <https://github.com/ros-controls/ros2_controllers/issues/1856>`_)
