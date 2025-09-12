@@ -56,8 +56,7 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  range_sensor_ = std::make_unique<semantic_components::RangeSensor>(
-    semantic_components::RangeSensor(params_.sensor_name));
+  range_sensor_ = std::make_unique<semantic_components::RangeSensor>(params_.sensor_name);
   try
   {
     // register ft sensor data publisher
