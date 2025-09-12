@@ -30,8 +30,15 @@ TEST(TestLoadGpioCommandController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-    cm.load_controller("test_gpio_tool_controller", "gpio_controllers/GpioToolController"));
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) +
+    "/gpio_tool_controller/test_gpio_tool_controller_gripper_example.yaml";
+
+  cm.set_parameter({"test_gpio_tool_controller.params_file", test_file_path});
+
+  ASSERT_NE(
+    cm.load_controller("test_gpio_tool_controller", "gpio_tool_controller/GpioToolController"),
+    nullptr);
 
   rclcpp::shutdown();
 }

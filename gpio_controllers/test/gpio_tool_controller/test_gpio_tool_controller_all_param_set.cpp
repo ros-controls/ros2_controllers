@@ -19,30 +19,30 @@
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
-#include "test_io_gripper_controller.hpp"
+#include "test_gpio_tool_controller.hpp"
 
 // Test setting all params and getting success
-TEST_F(IOGripperControllerTest, AllParamsSetSuccess)
+TEST_F(GpioToolControllerTest, AllParamsSetSuccess)
 {
-  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setting all parameters");
-  SetUpController();
-  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setting up controllers");
-
+  SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
   setup_parameters();
-
-  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setup parameters successfully");
 
   // configure success.
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
-  RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "Setup parameters successfully");
+
+  RCLCPP_INFO(rclcpp::get_logger("GpioToolControllerTest"), "Setup parameters successfully");
 }
 
 // Test not setting the one param and getting failure
-TEST_F(IOGripperControllerTest, AllParamNotSetFailure)
+TEST_F(GpioToolControllerTest, AllParamNotSetFailure)
 {
-  SetUpController();
+  SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
 
   setup_parameters_fail();
 

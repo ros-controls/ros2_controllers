@@ -18,8 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include <rclcpp/rclcpp.hpp>
-#include "test_io_gripper_controller.hpp"
+#include "test_gpio_tool_controller.hpp"
 
 int main(int argc, char ** argv)
 {
