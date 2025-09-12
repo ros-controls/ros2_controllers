@@ -2,6 +2,11 @@
 Changelog for package gps_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix temporary copies of other semantic components (`#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_)
+* Contributors: Christoph Fröhlich
+
 5.6.1 (2025-08-30)
 ------------------
 

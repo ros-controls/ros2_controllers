@@ -2,6 +2,12 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* FTS: Don't make a temporary copy of semantic component (`#1902 <https://github.com/ros-controls/ros2_controllers/issues/1902>`_)
+* Add filtering capability to ft_broadcaster (`#1814 <https://github.com/ros-controls/ros2_controllers/issues/1814>`_)
+* Contributors: Christoph Fröhlich, Óscar Martínez Martínez
+
 5.6.1 (2025-08-30)
 ------------------
 
