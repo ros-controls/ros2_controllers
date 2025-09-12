@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1907 <https://github.com/ros-controls/ros2_controllers/issues/1907>`_)
+* Contributors: mergify[bot]
+
 2.49.1 (2025-07-31)
 -------------------
 * Fix `child_frame_id` in controller_state_msg (backport `#1601 <https://github.com/ros-controls/ros2_controllers/issues/1601>`_) (`#1834 <https://github.com/ros-controls/ros2_controllers/issues/1834>`_)

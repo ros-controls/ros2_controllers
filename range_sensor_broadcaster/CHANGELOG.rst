@@ -2,6 +2,11 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1907 <https://github.com/ros-controls/ros2_controllers/issues/1907>`_)
+* Contributors: mergify[bot]
+
 2.49.1 (2025-07-31)
 -------------------
 

@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* docs(joint_state_broadcaster): clarify /dynamic_joint_states contents (backport `#1865 <https://github.com/ros-controls/ros2_controllers/issues/1865>`_) (`#1870 <https://github.com/ros-controls/ros2_controllers/issues/1870>`_)
+* Contributors: mergify[bot]
+
 2.49.1 (2025-07-31)
 -------------------
 
