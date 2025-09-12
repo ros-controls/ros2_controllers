@@ -27,13 +27,16 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 
 using hardware_interface::LoanedStateInterface;
+using lifecycle_msgs::msg::State;
 using callback_return_type =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 namespace
 {
 constexpr uint16_t GPS_SERVICE = 1;
@@ -60,7 +63,11 @@ class GPSSensorBroadcasterTest : public ::testing::Test
 public:
   GPSSensorBroadcasterTest() { rclcpp::init(0, nullptr); }
 
-  ~GPSSensorBroadcasterTest() { rclcpp::shutdown(); }
+  ~GPSSensorBroadcasterTest()
+  {
+    gps_broadcaster_.reset(nullptr);
+    rclcpp::shutdown();
+  }
 
   void SetUp()
   {
@@ -103,6 +110,34 @@ public:
     sensor_msgs::msg::NavSatFix gps_msg;
     subscription->take(gps_msg, msg_info);
     return gps_msg;
+  }
+
+  bool is_configure_succeeded(
+    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
+  {
+    auto state = broadcaster->configure();
+    return State::PRIMARY_STATE_INACTIVE == state.id();
+  }
+
+  bool is_configure_failed(
+    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
+  {
+    auto state = broadcaster->configure();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
+  }
+
+  bool is_activate_succeeded(
+    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
+  {
+    auto state = broadcaster->get_node()->activate();
+    return State::PRIMARY_STATE_ACTIVE == state.id();
+  }
+
+  bool is_activate_failed(
+    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
+  {
+    auto state = broadcaster->get_node()->activate();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
   }
 
 protected:
@@ -152,10 +187,10 @@ TEST_F(
     "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
     node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(gps_broadcaster_));
+
+  ASSERT_TRUE(is_activate_succeeded(gps_broadcaster_));
 }
 
 TEST_F(
@@ -167,11 +202,12 @@ TEST_F(
     "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
     node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(gps_broadcaster_));
+
   setup_gps_broadcaster();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_activate_succeeded(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
@@ -199,11 +235,12 @@ TEST_F(
     "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
     node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(gps_broadcaster_));
+
   setup_gps_broadcaster();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_activate_succeeded(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
@@ -227,11 +264,12 @@ TEST_F(
     "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
     node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(gps_broadcaster_));
+
   setup_gps_broadcaster<semantic_components::GPSSensorOption::WithCovariance>();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(is_activate_succeeded(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
