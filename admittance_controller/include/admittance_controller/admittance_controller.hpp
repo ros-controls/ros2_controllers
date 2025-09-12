@@ -27,6 +27,10 @@
 #include "admittance_controller/admittance_rule.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "filters/filter_chain.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
@@ -115,6 +119,9 @@ protected:
 
   // admittance parameters
   std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
+
+  // filter chain for Wrench data
+  std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
   // real-time boxes
   realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
