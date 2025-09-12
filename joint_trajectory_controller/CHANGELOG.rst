@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.50.0 (2025-09-12)
+-------------------
 * Preallocate `std::vector` variables for interfaces (backport `#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_) (`#1898 <https://github.com/ros-controls/ros2_controllers/issues/1898>`_)
 * Reset JTC PID's to zero on_activate() (backport `#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_) (`#1843 <https://github.com/ros-controls/ros2_controllers/issues/1843>`_)
 * Contributors: mergify[bot]
