@@ -321,7 +321,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
 
   // Initialize FTS semantic semantic_component
   force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-    semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
+    admittance_->parameters_.ft_sensor.name);
 
   // configure admittance rule
   if (
