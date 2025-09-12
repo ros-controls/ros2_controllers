@@ -49,17 +49,17 @@ target_include_directories(gpio_tool_controllers PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(gpio_tool_controllers PUBLIC
-                      gpio_tool_controller_parameters
-                      controller_interface::controller_interface
-                      hardware_interface::hardware_interface
-                      pluginlib::pluginlib
-                      rclcpp::rclcpp
-                      rclcpp_lifecycle::rclcpp_lifecycle
-                      realtime_tools::realtime_tools
-                      ${control_msgs_TARGETS}
-                      ${builtin_interfaces_TARGETS}
-                      ${std_srvs_TARGETS}
-                      )
+  gpio_tool_controller_parameters
+  controller_interface::controller_interface
+  hardware_interface::hardware_interface
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  realtime_tools::realtime_tools
+  ${control_msgs_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${std_srvs_TARGETS}
+)
 
 pluginlib_export_plugin_description_file(controller_interface gpio_controllers_plugin.xml)
 
@@ -104,7 +104,7 @@ if(BUILD_TESTING)
     gpio_controllers
     ros2_control_test_assets::ros2_control_test_assets
   )
-
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(
     test_load_gpio_tool_controller
     test/test_load_gpio_tool_controller.cpp
@@ -116,28 +116,30 @@ if(BUILD_TESTING)
     ros2_control_test_assets::ros2_control_test_assets
   )
 
-  # ament_add_gmock(test_gpio_tool_controller
-  #   test/gpio_tool_controller/test_gpio_tool_controller.cpp
+  ament_add_gmock(test_gpio_tool_controller
+    test/gpio_tool_controller/test_gpio_tool_controller.cpp
   #   test/gpio_tool_controller/test_gpio_tool_controller_open.cpp
   #   test/gpio_tool_controller/test_gpio_tool_controller_close.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_all_param_set.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_all_param_set.cpp
   #   test/gpio_tool_controller/test_gpio_tool_controller_open_close_action.cpp
   #   test/gpio_tool_controller/test_gpio_tool_controller_reconfigure.cpp
   #   test/gpio_tool_controller/test_gpio_tool_controller_reconfigure_action.cpp
-  # )
-  # target_include_directories(test_gpio_tool_controller PRIVATE include)
-  # target_link_libraries(test_gpio_tool_controller
-  #   gpio_tool_controller
-  #   ros2_control_test_assets::ros2_control_test_assets
-  # )
+  )
+  target_include_directories(test_gpio_tool_controller PRIVATE include)
+  target_link_libraries(test_gpio_tool_controller
+    gpio_tool_controllers
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
+  )
 endif()
 
 ament_export_dependencies(
-  controller_interface
-  hardware_interface
-  rclcpp
-  rclcpp_lifecycle
-  realtime_tools
+  controller_interface::controller_interface
+  hardware_interface::hardware_interface
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  realtime_tools::realtime_tools
 )
 ament_export_include_directories(
   include

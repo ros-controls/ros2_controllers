@@ -1,8 +1,8 @@
-test_io_gripper_controller:
+test_gpio_tool_controller:
   ros__parameters:
     use_action: true
     timeout: 5.0
-    tollerance: 0.00001  # binary data on the interfaces therefore small tollerance
+    tolerance: 0.00001  # binary data on the interfaces therefore small tolerance
     engaged_joints: [gripper_clamp_jaw]
 
     disengaged:
