@@ -63,6 +63,13 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_EQ(controller_->params_.kinematics.base_frame_offset.theta, 0.0);
 
   ASSERT_EQ(
+    controller_->params_.pose_covariance_diagonal,
+    std::vector<double>({0.0, 6.0, 12.0, 18.0, 24.0, 30.0}));
+  ASSERT_EQ(
+    controller_->params_.twist_covariance_diagonal,
+    std::vector<double>({0.0, 7.0, 14.0, 21.0, 28.0, 35.0}));
+
+  ASSERT_EQ(
     controller_->params_.front_left_wheel_command_joint_name, TEST_FRONT_LEFT_CMD_JOINT_NAME);
   ASSERT_EQ(
     controller_->params_.front_right_wheel_command_joint_name, TEST_FRONT_RIGHT_CMD_JOINT_NAME);
@@ -140,6 +147,17 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_na
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_link_id);
+
+  std::array<double, 36> pose_covariance = {
+    {0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 12.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 18.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 24.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 30.0}};
+
+  std::array<double, 36> twist_covariance = {
+    {0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 7.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 14.0, 0.0, 0.0, 0.0,
+     0.0, 0.0, 0.0, 21.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 28.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 35.0}};
+
+  ASSERT_EQ(odometry_message.pose.covariance, pose_covariance);
+  ASSERT_EQ(odometry_message.twist.covariance, twist_covariance);
 }
 
 TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
@@ -320,11 +338,11 @@ TEST_F(
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value(), 101.101);
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_value()));
+  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -546,7 +564,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 0.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 0.0);
   }
 
   msg_2.header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.01);
@@ -585,7 +603,7 @@ TEST_F(
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 3.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 3.0);
   }
 }
 
@@ -644,7 +662,7 @@ TEST_F(
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->command_interfaces_[i].get_value(), 6.0);
+    EXPECT_EQ(controller_->command_interfaces_[i].get_optional().value(), 6.0);
   }
 }
 
@@ -799,10 +817,14 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
     size_t fr_index = controller_->get_front_right_wheel_index();
     size_t rl_index = controller_->get_rear_left_wheel_index();
     size_t rr_index = controller_->get_rear_right_wheel_index();
-    joint_state_values_[fl_index] = controller_->command_interfaces_[fl_index].get_value();
-    joint_state_values_[fr_index] = controller_->command_interfaces_[fr_index].get_value();
-    joint_state_values_[rl_index] = controller_->command_interfaces_[rl_index].get_value();
-    joint_state_values_[rr_index] = controller_->command_interfaces_[rr_index].get_value();
+    joint_state_values_[fl_index] =
+      controller_->command_interfaces_[fl_index].get_optional().value();
+    joint_state_values_[fr_index] =
+      controller_->command_interfaces_[fr_index].get_optional().value();
+    joint_state_values_[rl_index] =
+      controller_->command_interfaces_[rl_index].get_optional().value();
+    joint_state_values_[rr_index] =
+      controller_->command_interfaces_[rr_index].get_optional().value();
   }
 
   RCLCPP_INFO(

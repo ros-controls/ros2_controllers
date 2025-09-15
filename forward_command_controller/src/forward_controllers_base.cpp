@@ -72,7 +72,21 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
 
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
     "~/commands", rclcpp::SystemDefaultsQoS(),
-    [this](const CmdType::SharedPtr msg) { rt_command_.set(*msg); });
+    [this](const CmdType::SharedPtr msg)
+    {
+      const auto cmd = *msg;
+
+      if (!std::all_of(
+            cmd.data.cbegin(), cmd.data.cend(),
+            [](const auto & value) { return std::isfinite(value); }))
+      {
+        RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "Non-finite value received. Dropping message");
+        return;
+      }
+      rt_command_.set(cmd);
+    });
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -98,22 +112,6 @@ controller_interface::InterfaceConfiguration ForwardControllersBase::state_inter
 controller_interface::CallbackReturn ForwardControllersBase::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  //  check if we have all resources defined in the "points" parameter
-  //  also verify that we *only* have the resources defined in the "points" parameter
-  // ATTENTION(destogl): Shouldn't we use ordered interface all the time?
-  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    ordered_interfaces;
-  if (
-    !controller_interface::get_ordered_interfaces(
-      command_interfaces_, command_interface_types_, std::string(""), ordered_interfaces) ||
-    command_interface_types_.size() != ordered_interfaces.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
-      command_interface_types_.size(), ordered_interfaces.size());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // reset command buffer if a command came through callback when controller was inactive
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
@@ -162,10 +160,17 @@ controller_interface::return_type ForwardControllersBase::update(
 
   for (auto index = 0ul; index < command_interfaces_.size(); ++index)
   {
-    command_interfaces_[index].set_value(joint_commands_.data[index]);
+    const auto & value = joint_commands_.data[index];
+
+    if (!command_interfaces_[index].set_value(value))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(), "Unable to set the command interface value %s: value = %f",
+        command_interfaces_[index].get_name().c_str(), value);
+      return controller_interface::return_type::OK;
+    }
   }
 
   return controller_interface::return_type::OK;
 }
-
 }  // namespace forward_command_controller

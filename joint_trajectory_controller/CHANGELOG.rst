@@ -2,6 +2,37 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.7.0 (2025-09-12)
+------------------
+* [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+* Filling `index` field in feedback message of the action interface (`#1850 <https://github.com/ros-controls/ros2_controllers/issues/1850>`_)
+* Contributors: Giuseppe Monetti
+
+5.5.0 (2025-07-31)
+------------------
+* Reset JTC PID's to zero on_activate() (`#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_)
+* Fix `-Wunused-result` warnings in JTC (`#1831 <https://github.com/ros-controls/ros2_controllers/issues/1831>`_)
+* Contributors: Christoph Fröhlich, Marq Rasmussen
+
+5.4.0 (2025-07-23)
+------------------
+* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
+* Contributors: Sanjeev Kumar
+
+5.3.0 (2025-07-14)
+------------------
+* Use ParamListener::try_get_params to Avoid Blocking in Real-Time Contexts (`#1198 <https://github.com/ros-controls/ros2_controllers/issues/1198>`_)
+* Add speed scaling support to JTC (`#1191 <https://github.com/ros-controls/ros2_controllers/issues/1191>`_)
+* Contributors: Felix Exner (fexner), Kenta Kato
+
 5.2.0 (2025-06-23)
 ------------------
 * Fix atomic variables in JTC (`#1749 <https://github.com/ros-controls/ros2_controllers/issues/1749>`_)
