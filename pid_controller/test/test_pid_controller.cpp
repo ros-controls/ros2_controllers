@@ -193,6 +193,51 @@ TEST_F(PidControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
+TEST_F(PidControllerTest, all_parameters_set_configure_success_full_gains)
+{
+  SetUpController("test_pid_controller_full_gains");
+
+  ASSERT_TRUE(controller_->params_.dof_names.empty());
+  ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
+  ASSERT_TRUE(controller_->params_.command_interface.empty());
+  ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
+  ASSERT_FALSE(controller_->params_.use_external_measured_states);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_THAT(controller_->params_.dof_names, testing::ElementsAreArray(dof_names_));
+  ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
+  ASSERT_THAT(controller_->reference_and_state_dof_names_, testing::ElementsAreArray(dof_names_));
+  for (const auto & dof_name : dof_names_)
+  {
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 1.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i, 2.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].d, 3.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].derivative_filter_time, 1.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_max, 5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_min, -5.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_max, 4.0);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i_clamp_min, -4.0);
+    ASSERT_EQ(
+      controller_->params_.gains.dof_names_map[dof_name].antiwindup_strategy, "back_calculation");
+    ASSERT_EQ(
+      controller_->params_.gains.dof_names_map[dof_name].integration_method, "backward_euler");
+    ASSERT_EQ(
+      controller_->params_.gains.dof_names_map[dof_name].derivative_method, "backward_euler");
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].tracking_time_constant, 0.1);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].error_deadband, 0.01);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 1.5);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].angle_wraparound, true);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].save_i_term, false);
+    ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].activate_state_publisher, true);
+  }
+  ASSERT_EQ(controller_->params_.command_interface, command_interface_);
+  EXPECT_THAT(
+    controller_->params_.reference_and_state_interfaces,
+    testing::ElementsAreArray(state_interfaces_));
+  ASSERT_FALSE(controller_->params_.use_external_measured_states);
+}
+
 /**
  * @brief Check the update logic in non chained mode with feedforward gain is 0
  *

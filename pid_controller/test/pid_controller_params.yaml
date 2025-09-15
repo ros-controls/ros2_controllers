@@ -90,3 +90,32 @@ test_save_i_term_on:
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, save_i_term: true}
+
+test_pid_controller_full_gains:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    gains:
+      joint1:
+        p: 1.0
+        i: 2.0
+        d: 3.0
+        derivative_filter_time: 1.0
+        u_clamp_max: 5.0
+        u_clamp_min: -5.0
+        i_clamp_max: 4.0
+        i_clamp_min: -4.0
+        antiwindup_strategy: "back_calculation"
+        integration_method: "backward_euler"
+        derivative_method: "backward_euler"
+        tracking_time_constant: 0.1
+        error_deadband: 0.01
+        feedforward_gain: 1.5
+        angle_wraparound: true
+        save_i_term: false
+        activate_state_publisher: true
