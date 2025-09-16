@@ -51,21 +51,26 @@ TEST_F(GpioToolControllerTest, AllParamNotSetFailure)
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::FAILURE);
 
-  RCLCPP_INFO(rclcpp::get_logger("GpioToolControllerTest"), "Engaged Joint Size not equal");
-
   controller_->get_node()->set_parameter(
     {"engaged_joints", std::vector<std::string>{"gripper_clamp_jaw"}});
 
   // engaged.close_empty state
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+    controller_interface::CallbackReturn::FAILURE);
+
+  controller_->get_node()->set_parameter(
+    {"engaged.states.close_empty.joint_states", std::vector<double>{0.16}});
+
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::FAILURE);
 
   // engaged.close_full state
+  controller_->get_node()->set_parameter(
+    {"engaged.states.close_full.joint_states", std::vector<double>{0.08}});
+
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
-
-  // Checking param pair for set before disengaged.set_before_command.interfaces and
-  // disengaged.set_before_command.values
 }
