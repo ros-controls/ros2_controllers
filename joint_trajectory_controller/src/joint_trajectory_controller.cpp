@@ -133,7 +133,9 @@ JointTrajectoryController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names.reserve(dof_ * params_.state_interfaces.size());
+
+  conf.names.reserve(
+    dof_ * params_.state_interfaces.size() + traj_ctr_state_interface_names_.size());
   for (const auto & joint_name : params_.joints)
   {
     for (const auto & interface_type : params_.state_interfaces)
@@ -145,6 +147,9 @@ JointTrajectoryController::state_interface_configuration() const
   {
     conf.names.push_back(params_.speed_scaling.state_interface);
   }
+  conf.names.insert(
+    conf.names.end(), traj_ctr_state_interface_names_.begin(),
+    traj_ctr_state_interface_names_.end());
   return conf;
 }
 
@@ -332,7 +337,8 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           traj_contr_->compute_commands(
             tmp_command_, state_current_, state_error_, command_next_,
-            time - current_trajectory_->time_from_start(), period);
+            traj_ctr_state_interfaces_values_, time - current_trajectory_->time_from_start(),
+            period);
         }
 
         // set values for next hardware write()
@@ -534,6 +540,22 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
   {
     assign_point_from_command_interface(state.effort, joint_command_interface_[3]);
   }
+
+  // Optional traj_ctrl_ state interfaces
+  for (size_t index = 0; index < traj_ctr_state_interfaces_.size(); ++index)
+  {
+    const auto state_interface_value_op = traj_ctr_state_interfaces_[index].get().get_optional();
+    if (!state_interface_value_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        logger, "Unable to retrieve state interface value for joint at index %zu", index);
+    }
+    else
+    {
+      traj_ctr_state_interfaces_values_[index] = state_interface_value_op.value();
+    }
+  }
+  traj_ctr_state_interfaces_box_.try_set(traj_ctr_state_interfaces_values_);
 }
 
 bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
@@ -929,6 +951,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       }
     }
 
+    traj_ctr_state_interface_names_ =
+      traj_contr_ ? traj_contr_->state_interface_configuration() : std::vector<std::string>{};
+    traj_ctr_state_interfaces_.reserve(traj_ctr_state_interface_names_.size());
+    traj_ctr_state_interfaces_values_.resize(traj_ctr_state_interface_names_.size(), 0.0);
+    traj_ctr_state_interfaces_box_.set(traj_ctr_state_interfaces_values_);
     tmp_command_.resize(dof_, 0.0);
   }
 
@@ -1218,6 +1245,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       return CallbackReturn::ERROR;
     }
   }
+  if (!controller_interface::get_ordered_interfaces(
+        state_interfaces_, traj_ctr_state_interface_names_, "", traj_ctr_state_interfaces_))
+  {
+    RCLCPP_ERROR(
+      logger, "Expected %zu state interfaces, got %zu.", traj_ctr_state_interface_names_.size(),
+      traj_ctr_state_interfaces_.size());
+    return CallbackReturn::ERROR;
+  }
 
   current_trajectory_ = std::make_shared<Trajectory>();
   new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
@@ -1343,6 +1378,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
+  traj_ctr_state_interfaces_.clear();
   release_interfaces();
 
   subscriber_is_active_ = false;
@@ -1841,7 +1877,9 @@ void JointTrajectoryController::add_new_trajectory_msg_nonRT(
   if (traj_contr_)
   {
     // this can take some time; trajectory won't start until control law is computed
-    if (traj_contr_->compute_control_law_non_rt(traj_msg) == false)
+    if (
+      traj_contr_->compute_control_law_non_rt(traj_msg, traj_ctr_state_interfaces_box_.get()) ==
+      false)
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }
@@ -1860,7 +1898,8 @@ void JointTrajectoryController::add_new_trajectory_msg_RT(
   if (traj_contr_)
   {
     // this is used for set_hold_position() only -> this should (and must) not take a long time
-    if (traj_contr_->compute_control_law_rt(traj_msg) == false)
+    if (
+      traj_contr_->compute_control_law_rt(traj_msg, traj_ctr_state_interfaces_box_.get()) == false)
     {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
     }

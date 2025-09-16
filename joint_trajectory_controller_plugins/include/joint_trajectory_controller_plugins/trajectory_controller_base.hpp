@@ -37,6 +37,11 @@ public:
   virtual ~TrajectoryControllerBase() = default;
 
   /**
+   * @brief get additional state interfaces required by this controller plugin
+   */
+  virtual std::vector<std::string> state_interface_configuration() const { return {}; }
+
+  /**
    * @brief initialize the controller plugin.
    * @param node the node handle to use for parameter handling
    * @param map_cmd_to_joints a mapping from the joint names in the trajectory messages to the
@@ -73,10 +78,11 @@ public:
    * @return true if the gains were computed, false otherwise
    */
   bool compute_control_law_non_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
+    const std::vector<double> & opt_state_interfaces_values_)
   {
     rt_control_law_ready_ = false;
-    auto ret = on_compute_control_law_non_rt(trajectory);
+    auto ret = on_compute_control_law_non_rt(trajectory, opt_state_interfaces_values_);
     rt_control_law_ready_ = true;
     return ret;
   }
@@ -92,10 +98,11 @@ public:
    * @return true if the gains were computed, false otherwise
    */
   bool compute_control_law_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory)
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
+    const std::vector<double> & opt_state_interfaces_values_)
   {
     rt_control_law_ready_ = false;
-    auto ret = on_compute_control_law_rt(trajectory);
+    auto ret = on_compute_control_law_rt(trajectory, opt_state_interfaces_values_);
     rt_control_law_ready_ = true;
     return ret;
   }
@@ -123,6 +130,8 @@ public:
    * @param[in] current the current state
    * @param[in] error the error between the current state and the desired state
    * @param[in] desired the desired state
+   * @param[in] opt_state_interfaces_values optional state interface values, \ref
+   * state_interface_configuration
    * @param[in] duration_since_start the duration since the start of the trajectory
    *            can be negative if the trajectory-start is in the future
    * @param[in] period the period since the last update
@@ -131,6 +140,7 @@ public:
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
+    const std::vector<double> & opt_state_interfaces_values,
     const rclcpp::Duration & duration_since_start, const rclcpp::Duration & period) = 0;
 
   /**
@@ -165,14 +175,16 @@ protected:
    * @return true if the gains were computed, false otherwise
    */
   virtual bool on_compute_control_law_non_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
+    const std::vector<double> & opt_state_interfaces_values) = 0;
 
   /**
    * @brief compute the control law for a single point (in the RT loop)
    * @return true if the gains were computed, false otherwise
    */
   virtual bool on_compute_control_law_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory) = 0;
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
+    const std::vector<double> & opt_state_interfaces_values) = 0;
 
   /**
    * @brief initialize the controller plugin.

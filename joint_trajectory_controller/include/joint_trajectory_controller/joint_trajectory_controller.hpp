@@ -42,6 +42,7 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -139,6 +140,11 @@ protected:
     scaling_state_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
     scaling_command_interface_;
+  std::vector<std::string> traj_ctr_state_interface_names_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+    traj_ctr_state_interfaces_;
+  std::vector<double> traj_ctr_state_interfaces_values_;
+  realtime_tools::RealtimeThreadSafeBox<std::vector<double>> traj_ctr_state_interfaces_box_;
 
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;

@@ -487,14 +487,14 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_parameters)
     rclcpp::Duration duration_since_start(std::chrono::milliseconds(250));
     rclcpp::Duration period(std::chrono::milliseconds(100));
 
-    pids->compute_commands(tmp_command, current, error, desired, duration_since_start, period);
+    pids->compute_commands(tmp_command, current, error, desired, {}, duration_since_start, period);
     EXPECT_EQ(tmp_command.at(0), 0.0);
 
     double kp = 1.0;
     SetPidParameters(kp);
     updateControllerAsync();
 
-    pids->compute_commands(tmp_command, current, error, desired, duration_since_start, period);
+    pids->compute_commands(tmp_command, current, error, desired, {}, duration_since_start, period);
     EXPECT_EQ(tmp_command.at(0), 1.0);
   }
   else

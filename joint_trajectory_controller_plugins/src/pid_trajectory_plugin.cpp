@@ -116,6 +116,7 @@ void PidTrajectoryPlugin::compute_commands(
   std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint /*current*/,
   const trajectory_msgs::msg::JointTrajectoryPoint error,
   const trajectory_msgs::msg::JointTrajectoryPoint desired,
+  const std::vector<double> & /* opt_state_interfaces_values*/,
   const rclcpp::Duration & /*duration_since_start*/, const rclcpp::Duration & period)
 {
   // if effort field is present, otherwise it would have been rejected

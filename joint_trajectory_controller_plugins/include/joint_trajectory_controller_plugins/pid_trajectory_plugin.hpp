@@ -38,6 +38,7 @@ public:
     std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
+    const std::vector<double> & opt_state_interfaces_values,
     const rclcpp::Duration & duration_since_start, const rclcpp::Duration & period) override;
 
   void reset() override;
@@ -63,14 +64,16 @@ protected:
   bool on_activate() override;
 
   bool on_compute_control_law_non_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/,
+    const std::vector<double> & /*opt_state_interfaces_values*/) override
   {
     // nothing to do
     return true;
   }
 
   bool on_compute_control_law_rt(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/) override
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & /*trajectory*/,
+    const std::vector<double> & /*opt_state_interfaces_values*/) override
   {
     // nothing to do
     return true;

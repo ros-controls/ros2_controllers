@@ -40,7 +40,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   ASSERT_TRUE(traj_contr->configure());
   ASSERT_TRUE(traj_contr->activate());
   ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
-    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>(), {}));
   ASSERT_TRUE(traj_contr->update_gains_rt());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
@@ -51,7 +51,7 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   const rclcpp::Duration period(1, 0);
 
   ASSERT_NO_THROW(traj_contr->compute_commands(
-    tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
+    tmp_command, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
 }
 
 TEST_F(PidTrajectoryTest, TestMultipleJoints)
@@ -74,11 +74,11 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   ASSERT_TRUE(traj_contr->configure());
   ASSERT_TRUE(traj_contr->activate());
   ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
-    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>(), {}));
   ASSERT_TRUE(traj_contr->update_gains_rt());
 
   ASSERT_TRUE(traj_contr->compute_control_law_non_rt(
-    std::make_shared<trajectory_msgs::msg::JointTrajectory>()));
+    std::make_shared<trajectory_msgs::msg::JointTrajectory>(), {}));
   ASSERT_TRUE(traj_contr->update_gains_rt());
 
   trajectory_msgs::msg::JointTrajectoryPoint traj_msg;
@@ -93,7 +93,7 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   const rclcpp::Duration period(1, 0);
 
   ASSERT_NO_THROW(traj_contr->compute_commands(
-    tmp_command, traj_msg, traj_msg, traj_msg, time_since_start, period));
+    tmp_command, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
 
   EXPECT_EQ(tmp_command[0], 1.0);
   EXPECT_EQ(tmp_command[1], 2.0);
