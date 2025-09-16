@@ -335,10 +335,12 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         if (traj_contr_)
         {
+          double scaling_fact = scaling_factor_.load();
           traj_contr_->compute_commands(
-            tmp_command_, state_current_, state_error_, command_next_,
+            tmp_command_, scaling_fact, state_current_, state_error_, command_next_,
             traj_ctr_state_interfaces_values_, time - current_trajectory_->time_from_start(),
             period);
+          scaling_factor_.store(scaling_fact);
         }
 
         // set values for next hardware write()

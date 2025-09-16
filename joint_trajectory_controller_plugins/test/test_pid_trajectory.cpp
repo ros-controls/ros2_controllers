@@ -50,8 +50,10 @@ TEST_F(PidTrajectoryTest, TestSingleJoint)
   const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
+  double scaling_fact = 1.0;
   ASSERT_NO_THROW(traj_contr->compute_commands(
-    tmp_command, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
+    tmp_command, scaling_fact, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
+  EXPECT_EQ(scaling_fact, 1.0);
 }
 
 TEST_F(PidTrajectoryTest, TestMultipleJoints)
@@ -92,8 +94,10 @@ TEST_F(PidTrajectoryTest, TestMultipleJoints)
   const rclcpp::Duration time_since_start(1, 0);
   const rclcpp::Duration period(1, 0);
 
+  double scaling_fact = 1.0;
   ASSERT_NO_THROW(traj_contr->compute_commands(
-    tmp_command, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
+    tmp_command, scaling_fact, traj_msg, traj_msg, traj_msg, {}, time_since_start, period));
+  EXPECT_EQ(scaling_fact, 1.0);
 
   EXPECT_EQ(tmp_command[0], 1.0);
   EXPECT_EQ(tmp_command[1], 2.0);

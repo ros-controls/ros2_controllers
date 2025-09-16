@@ -35,7 +35,8 @@ public:
   bool update_gains_rt() override;
 
   void compute_commands(
-    std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
+    std::vector<double> & tmp_command, double & scaling_fact,
+    const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
     const std::vector<double> & opt_state_interfaces_values,

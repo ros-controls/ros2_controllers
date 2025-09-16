@@ -79,10 +79,10 @@ public:
    */
   bool compute_control_law_non_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
-    const std::vector<double> & opt_state_interfaces_values_)
+    const std::vector<double> & opt_state_interfaces_values)
   {
     rt_control_law_ready_ = false;
-    auto ret = on_compute_control_law_non_rt(trajectory, opt_state_interfaces_values_);
+    auto ret = on_compute_control_law_non_rt(trajectory, opt_state_interfaces_values);
     rt_control_law_ready_ = true;
     return ret;
   }
@@ -99,10 +99,10 @@ public:
    */
   bool compute_control_law_rt(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory,
-    const std::vector<double> & opt_state_interfaces_values_)
+    const std::vector<double> & opt_state_interfaces_values)
   {
     rt_control_law_ready_ = false;
-    auto ret = on_compute_control_law_rt(trajectory, opt_state_interfaces_values_);
+    auto ret = on_compute_control_law_rt(trajectory, opt_state_interfaces_values);
     rt_control_law_ready_ = true;
     return ret;
   }
@@ -127,6 +127,7 @@ public:
    * @brief compute the commands with the precalculated control law
    *
    * @param[out] tmp_command the output command
+   * @param[out] scaling_fact scaling factor if ctrl is not following reference
    * @param[in] current the current state
    * @param[in] error the error between the current state and the desired state
    * @param[in] desired the desired state
@@ -137,7 +138,8 @@ public:
    * @param[in] period the period since the last update
    */
   virtual void compute_commands(
-    std::vector<double> & tmp_command, const trajectory_msgs::msg::JointTrajectoryPoint current,
+    std::vector<double> & tmp_command, double & scaling_fact,
+    const trajectory_msgs::msg::JointTrajectoryPoint current,
     const trajectory_msgs::msg::JointTrajectoryPoint error,
     const trajectory_msgs::msg::JointTrajectoryPoint desired,
     const std::vector<double> & opt_state_interfaces_values,
