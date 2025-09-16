@@ -6,7 +6,7 @@
   <description>A ROS2 package implementing a PD controller with gravity compensation</description>
   <author email="drisi@unisa.it">Davide Risi</author>
   <maintainer email="eferrentino@unisa.it">Enrico Ferrentino</maintainer>
-  <license>BSD</license>
+  <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

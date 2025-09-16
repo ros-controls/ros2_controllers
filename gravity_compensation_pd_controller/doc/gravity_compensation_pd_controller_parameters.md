@@ -125,6 +125,3 @@ Specifies the end effector link of the robot description used by the inverse dyn
  - parameter is not empty
 
 *Additional Constraints:*
-
-
-

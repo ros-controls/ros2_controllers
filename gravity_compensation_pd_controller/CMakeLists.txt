@@ -4,9 +4,9 @@ project(gravity_compensation_pd_controller
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX
-   OR CMAKE_CXX_COMPILER_ID
-      MATCHES
-      "Clang"
+  OR CMAKE_CXX_COMPILER_ID
+    MATCHES
+    "Clang"
 )
   add_compile_options(
     -Wall
@@ -37,7 +37,7 @@ foreach(dependency IN
 endforeach()
 
 generate_parameter_library(gravity_compensation_pd_controller_parameters
-                           src/gravity_compensation_pd_controller_parameters.yaml
+                          src/gravity_compensation_pd_controller_parameters.yaml
 )
 
 add_library(gravity_compensation_pd_controller SHARED
@@ -52,7 +52,7 @@ target_compile_features(
 target_include_directories(
   gravity_compensation_pd_controller
   PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include/gravity_compensation_pd_controller>
+        $<INSTALL_INTERFACE:include/gravity_compensation_pd_controller>
 )
 
 target_link_libraries(
@@ -63,15 +63,15 @@ target_link_libraries(
 target_link_libraries(
   gravity_compensation_pd_controller
   PUBLIC controller_interface::controller_interface
-         hardware_interface::hardware_interface
-         hardware_interface::mock_components
-         inverse_dynamics_solver::inverse_dynamics_solver_lib
-         pluginlib::pluginlib
-         rclcpp::rclcpp
-         rclcpp_lifecycle::rclcpp_lifecycle
-         realtime_tools::realtime_tools
-         realtime_tools::thread_priority
-         urdf::urdf
+        hardware_interface::hardware_interface
+        hardware_interface::mock_components
+        inverse_dynamics_solver::inverse_dynamics_solver_lib
+        pluginlib::pluginlib
+        rclcpp::rclcpp
+        rclcpp_lifecycle::rclcpp_lifecycle
+        realtime_tools::realtime_tools
+        realtime_tools::thread_priority
+        urdf::urdf
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport, which is appropriate when
