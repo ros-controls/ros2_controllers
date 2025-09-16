@@ -1119,7 +1119,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
-  release_interfaces();
 
   subscriber_is_active_ = false;
 
