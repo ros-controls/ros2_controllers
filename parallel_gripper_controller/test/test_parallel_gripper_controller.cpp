@@ -132,6 +132,7 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
   ASSERT_EQ(
     this->controller_->on_deactivate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+  this->controller_->release_interfaces();
 
   // re-assign interfaces
   std::vector<LoanedCommandInterface> command_ifs;
