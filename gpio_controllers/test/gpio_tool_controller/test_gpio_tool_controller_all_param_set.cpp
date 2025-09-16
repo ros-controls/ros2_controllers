@@ -44,9 +44,8 @@ TEST_F(GpioToolControllerTest, AllParamNotSetFailure)
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
 
-  setup_parameters_fail();
-
-  // configure success. remaining parameters are default
+  controller_->get_node()->set_parameter({"engaged_joints", std::vector<std::string>{}});
+  controller_->get_node()->set_parameter({"disengaged.joint_states", std::vector<double>{0.0}});
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::FAILURE);
