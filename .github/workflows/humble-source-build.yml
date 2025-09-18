@@ -25,4 +25,4 @@ jobs:
     with:
       ros_distro: humble
       ref: humble
-      os_name: ubuntu-22.04
+      container: ubuntu:22.04
