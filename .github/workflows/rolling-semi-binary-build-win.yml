@@ -16,7 +16,6 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
-      - 'ros2_controllers.windows.rolling.repos'
   push:
     branches:
       - master
@@ -29,7 +28,6 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
-      - 'ros2_controllers.windows.rolling.repos'
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on given branches
