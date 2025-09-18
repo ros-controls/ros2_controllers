@@ -583,8 +583,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
@@ -675,8 +673,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
