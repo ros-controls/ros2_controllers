@@ -15,6 +15,11 @@ on:
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
       - '**.xml'
+  pull_request:
+    branches:
+      - jazzy
+    paths:
+      - '.github/workflows/jazzy-source-build.yml'
   schedule:
     # Run every day to detect flakiness and broken dependencies
     - cron: '03 3 * * MON-FRI'
