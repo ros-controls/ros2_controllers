@@ -38,6 +38,9 @@ add_library(joint_trajectory_controller SHARED
   src/trajectory.cpp
 )
 target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
+if(WIN32)
+  target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
+endif()
 target_include_directories(joint_trajectory_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/joint_trajectory_controller>
