@@ -232,7 +232,7 @@ class TrajectoryControllerTest : public ::testing::Test
 public:
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-  virtual void SetUp()
+  void SetUp() override
   {
     controller_name_ = "test_joint_trajectory_controller";
 
@@ -434,6 +434,7 @@ public:
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
           lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        traj_controller_->release_interfaces();
       }
     }
   }
