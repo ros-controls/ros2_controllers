@@ -236,7 +236,7 @@ class TrajectoryControllerTest : public ::testing::Test
 public:
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-  virtual void SetUp()
+  void SetUp() override
   {
     controller_name_ = "test_joint_trajectory_controller";
 
