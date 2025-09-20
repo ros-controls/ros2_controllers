@@ -91,7 +91,7 @@ test_save_i_term_on:
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, save_i_term: true}
 
-test_pid_controller_full_gains:
+test_pid_controller_discretization_gains:
   ros__parameters:
     dof_names:
       - joint1

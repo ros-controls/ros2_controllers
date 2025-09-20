@@ -193,9 +193,9 @@ TEST_F(PidControllerTest, reactivate_success)
     controller_interface::return_type::OK);
 }
 
-TEST_F(PidControllerTest, all_parameters_set_configure_success_full_gains)
+TEST_F(PidControllerTest, all_parameters_set_configure_success_discretization_gains)
 {
-  SetUpController("test_pid_controller_full_gains");
+  SetUpController("test_pid_controller_discretization_gains");
 
   ASSERT_TRUE(controller_->params_.dof_names.empty());
   ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
@@ -714,12 +714,17 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   // check the command value
   // error = ref - state = 100.001, error_dot = error/ds = 10000.1,
   // p_term = 100.001 * 1, i_term = zero at first update, d_term = error/ds = 10000.1 * 3
-  // feedforward OFF -> cmd = p_term + i_term + d_term = 30102.301
+  // feedforward OFF -> cmd = p_term + i_term + d_term = 30100.3010
   const double expected_command_value = 30100.3010;
 
   double actual_value =
     std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
+
+  // second update, the i_term should be non-zero now
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
 
   // deactivate the controller and set command=state
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);

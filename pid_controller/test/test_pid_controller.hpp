@@ -53,7 +53,7 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(PidControllerTest, activate_success);
   FRIEND_TEST(PidControllerTest, reactivate_success);
-  FRIEND_TEST(PidControllerTest, all_parameters_set_configure_success_full_gains);
+  FRIEND_TEST(PidControllerTest, all_parameters_set_configure_success_discretization_gains);
   FRIEND_TEST(PidControllerTest, test_update_logic_zero_feedforward_gain);
   FRIEND_TEST(PidControllerTest, test_update_chained_non_zero_feedforward_gain);
   FRIEND_TEST(PidControllerTest, test_update_chained_changing_feedforward_gain);
