@@ -59,6 +59,7 @@ public:
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
   JointTrajectoryController();
 
+<<<<<<< HEAD
   /**
    * @brief command_interface_configuration
    */
@@ -69,6 +70,10 @@ public:
    * @brief command_interface_configuration
    */
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
+=======
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+
+>>>>>>> 42e7ba4 (Remove wrong and unnecessary docstrings (#1912))
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   JOINT_TRAJECTORY_CONTROLLER_PUBLIC
