@@ -55,14 +55,8 @@ class JointTrajectoryController : public controller_interface::ControllerInterfa
 public:
   JointTrajectoryController();
 
-  /**
-   * @brief command_interface_configuration
-   */
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
-  /**
-   * @brief command_interface_configuration
-   */
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
   controller_interface::return_type update(
