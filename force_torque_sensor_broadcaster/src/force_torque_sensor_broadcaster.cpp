@@ -186,14 +186,10 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_deactivate
 controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-<<<<<<< HEAD
   if (param_listener_->is_old(params_))
   {
     params_ = param_listener_->get_params();
   }
-  if (realtime_publisher_ && realtime_publisher_->trylock())
-=======
-  param_listener_->try_get_params(params_);
 
   wrench_raw_.header.stamp = time;
   force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
@@ -201,7 +197,6 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
   this->apply_sensor_multiplier(params_, wrench_raw_);
 
   if (realtime_raw_publisher_ && realtime_raw_publisher_->trylock())
->>>>>>> 4f9c462 (Add filtering capability to ft_broadcaster (#1814))
   {
     realtime_raw_publisher_->msg_.header.stamp = time;
     realtime_raw_publisher_->msg_.wrench = wrench_raw_.wrench;
