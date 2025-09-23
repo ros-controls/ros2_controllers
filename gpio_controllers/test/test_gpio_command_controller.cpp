@@ -53,6 +53,7 @@ using CmdType = control_msgs::msg::DynamicInterfaceGroupValues;
 using StateType = control_msgs::msg::DynamicInterfaceGroupValues;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
+using lifecycle_msgs::msg::State;
 
 namespace
 {
@@ -120,9 +121,12 @@ public:
   void move_to_activate_state(controller_interface::return_type result_of_initialization)
   {
     ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
-    ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+    ASSERT_TRUE(is_configure_succeeded(controller_));
+
     setup_command_and_state_interfaces();
-    ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+    ASSERT_TRUE(is_activate_succeeded(controller_));
   }
 
   void stop_test_when_message_cannot_be_published(int max_sub_check_loop_count)
@@ -195,6 +199,30 @@ public:
       }
     }
     return max_sub_check_loop_count;
+  }
+
+  bool is_configure_succeeded(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->configure();
+    return State::PRIMARY_STATE_INACTIVE == state.id();
+  }
+
+  bool is_configure_failed(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->configure();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
+  }
+
+  bool is_activate_succeeded(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->get_node()->activate();
+    return State::PRIMARY_STATE_ACTIVE == state.id();
+  }
+
+  bool is_activate_failed(const std::unique_ptr<FriendGpioCommandController> & controller)
+  {
+    auto state = controller->get_node()->activate();
+    return State::PRIMARY_STATE_UNCONFIGURED == state.id();
   }
 
   std::unique_ptr<FriendGpioCommandController> controller_;
@@ -277,7 +305,8 @@ TEST_F(
     "test_gpio_command_controller", ros2_control_test_assets::minimal_robot_urdf, 0, "",
     node_options);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+
+  ASSERT_TRUE(is_configure_failed(controller_));
 }
 
 TEST_F(
@@ -292,7 +321,8 @@ TEST_F(
     "test_gpio_command_controller", minimal_robot_urdf_with_gpio, 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 }
 
 TEST_F(
@@ -306,7 +336,8 @@ TEST_F(
   const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+
+  ASSERT_TRUE(is_configure_failed(controller_));
 }
 
 TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
@@ -317,12 +348,9 @@ TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
 
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  setup_command_and_state_interfaces();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  move_to_activate_state(
+    controller_->init("test_gpio_command_controller", "", 0, "", node_options));
 }
 
 TEST_F(
@@ -336,9 +364,9 @@ TEST_F(
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
   const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
-
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
   command_interfaces.emplace_back(gpio_1_1_dig_cmd);
@@ -350,7 +378,8 @@ TEST_F(
   state_interfaces.emplace_back(gpio_2_ana_state);
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(
@@ -366,7 +395,8 @@ TEST_F(
   const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
   command_interfaces.emplace_back(gpio_1_1_dig_cmd);
@@ -379,7 +409,7 @@ TEST_F(
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  ASSERT_TRUE(is_activate_failed(controller_));
 }
 
 TEST_F(
@@ -392,23 +422,9 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init("test_gpio_command_controller", "", 0, "", node_options);
 
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  std::vector<LoanedCommandInterface> command_interfaces;
-  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
-  command_interfaces.emplace_back(gpio_1_2_dig_cmd);
-  command_interfaces.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_interfaces;
-  state_interfaces.emplace_back(gpio_1_1_dig_state);
-  state_interfaces.emplace_back(gpio_2_ana_state);
-
-  controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
-
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  move_to_activate_state(
+    controller_->init("test_gpio_command_controller", "", 0, "", node_options));
 }
 
 TEST_F(
@@ -646,9 +662,12 @@ TEST_F(
   const auto result_of_initialization = controller_->init(
     "test_gpio_command_controller", minimal_robot_urdf_with_gpio, 0, "", node_options);
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(controller_));
+
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
@@ -682,9 +701,12 @@ TEST_F(
   const auto result_of_initialization =
     controller_->init("test_gpio_command_controller", "", 0, "", node_options);
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_configure_succeeded(controller_));
+
   controller_->assign_interfaces({}, std::move(state_interfaces));
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  ASSERT_TRUE(is_activate_succeeded(controller_));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
