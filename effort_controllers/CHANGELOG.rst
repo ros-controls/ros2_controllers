@@ -2,6 +2,12 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.7.0 (2025-09-12)
+------------------
+
+5.6.1 (2025-08-30)
+------------------
+
 5.6.0 (2025-08-29)
 ------------------
 * Remove usage of `get_ordered_interfaces` but update parameter validation instead (`#1816 <https://github.com/ros-controls/ros2_controllers/issues/1816>`_)

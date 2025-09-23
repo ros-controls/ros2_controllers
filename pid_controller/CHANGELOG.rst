@@ -2,6 +2,14 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.7.0 (2025-09-12)
+------------------
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Victor Coutinho Vieira Santos
+
+5.6.1 (2025-08-30)
+------------------
+
 5.6.0 (2025-08-29)
 ------------------
 

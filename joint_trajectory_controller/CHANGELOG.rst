@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.7.0 (2025-09-12)
+------------------
+* [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
+5.6.1 (2025-08-30)
+------------------
+
 5.6.0 (2025-08-29)
 ------------------
 * Filling `index` field in feedback message of the action interface (`#1850 <https://github.com/ros-controls/ros2_controllers/issues/1850>`_)
