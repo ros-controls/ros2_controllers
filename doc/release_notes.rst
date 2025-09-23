@@ -24,18 +24,6 @@ chained_filter_controller
 *******************************
 * The chained_filter_controller was added to use generic filter plugins (`#1634 <https://github.com/ros-controls/ros2_controllers/pull/1634>`__).
 
-<<<<<<< HEAD
-=======
-force_torque_sensor_broadcaster
-*******************************
-* Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
-* Added support for filter chains, allowing users to configure a sequence of filter plugins with their parameters. The force/torque sensor readings are filtered sequentially and published on a separate topic.
-
-imu_sensor_broadcaster
-*******************************
-* IMU sensor broadcaster is now a chainable controller. It supports a calibration by means of a rotation, defined as euler angles, to its target frame. (`#1833 <https://github.com/ros-controls/ros2_controllers/pull/1833/files>`__).
-
->>>>>>> 4f9c462 (Add filtering capability to ft_broadcaster (#1814))
 joint_trajectory_controller
 *****************************
 
@@ -118,3 +106,4 @@ gpio_controllers
 force_torque_sensor_broadcaster
 *******************************
 * Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
+* Added support for filter chains, allowing users to configure a sequence of filter plugins with their parameters. The force/torque sensor readings are filtered sequentially and published on a separate topic.
