@@ -834,6 +834,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
   joint_command_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_command_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_POSITION);
@@ -870,6 +874,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // allocation during activation
   // Note: 'effort' storage is also here, but never used. Still, for this is OK.
   joint_state_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_state_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_state_interface_ =
     contains_interface_type(params_.state_interfaces, hardware_interface::HW_IF_POSITION);
@@ -1265,7 +1273,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
-  release_interfaces();
 
   subscriber_is_active_ = false;
 
