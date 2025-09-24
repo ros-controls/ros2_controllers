@@ -667,13 +667,15 @@ DiffDriveController::on_export_reference_interfaces()
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[0]));
+  reference_interfaces.push_back(
+      hardware_interface::CommandInterface(
+        get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
+        &reference_interfaces_[0]));
 
-  reference_interfaces.push_back(hardware_interface::CommandInterface(
-    get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
-    &reference_interfaces_[1]));
+  reference_interfaces.push_back(
+      hardware_interface::CommandInterface(
+        get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
+        &reference_interfaces_[1]));
 
   return reference_interfaces;
 }
