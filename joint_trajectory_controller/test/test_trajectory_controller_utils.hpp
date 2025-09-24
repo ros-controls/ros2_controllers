@@ -232,7 +232,7 @@ class TrajectoryControllerTest : public ::testing::Test
 public:
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-  virtual void SetUp()
+  void SetUp() override
   {
     controller_name_ = "test_joint_trajectory_controller";
 
@@ -304,9 +304,8 @@ public:
       const rclcpp::Parameter k_p(prefix + ".p", p_value);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
-      const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value);
-      node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
+      node->set_parameters({k_p, k_i, k_d, ff_velocity_scale});
     }
   }
 
@@ -435,6 +434,7 @@ public:
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
           lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        traj_controller_->release_interfaces();
       }
     }
   }

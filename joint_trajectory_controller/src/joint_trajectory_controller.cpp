@@ -175,7 +175,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
   }
 
-  // don't update goal after we sampled the trajectory to avoid any racecondition
+  // don't update goal after we sampled the trajectory to avoid any race condition
   const auto active_goal = *rt_active_goal_.readFromRT();
 
   // Check if a new trajectory message has been received from Non-RT threads
@@ -230,6 +230,8 @@ controller_interface::return_type JointTrajectoryController::update(
     current_trajectory_->sample(
       traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
     state_desired_.time_from_start = traj_time_ - current_trajectory_->time_from_start();
+
+    const auto next_point_index = std::distance(current_trajectory_->begin(), end_segment_itr);
 
     // Sample setpoint for next control cycle
     const bool valid_point = current_trajectory_->sample(
@@ -373,6 +375,7 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
+        feedback->index = static_cast<int32_t>(next_point_index);
         active_goal->setFeedback(feedback);
 
         // check abort
@@ -831,6 +834,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
   joint_command_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_command_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_POSITION);
@@ -867,6 +874,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // allocation during activation
   // Note: 'effort' storage is also here, but never used. Still, for this is OK.
   joint_state_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_state_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_state_interface_ =
     contains_interface_type(params_.state_interfaces, hardware_interface::HW_IF_POSITION);
@@ -1259,7 +1270,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
-  release_interfaces();
 
   subscriber_is_active_ = false;
 
@@ -1884,8 +1894,8 @@ void JointTrajectoryController::update_pids()
     const auto & gains = params_.gains.joints_map.at(params_.joints.at(map_cmd_to_joints_[i]));
     control_toolbox::AntiWindupStrategy antiwindup_strat;
     antiwindup_strat.set_type(gains.antiwindup_strategy);
-    antiwindup_strat.i_max = gains.i_clamp;
-    antiwindup_strat.i_min = -gains.i_clamp;
+    antiwindup_strat.i_max = gains.i_clamp_max;
+    antiwindup_strat.i_min = gains.i_clamp_min;
     antiwindup_strat.error_deadband = gains.error_deadband;
     antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
     if (pids_[i])
