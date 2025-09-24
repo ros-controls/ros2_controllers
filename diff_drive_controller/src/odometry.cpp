@@ -73,10 +73,8 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   return true;
 }
 
-bool Odometry::updateFromPos(
-  const double left_pos, const double right_pos, const rclcpp::Time & time)
+bool Odometry::updateFromPos(const double left_pos, const double right_pos, const double dt)
 {
-  const double dt = time.seconds() - timestamp_.seconds();
   // We cannot estimate angular velocity with very small time intervals
   if (std::fabs(dt) < 1e-6)
   {
@@ -91,7 +89,7 @@ bool Odometry::updateFromPos(
   left_wheel_old_pos_ = left_pos;
   right_wheel_old_pos_ = right_pos;
 
-  return updateFromVel(left_vel, right_vel, time);
+  return updateFromVel(left_vel, right_vel, dt);
 }
 
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
@@ -121,11 +119,8 @@ bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcp
   return true;
 }
 
-bool Odometry::updateFromVel(
-  const double left_vel, const double right_vel, const rclcpp::Time & time)
+bool Odometry::updateFromVel(const double left_vel, const double right_vel, const double dt)
 {
-  const double dt = time.seconds() - timestamp_.seconds();
-
   // Compute linear and angular velocities of the robot:
   const double linear_vel = (left_vel * left_wheel_radius_ + right_vel * right_wheel_radius_) * 0.5;
   const double angular_vel =
@@ -133,8 +128,6 @@ bool Odometry::updateFromVel(
 
   // Integrate odometry:
   integrate(linear_vel * dt, angular_vel * dt);
-
-  timestamp_ = time;
 
   // Estimate speeds using a rolling mean to filter them out:
   linear_accumulator_.accumulate(linear_vel);
@@ -158,15 +151,10 @@ void Odometry::updateOpenLoop(double linear, double angular, const rclcpp::Time 
   integrateExact(linear * dt, angular * dt);
 }
 
-bool Odometry::tryUpdateOpenLoop(
-  const double linear_vel, const double angular_vel, const rclcpp::Time & time)
+bool Odometry::tryUpdateOpenLoop(const double linear_vel, const double angular_vel, const double dt)
 {
-  const double dt = time.seconds() - timestamp_.seconds();
-
   // Integrate odometry:
   integrate(linear_vel * dt, angular_vel * dt);
-
-  timestamp_ = time;
 
   // Save last linear and angular velocity:
   linear_ = linear_vel;

@@ -164,7 +164,8 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   bool odometry_updated = false;
   if (params_.open_loop)
   {
-    odometry_updated = odometry_.tryUpdateOpenLoop(linear_command, angular_command, time);
+    odometry_updated =
+      odometry_.tryUpdateOpenLoop(linear_command, angular_command, period.seconds());
   }
   else
   {
@@ -202,11 +203,13 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 
     if (params_.position_feedback)
     {
-      odometry_updated = odometry_.updateFromPos(left_feedback_mean, right_feedback_mean, time);
+      odometry_updated =
+        odometry_.updateFromPos(left_feedback_mean, right_feedback_mean, period.seconds());
     }
     else
     {
-      odometry_updated = odometry_.updateFromVel(left_feedback_mean, right_feedback_mean, time);
+      odometry_updated =
+        odometry_.updateFromVel(left_feedback_mean, right_feedback_mean, period.seconds());
     }
   }
 
@@ -664,15 +667,13 @@ DiffDriveController::on_export_reference_interfaces()
   std::vector<hardware_interface::CommandInterface> reference_interfaces;
   reference_interfaces.reserve(reference_interfaces_.size());
 
-  reference_interfaces.push_back(
-    hardware_interface::CommandInterface(
-      get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[0]));
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[0]));
 
-  reference_interfaces.push_back(
-    hardware_interface::CommandInterface(
-      get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
-      &reference_interfaces_[1]));
+  reference_interfaces.push_back(hardware_interface::CommandInterface(
+    get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY,
+    &reference_interfaces_[1]));
 
   return reference_interfaces;
 }

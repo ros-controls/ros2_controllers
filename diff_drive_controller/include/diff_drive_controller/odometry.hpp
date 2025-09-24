@@ -53,10 +53,9 @@ public:
     "& time).")]]
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
 
-  bool updateFromPos(const double left_pos, const double right_pos, const rclcpp::Time & time);
-  bool updateFromVel(const double left_vel, const double right_vel, const rclcpp::Time & time);
-  bool tryUpdateOpenLoop(
-    const double linear_vel, const double angular_vel, const rclcpp::Time & time);
+  bool updateFromPos(const double left_pos, const double right_pos, const double dt);
+  bool updateFromVel(const double left_vel, const double right_vel, const double dt);
+  bool tryUpdateOpenLoop(const double linear_vel, const double angular_vel, const double dt);
   void resetOdometry();
 
   double getX() const { return x_; }
