@@ -80,9 +80,11 @@ TEST_F(GripperControllerTest, ConfigureParamsSuccess)
 {
   this->SetUpController();
 
-  this->controller_->get_node()->set_parameter({"joint", "joint1"});
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  rclcpp::spin_some(this->controller_->get_node()->get_node_base_interface());
+  this->controller_->get_node()->set_parameter({"joint", "joint1"});
+  executor.spin_some();
 
   // configure successful
   ASSERT_EQ(
