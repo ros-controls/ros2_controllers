@@ -56,8 +56,8 @@ controller_interface::CallbackReturn GpioToolController::on_init()
   current_tool_action_.store(ToolAction::IDLE);
   current_tool_transition_.store(GPIOToolTransition::IDLE);
   target_configuration_.set("");
-  current_state_ = "";
-  current_configuration_ = "";
+  current_state_.set("");
+  current_configuration_.set("");
 
   try
   {
@@ -317,26 +317,34 @@ controller_interface::return_type GpioToolController::update(
     }
     case ToolAction::DISENGAGING:
     {
+      // A local copy is used because handle_tool_state_transition modifies its state argument
+      std::string current_state = current_state_.get();
       handle_tool_state_transition(
-        time, disengaged_gpios_, params_.disengaged.name, joint_states_values_, 0, current_state_);
+        time, disengaged_gpios_, params_.disengaged.name, joint_states_values_, 0, current_state);
+      current_state_.set(current_state);
       break;
     }
     case ToolAction::ENGAGING:
     {
+      // A local copy is used because handle_tool_state_transition modifies its state argument
+      std::string current_state = current_state_.get();
       handle_tool_state_transition(
-        time, engaged_gpios_, params_.engaged.name, joint_states_values_, 0, current_state_);
+        time, engaged_gpios_, params_.engaged.name, joint_states_values_, 0, current_state);
+      current_state_.set(current_state);
       break;
     }
     case ToolAction::RECONFIGURING:
-    { 
-      // realtime_tools::RealtimeThreadSafeBox - only way to access box contents without copying. In the provided lambda we operate on the data.  
-      bool was_executed = target_configuration_.try_get(
+    {
+      // A local copy is used because handle_tool_state_transition modifies its state argument
+      std::string current_configuration = current_configuration_.get();
+      // realtime_tools::RealtimeThreadSafeBox - only way to access box contents in READ-ONLY mode without copying. In the provided lambda we operate on the data.
+      target_configuration_.try_get(
         [&](const std::string & target_config){
           handle_tool_state_transition(
-            time, reconfigure_gpios_, target_config, joint_states_values_, params_.engaged_joints.size(), current_configuration_);
+            time, reconfigure_gpios_, target_config, joint_states_values_, params_.engaged_joints.size(), current_configuration);
         }
       );
-
+      current_configuration_.set(current_configuration);
       break;
     }
     case ToolAction::CANCELING:
@@ -344,7 +352,7 @@ controller_interface::return_type GpioToolController::update(
       RCLCPP_ERROR_THROTTLE(
         get_node()->get_logger(), *get_node()->get_clock(), 1000,
         "%s - CANCELING: Tool action is being canceled, "
-        "going to HALTED. Reset the tool using '~/reset_halted' service. After that set sensible state.", current_state_.c_str());
+        "going to HALTED. Reset the tool using '~/reset_halted' service. After that set sensible state.", current_state_.get().c_str());
       current_tool_transition_.store(GPIOToolTransition::HALTED);
       check_tool_state(time, true);
       std::vector<double> tmp_vec;
@@ -855,9 +863,10 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_engagi
   }
   else  // if already in desired state - nothing to do
   {
+    const std::string current_state = current_state_.get();
     if ((requested_action == ToolAction::ENGAGING &&
-         (std::find(params_.possible_engaged_states.begin(), params_.possible_engaged_states.end(), current_state_) != params_.possible_engaged_states.end())) ||
-      (requested_action == ToolAction::DISENGAGING && current_state_ == params_.disengaged.name))
+         (std::find(params_.possible_engaged_states.begin(), params_.possible_engaged_states.end(), current_state) != params_.possible_engaged_states.end())) ||
+      (requested_action == ToolAction::DISENGAGING && current_state == params_.disengaged.name))
     {
       response.success = true;
       response.message = "Tool is already in the desired state '" + requested_action_name + "'. Nothing to do.";
@@ -897,10 +906,10 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_reconf
                         + "' action.Please wait until it finishes.";
   }
   // This is OK to access `current_state_` as we are in the IDLE state and it is not being modified
-  if (response.success && current_state_ != params_.disengaged.name)
+  if (response.success && current_state_.get() != params_.disengaged.name)
   {
     response.success = false;
-    response.message = "Tool can be reconfigured only in '" + params_.disengaged.name + "' state. Current state is '" + current_state_ + "'.";
+    response.message = "Tool can be reconfigured only in '" + params_.disengaged.name + "' state. Current state is '" + current_state_.get() + "'.";
   }
   if (response.success)
   {
@@ -1116,8 +1125,8 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
     interface_publisher_->msg_.commands.interface_names.push_back(command_io);
   }
 
-  controller_state_publisher_->msg_.state = current_state_;
-  controller_state_publisher_->msg_.configuration = current_configuration_;
+  controller_state_publisher_->msg_.state = current_state_.get();
+  controller_state_publisher_->msg_.configuration = current_configuration_.get();
   controller_state_publisher_->msg_.current_transition.state = current_tool_transition_.load();
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -1154,8 +1163,8 @@ void GpioToolController::publish_topics(const rclcpp::Time & time)
   }
   if (controller_state_publisher_ && controller_state_publisher_->trylock())
   {
-    controller_state_publisher_->msg_.state = current_state_;
-    controller_state_publisher_->msg_.configuration = current_configuration_;
+    controller_state_publisher_->msg_.state = current_state_.get();
+    controller_state_publisher_->msg_.configuration = current_configuration_.get();
     controller_state_publisher_->msg_.current_transition.state = current_tool_transition_.load();
     controller_state_publisher_->unlockAndPublish();
   }
@@ -1228,7 +1237,7 @@ void GpioToolController::handle_action_accepted(
     if (current_tool_action_.load() == ToolAction::IDLE)
     {
       result->success = true;
-      result->resulting_state_name = current_state_;
+      result->resulting_state_name = current_state_.get();
       result->message = "Tool action successfully executed!";
       goal_handle->succeed(result);
       break;
@@ -1236,7 +1245,7 @@ void GpioToolController::handle_action_accepted(
     else if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
     {
       result->success = false;
-      result->resulting_state_name = current_state_;
+      result->resulting_state_name = current_state_.get();
       result->message = "Tool action canceled or halted! Check the error, reset the tool using '~/reset_halted' service and set to sensible state.";
       goal_handle->abort(result);
       break;
@@ -1253,13 +1262,16 @@ void GpioToolController::handle_action_accepted(
 
 void GpioToolController::check_tool_state(const rclcpp::Time & current_time, const bool warning_output)
 {
-  current_state_ = "";
-  check_tool_state_and_switch(current_time, disengaged_gpios_, joint_states_values_, 0, params_.disengaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_, warning_output);
-  if (current_state_.empty())
+  std::string current_state = "";
+  check_tool_state_and_switch(current_time, disengaged_gpios_, joint_states_values_, 0, params_.disengaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state, warning_output);
+  if (current_state.empty())
   {
-    check_tool_state_and_switch(current_time, engaged_gpios_, joint_states_values_, 0, params_.engaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state_, warning_output);
+    check_tool_state_and_switch(current_time, engaged_gpios_, joint_states_values_, 0, params_.engaged.name + " - CHECK STATES", GPIOToolTransition::IDLE, current_state, warning_output);
   }
-  if (current_state_.empty())
+
+  current_state_.set(current_state);
+
+  if (current_state.empty())
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
@@ -1269,9 +1281,12 @@ void GpioToolController::check_tool_state(const rclcpp::Time & current_time, con
 
   if (configuration_control_enabled_)
   {
-    current_configuration_ = "";
-    check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration_, warning_output);
-    if (current_configuration_.empty())
+    std::string current_configuration = "";
+    check_tool_state_and_switch(current_time, reconfigure_gpios_, joint_states_values_, params_.engaged_joints.size(), "reconfigure - CHECK STATES", GPIOToolTransition::IDLE, current_configuration, warning_output);
+
+    current_configuration_.set(current_configuration);
+
+    if (current_configuration.empty())
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),

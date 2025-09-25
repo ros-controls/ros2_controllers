@@ -147,10 +147,9 @@ protected:
   ToolTransitionIOs engaged_gpios_;
   ToolTransitionIOs reconfigure_gpios_;
 
-  // Not needed to be atomic or protected as used only in the RT loop
   rclcpp::Time state_change_start_;
-  std::string current_configuration_;
-  std::string current_state_;
+  realtime_tools::RealtimeThreadSafeBox<std::string> current_configuration_;
+  realtime_tools::RealtimeThreadSafeBox<std::string> current_state_;
 
   std::unordered_set<std::string> command_if_ios_;
   std::unordered_set<std::string> state_if_ios_;
