@@ -205,18 +205,35 @@ private:
 
   /**
    * @brief Handles the state transition when enaging the tool.
-   * @param state The current transition of the tool.
+   * @param current_time [in] Current time for checking the transition time.
+   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the transition.
+   * @param target_state [in] State name to target when checking reached states.
+   * @param joint_states [in/out] Joint states vector to write the joint states to.
+   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint states to.
+   * @param end_state [out] Currently determined state during transition. If empty, tool is currently in transition and no known state has been reached.
    */
   void handle_tool_state_transition(
     const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
     const std::string & target_state, std::vector<double> & joint_states,
     const size_t joint_states_start_index, std::string & end_state);
 
+  /**
+   * @brief
+   *
+   * @param current_time [in] Current time for checking the transition time.
+   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the transition.
+   * @param joint_states [in/out] Joint states vector to write the joint states to.
+   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint states to.
+   * @param output_prefix [in] Prefix to add to the output messages.
+   * @param next_transition [in] Next transition to set if the current transition is completed.
+   * @param target_and_found_state_name [in/out] State name to target when checking reached states, and feedback on the found state. If the argument is not empty, the next transition will be triggered only when that state is reached. If any state is acceptable, empty string shall be passed. In that case the next transition will be triggered if any state if reached. In either case the output is the found state name.
+   * @param warning_output [in] If true, warning messages will be printed.
+   */
   void check_tool_state_and_switch(
     const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
     std::vector<double> & joint_states, const size_t joint_states_start_index,
     const std::string & output_prefix, const uint8_t next_transition,
-    std::string & found_state_name, const bool warning_output = false);
+    std::string & target_and_found_state_name, const bool warning_output = false);
 
   /**
    * @brief Prepares the command and state IOs.

@@ -449,21 +449,25 @@ bool GpioToolController::check_states(
 }
 
 void GpioToolController::check_tool_state_and_switch(
-  const rclcpp::Time & current_time, const ToolTransitionIOs & ios, std::vector<double> & joint_states, const size_t joint_states_start_index, const std::string & output_prefix, const uint8_t next_transition, std::string & found_state_name, const bool warning_output)
+  const rclcpp::Time & current_time, const ToolTransitionIOs & ios, std::vector<double> & joint_states, const size_t joint_states_start_index, const std::string & output_prefix, const uint8_t next_transition, std::string & target_and_found_state_name, const bool warning_output)
 {
   for (const auto & [state_name, states] : ios.states)
   {
-    bool state_exists = states.size() > 0;
+    if (!target_and_found_state_name.empty() && state_name != target_and_found_state_name)
+    {
+      // if we are looking for specific state and this is not it - skip
+      continue;
+    }
     RCLCPP_DEBUG(
       get_node()->get_logger(), "%s: Checking state '%s' for tool. States _%s_ exist. Used number of state interfaces %zu.",
-      output_prefix.c_str(), state_name.c_str(), (state_exists ? "do" : "do not"), states.size());
+      output_prefix.c_str(), state_name.c_str(), (states.size() ? "do" : "do not"), states.size());
 
     if (check_states(current_time, states, output_prefix, next_transition, warning_output))
     {
       RCLCPP_DEBUG(
         get_node()->get_logger(), "%s: SUCCESS! state '%s' for tool is confirmed!",
         output_prefix.c_str(), state_name.c_str());
-      found_state_name = state_name;
+      target_and_found_state_name = state_name;
       const auto & js_val = ios.states_joint_states.at(state_name);
       if (joint_states_start_index + js_val.size() <= joint_states.size())
       {
@@ -486,7 +490,7 @@ void GpioToolController::check_tool_state_and_switch(
 
 void GpioToolController::handle_tool_state_transition(
   const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
-  const std::string & target_state, std::vector<double> & joint_states, const size_t joint_states_start_index, std::string & end_state)
+  const std::string & target_state, std::vector<double> & joint_states, const size_t joint_states_start_index, std::string & current_state)
 {
   bool finish_transition_to_state = false;
   switch (current_tool_transition_.load())
@@ -528,16 +532,28 @@ void GpioToolController::handle_tool_state_transition(
       set_commands(ios.commands.at(target_state), target_state + " - SET_COMMAND", GPIOToolTransition::CHECK_COMMAND);
       break;
     case GPIOToolTransition::CHECK_COMMAND:
-      check_tool_state_and_switch(current_time, ios, joint_states, joint_states_start_index, target_state + " - CHECK_COMMAND", GPIOToolTransition::SET_AFTER_COMMAND, end_state);
+      // if the target state is not in the state map, any state is valid -
+      // used for engaging where multiple final state are possible
+      if (ios.states.find(target_state) == ios.states.end())
+      {
+        current_state = "";
+      }
+      else
+      {
+        current_state = target_state;
+      }
+      check_tool_state_and_switch(current_time, ios, joint_states, joint_states_start_index, target_state + " - CHECK_COMMAND", GPIOToolTransition::SET_AFTER_COMMAND, current_state);
       break;
     case GPIOToolTransition::SET_AFTER_COMMAND:
+      // after the main command we can end up in arbitrary state during engaging therefore we are
+      // using current state that is determined by checking the sensors.
       set_commands(
-        ios.set_after_commands.at(end_state),
+        ios.set_after_commands.at(current_state),
         target_state + " - SET_AFTER_COMMAND", GPIOToolTransition::CHECK_AFTER_COMMAND);
       break;
 
     case GPIOToolTransition::CHECK_AFTER_COMMAND:
-      if (check_states(current_time, ios.set_after_states.at(end_state), target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
+      if (check_states(current_time, ios.set_after_states.at(current_state), target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
       {
         finish_transition_to_state = true;
       }
@@ -831,6 +847,19 @@ GpioToolController::EngagingSrvType::Response GpioToolController::process_engagi
       return response;
     }
   }
+  else  // if already in desired state - nothing to do
+  {
+    if ((requested_action == ToolAction::ENGAGING &&
+         (std::find(params_.possible_engaged_states.begin(), params_.possible_engaged_states.end(), current_state_) != params_.possible_engaged_states.end())) ||
+      (requested_action == ToolAction::DISENGAGING && current_state_ == params_.disengaged.name))
+    {
+      response.success = true;
+      response.message = "Tool is already in the desired state '" + requested_action_name + "'. Nothing to do.";
+      RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+      return response;
+    }
+  }
+
   current_tool_action_.store(requested_action);
   current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
 
