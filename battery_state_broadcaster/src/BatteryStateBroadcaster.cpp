@@ -84,11 +84,12 @@ BatteryStateBroadcaster::on_deactivate(const rclcpp_lifecycle::State& /*previous
 controller_interface::return_type BatteryStateBroadcaster::update(const rclcpp::Time& time,
                                                                   const rclcpp::Duration& /*period*/)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  if (realtime_publisher_)
   {
-    realtime_publisher_->msg_.header.stamp = time;
-    battery_sensor_->get_values_as_message(realtime_publisher_->msg_);
-    realtime_publisher_->unlockAndPublish();
+    sensor_msgs::msg::BatteryState msg_;
+    msg_.header.stamp = time;
+    battery_sensor_->get_values_as_message(msg_);
+    realtime_publisher_->try_publish(msg_);
   }
 
   return controller_interface::return_type::OK;

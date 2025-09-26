@@ -19,7 +19,7 @@ public:
 
   double get_voltage()
   {
-    voltage_ = state_interfaces_[0].get().get_value();
+    voltage_ = state_interfaces_[0].get().get_optional().value();
     return voltage_;
   }
 
