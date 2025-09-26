@@ -74,8 +74,9 @@ TEST_F(IOGripperControllerTest, ReconfigureGripperAction)
     *(controller_->reconfigure_state_buffer_.readFromRT()),
     io_gripper_controller::reconfigure_state_type::IDLE);
 
-  executor.spin_some(std::chrono::milliseconds(
-    1000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      1000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   // since update doesn't guarantee a published message, republish until received
@@ -96,8 +97,9 @@ TEST_F(IOGripperControllerTest, ReconfigureGripperAction)
       break;
     }
   }
-  executor.spin_some(std::chrono::milliseconds(
-    1000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      1000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   // ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
   // "controller/broadcaster update loop";

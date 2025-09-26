@@ -102,8 +102,9 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  executor.spin_some(std::chrono::milliseconds(
-    1000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      1000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   // since update doesn't guarantee a published message, republish until received
@@ -124,8 +125,9 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
       break;
     }
   }
-  executor.spin_some(std::chrono::milliseconds(
-    1000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      1000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   ASSERT_TRUE(joint_state_sub_msg_);
@@ -188,8 +190,9 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  executor.spin_some(std::chrono::milliseconds(
-    1000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      1000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   // since update doesn't guarantee a published message, republish until received
@@ -210,8 +213,9 @@ TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
       break;
     }
   }
-  executor.spin_some(std::chrono::milliseconds(
-    2000));  // this solve the issue related to subscriber not able to get the message
+  executor.spin_some(
+    std::chrono::milliseconds(
+      2000));  // this solve the issue related to subscriber not able to get the message
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   ASSERT_TRUE(joint_state_sub_msg_);
 
