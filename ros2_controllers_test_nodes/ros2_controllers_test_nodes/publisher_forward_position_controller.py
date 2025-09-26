@@ -66,14 +66,18 @@ class PublisherForwardPosition(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    publisher_forward_position = PublisherForwardPosition()
+    node = PublisherForwardPosition()
 
     try:
-        rclpy.spin(publisher_forward_position)
+        rclpy.spin(node)
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         print("Keyboard interrupt received. Shutting down node.")
     except Exception as e:
         print(f"Unhandled exception: {e}")
+    finally:
+        if node:
+            node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
