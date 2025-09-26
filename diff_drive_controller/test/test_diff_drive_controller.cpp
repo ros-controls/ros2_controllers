@@ -134,7 +134,7 @@ protected:
   }
 
   /// \brief wait for the subscriber and publisher to completely setup
-  void waitForSetup()
+  void waitForSetup(rclcpp::Executor & executor)
   {
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = pub_node->get_clock();
@@ -145,7 +145,8 @@ protected:
       {
         FAIL();
       }
-      rclcpp::spin_some(pub_node);
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
   }
 
@@ -536,7 +537,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // send msg
   publish(0.0, 0.0);
@@ -777,7 +778,7 @@ TEST_F(TestDiffDriveController, cleanup)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // send msg
   const double linear = 1.0;
@@ -898,7 +899,7 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   // (Note: reference_interfaces_ is protected, but this is
@@ -994,7 +995,7 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -1098,7 +1099,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   // (Note: reference_interfaces_ is protected, but this is
@@ -1142,7 +1143,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // (Note: reference_interfaces_ is protected, but this is
   // a FRIEND_TEST so we can use it)
@@ -1196,7 +1197,7 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // published command message with zero timestamp sets the command interfaces to the correct values
   const double linear = 1.0;
