@@ -2,6 +2,12 @@
 Changelog for package battery_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* address deprecations in ros2_control for kilted
+* Don't make a temporary copy of semantic component (https://github.com/ipa320/ros_battery_monitoring/pull/9)
+* Contributors: Christoph Froehlich, Jonas Otto
+
 1.0.2 (2025-06-01)
 ------------------
 * Replace ament_target_dependencies with target_link_libraries ([#6](https://github.com/ipa320/ros_battery_monitoring/issues/6))
