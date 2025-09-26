@@ -26,9 +26,9 @@
 #include "control_msgs/action/gpio_tool_command.hpp"
 #include "control_msgs/action/set_gpio_tool_config.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
-#include "control_msgs/msg/interface_value.hpp"
 #include "control_msgs/msg/gpio_tool_controller_state.hpp"
 #include "control_msgs/msg/gpio_tool_transition.hpp"
+#include "control_msgs/msg/interface_value.hpp"
 #include "control_msgs/srv/set_gpio_tool_config.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "gpio_controllers/gpio_tool_controller_parameters.hpp"
@@ -65,7 +65,8 @@ enum class ToolAction : std::uint8_t
 
 class GpioToolController : public controller_interface::ControllerInterface
 /**
- * @brief GpioToolController class handles the control of an IO-based tools, like grippers, lifts, mode control.
+ * @brief GpioToolController class handles the control of an IO-based tools, like grippers, lifts,
+ * mode control.
  */
 {
 public:
@@ -132,15 +133,21 @@ protected:
   {
     std::vector<std::string> possible_states;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_before_commands;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_before_states;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      set_before_commands;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      set_before_states;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> commands;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      commands;
 
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> states;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      states;
     std::unordered_map<std::string, std::vector<double>> states_joint_states;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_after_commands;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>> set_after_states;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      set_after_commands;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::pair<double, size_t>>>
+      set_after_states;
   };
 
   ToolTransitionIOs disengaged_gpios_;
@@ -166,7 +173,7 @@ protected:
   std::shared_ptr<gpio_tool_controller::ParamListener> param_listener_;
   rclcpp::Service<EngagingSrvType>::SharedPtr disengaged_service_;
   rclcpp::Service<EngagingSrvType>::SharedPtr engaged_service_;
-  rclcpp::Service<ConfigSrvType>::SharedPtr reconfigure_tool_service_;  
+  rclcpp::Service<ConfigSrvType>::SharedPtr reconfigure_tool_service_;
   rclcpp_action::Server<EngagingActionType>::SharedPtr engaging_action_server_;
   rclcpp_action::Server<ConfigActionType>::SharedPtr config_action_server_;
   rclcpp::Service<ResetSrvType>::SharedPtr reset_service_;
@@ -185,8 +192,7 @@ protected:
   using InterfacePublisher = realtime_tools::RealtimePublisher<DynInterfaceMsg>;
   rclcpp::Publisher<DynInterfaceMsg>::SharedPtr if_publisher_;
   std::unique_ptr<InterfacePublisher> interface_publisher_;
-  using ControllerStatePublisher =
-    realtime_tools::RealtimePublisher<ControllerStateMsg>;
+  using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr t_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
 
@@ -205,11 +211,14 @@ private:
   /**
    * @brief Handles the state transition when enaging the tool.
    * @param current_time [in] Current time for checking the transition time.
-   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the transition.
+   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the
+   * transition.
    * @param target_state [in] State name to target when checking reached states.
    * @param joint_states [in/out] Joint states vector to write the joint states to.
-   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint states to.
-   * @param end_state [out] Currently determined state during transition. If empty, tool is currently in transition and no known state has been reached.
+   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint
+   * states to.
+   * @param end_state [out] Currently determined state during transition. If empty, tool is
+   * currently in transition and no known state has been reached.
    */
   void handle_tool_state_transition(
     const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
@@ -220,12 +229,18 @@ private:
    * @brief
    *
    * @param current_time [in] Current time for checking the transition time.
-   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the transition.
+   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the
+   * transition.
    * @param joint_states [in/out] Joint states vector to write the joint states to.
-   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint states to.
+   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint
+   * states to.
    * @param output_prefix [in] Prefix to add to the output messages.
    * @param next_transition [in] Next transition to set if the current transition is completed.
-   * @param target_and_found_state_name [in/out] State name to target when checking reached states, and feedback on the found state. If the argument is not empty, the next transition will be triggered only when that state is reached. If any state is acceptable, empty string shall be passed. In that case the next transition will be triggered if any state if reached. In either case the output is the found state name.
+   * @param target_and_found_state_name [in/out] State name to target when checking reached states,
+   * and feedback on the found state. If the argument is not empty, the next transition will be
+   * triggered only when that state is reached. If any state is acceptable, empty string shall be
+   * passed. In that case the next transition will be triggered if any state if reached. In either
+   * case the output is the found state name.
    * @param warning_output [in] If true, warning messages will be printed.
    */
   void check_tool_state_and_switch(
@@ -236,7 +251,7 @@ private:
 
   /**
    * @brief Prepares the command and state IOs.
-   * \returns true if successful, false otherwise. Check the output if error has happend.
+   * \returns true if successful, false otherwise. Check the output if error has happened.
    */
   bool prepare_command_and_state_ios();
 
@@ -258,10 +273,12 @@ private:
 
   bool set_commands(
     const std::unordered_map<std::string, std::pair<double, size_t>> & commands,
-    const std::string & output_prefix,
-    const uint8_t next_transition);
+    const std::string & output_prefix, const uint8_t next_transition);
   bool check_states(
-    const rclcpp::Time & current_time, const std::unordered_map<std::string, std::pair<double, size_t>> & states, const std::string & output_prefix, const uint8_t next_transition, const bool warning_output = false);
+    const rclcpp::Time & current_time,
+    const std::unordered_map<std::string, std::pair<double, size_t>> & states,
+    const std::string & output_prefix, const uint8_t next_transition,
+    const bool warning_output = false);
 
   std::vector<std::string> configurations_list_;
   std::vector<gpio_tool_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;
@@ -282,7 +299,7 @@ private:
    * @return GoalResponse indicating acceptance or rejection of the goal.
    */
   rclcpp_action::GoalResponse handle_engaging_goal(
-    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const EngagingActionType::Goal>  goal);
+    const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const EngagingActionType::Goal> goal);
 
   /**
    * @brief Handles the cancellation of the tool action.

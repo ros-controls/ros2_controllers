@@ -265,7 +265,7 @@ gpio_tool_controller:
       joint_states: {
         type: double_array,
         default_value: [],
-        description: "List of joint states values that tool has in certian configurations. The order of the values must match the order of the joint names in `engaged_joints` parameter.",
+        description: "List of joint states values that tool has in certain configurations. The order of the values must match the order of the joint names in `engaged_joints` parameter.",
       }
       set_before_command_interfaces: {
         type: string_array,
@@ -304,7 +304,7 @@ gpio_tool_controller:
       command_values: {
         type: double_array,
         default_value: [],
-        description: "(optional) list of values for command interfaces that have to be set for swicthing to aa specific configuration.",
+        description: "(optional) list of values for command interfaces that have to be set for switching to aa specific configuration.",
       }
       state_interfaces: {
         type: string_array,
