@@ -24,7 +24,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
 
 3. **Adding declarations into header file (.hpp)**
 
-   1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives. 
+   1. Take care that you use header guards. ROS 2-style is using ``#ifndef`` and ``#define`` preprocessor directives.
 
    2. include ``"controller_interface/controller_interface.hpp"``.
 
@@ -33,7 +33,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
    4. Define the class of the controller, extending ``ControllerInterface``. Now, your code should look similar to this:
 
       .. code:: c++
-         
+
          #ifndef <CONTROLLER_NAME>_HPP_
          #define <CONTROLLER_NAME>_HPP_
 
@@ -48,7 +48,7 @@ The following is a step-by-step guide to create source files, basic tests, and c
          };
 
          }  // namespace <controller_name>
-         
+
          #endif  // <CONTROLLER_NAME>_HPP_
 
    5. Add a constructor without parameters and the following public methods overriding the ``ControllerInterface`` definition: ``on_init``, ``command_interface_configuration``, ``state_interface_configuration``, ``on_configure``, ``on_activate``, ``on_deactivate``, ``update``.
