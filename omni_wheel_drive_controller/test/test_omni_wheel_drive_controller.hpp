@@ -139,7 +139,7 @@ protected:
   }
 
   /// \brief wait for the subscriber and publisher to completely setup
-  void waitForSetup()
+  void waitForSetup(rclcpp::Executor & executor)
   {
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = cmd_vel_publisher_node_->get_clock();
@@ -150,7 +150,8 @@ protected:
       {
         FAIL();
       }
-      rclcpp::spin_some(cmd_vel_publisher_node_);
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
   }
 
