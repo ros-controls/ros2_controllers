@@ -18,7 +18,7 @@ BatteryStateBroadcaster::on_configure(const rclcpp_lifecycle::State& /*previous_
 {
   std::string sensor_name = get_node()->get_parameter("sensor_name").as_string();
 
-  battery_sensor_ = std::make_unique<BatterySensor>(BatterySensor(sensor_name));
+  battery_sensor_ = std::make_unique<BatterySensor>(sensor_name);
 
   battery_state_pub_ =
       get_node()->create_publisher<sensor_msgs::msg::BatteryState>("~/battery_state", rclcpp::SystemDefaultsQoS());
