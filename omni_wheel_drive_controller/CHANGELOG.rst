@@ -2,6 +2,18 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.7.0 (2025-09-12)
+------------------
+* Fix use of M_PI in omni_wheel_driver_controller on MSVC (`#1886 <https://github.com/ros-controls/ros2_controllers/issues/1886>`_)
+* [omni_wheel_drive_controller] Fix the broken links (`#1882 <https://github.com/ros-controls/ros2_controllers/issues/1882>`_)
+* Contributors: Sai Kishor Kothakota, Silvio Traversaro
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+
 5.5.0 (2025-07-31)
 ------------------
 * Add omni_wheel_drive_controller (`#1535 <https://github.com/ros-controls/ros2_controllers/issues/1535>`_)

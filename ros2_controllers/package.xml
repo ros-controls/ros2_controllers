@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>ros2_controllers</name>
-  <version>5.5.0</version>
+  <version>5.7.0</version>
   <description>Metapackage for ros2_controllers related packages</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -31,6 +31,7 @@
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>joint_trajectory_controller</exec_depend>
   <exec_depend>mecanum_drive_controller</exec_depend>
+  <exec_depend>motion_primitives_controllers</exec_depend>
   <exec_depend>omni_wheel_drive_controller</exec_depend>
   <exec_depend>parallel_gripper_controller</exec_depend>
   <exec_depend>pid_controller</exec_depend>
