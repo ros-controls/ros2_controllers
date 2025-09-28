@@ -120,7 +120,7 @@ protected:
   }
 
   /// \brief wait for the subscriber and publisher to completely setup
-  void waitForSetup()
+  void waitForSetup(rclcpp::Executor & executor)
   {
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = pub_node->get_clock();
@@ -131,7 +131,8 @@ protected:
       {
         FAIL();
       }
-      rclcpp::spin_some(pub_node);
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
   }
 
@@ -268,7 +269,7 @@ TEST_F(TestTricycleController, cleanup)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // send msg
   const double linear = 1.0;

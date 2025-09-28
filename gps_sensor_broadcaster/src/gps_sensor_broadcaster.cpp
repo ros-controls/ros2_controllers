@@ -56,12 +56,16 @@ callback_return_type GPSSensorBroadcaster::on_configure(const rclcpp_lifecycle::
   param_listener_->refresh_dynamic_parameters();
   params_ = param_listener_->get_params();
 
-  gps_sensor_ =
-    params_.read_covariance_from_interface
-      ? GPSSensorVariant{semantic_components::GPSSensor<GPSSensorOption::WithCovariance>(
-          params_.sensor_name)}
-      : GPSSensorVariant{
-          semantic_components::GPSSensor<GPSSensorOption::WithoutCovariance>(params_.sensor_name)};
+  if (params_.read_covariance_from_interface)
+  {
+    gps_sensor_.emplace<semantic_components::GPSSensor<GPSSensorOption::WithCovariance>>(
+      params_.sensor_name);
+  }
+  else
+  {
+    gps_sensor_.emplace<semantic_components::GPSSensor<GPSSensorOption::WithoutCovariance>>(
+      params_.sensor_name);
+  }
   std::visit(
     Visitor{
       [this](auto & sensor) { state_names_ = sensor.get_state_interface_names(); },
