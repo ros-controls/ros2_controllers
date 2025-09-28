@@ -319,7 +319,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
   // -> cmd = p_term + i_term + d_term + feedforward_gain * ref = 30100.3 + 0 * 101.101 = 30102.3
   const double expected_command_value = 30100.301000;
 
-  double actual_value = std::round(controller_->command_interfaces_[0].get_value() * 1e5) / 1e5;
+  double actual_value =
+    std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 }
 
