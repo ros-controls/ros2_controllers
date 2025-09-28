@@ -83,7 +83,7 @@ public:
     double /* error_velocity */, double max_allowed_effort)
   {
     // Forward desired position to command
-    joint_handle_->get().set_value(desired_position);
+    std::ignore = joint_handle_->get().set_value(desired_position);
     return max_allowed_effort;
   }
 
@@ -148,7 +148,7 @@ public:
     }
     // Reset PIDs, zero effort commands
     pid_->reset();
-    joint_handle_->get().set_value(0.0);
+    std::ignore = joint_handle_->get().set_value(0.0);
   }
 
   void stopping(const rclcpp::Time & /* time */) {}
@@ -168,7 +168,7 @@ public:
     double command = pid_->compute_command(error_position, error_velocity, period);
     command = std::min<double>(
       fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
-    joint_handle_->get().set_value(command);
+    std::ignore = joint_handle_->get().set_value(command);
     last_update_time_ = std::chrono::steady_clock::now();
     return command;
   }
