@@ -15,7 +15,6 @@ gravity_compensation_pd_controller:
     joint_space_reference_controller: ''
     joints: '{}'
     p_gains: '{}'
-    robot_name: ''
     state_interfaces_names_override:
       position: '{}'
       velocity: '{}'
@@ -28,14 +27,6 @@ Specifies which joints will be used by the controller.
 
 * Type: `string_array`
 * Default Value: {}
-
-## robot_name
-
-Name of the robot to control.
-
-* Type: `string`
-* Default Value: ""
-* Read only: True
 
 ## joint_space_reference_controller
 

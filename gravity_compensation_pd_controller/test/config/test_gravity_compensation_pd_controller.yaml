@@ -1,0 +1,16 @@
+test_gravity_compensation_pd_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+
+    dynamics_solver:
+      dynamics_solver_plugin: kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL
+      tip: tool0
+      root: world
+
+    p_gains: [2000.0, 3000.0, 4000.0]
+    d_gains: [100.0, 100.0, 100.0]
+
+    compensate_gravity: true

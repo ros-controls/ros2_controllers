@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.8)
-project(gravity_compensation_pd_controller
-        LANGUAGES CXX
-)
+cmake_minimum_required(VERSION 3.16)
+project(gravity_compensation_pd_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX
   OR CMAKE_CXX_COMPILER_ID
@@ -96,7 +94,27 @@ install(TARGETS gravity_compensation_pd_controller gravity_compensation_pd_contr
         LIBRARY DESTINATION lib
 )
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  ament_add_gmock(test_gravity_compensation_pd_controller
+    test/test_gravity_compensation_pd_controller.cpp
+  )
+  target_link_libraries(test_gravity_compensation_pd_controller
+    gravity_compensation_pd_controller
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_gravity_compensation_pd_controller test/test_load_gravity_compensation_pd_controller.cpp)
+  target_link_libraries(test_load_gravity_compensation_pd_controller
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+endif()
+
 ament_export_targets(export_gravity_compensation_pd_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
-
 ament_package()
