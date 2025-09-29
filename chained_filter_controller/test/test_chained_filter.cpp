@@ -123,18 +123,18 @@ TEST_F(ChainedFilterTest, UpdateFilter)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input state interface should not change
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 
-  ASSERT_TRUE(joint_1_pos_.set_value(2.0));
+  ASSERT_TRUE(joint_1_pos_->set_value(2.0));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),

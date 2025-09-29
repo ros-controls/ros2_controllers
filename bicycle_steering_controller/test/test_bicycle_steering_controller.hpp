@@ -144,39 +144,39 @@ protected:
       traction_interface_name_ = "velocity";
     }
 
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
-    command_ifs.reserve(joint_command_values_.size());
+    loaned_command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
+      std::make_shared<hardware_interface::CommandInterface>(
         traction_joints_names_[0], traction_interface_name_,
         &joint_command_values_[CMD_TRACTION_WHEEL]));
-    command_ifs.emplace_back(command_itfs_.back());
+    loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
-      hardware_interface::CommandInterface(
+      std::make_shared<hardware_interface::CommandInterface>(
         steering_joints_names_[0], steering_interface_name_,
         &joint_command_values_[CMD_STEER_WHEEL]));
-    command_ifs.emplace_back(command_itfs_.back());
+    loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
-    state_ifs.reserve(joint_state_values_.size());
+    loaned_state_ifs.reserve(joint_state_values_.size());
 
     state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
+      std::make_shared<hardware_interface::StateInterface>(
         traction_joints_names_[0], traction_interface_name_,
         &joint_state_values_[STATE_TRACTION_WHEEL]));
-    state_ifs.emplace_back(state_itfs_.back());
+    loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
-      hardware_interface::StateInterface(
+      std::make_shared<hardware_interface::StateInterface>(
         steering_joints_names_[0], steering_interface_name_,
         &joint_state_values_[STATE_STEER_AXIS]));
-    state_ifs.emplace_back(state_itfs_.back());
+    loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void subscribe_and_get_messages(ControllerStateMsg & msg)
@@ -275,8 +275,8 @@ protected:
   std::string traction_interface_name_ = "";
   std::string preceding_prefix_ = "pid_controller";
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   // Test related parameters
   std::unique_ptr<TestableBicycleSteeringController> controller_;

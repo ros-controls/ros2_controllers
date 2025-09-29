@@ -62,12 +62,24 @@ protected:
   const std::string frame_id_ = "fts_sensor_frame";
   std::array<double, 6> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
 
-  hardware_interface::StateInterface fts_force_x_{sensor_name_, "force.x", &sensor_values_[0]};
-  hardware_interface::StateInterface fts_force_y_{sensor_name_, "force.y", &sensor_values_[1]};
-  hardware_interface::StateInterface fts_force_z_{sensor_name_, "force.z", &sensor_values_[2]};
-  hardware_interface::StateInterface fts_torque_x_{sensor_name_, "torque.x", &sensor_values_[3]};
-  hardware_interface::StateInterface fts_torque_y_{sensor_name_, "torque.y", &sensor_values_[4]};
-  hardware_interface::StateInterface fts_torque_z_{sensor_name_, "torque.z", &sensor_values_[5]};
+  hardware_interface::StateInterface::SharedPtr fts_force_x_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "force.x", &sensor_values_[0]);
+  hardware_interface::StateInterface::SharedPtr fts_force_y_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "force.y", &sensor_values_[1]);
+  hardware_interface::StateInterface::SharedPtr fts_force_z_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "force.z", &sensor_values_[2]);
+  hardware_interface::StateInterface::SharedPtr fts_torque_x_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "torque.x", &sensor_values_[3]);
+  hardware_interface::StateInterface::SharedPtr fts_torque_y_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "torque.y", &sensor_values_[4]);
+  hardware_interface::StateInterface::SharedPtr fts_torque_z_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "torque.z", &sensor_values_[5]);
 
   std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
 

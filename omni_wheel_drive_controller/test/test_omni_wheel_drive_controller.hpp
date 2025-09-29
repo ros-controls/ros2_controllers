@@ -157,54 +157,56 @@ protected:
 
   void assignResourcesPosFeedback(const std::vector<std::string> wheel_names = wheel_names_)
   {
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-    state_ifs.reserve(wheels_pos_states_.size());
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
+    loaned_state_ifs.reserve(wheels_pos_states_.size());
     state_itfs_.reserve(wheels_pos_states_.size());
     for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(wheel_names[i], HW_IF_POSITION, &wheels_pos_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+        std::make_shared<hardware_interface::StateInterface>(
+          wheel_names[i], HW_IF_POSITION, &wheels_pos_states_[i]));
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-    command_ifs.reserve(wheels_vel_cmds_.size());
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
+    loaned_command_ifs.reserve(wheels_vel_cmds_.size());
     command_itfs_.reserve(wheels_vel_cmds_.size());
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(wheel_names[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+        std::make_shared<hardware_interface::CommandInterface>(
+          wheel_names[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void assignResourcesVelFeedback()
   {
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-    state_ifs.reserve(wheels_vel_states_.size());
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
+    loaned_state_ifs.reserve(wheels_vel_states_.size());
     state_itfs_.reserve(wheels_vel_states_.size());
     for (size_t i = 0; i < wheels_vel_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-    command_ifs.reserve(wheels_vel_cmds_.size());
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
+    loaned_command_ifs.reserve(wheels_vel_cmds_.size());
     command_itfs_.reserve(wheels_vel_cmds_.size());
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   controller_interface::return_type InitController(
@@ -232,8 +234,8 @@ protected:
   std::vector<double> wheels_vel_states_ = {1, 1, 1, 1};
   std::vector<double> wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   std::vector<std::string> reference_interface_names = {"linear/x", "linear/y", "angular/z"};
 
