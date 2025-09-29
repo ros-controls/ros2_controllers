@@ -21,6 +21,7 @@
 
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "rclcpp/utilities.hpp"
 #include "test_gravity_compensation_pd_controller.hpp"
 
@@ -29,10 +30,6 @@
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
-void GravityCompensationPDControllerTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
-
-void GravityCompensationPDControllerTest::TearDownTestCase() { rclcpp::shutdown(); }
-
 void GravityCompensationPDControllerTest::SetUp()
 {
   controller_ = std::make_unique<FriendGravityCompensationPDController>();
@@ -40,7 +37,7 @@ void GravityCompensationPDControllerTest::SetUp()
     rclcpp::Parameter("joints", joint_names_),
     rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
     rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
-    rclcpp::Parameter("compensate_gravity", false),
+    rclcpp::Parameter("compensate_gravity", true),
     rclcpp::Parameter(
       "dynamics_solver.dynamics_solver_plugin",
       std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
@@ -56,7 +53,7 @@ void GravityCompensationPDControllerTest::TearDown()
   state_interfaces_.clear();
 }
 
-void GravityCompensationPDControllerTest::assign_interfaces_()
+void GravityCompensationPDControllerTestBase::assign_interfaces_()
 {
   std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
   command_ifs.reserve(joint_command_values_.size());
@@ -92,7 +89,7 @@ void GravityCompensationPDControllerTest::assign_interfaces_()
   controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 }
 
-void GravityCompensationPDControllerTest::SetUpController(
+void GravityCompensationPDControllerTestBase::SetUpController(
   const std::vector<rclcpp::Parameter> & parameters)
 {
   auto node_options = controller_->define_custom_node_options();
@@ -148,4 +145,129 @@ TEST_F(GravityCompensationPDControllerTest, StopJointsOnDeactivateTest)
   EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-6);
   EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-6);
   EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-6);
+}
+
+void GravityCompensationPDControllerInvalidParameterTest::SetUp()
+{
+  controller_ = std::make_unique<FriendGravityCompensationPDController>();
+  // Parameters are set in each test case
+  const std::vector<rclcpp::Parameter> parameters = WithParamInterface::GetParam();
+  SetUpController(parameters);
+}
+
+void GravityCompensationPDControllerInvalidParameterTest::TearDown()
+{
+  controller_.reset(nullptr);
+  command_interfaces_.clear();
+  state_interfaces_.clear();
+}
+
+TEST_P(GravityCompensationPDControllerInvalidParameterTest, ConfigureFail)
+{
+  // configure should fail
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  InvalidConfigParameters, GravityCompensationPDControllerInvalidParameterTest,
+  testing::Values(
+    // Empty joint names
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter(
+        "dynamics_solver.dynamics_solver_plugin",
+        std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
+
+    // Mismatched p_gains size
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{"joint1", "joint2", "joint3"}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter(
+        "dynamics_solver.dynamics_solver_plugin",
+        std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
+
+    // Mismatched d_gains size
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{"joint1", "joint2", "joint3"}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter(
+        "dynamics_solver.dynamics_solver_plugin",
+        std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))}));
+
+void GravityCompensationPDControllerMissingParameterTest::SetUp()
+{
+  controller_ = std::make_unique<FriendGravityCompensationPDController>();
+  // Parameters are set in each test case
+  const std::vector<rclcpp::Parameter> parameters = WithParamInterface::GetParam();
+  auto node_options = controller_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
+
+  controller_->init(
+    "test_gravity_compensation_pd_controller", ros2_control_test_assets::valid_robot_urdf, 0, "",
+    node_options);
+
+  executor_.add_node(controller_->get_node()->get_node_base_interface());
+}
+
+TEST_P(GravityCompensationPDControllerMissingParameterTest, InitFail)
+{
+  // init should fail
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::ERROR);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  InvalidInitParameters, GravityCompensationPDControllerMissingParameterTest,
+  testing::Values(
+    // Missing dynamics solver plugin
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{"joint1", "joint2", "joint3"}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
+    // Missing dynamics solver tip
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{"joint1", "joint2", "joint3"}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter(
+        "dynamics_solver.dynamics_solver_plugin",
+        std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
+      rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
+    // Missing dynamics solver root
+    std::vector<rclcpp::Parameter>{
+      rclcpp::Parameter("joints", std::vector<std::string>{"joint1", "joint2", "joint3"}),
+      rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
+      rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
+      rclcpp::Parameter("compensate_gravity", true),
+      rclcpp::Parameter(
+        "dynamics_solver.dynamics_solver_plugin",
+        std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link"))}));
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+  return result;
 }

@@ -32,20 +32,12 @@
 class FriendGravityCompensationPDController
 : public gravity_compensation_pd_controller::GravityCompensationPDController
 {
-  FRIEND_TEST(GravityCompensationPDControllerTest, StopJointsOnDeactivateTest);
-  FRIEND_TEST(GravityCompensationPDControllerTest, ConfigureAndActivateParamsSuccess);
   FRIEND_TEST(GravityCompensationPDControllerTest, NoCommandCheckTest);
 };
 
-class GravityCompensationPDControllerTest : public ::testing::Test
+class GravityCompensationPDControllerTestBase
 {
 public:
-  static void SetUpTestCase();
-  static void TearDownTestCase();
-
-  void SetUp();
-  void TearDown();
-
   void SetUpController(const std::vector<rclcpp::Parameter> & parameters = {});
 
 protected:
@@ -63,6 +55,30 @@ protected:
   std::vector<std::unique_ptr<hardware_interface::StateInterface>> state_interfaces_;
 
   rclcpp::executors::SingleThreadedExecutor executor_;
+};
+
+class GravityCompensationPDControllerTest : public GravityCompensationPDControllerTestBase,
+                                            public testing::Test
+{
+public:
+  void SetUp() override;
+  void TearDown() override;
+};
+
+class GravityCompensationPDControllerInvalidParameterTest
+: public testing::TestWithParam<std::vector<rclcpp::Parameter>>,
+  public GravityCompensationPDControllerTestBase
+{
+public:
+  void SetUp() override;
+  void TearDown() override;
+};
+
+class GravityCompensationPDControllerMissingParameterTest
+: public GravityCompensationPDControllerInvalidParameterTest
+{
+public:
+  void SetUp() override;
 };
 
 #endif  // TEST_GRAVITY_COMPENSATION_PD_CONTROLLER_HPP_
