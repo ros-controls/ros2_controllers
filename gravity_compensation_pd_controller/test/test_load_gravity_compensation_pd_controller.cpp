@@ -30,14 +30,8 @@ TEST(TestLoadGravityCompensationPDController, load_controller)
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  // auto robot_description = std::string(ros2_control_test_assets::urdf_head) +
-  //   std::string(ros2_control_test_assets::hardware_resources_with_exclusive_interface) +
-  //   std::string(ros2_control_test_assets::urdf_tail);
-
-  const std::string robot_description = ros2_control_test_assets::valid_robot_urdf;
-
   controller_manager::ControllerManager cm(
-    executor, robot_description, true, "test_controller_manager");
+    executor, ros2_control_test_assets::valid_robot_urdf, true, "test_controller_manager");
   const std::string test_file_path =
     std::string(TEST_FILES_DIRECTORY) + "/config/test_gravity_compensation_pd_controller.yaml";
 

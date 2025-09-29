@@ -47,7 +47,9 @@ public:
   void TearDown();
 
   void SetUpController(const std::vector<rclcpp::Parameter> & parameters = {});
-  void assign_interfaces();
+
+protected:
+  void assign_interfaces_();
 
 protected:
   std::unique_ptr<FriendGravityCompensationPDController> controller_;
