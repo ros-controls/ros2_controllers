@@ -4,7 +4,7 @@
 
 Battery State Broadcaster
 --------------------------------
-The *Battery State Broadcaster* is a ROS 2 controller that publishes battery status information as ``sensor_msgs/msg/BatteryState`` messages.
+The *Battery State Broadcaster* publishes battery status information as ``sensor_msgs/msg/BatteryState`` messages.
 
 It reads battery-related state interfaces from one or more joints and exposes them in a standard ROS 2 message format. This allows easy integration with monitoring tools, logging systems, and higher-level decision-making nodes.
 
