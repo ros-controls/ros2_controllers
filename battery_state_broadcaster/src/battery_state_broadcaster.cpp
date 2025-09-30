@@ -25,7 +25,7 @@
 namespace battery_state_broadcaster
 {
 const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
-const size_t MAX_LENGTH = 64;
+const size_t MAX_LENGTH = 64;  // maximum length of strings to reserve
 
 BatteryStateBroadcaster::BatteryStateBroadcaster() : controller_interface::ControllerInterface() {}
 
