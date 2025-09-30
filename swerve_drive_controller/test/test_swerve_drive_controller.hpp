@@ -248,10 +248,8 @@ protected:
 
     if (wheel_joints.size() >= 4 && steering_joints.size() >= 4)
     {
-      parameter_overrides.push_back(
-        rclcpp::Parameter("chassis_length", rclcpp::ParameterValue(0.2)));
-      parameter_overrides.push_back(
-        rclcpp::Parameter("chassis_width", rclcpp::ParameterValue(0.35)));
+      parameter_overrides.push_back(rclcpp::Parameter("wheelbase", rclcpp::ParameterValue(0.85)));
+      parameter_overrides.push_back(rclcpp::Parameter("trackwidth", rclcpp::ParameterValue(0.75)));
       parameter_overrides.push_back(rclcpp::Parameter("wheel_radius", rclcpp::ParameterValue(0.1)));
       parameter_overrides.push_back(
         rclcpp::Parameter("cmd_vel_timeout", rclcpp::ParameterValue(0.5)));
@@ -259,8 +257,6 @@ protected:
       parameter_overrides.push_back(
         rclcpp::Parameter("base_footprint", rclcpp::ParameterValue("base_footprint")));
       parameter_overrides.push_back(rclcpp::Parameter("open_loop", rclcpp::ParameterValue(false)));
-      parameter_overrides.push_back(
-        rclcpp::Parameter("center_of_rotation", rclcpp::ParameterValue(0.1)));
     }
 
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());

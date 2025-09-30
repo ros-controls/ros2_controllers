@@ -48,22 +48,28 @@ swerve_drive_controller:
     description: "Name of the rear right axle joint.",
     read_only: true
   }
-  chassis_length: {
+  wheelbase: {
     type: double,
     default_value: 0.85,
-    description: "Length of the robot chassis.",
+    description: "Wheelbase is the distance between front and rear wheels.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
     },
     read_only: true
   }
-  chassis_width: {
+  trackwidth: {
     type: double,
     default_value: 0.75,
-    description: "Width of the robot chassis.",
+    description: "Trackwidth is the distance between left and right wheels.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]
     },
+    read_only: true
+  }
+  offset: {
+    type: double_array,
+    default_value: [0.0, 0.0],
+    description: "Offset of center of gravity from geometric center",
     read_only: true
   }
   wheel_radius: {
@@ -76,12 +82,9 @@ swerve_drive_controller:
     read_only: true
   }
   center_of_rotation: {
-    type: double,
-    default_value: 0.1,
-    description: "Center of rotation of robot",
-    validation: {
-      "swerve_drive_controller::gt<>": [0.0]
-    },
+    type: double_array,
+    default_value: [0.0, 0.0],
+    description: "Center of rotation (x,y) of robot",
     read_only: true
   }
   cmd_vel_timeout: {

@@ -68,15 +68,9 @@ void Axle::set_position(double position) { position_.get().set_value(position); 
 
 double Axle::get_feedback() { return Axle::feedback_.get().get_optional().value(); }
 
-std::array<std::pair<double, double>, 4> wheel_positions_ = {{
-  {-0.1, 0.175},   // front left
-  {0.1, 0.175},    // front right
-  {-0.1, -0.175},  // rear left
-  {0.1, -0.175}    // rear right
-}};
-
 SwerveController::SwerveController()
-: controller_interface::ControllerInterface(), swerveDriveKinematics_(wheel_positions_)
+
+: controller_interface::ControllerInterface()
 {
   auto zero_twist = std::make_shared<TwistStamped>();
   zero_twist->header.stamp = rclcpp::Time(0);
@@ -99,6 +93,9 @@ CallbackReturn SwerveController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    swerveDriveKinematics_.calculate_wheel_position(
+      params_.wheelbase, params_.trackwidth, params_.offset[0], params_.offset[1]);
   }
   catch (const std::exception & e)
   {
@@ -141,10 +138,6 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
   auto logger = get_node()->get_logger();
   try
   {
-    wheel_params_.x_offset = params_.chassis_length;
-    wheel_params_.y_offset = params_.chassis_width;
-    wheel_params_.radius = params_.wheel_radius;
-    wheel_params_.center_of_rotation = params_.center_of_rotation;
     for (std::size_t i = 0; i < 6; ++i)
     {
       params_.pose_covariance_diagonal[i] = 0.01;
@@ -336,6 +329,9 @@ CallbackReturn SwerveController::on_activate(const rclcpp_lifecycle::State &)
 controller_interface::return_type SwerveController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  auto logger = get_node()->get_logger();
+
+  RCLCPP_INFO(logger, "Updated Kinematics");
   if (this->get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted_)
@@ -374,9 +370,6 @@ controller_interface::return_type SwerveController::update(
   double & linear_x_cmd = command.twist.linear.x;
   double & linear_y_cmd = command.twist.linear.y;
   double & angular_cmd = command.twist.angular.z;
-  double x_offset = wheel_params_.x_offset;
-  double y_offset = wheel_params_.y_offset;
-  double radius = wheel_params_.radius;
 
   auto wheel_command =
     swerveDriveKinematics_.compute_wheel_commands(linear_x_cmd, linear_y_cmd, angular_cmd);

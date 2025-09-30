@@ -53,12 +53,20 @@ struct OdometryState
 class SwerveDriveKinematics
 {
 public:
-  /**
-   * @brief Constructor for the kinematics solver.
-   * @param wheel_positions Array of (x, y) positions of the wheels relative to the robot's center.
-   */
+  /// @brief Default Constructor
+  SwerveDriveKinematics();
 
-  explicit SwerveDriveKinematics(const std::array<std::pair<double, double>, 4> & wheel_positions);
+  /**
+   * @brief Sets necessary params required for kinematics calculation.
+   * @param wheel_base Distance between front and rear axles (meters).
+   * @param track_width Distance between left and right wheels (meters).
+   * @param x_offset Optional global x offset of wheel positions.
+   * @param y_offset Optional global y offset of wheel positions.
+   * @attention order enforced as: front_left, front_right, rear_left, rear_right
+   */
+  void calculate_wheel_position(
+    double wheel_base, double track_width, double x_offset = 0.0, double y_offset = 0.0);
+
   /**
    * @brief Compute the wheel commands based on robot velocity commands.
    * @param linear_velocity_x Linear velocity in the x direction (m/s).
@@ -66,7 +74,6 @@ public:
    * @param angular_velocity_z Angular velocity about the z-axis (rad/s).
    * @return Array of wheel commands (steering angles and drive velocities).
    */
-
   std::array<WheelCommand, 4> compute_wheel_commands(
     double linear_velocity_x, double linear_velocity_y, double angular_velocity_z);
 

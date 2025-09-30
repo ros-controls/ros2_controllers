@@ -16,18 +16,24 @@
 namespace swerve_drive_controller
 {
 
-SwerveDriveKinematics::SwerveDriveKinematics(
-  const std::array<std::pair<double, double>, 4> & wheel_positions)
-: wheel_positions_(wheel_positions), odometry_{0.0, 0.0, 0.0}
+SwerveDriveKinematics::SwerveDriveKinematics() : odometry_{0.0, 0.0, 0.0} {}
+
+void SwerveDriveKinematics::calculate_wheel_position(
+  double wheel_base, double track_width, double x_offset, double y_offset)
 {
+  double half_length = wheel_base / 2.0;
+  double half_width = track_width / 2.0;
+
+  wheel_positions_[0] = {half_length - x_offset, half_width - y_offset};    // Front Left  (+x, +y)
+  wheel_positions_[1] = {half_length - x_offset, -half_width - y_offset};   // Front Right (+x, -y)
+  wheel_positions_[2] = {-half_length - x_offset, half_width - y_offset};   // Rear Left   (-x, +y)
+  wheel_positions_[3] = {-half_length - x_offset, -half_width - y_offset};  // Rear Right  (-x, -y)
 }
 
 std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
   double linear_velocity_x, double linear_velocity_y, double angular_velocity_z)
 {
   std::array<WheelCommand, 4> wheel_commands;
-
-  // wx = W/2, wy = L/2
 
   for (std::size_t i = 0; i < 4; i++)
   {
