@@ -7,8 +7,8 @@ test_gravity_compensation_pd_controller:
 
     dynamics_solver:
       dynamics_solver_plugin: kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL
-      tip: tool0
-      root: world
+      tip: link3
+      root: base_link
 
     p_gains: [2000.0, 3000.0, 4000.0]
     d_gains: [100.0, 100.0, 100.0]

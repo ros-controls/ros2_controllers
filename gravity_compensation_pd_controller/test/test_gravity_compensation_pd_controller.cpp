@@ -30,6 +30,8 @@
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 
+// ****** Definitions of the test cases for GravityCompensationPDController public API ******
+
 void GravityCompensationPDControllerTest::SetUp()
 {
   controller_ = std::make_unique<FriendGravityCompensationPDController>();
@@ -41,7 +43,7 @@ void GravityCompensationPDControllerTest::SetUp()
     rclcpp::Parameter(
       "dynamics_solver.dynamics_solver_plugin",
       std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
-    rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+    rclcpp::Parameter("dynamics_solver.tip", std::string("link3")),
     rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))};
   SetUpController(default_parameters);
 }
@@ -106,46 +108,73 @@ void GravityCompensationPDControllerTestBase::SetUpController(
 
 TEST_F(GravityCompensationPDControllerTest, ConfigureAndActivateParamsSuccess)
 {
-  // configure successful
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
 TEST_F(GravityCompensationPDControllerTest, NoCommandCheckTest)
 {
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
+  // This method is protected, so we need the friend class
   controller_->on_export_reference_interfaces();
 
-  // update successful, no command received yet
+  // Update successful, no command received yet
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // check joint commands are still the default ones
-  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-6);
+  // Check joint commands with gravity compensation only and no PD action
+  EXPECT_NEAR(joint_command_values_[0], 0.1, 1e-9);
+  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-9);
 }
 
 TEST_F(GravityCompensationPDControllerTest, StopJointsOnDeactivateTest)
 {
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
+  
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // check joint commands are still the default ones
-  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-6);
+  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-9);
 
   // stop the controller
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // check joint commands are now zero
-  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-6);
-  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-6);
+  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-9);
 }
+
+TEST_F(GravityCompensationPDControllerTest, CommandNanOnErrorTest)
+{
+  ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
+  
+  // configure successful
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are still the default ones
+  EXPECT_NEAR(joint_command_values_[0], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[1], 0.0, 1e-9);
+  EXPECT_NEAR(joint_command_values_[2], 0.0, 1e-9);
+
+  // stop the controller
+  ASSERT_EQ(controller_->on_error(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+
+  // check joint commands are now NaN
+  EXPECT_TRUE(std::isnan(joint_command_values_[0]));
+  EXPECT_TRUE(std::isnan(joint_command_values_[1]));
+  EXPECT_TRUE(std::isnan(joint_command_values_[2]));
+}
+
+// ****** Definitions of the test cases for invalid parameters ******
 
 void GravityCompensationPDControllerInvalidParameterTest::SetUp()
 {
@@ -181,7 +210,7 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::Parameter(
         "dynamics_solver.dynamics_solver_plugin",
         std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
-      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("link3")),
       rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
 
     // Mismatched p_gains size
@@ -193,7 +222,7 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::Parameter(
         "dynamics_solver.dynamics_solver_plugin",
         std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
-      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("link3")),
       rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
 
     // Mismatched d_gains size
@@ -205,8 +234,10 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::Parameter(
         "dynamics_solver.dynamics_solver_plugin",
         std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
-      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("link3")),
       rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))}));
+
+// ****** Definitions of the test cases for missing parameters ******
 
 void GravityCompensationPDControllerMissingParameterTest::SetUp()
 {
@@ -238,7 +269,7 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::Parameter("p_gains", std::vector<double>{100.0, 100.0, 100.0}),
       rclcpp::Parameter("d_gains", std::vector<double>{5.0, 5.0, 5.0}),
       rclcpp::Parameter("compensate_gravity", true),
-      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link")),
+      rclcpp::Parameter("dynamics_solver.tip", std::string("link3")),
       rclcpp::Parameter("dynamics_solver.root", std::string("base_link"))},
     // Missing dynamics solver tip
     std::vector<rclcpp::Parameter>{
@@ -259,7 +290,7 @@ INSTANTIATE_TEST_SUITE_P(
       rclcpp::Parameter(
         "dynamics_solver.dynamics_solver_plugin",
         std::string("kdl_inverse_dynamics_solver/InverseDynamicsSolverKDL")),
-      rclcpp::Parameter("dynamics_solver.tip", std::string("tool_link"))}));
+      rclcpp::Parameter("dynamics_solver.tip", std::string("link3"))}));
 
 int main(int argc, char ** argv)
 {
