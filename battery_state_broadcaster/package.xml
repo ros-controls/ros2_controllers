@@ -4,9 +4,11 @@
   <name>battery_state_broadcaster</name>
   <version>0.1.0</version>
   <description>ros2 control battery state broadcaster controller</description>
-  <author email="yara.shahin@b-robotized.com">Yara Shahin</author>
 
-  <maintainer email="denis.stogl@b-robotized.com">Dr. Denis Štogl</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="denis.stogl@b-robotized.com">Denis Štogl</maintainer>
+  <maintainer email="christoph.froehlich@ait.ac.at">Christoph Froehlich</maintainer>
+  <maintainer email="sai.kishor@pal-robotics.com">Sai Kishor Kothakota</maintainer>
 
   <license>Apache License 2.0</license>
 
@@ -14,6 +16,8 @@
   <url type="bugtracker">https://github.com/ros-controls/ros2_controllers/issues</url>
   <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
+  <author email="yara.shahin@b-robotized.com">Yara Shahin</author>
+  
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>ros2_control_cmake</build_depend>
