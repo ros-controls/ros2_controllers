@@ -367,7 +367,7 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         auto opt = state_interfaces_[interface_cnt].get_optional<bool>();
         if (opt.has_value())
         {
-          raw_battery_states_msg.battery_states[i].present = static_cast<bool>(*opt);
+          raw_battery_states_msg.battery_states[i].present = opt->value();
         }
         else
         {
