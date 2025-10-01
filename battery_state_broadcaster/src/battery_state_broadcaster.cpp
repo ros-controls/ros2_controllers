@@ -364,15 +364,8 @@ controller_interface::return_type BatteryStateBroadcaster::update(
       }
       if (interfaces.battery_present)
       {
-        auto opt = state_interfaces_[interface_cnt].get_optional<bool>();
-        if (opt.has_value())
-        {
-          raw_battery_states_msg.battery_states[i].present = opt->value();
-        }
-        else
-        {
-          raw_battery_states_msg.battery_states[i].present = false;
-        }
+        raw_battery_states_msg.battery_states[i].present =
+          state_interfaces_[interface_cnt].get_optional().value_or(false);
         interface_cnt++;
       }
       else
