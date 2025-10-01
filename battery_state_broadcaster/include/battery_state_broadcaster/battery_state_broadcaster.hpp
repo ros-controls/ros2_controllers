@@ -16,6 +16,7 @@
 #define BATTERY_STATE_BROADCASTER__BATTERY_STATE_BROADCASTER_HPP_
 
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -83,9 +84,6 @@ public:
 
   controller_interface::return_type update(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
-
-  float get_or_nan(int interface_cnt);
-  char get_or_unknown(int interface_cnt);
 
 protected:
   std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
