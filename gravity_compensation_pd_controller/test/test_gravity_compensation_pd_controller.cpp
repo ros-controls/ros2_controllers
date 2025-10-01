@@ -135,7 +135,7 @@ TEST_F(GravityCompensationPDControllerTest, NoCommandCheckTest)
 TEST_F(GravityCompensationPDControllerTest, StopJointsOnDeactivateTest)
 {
   ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
-  
+
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
@@ -156,7 +156,7 @@ TEST_F(GravityCompensationPDControllerTest, StopJointsOnDeactivateTest)
 TEST_F(GravityCompensationPDControllerTest, CommandNanOnErrorTest)
 {
   ASSERT_EQ(controller_->on_init(), CallbackReturn::SUCCESS);
-  
+
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 

@@ -23,7 +23,7 @@
 namespace ros2_control_test_assets
 {
 
-const std::string system_hardware_resources =
+const auto system_hardware_resources =
   R"(
   <ros2_control name="TestSystem" type="system">
     <hardware>
@@ -61,7 +61,7 @@ const std::string system_hardware_resources =
   </ros2_control>
 )";
 
-const std::string valid_robot_urdf = 
+const auto valid_robot_urdf =
   std::string(urdf_head) + std::string(system_hardware_resources) + std::string(urdf_tail);
 
 }  // namespace ros2_control_test_assets
