@@ -86,14 +86,10 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
   battery_state_broadcaster::Params params_;
 
   std::vector<std::string> state_joints_;
 
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::BatteryStates>>
-    raw_battery_states_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
     battery_state_realtime_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::BatteryStates>>
@@ -119,9 +115,13 @@ protected:
   BatteryInterfaceSums sums_;
   BatteryInterfaceCounts counts_;
 
-  std::vector<bool> battery_presence_;
-
 private:
+  std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;
+  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::BatteryStates>>
+    raw_battery_states_publisher_;
+
+  std::vector<bool> battery_presence_;
 };
 
 }  // namespace battery_state_broadcaster
