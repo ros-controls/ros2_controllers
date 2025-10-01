@@ -178,31 +178,31 @@ protected:
       controller_->init(controller_name, urdf, 0, ns, node_options),
       controller_interface::return_type::OK);
 
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
-    command_ifs.reserve(joint_command_values_.size());
+    loaned_command_ifs.reserve(joint_command_values_.size());
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           command_joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
-    state_ifs.reserve(joint_state_values_.size());
+    loaned_state_ifs.reserve(joint_state_values_.size());
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           command_joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void subscribe_to_controller_status_execute_update_and_get_messages(ControllerStateMsg & msg)
@@ -310,8 +310,8 @@ protected:
   static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
   double command_lin_x = 111;
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   double ref_timeout_ = 0.1;
 
