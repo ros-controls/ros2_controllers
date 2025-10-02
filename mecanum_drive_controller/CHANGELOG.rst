@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.50.1 (2025-10-02)
+-------------------
 * mecanum_drive_controller: Declare missing backward_ros dependency (backport `#1941 <https://github.com/ros-controls/ros2_controllers/issues/1941>`_) (`#1942 <https://github.com/ros-controls/ros2_controllers/issues/1942>`_)
 * Contributors: mergify[bot]
 

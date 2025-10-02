@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.50.1 (2025-10-02)
+-------------------
 * Remove wrong and unnecessary docstrings (backport `#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_) (`#1923 <https://github.com/ros-controls/ros2_controllers/issues/1923>`_)
 * Use auto dependency management for windows workflow (backport `#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_) (`#1921 <https://github.com/ros-controls/ros2_controllers/issues/1921>`_)
 * Contributors: mergify[bot]
