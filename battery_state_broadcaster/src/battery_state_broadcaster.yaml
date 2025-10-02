@@ -17,6 +17,7 @@ battery_state_broadcaster:
     type: string_array,
     description: "List of joints from which battery state interfaces will be read.",
     read_only: true,
+    default_value: [],
     validation: {
       unique<>: null
     }
