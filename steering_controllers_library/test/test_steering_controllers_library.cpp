@@ -146,12 +146,12 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   }
 
   // Wheel velocities should reset to 0
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0);
 
   // Steer angles should not reset
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 
   // case 2 position_feedback = true
   controller_->params_.position_feedback = true;
@@ -190,12 +190,12 @@ TEST_F(SteeringControllersLibraryTest, test_both_update_methods_for_ref_timeout)
   }
 
   // Wheel velocities should reset to 0
-  EXPECT_EQ(controller_->command_interfaces_[0].get_value(), 0);
-  EXPECT_EQ(controller_->command_interfaces_[1].get_value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0);
 
   // Steer angles should not reset
-  EXPECT_NEAR(controller_->command_interfaces_[2].get_value(), 0.575875, 1e-6);
-  EXPECT_NEAR(controller_->command_interfaces_[3].get_value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
 int main(int argc, char ** argv)

@@ -86,11 +86,24 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
   }
   else
   {
-    const double traction_right_wheel_value =
-      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_value();
-    const double traction_left_wheel_value =
-      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_value();
-    const double steering_position = state_interfaces_[STATE_STEER_AXIS].get_value();
+    const auto traction_right_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional();
+    const auto traction_left_wheel_value_op =
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional();
+    const auto steering_position_op = state_interfaces_[STATE_STEER_AXIS].get_optional();
+
+    if (
+      !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
+      !steering_position_op.has_value())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Unable to retrieve the data from right wheel or left wheel or steering position");
+      return true;
+    }
+    const double traction_right_wheel_value = traction_right_wheel_value_op.value();
+    const double traction_left_wheel_value = traction_left_wheel_value_op.value();
+    const double steering_position = steering_position_op.value();
     if (
       std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
       std::isfinite(steering_position))

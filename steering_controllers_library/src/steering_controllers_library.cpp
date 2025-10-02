@@ -529,7 +529,14 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
 {
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
-    command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
+    if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Failed to set NaN value for command interface '%s' (index %zu) during deactivation.",
+        command_interfaces_[i].get_name().c_str(), i);
+      return controller_interface::CallbackReturn::SUCCESS;
+    }
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -552,6 +559,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   update_odometry(period);
+  auto logger = get_node()->get_logger();
 
   // MOVE ROBOT
 
@@ -574,11 +582,23 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
-      command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
+      const auto value = timeout ? 0.0 : traction_commands[i];
+
+      if (!command_interfaces_[i].set_value(value))
+      {
+        RCLCPP_WARN(logger, "Unable to set traction command at index %zu: value = %f", i, value);
+        return controller_interface::return_type::OK;
+      }
     }
     for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
     {
-      command_interfaces_[i + params_.traction_joints_names.size()].set_value(steering_commands[i]);
+      const auto & value = steering_commands[i];
+
+      if (!command_interfaces_[i + params_.traction_joints_names.size()].set_value(value))
+      {
+        RCLCPP_WARN(logger, "Unable to set steering command at index %zu: value = %f", i, value);
+        return controller_interface::return_type::OK;
+      }
     }
   }
 
@@ -628,24 +648,66 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     {
       if (params_.position_feedback)
       {
-        controller_state_publisher_->msg_.traction_wheels_position.push_back(
-          state_interfaces_[i].get_value());
+        auto position_state_interface_op = state_interfaces_[i].get_optional();
+        if (!position_state_interface_op.has_value())
+        {
+          RCLCPP_DEBUG(
+            logger, "Unable to retrieve position feedback data for traction wheel %zu", i);
+        }
+        else
+        {
+          controller_state_publisher_->msg_.traction_wheels_position.push_back(
+            position_state_interface_op.value());
+        }
       }
       else
       {
-        controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
-          state_interfaces_[i].get_value());
+        auto velocity_state_interface_op = state_interfaces_[i].get_optional();
+        if (!velocity_state_interface_op.has_value())
+        {
+          RCLCPP_DEBUG(
+            logger, "Unable to retrieve velocity feedback data for traction wheel %zu", i);
+        }
+        else
+        {
+          controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
+            velocity_state_interface_op.value());
+        }
       }
-      controller_state_publisher_->msg_.linear_velocity_command.push_back(
-        command_interfaces_[i].get_value());
+
+      auto velocity_command_interface_op = command_interfaces_[i].get_optional();
+      if (!velocity_command_interface_op.has_value())
+      {
+        RCLCPP_DEBUG(logger, "Unable to retrieve velocity command for traction wheel %zu", i);
+      }
+      else
+      {
+        controller_state_publisher_->msg_.linear_velocity_command.push_back(
+          velocity_command_interface_op.value());
+      }
     }
 
     for (size_t i = 0; i < number_of_steering_wheels; ++i)
     {
-      controller_state_publisher_->msg_.steer_positions.push_back(
-        state_interfaces_[number_of_traction_wheels + i].get_value());
-      controller_state_publisher_->msg_.steering_angle_command.push_back(
-        command_interfaces_[number_of_traction_wheels + i].get_value());
+      const auto state_interface_value_op =
+        state_interfaces_[number_of_traction_wheels + i].get_optional();
+      const auto command_interface_value_op =
+        command_interfaces_[number_of_traction_wheels + i].get_optional();
+      if (!state_interface_value_op.has_value() || !command_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          logger, "Unable to retrieve %s for steering wheel %zu",
+          !state_interface_value_op.has_value() ? "state interface value"
+                                                : "command interface value",
+          i);
+      }
+      else
+      {
+        controller_state_publisher_->msg_.steer_positions.push_back(
+          state_interface_value_op.value());
+        controller_state_publisher_->msg_.steering_angle_command.push_back(
+          command_interface_value_op.value());
+      }
     }
 
     controller_state_publisher_->unlockAndPublish();
