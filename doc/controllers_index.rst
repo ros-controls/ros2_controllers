@@ -59,6 +59,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
    Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
+   Gravity Compensation Controller <../gravity_compensation_controller/doc/userdoc.rst>
 
 Broadcasters
 **********************

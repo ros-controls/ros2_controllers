@@ -10,7 +10,7 @@ test_gravity_compensation_pd_controller:
       tip: link3
       root: base_link
 
-    p_gains: [2000.0, 3000.0, 4000.0]
-    d_gains: [100.0, 100.0, 100.0]
+    p_gains: [200.0, 300.0, 400.0]
+    d_gains: [10.0, 10.0, 10.0]
 
     compensate_gravity: true
