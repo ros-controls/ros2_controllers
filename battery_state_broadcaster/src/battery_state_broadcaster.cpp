@@ -225,12 +225,21 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
     return controller_interface::CallbackReturn::FAILURE;
   }
 
-  param_listener_->refresh_dynamic_parameters();
-
   // get parameters from the listener in case they were updated
+  param_listener_->refresh_dynamic_parameters();
   params_ = param_listener_->get_params();
-  auto combined_power_supply_technology = static_cast<uint8_t>(
-    params_.state_joints_map.at(params_.state_joints.at(0)).power_supply_technology);
+
+  uint8_t combined_power_supply_technology;
+  if (!params_.sensor_name.empty())
+  {
+    sums_.design_capacity_sum = static_cast<float>(params_.design_capacity);
+    combined_power_supply_technology = static_cast<uint8_t>(params_.power_supply_technology);
+  }
+  else
+  {
+    combined_power_supply_technology = static_cast<uint8_t>(
+      params_.state_joints_map.at(params_.state_joints.at(0)).power_supply_technology);
+  }
   std::string combined_location = "";
   std::string combined_serial_number = "";
 
@@ -266,12 +275,6 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
     }
     combined_location += battery_state.location + ", ";
     combined_serial_number += battery_state.serial_number + ", ";
-  }
-
-  if (!params_.sensor_name.empty())
-  {
-    sums_.design_capacity_sum = static_cast<float>(params_.design_capacity);
-    combined_power_supply_technology = static_cast<uint8_t>(params_.power_supply_technology);
   }
 
   // handle aggregate battery state initialization
