@@ -2,6 +2,12 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Update broken links on motion_primitives_controllers readme (`#1919 <https://github.com/ros-controls/ros2_controllers/issues/1919>`_)
+* Contributors: Christoph Fröhlich, Junius Santoso
+
 5.7.0 (2025-09-12)
 ------------------
 * Fix docs for motion_primitive_controllers (`#1877 <https://github.com/ros-controls/ros2_controllers/issues/1877>`_)

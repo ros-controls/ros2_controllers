@@ -2,6 +2,16 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Remove wrong and unnecessary docstrings (`#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_)
+* Use auto dependency management for windows workflow (`#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_)
+* Remove unused variables and correctly override test class method (`#1918 <https://github.com/ros-controls/ros2_controllers/issues/1918>`_)
+* Don't call `release_interfaces` from controllers (`#1910 <https://github.com/ros-controls/ros2_controllers/issues/1910>`_)
+* Contributors: Christoph Fröhlich
+
 5.7.0 (2025-09-12)
 ------------------
 * [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)

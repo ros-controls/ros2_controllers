@@ -2,6 +2,13 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* mecanum_drive_controller: Declare missing backward_ros dependency (`#1941 <https://github.com/ros-controls/ros2_controllers/issues/1941>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Contributors: Christoph Fröhlich, Michal Sojka
+
 5.7.0 (2025-09-12)
 ------------------
 
