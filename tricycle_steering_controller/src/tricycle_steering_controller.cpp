@@ -37,6 +37,8 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
   odometry_.set_wheel_params(traction_wheels_radius, wheelbase, traction_track_width);
   odometry_.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
 
+  // note: might get overwritten in the base class, because we don't have access to the number of
+  // joints here
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
   RCLCPP_INFO(get_node()->get_logger(), "tricycle odom configure successful");
