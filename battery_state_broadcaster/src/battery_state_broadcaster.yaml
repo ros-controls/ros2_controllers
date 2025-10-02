@@ -18,8 +18,7 @@ battery_state_broadcaster:
     description: "List of joints from which battery state interfaces will be read.",
     read_only: true,
     validation: {
-      unique<>: null,
-      size_gt<>: [0]
+      unique<>: null
     }
   }
   interfaces:
@@ -105,3 +104,24 @@ battery_state_broadcaster:
       description: "Serial number of the battery.",
       read_only: true,
     }
+  sensor_name: {
+    type: string,
+    default_value: "",
+    description: "Sensor name of the battery. If provided, the 'voltage' state interface of this sensor will be used to populate the voltage field in the BatteryState message. If this parameter is used, the state joints and interfaces parameters are ignored.",
+    read_only: true,
+  }
+  design_capacity: {
+    type: double,
+    default_value: .nan,
+    description: "Design capacity of the battery [Ah] for the sensor_name mode (If unmeasured NaN).",
+    read_only: true,
+  }
+  power_supply_technology: {
+    type: int,
+    default_value: 0,
+    description: "Battery chemistry type as an enum for the sensor_name mode. If unmeasured, the technology is set to unknown.",
+    read_only: true,
+    validation: {
+      bounds<>: [0, 8]
+    }
+  }
