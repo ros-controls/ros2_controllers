@@ -137,17 +137,6 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
   wrench_raw_.header.frame_id = params_.frame_id;
   wrench_filtered_.header.frame_id = params_.frame_id;
 
-  realtime_raw_publisher_->lock();
-  realtime_raw_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_raw_publisher_->unlock();
-
-  if (has_filter_chain_)
-  {
-    realtime_filtered_publisher_->lock();
-    realtime_filtered_publisher_->msg_.header.frame_id = params_.frame_id;
-    realtime_filtered_publisher_->unlock();
-  }
-
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -196,22 +185,19 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
   this->apply_sensor_offset(params_, wrench_raw_);
   this->apply_sensor_multiplier(params_, wrench_raw_);
 
-  if (realtime_raw_publisher_ && realtime_raw_publisher_->trylock())
+  if (realtime_raw_publisher_)
   {
-    realtime_raw_publisher_->msg_.header.stamp = time;
-    realtime_raw_publisher_->msg_.wrench = wrench_raw_.wrench;
-    realtime_raw_publisher_->unlockAndPublish();
+    realtime_raw_publisher_->try_publish(wrench_raw_);
   }
 
   if (has_filter_chain_)
   {
     // Filter sensor data, if no filter chain config was specified, wrench_filtered_ = wrench_raw_
     auto filtered = filter_chain_->update(wrench_raw_, wrench_filtered_);
-    if (filtered && realtime_filtered_publisher_ && realtime_filtered_publisher_->trylock())
+    if (filtered && realtime_filtered_publisher_)
     {
-      realtime_filtered_publisher_->msg_.header.stamp = time;
-      realtime_filtered_publisher_->msg_.wrench = wrench_filtered_.wrench;
-      realtime_filtered_publisher_->unlockAndPublish();
+      wrench_filtered_.header.stamp = time;
+      realtime_filtered_publisher_->try_publish(wrench_filtered_);
     }
   }
 
