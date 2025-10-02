@@ -2,8 +2,8 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.8.0 (2025-10-02)
+------------------
 * Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
 * Fix: Remove deprecated `rclcpp::spin_some(node)` (`#1928 <https://github.com/ros-controls/ros2_controllers/issues/1928>`_)
 * Contributors: Christoph Fröhlich, Kostubh Khandelwal
