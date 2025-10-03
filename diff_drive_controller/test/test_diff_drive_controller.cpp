@@ -311,7 +311,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_names
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
@@ -336,7 +336,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namesp
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
@@ -363,7 +363,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_names
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the frame
@@ -392,7 +392,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_name
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
@@ -420,7 +420,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_names
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
@@ -449,7 +449,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_name
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_publisher()->msg_;
+  auto odometry_message = controller_->get_rt_odom_publisher()->get_msg();
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
