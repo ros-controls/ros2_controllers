@@ -322,7 +322,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -332,7 +332,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Check that a late command message causes the command interfaces to be set to 0.0
@@ -348,7 +348,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // Now check that a timely published command message sets the command interfaces to the correct
@@ -363,7 +363,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -372,7 +372,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -380,7 +380,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -410,7 +410,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -420,7 +420,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Imitate preceding controllers by setting reference_interfaces_
@@ -434,7 +434,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -443,7 +443,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -451,7 +451,7 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -478,7 +478,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -488,7 +488,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Now check that a timely published command message sets the command interfaces to the correct
@@ -503,7 +503,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -516,14 +516,14 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // Activate again
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   for (const auto & interface : controller_->reference_interfaces_)
   {
@@ -532,7 +532,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   }
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // A new command should work as expected
@@ -544,7 +544,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Deactivate again and cleanup
@@ -572,7 +572,7 @@ TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_wit
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // published command message with zero timestamp sets the command interfaces to the correct values
   publish_twist_timestamped(rclcpp::Time(0, 0, RCL_ROS_TIME));
@@ -585,7 +585,7 @@ TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_wit
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 5.0, 5.0, -15.0};
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i]);
   }
 
   // Deactivate and cleanup
@@ -615,7 +615,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -625,7 +625,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 3; i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Check that a published command msg sets the command interfaces to the correct values
@@ -639,7 +639,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 8.66025, -8.66025};
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -648,7 +648,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -656,7 +656,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -683,7 +683,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -693,7 +693,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 3; i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Check that a published command msg sets the command interfaces to the correct values
@@ -707,7 +707,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   std::vector<double> expected_wheels_vel_cmds = {-1.33975, 5.0, -18.6603};
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -716,7 +716,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -724,7 +724,7 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < 3; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -751,7 +751,7 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -761,7 +761,7 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 4; i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Check that a published command msg sets the command interfaces to the correct values
@@ -775,7 +775,7 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   std::vector<double> expected_wheels_vel_cmds = {-5.0, 9.14214, -5.0, -19.1421};
   for (size_t i = 0; i < 4; i++)
   {
-    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -784,7 +784,7 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < 4; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -792,7 +792,7 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < 4; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
@@ -819,7 +819,7 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
   for (const auto & interface : controller_->reference_interfaces_)
@@ -829,7 +829,7 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 5; i++)
   {
-    ASSERT_FALSE(std::isnan(command_itfs_[i].get_optional().value()));
+    ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
   // Check that a published command msg sets the command interfaces to the correct values
@@ -843,7 +843,7 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   std::vector<double> expected_wheels_vel_cmds = {-15.0, 1.42040, 8.96802, -2.78768, -17.6007};
   for (size_t i = 0; i < 5; i++)
   {
-    EXPECT_NEAR(command_itfs_[i].get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), expected_wheels_vel_cmds[i], 0.0001);
   }
 
   // Now check that the command interfaces are set to 0.0 on deactivation
@@ -852,7 +852,7 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   for (size_t i = 0; i < 5; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
@@ -860,7 +860,7 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   for (size_t i = 0; i < 5; i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->configure();
