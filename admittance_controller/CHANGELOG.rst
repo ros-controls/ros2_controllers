@@ -2,6 +2,13 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
+* Update realtime containers (backport `#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_) (`#1935 <https://github.com/ros-controls/ros2_controllers/issues/1935>`_)
+* Use new handles API in ros2_controllers to fix deprecation warnings (backport `#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_) (`#1934 <https://github.com/ros-controls/ros2_controllers/issues/1934>`_)
+* Contributors: mergify[bot]
+
 4.32.0 (2025-09-12)
 -------------------
 * Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1908 <https://github.com/ros-controls/ros2_controllers/issues/1908>`_)

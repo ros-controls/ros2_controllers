@@ -2,6 +2,12 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update realtime containers (backport `#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_) (`#1935 <https://github.com/ros-controls/ros2_controllers/issues/1935>`_)
+* Use new handles API in ros2_controllers to fix deprecation warnings (backport `#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_) (`#1934 <https://github.com/ros-controls/ros2_controllers/issues/1934>`_)
+* Contributors: mergify[bot]
+
 4.32.0 (2025-09-12)
 -------------------
 

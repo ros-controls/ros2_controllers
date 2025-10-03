@@ -2,6 +2,11 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
+* Contributors: mergify[bot]
+
 4.32.0 (2025-09-12)
 -------------------
 * Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1908 <https://github.com/ros-controls/ros2_controllers/issues/1908>`_)

@@ -2,6 +2,16 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
+* Use new handles API in ros2_controllers to fix deprecation warnings (backport `#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_) (`#1934 <https://github.com/ros-controls/ros2_controllers/issues/1934>`_)
+* Remove wrong and unnecessary docstrings (backport `#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_) (`#1924 <https://github.com/ros-controls/ros2_controllers/issues/1924>`_)
+* Use auto dependency management for windows workflow (backport `#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_) (`#1922 <https://github.com/ros-controls/ros2_controllers/issues/1922>`_)
+* Remove unused variables and correctly override test class method (backport `#1918 <https://github.com/ros-controls/ros2_controllers/issues/1918>`_) (`#1920 <https://github.com/ros-controls/ros2_controllers/issues/1920>`_)
+* Don't call `release_interfaces` from controllers (backport `#1910 <https://github.com/ros-controls/ros2_controllers/issues/1910>`_) (`#1911 <https://github.com/ros-controls/ros2_controllers/issues/1911>`_)
+* Contributors: mergify[bot]
+
 4.32.0 (2025-09-12)
 -------------------
 * Preallocate `std::vector` variables for interfaces (backport `#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_) (`#1899 <https://github.com/ros-controls/ros2_controllers/issues/1899>`_)

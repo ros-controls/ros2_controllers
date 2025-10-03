@@ -2,6 +2,14 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
+* Update realtime containers (backport `#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_) (`#1935 <https://github.com/ros-controls/ros2_controllers/issues/1935>`_)
+* mecanum_drive_controller: Declare missing backward_ros dependency (backport `#1941 <https://github.com/ros-controls/ros2_controllers/issues/1941>`_) (`#1943 <https://github.com/ros-controls/ros2_controllers/issues/1943>`_)
+* Use new handles API in ros2_controllers to fix deprecation warnings (backport `#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_) (`#1934 <https://github.com/ros-controls/ros2_controllers/issues/1934>`_)
+* Contributors: mergify[bot]
+
 4.32.0 (2025-09-12)
 -------------------
 
