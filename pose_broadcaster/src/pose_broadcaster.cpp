@@ -191,7 +191,7 @@ controller_interface::return_type PoseBroadcaster::update(
 
     if (do_publish)
     {
-      auto & tf_transform = tf_msg_.msg_.transforms[0];
+      auto & tf_transform = tf_msg_.transforms[0];
       tf_transform.header.stamp = time;
 
       tf_transform.transform.translation.x = pose.position.x;
