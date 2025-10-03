@@ -272,13 +272,11 @@ controller_interface::CallbackReturn PidController::on_configure(
   }
 
   // Reserve memory in state publisher
-  state_publisher_->lock();
-  state_publisher_->msg_.dof_states.resize(reference_and_state_dof_names_.size());
+  state_msg_.dof_states.resize(reference_and_state_dof_names_.size());
   for (size_t i = 0; i < reference_and_state_dof_names_.size(); ++i)
   {
-    state_publisher_->msg_.dof_states[i].name = reference_and_state_dof_names_[i];
+    state_msg_.dof_states[i].name = reference_and_state_dof_names_[i];
   }
-  state_publisher_->unlock();
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -596,31 +594,30 @@ controller_interface::return_type PidController::update_and_write_commands(
     }
   }
 
-  if (state_publisher_ && state_publisher_->trylock())
+  if (state_publisher_)
   {
-    state_publisher_->msg_.header.stamp = time;
+    state_msg_.header.stamp = time;
     for (size_t i = 0; i < dof_; ++i)
     {
-      state_publisher_->msg_.dof_states[i].reference = reference_interfaces_[i];
-      state_publisher_->msg_.dof_states[i].feedback = measured_state_values_[i];
+      state_msg_.dof_states[i].reference = reference_interfaces_[i];
+      state_msg_.dof_states[i].feedback = measured_state_values_[i];
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
-        state_publisher_->msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
+        state_msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
       }
-      state_publisher_->msg_.dof_states[i].error =
-        reference_interfaces_[i] - measured_state_values_[i];
+      state_msg_.dof_states[i].error = reference_interfaces_[i] - measured_state_values_[i];
       if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
       {
         // for continuous angles the error is normalized between -pi<error<pi
-        state_publisher_->msg_.dof_states[i].error =
+        state_msg_.dof_states[i].error =
           angles::shortest_angular_distance(measured_state_values_[i], reference_interfaces_[i]);
       }
       if (reference_interfaces_.size() == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
-        state_publisher_->msg_.dof_states[i].error_dot =
+        state_msg_.dof_states[i].error_dot =
           reference_interfaces_[dof_ + i] - measured_state_values_[dof_ + i];
       }
-      state_publisher_->msg_.dof_states[i].time_step = period.seconds();
+      state_msg_.dof_states[i].time_step = period.seconds();
       // Command can store the old calculated values. This should be obvious because at least one
       // another value is NaN.
       const auto command_interface_value_op = command_interfaces_[i].get_optional();
@@ -633,10 +630,10 @@ controller_interface::return_type PidController::update_and_write_commands(
       }
       else
       {
-        state_publisher_->msg_.dof_states[i].output = command_interface_value_op.value();
+        state_msg_.dof_states[i].output = command_interface_value_op.value();
       }
     }
-    state_publisher_->unlockAndPublish();
+    state_publisher_->try_publish(state_msg_);
   }
 
   return controller_interface::return_type::OK;

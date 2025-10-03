@@ -166,6 +166,7 @@ protected:
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
+  ControllerStateMsg state_msg_;
 
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;

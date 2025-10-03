@@ -130,6 +130,7 @@ protected:
     input_joint_command_;
   realtime_tools::RealtimeThreadSafeBox<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
+  ControllerStateMsg state_msg_;
 
   // save the last commands in case of unable to get value from box
   trajectory_msgs::msg::JointTrajectoryPoint joint_command_msg_;

@@ -96,7 +96,9 @@ protected:
   rclcpp::Publisher<ControllerStateMsgTf>::SharedPtr tf_odom_s_publisher_;
 
   std::unique_ptr<ControllerStatePublisherOdom> rt_odom_state_publisher_;
+  ControllerStateMsgOdom odom_state_msg_;
   std::unique_ptr<ControllerStatePublisherTf> rt_tf_odom_state_publisher_;
+  ControllerStateMsgTf tf_odom_state_msg_;
 
   // override methods from ChainableControllerInterface
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
@@ -111,6 +113,7 @@ protected:
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<SteeringControllerStateMsg>;
   rclcpp::Publisher<SteeringControllerStateMsg>::SharedPtr controller_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
+  SteeringControllerStateMsg controller_state_msg_;
 
   // name constants for state interfaces
   size_t nr_state_itfs_;

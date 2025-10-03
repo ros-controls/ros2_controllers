@@ -62,6 +62,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>
     realtime_publisher_;
+  geometry_msgs::msg::PoseStamped pose_msg_;
 
   // TODO(amronos): Remove these two member variables
   std::optional<rclcpp::Duration> tf_publish_period_;
@@ -70,6 +71,7 @@ private:
   rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr tf_publisher_;
   std::unique_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_tf_publisher_;
+  tf2_msgs::msg::TFMessage tf_msg_;
 };
 
 }  // namespace pose_broadcaster
