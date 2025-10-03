@@ -1,7 +1,7 @@
 # ros2_controllers
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![codecov](https://codecov.io/gh/ros-controls/ros2_controllers/graph/badge.svg?token=KSdY0tsHm6)](https://codecov.io/gh/ros-controls/ros2_controllers)
+[![codecov](https://codecov.io/gh/ros-controls/ros2_controllers/branch/jazzy/graph/badge.svg?token=KSdY0tsHm6)](https://codecov.io/gh/ros-controls/ros2_controllers)
 
 Commonly used and generalized controllers for ros2-control framework that are ready to use with many robots, MoveIt2 and Nav2.
 
