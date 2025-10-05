@@ -49,7 +49,8 @@ protected:
   const std::vector<std::string> joint_names_ = {"wheel_left"};
   std::vector<double> joint_states_ = {1.1};
 
-  StateInterface joint_1_pos_{joint_names_[0], HW_IF_POSITION, &joint_states_[0]};
+  StateInterface::SharedPtr joint_1_pos_ =
+    std::make_shared<StateInterface>(joint_names_[0], HW_IF_POSITION, &joint_states_[0]);
   rclcpp::executors::SingleThreadedExecutor executor;
 };
 

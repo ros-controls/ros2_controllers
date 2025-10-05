@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>effort_controllers</name>
-  <version>5.6.1</version>
+  <version>5.8.0</version>
   <description>Generic controller for forwarding commands.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
