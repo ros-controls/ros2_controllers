@@ -208,7 +208,7 @@ public:
 
   control_msgs::msg::JointTrajectoryControllerState get_state_msg()
   {
-    return state_publisher_->msg_;
+    return state_publisher_->get_msg();
   }
 
   /**
