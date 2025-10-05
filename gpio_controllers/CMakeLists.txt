@@ -5,38 +5,44 @@ find_package(ros2_control_cmake REQUIRED)
 set_compiler_options()
 export_windows_symbols()
 
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_msgs
+  controller_interface
+  generate_parameter_library
+  hardware_interface
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  realtime_tools
+  std_srvs
+)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(controller_interface REQUIRED)
-find_package(generate_parameter_library REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(realtime_tools REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
+find_package(backward_ros REQUIRED)
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 generate_parameter_library(gpio_command_controller_parameters
   src/gpio_command_controller_parameters.yaml
 )
-
 add_library(gpio_controllers SHARED
   src/gpio_command_controller.cpp
 )
-target_include_directories(gpio_controllers PRIVATE include)
-target_link_libraries(gpio_controllers PUBLIC gpio_command_controller_parameters)
-ament_target_dependencies(gpio_controllers PUBLIC
-  builtin_interfaces
-  controller_interface
-  hardware_interface
-  pluginlib
-  rclcpp_lifecycle
-  rcutils
-  realtime_tools
-  control_msgs
-)
+target_include_directories(gpio_controllers PUBLIC
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(gpio_controllers PUBLIC
+                      gpio_command_controller_parameters
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
+                      ${builtin_interfaces_TARGETS})
 
 generate_parameter_library(gpio_tool_controller_parameters
   src/gpio_tool_controller.yaml
@@ -44,7 +50,6 @@ generate_parameter_library(gpio_tool_controller_parameters
 add_library(gpio_tool_controllers SHARED
   src/gpio_tool_controller.cpp
 )
-target_compile_features(gpio_tool_controllers PUBLIC cxx_std_20)
 target_include_directories(gpio_tool_controllers PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
@@ -62,20 +67,6 @@ target_link_libraries(gpio_tool_controllers PUBLIC
 )
 
 pluginlib_export_plugin_description_file(controller_interface gpio_controllers_plugin.xml)
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-install(
-  TARGETS
-  gpio_controllers
-  gpio_tool_controllers
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
@@ -134,18 +125,23 @@ if(BUILD_TESTING)
   )
 endif()
 
-ament_export_dependencies(
-  controller_interface::controller_interface
-  hardware_interface::hardware_interface
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  realtime_tools::realtime_tools
+install(
+  DIRECTORY include/
+  DESTINATION include/gpio_controllers
 )
-ament_export_include_directories(
-  include
-)
-ament_export_libraries(
+
+install(
+  TARGETS
   gpio_controllers
+  gpio_command_controller_parameters
   gpio_tool_controllers
+  gpio_tool_controller_parameters
+  EXPORT export_gpio_controllers
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
+
+ament_export_targets(export_gpio_controllers HAS_LIBRARY_TARGET)
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
