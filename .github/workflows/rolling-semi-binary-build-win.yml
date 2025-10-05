@@ -15,7 +15,6 @@ on:
       - '.github/workflows/rolling-semi-binary-build-win.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
-      - 'ros2_controllers.rolling.repos'
   push: *event
 
 concurrency:
