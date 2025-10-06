@@ -3,7 +3,7 @@ name: Kilted Semi-Binary Build
 
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request: &event
     branches:
       - kilted
       - '*feature*'
@@ -19,20 +19,7 @@ on:
       - '**/CMakeLists.txt'
       - 'ros2_controllers.kilted.repos'
       - '**.xml'
-  push:
-    branches:
-      - kilted
-    paths:
-      - '**.hpp'
-      - '**.h'
-      - '**.cpp'
-      - '**.py'
-      - '**.yaml'
-      - '.github/workflows/kilted-semi-binary-build.yml'
-      - '**/package.xml'
-      - '**/CMakeLists.txt'
-      - 'ros2_controllers.kilted.repos'
-      - '**.xml'
+  push: *event
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * MON-FRI'
