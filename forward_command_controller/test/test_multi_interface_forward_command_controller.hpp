@@ -75,9 +75,12 @@ protected:
   double vel_cmd_ = 2.1;
   double eff_cmd_ = 3.1;
 
-  CommandInterface joint_1_pos_cmd_{joint_name_, HW_IF_POSITION, &pos_cmd_};
-  CommandInterface joint_1_vel_cmd_{joint_name_, HW_IF_VELOCITY, &vel_cmd_};
-  CommandInterface joint_1_eff_cmd_{joint_name_, HW_IF_EFFORT, &eff_cmd_};
+  CommandInterface::SharedPtr joint_1_pos_cmd_ =
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_POSITION, &pos_cmd_);
+  CommandInterface::SharedPtr joint_1_vel_cmd_ =
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_VELOCITY, &vel_cmd_);
+  CommandInterface::SharedPtr joint_1_eff_cmd_ =
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_EFFORT, &eff_cmd_);
   rclcpp::executors::SingleThreadedExecutor executor;
 };
 
