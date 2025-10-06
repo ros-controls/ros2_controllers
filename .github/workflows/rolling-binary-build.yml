@@ -4,7 +4,7 @@ name: Rolling Binary Build
 
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request: &event
     branches:
       - master
       - '*feature*'
@@ -21,21 +21,7 @@ on:
       - 'ros2_controllers-not-released.rolling.repos'
       - 'ros2_controllers-not-released.kilted.repos'
       - '**.xml'
-  push:
-    branches:
-      - master
-    paths:
-      - '**.hpp'
-      - '**.h'
-      - '**.cpp'
-      - '**.py'
-      - '**.yaml'
-      - '.github/workflows/rolling-binary-build.yml'
-      - '**/package.xml'
-      - '**/CMakeLists.txt'
-      - 'ros2_controllers-not-released.rolling.repos'
-      - 'ros2_controllers-not-released.kilted.repos'
-      - '**.xml'
+  push: *event
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '03 1 * * MON-FRI'
