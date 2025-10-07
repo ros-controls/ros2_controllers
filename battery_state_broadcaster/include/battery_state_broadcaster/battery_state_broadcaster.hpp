@@ -38,14 +38,15 @@ namespace battery_state_broadcaster
  * \brief Battery State Broadcaster for all or some state in a ros2_control system.
  *
  * BatteryStateBroadcaster publishes state interfaces from ros2_control as ROS messages.
- * The following state interfaces are published:
- *    <state_joint>/voltage
- *    <state_joint>/current
- *    <state_joint>/charge
- *    <state_joint>/percentage
- *    <state_joint>/power_supply_status
- *    <state_joint>/power_supply_health
- *    <state_joint>/present
+ * The following state interfaces can be published:
+ *    <state_joint>/battery_voltage (Mandatory)
+ *    <state_joint>/battery_temperature
+ *    <state_joint>/battery_current
+ *    <state_joint>/battery_charge
+ *    <state_joint>/battery_percentage
+ *    <state_joint>/battery_power_supply_status
+ *    <state_joint>/battery_power_supply_health
+ *    <state_joint>/battery_present
  *
  * \param state_joints of the batteries to publish.
  * \param capacity of the batteries to publish.
