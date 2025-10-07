@@ -3,7 +3,7 @@ name: Humble Semi-Binary Build
 
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request: &event
     branches:
       - humble
     paths:
@@ -17,20 +17,7 @@ on:
       - '**/CMakeLists.txt'
       - 'ros2_controllers.humble.repos'
       - '**.xml'
-  push:
-    branches:
-      - humble
-    paths:
-      - '**.hpp'
-      - '**.h'
-      - '**.cpp'
-      - '**.py'
-      - '**.yaml'
-      - '.github/workflows/humble-semi-binary-build.yml'
-      - '**/package.xml'
-      - '**/CMakeLists.txt'
-      - 'ros2_controllers.humble.repos'
-      - '**.xml'
+  push: *event
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * MON-FRI'

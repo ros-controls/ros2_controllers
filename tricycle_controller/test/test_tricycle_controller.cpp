@@ -120,7 +120,7 @@ protected:
   }
 
   /// \brief wait for the subscriber and publisher to completely setup
-  void waitForSetup()
+  void waitForSetup(rclcpp::Executor & executor)
   {
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = pub_node->get_clock();
@@ -131,19 +131,20 @@ protected:
       {
         FAIL();
       }
-      rclcpp::spin_some(pub_node);
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
   }
 
   void assignResources()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(steering_joint_pos_state_);
-    state_ifs.emplace_back(traction_joint_vel_state_);
+    state_ifs.emplace_back(steering_joint_pos_state_, nullptr);
+    state_ifs.emplace_back(traction_joint_vel_state_, nullptr);
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(steering_joint_pos_cmd_);
-    command_ifs.emplace_back(traction_joint_vel_cmd_);
+    command_ifs.emplace_back(steering_joint_pos_cmd_, nullptr);
+    command_ifs.emplace_back(traction_joint_vel_cmd_, nullptr);
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -176,17 +177,21 @@ protected:
   double position_ = 0.1;
   double velocity_ = 0.2;
 
-  hardware_interface::StateInterface steering_joint_pos_state_{
-    steering_joint_name, HW_IF_POSITION, &position_};
+  hardware_interface::StateInterface::SharedPtr steering_joint_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      steering_joint_name, HW_IF_POSITION, &position_);
 
-  hardware_interface::StateInterface traction_joint_vel_state_{
-    traction_joint_name, HW_IF_VELOCITY, &velocity_};
+  hardware_interface::StateInterface::SharedPtr traction_joint_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      traction_joint_name, HW_IF_VELOCITY, &velocity_);
 
-  hardware_interface::CommandInterface steering_joint_pos_cmd_{
-    steering_joint_name, HW_IF_POSITION, &position_};
+  hardware_interface::CommandInterface::SharedPtr steering_joint_pos_cmd_ =
+    std::make_shared<hardware_interface::CommandInterface>(
+      steering_joint_name, HW_IF_POSITION, &position_);
 
-  hardware_interface::CommandInterface traction_joint_vel_cmd_{
-    traction_joint_name, HW_IF_VELOCITY, &velocity_};
+  hardware_interface::CommandInterface::SharedPtr traction_joint_vel_cmd_ =
+    std::make_shared<hardware_interface::CommandInterface>(
+      traction_joint_name, HW_IF_VELOCITY, &velocity_);
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -268,7 +273,7 @@ TEST_F(TestTricycleController, cleanup)
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
 
-  waitForSetup();
+  waitForSetup(executor);
 
   // send msg
   const double linear = 1.0;
@@ -284,15 +289,15 @@ TEST_F(TestTricycleController, cleanup)
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
 
   // should be stopped
-  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value());
-  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
 
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   // should be stopped
-  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value());
-  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
 
   executor.cancel();
 }
@@ -312,8 +317,8 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   assignResources();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(position_, steering_joint_pos_cmd_.get_optional().value());
-  EXPECT_EQ(velocity_, traction_joint_vel_cmd_.get_optional().value());
+  EXPECT_EQ(position_, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(velocity_, traction_joint_vel_cmd_->get_optional().value());
 
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -328,8 +333,8 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value());
-  EXPECT_EQ(1.0, traction_joint_vel_cmd_.get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(1.0, traction_joint_vel_cmd_->get_optional().value());
 
   // deactivated
   // wait so controller process the second point when deactivated
@@ -340,16 +345,16 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
-  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value())
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value())
     << "Wheels are halted on deactivate()";
-  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_optional().value())
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value())
     << "Wheels are halted on deactivate()";
 
   // cleanup
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_optional().value());
-  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
 
   state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
