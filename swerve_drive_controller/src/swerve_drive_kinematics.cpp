@@ -31,9 +31,16 @@ void SwerveDriveKinematics::calculate_wheel_position(
 }
 
 std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
-  double linear_velocity_x, double linear_velocity_y, double angular_velocity_z)
+  double linear_velocity_x, double linear_velocity_y, double angular_velocity_z,
+  double wheel_radius)
 {
   std::array<WheelCommand, 4> wheel_commands;
+
+  if (wheel_radius <= 0.0)
+  {
+    std::cerr << "invalid wheel_radius <= 0.0\n";
+    // fallthrough: compute but set angular velocities to 0 to avoid div-by-zero
+  }
 
   for (std::size_t i = 0; i < 4; i++)
   {
@@ -42,8 +49,21 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
     double vx = linear_velocity_x - angular_velocity_z * wy;
     double vy = linear_velocity_y + angular_velocity_z * wx;
 
-    wheel_commands[i].drive_velocity = std::hypot(vx, vy);
-    wheel_commands[i].steering_angle = std::atan2(vy, vx);
+    double linear_speed = std::hypot(vx, vy);
+    double steering = std::atan2(vy, vx);
+
+    wheel_commands[i].drive_velocity = linear_speed;
+
+    if (wheel_radius > 0.0)
+    {
+      wheel_commands[i].drive_angular_velocity = linear_speed / wheel_radius;  // rad/s
+    }
+    else
+    {
+      wheel_commands[i].drive_angular_velocity = 0.0;  // safe fallback
+    }
+
+    wheel_commands[i].steering_angle = steering;
   }
 
   return wheel_commands;

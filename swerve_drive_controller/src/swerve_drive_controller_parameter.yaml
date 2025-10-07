@@ -74,7 +74,7 @@ swerve_drive_controller:
   }
   wheel_radius: {
     type: double,
-    default_value: 0.0775,
+    default_value: 0.040,
     description: "Radius of the wheels.",
     validation: {
       "swerve_drive_controller::gt<>": [0.0]

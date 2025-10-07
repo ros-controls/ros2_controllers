@@ -318,6 +318,7 @@ CallbackReturn SwerveController::on_activate(const rclcpp_lifecycle::State &)
       return CallbackReturn::ERROR;
     }
     axle_handles_[i]->set_position(0.0);
+    previous_steering_angles_[i] = axle_handles_[i]->get_feedback();
   }
 
   is_halted_ = false;
@@ -331,7 +332,6 @@ controller_interface::return_type SwerveController::update(
 {
   auto logger = get_node()->get_logger();
 
-  RCLCPP_INFO(logger, "Updated Kinematics");
   if (this->get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted_)
@@ -371,14 +371,18 @@ controller_interface::return_type SwerveController::update(
   double & linear_y_cmd = command.twist.linear.y;
   double & angular_cmd = command.twist.angular.z;
 
-  auto wheel_command =
-    swerveDriveKinematics_.compute_wheel_commands(linear_x_cmd, linear_y_cmd, angular_cmd);
+  auto wheel_command = swerveDriveKinematics_.compute_wheel_commands(
+    linear_x_cmd, linear_y_cmd, angular_cmd, params_.wheel_radius);
 
   std::vector<std::tuple<WheelCommand &, double, std::string>> wheel_data = {
-    {wheel_command[0], params_.front_left_velocity_threshold, "front_left_wheel"},
-    {wheel_command[1], params_.front_right_velocity_threshold, "front_right_wheel"},
-    {wheel_command[2], params_.rear_left_velocity_threshold, "rear_left_wheel"},
-    {wheel_command[3], params_.rear_right_velocity_threshold, "rear_right_wheel"}};
+    {wheel_command[0], params_.front_left_velocity_threshold / params_.wheel_radius,
+     "front_left_wheel"},
+    {wheel_command[1], params_.front_right_velocity_threshold / params_.wheel_radius,
+     "front_right_wheel"},
+    {wheel_command[2], params_.rear_left_velocity_threshold / params_.wheel_radius,
+     "rear_left_wheel"},
+    {wheel_command[3], params_.rear_right_velocity_threshold / params_.wheel_radius,
+     "rear_right_wheel"}};
 
   for (const auto & [wheel_command_, threshold, label] : wheel_data)
   {
@@ -396,8 +400,20 @@ controller_interface::return_type SwerveController::update(
         "Axle or Wheel handle is nullptr for: " + axle_joint_names[i] + " / " +
         wheel_joint_names[i]);
     }
-    axle_handles_[i]->set_position(wheel_command[i].steering_angle);
-    wheel_handles_[i]->set_velocity(wheel_command[i].drive_velocity);
+
+    const bool is_stop = (std::fabs(linear_x_cmd) < EPS) && (std::fabs(linear_y_cmd) < EPS) &&
+                         (std::fabs(angular_cmd) < EPS);
+
+    if (is_stop)
+    {
+      axle_handles_[i]->set_position(previous_steering_angles_[i]);
+    }
+    else
+    {
+      axle_handles_[i]->set_position(wheel_command[i].steering_angle);
+      previous_steering_angles_[i] = wheel_command[i].steering_angle;
+    }
+    wheel_handles_[i]->set_velocity(wheel_command[i].drive_angular_velocity);
   }
 
   const auto update_dt = current_time - previous_update_timestamp_;
@@ -417,7 +433,7 @@ controller_interface::return_type SwerveController::update(
     }
     else
     {
-      velocity_array[i] = wheel_handles_[i]->get_feedback();
+      velocity_array[i] = wheel_handles_[i]->get_feedback() * params_.wheel_radius;
       steering_angle_array[i] = axle_handles_[i]->get_feedback();
     }
   }

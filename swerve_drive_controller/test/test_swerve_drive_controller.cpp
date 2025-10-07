@@ -281,7 +281,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  std::vector<double> expected_wheel_vel_cmds = {1.0, 1.0, 1.0, 1.0};
+  std::vector<double> expected_wheel_vel_cmds = {10.0, 10.0, 10.0, 10.0};
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
@@ -364,7 +364,7 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  std::vector<double> expected_wheel_vel_cmds = {1.0, 1.0, 1.0, 1.0};
+  std::vector<double> expected_wheel_vel_cmds = {10.0, 10.0, 10.0, 10.0};
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {

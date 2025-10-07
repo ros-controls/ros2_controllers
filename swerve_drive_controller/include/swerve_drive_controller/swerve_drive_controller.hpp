@@ -189,6 +189,9 @@ protected:
   std::array<std::string, 4> wheel_joint_names{};
   std::array<std::string, 4> axle_joint_names{};
 
+  const double EPS = 1e-6;
+  std::array<double, 4> previous_steering_angles_{};
+
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
