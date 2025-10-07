@@ -2,6 +2,36 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Remove wrong and unnecessary docstrings (`#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_)
+* Use auto dependency management for windows workflow (`#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_)
+* Remove unused variables and correctly override test class method (`#1918 <https://github.com/ros-controls/ros2_controllers/issues/1918>`_)
+* Don't call `release_interfaces` from controllers (`#1910 <https://github.com/ros-controls/ros2_controllers/issues/1910>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+* [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+* Filling `index` field in feedback message of the action interface (`#1850 <https://github.com/ros-controls/ros2_controllers/issues/1850>`_)
+* Contributors: Giuseppe Monetti
+
+5.5.0 (2025-07-31)
+------------------
+* Reset JTC PID's to zero on_activate() (`#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_)
+* Fix `-Wunused-result` warnings in JTC (`#1831 <https://github.com/ros-controls/ros2_controllers/issues/1831>`_)
+* Contributors: Christoph Fröhlich, Marq Rasmussen
+
 5.4.0 (2025-07-23)
 ------------------
 * Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)

@@ -86,15 +86,6 @@ protected:
   size_t num_joints_ = 0;
   std::vector<std::string> command_joint_names_;
 
-  // The interfaces are defined as the types in 'allowed_interface_types_' member.
-  // For convenience, for each type the interfaces are ordered so that i-th position
-  // matches i-th index in joint_names_
-  template <typename T>
-  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
-
-  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
-  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
-
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;
   bool has_acceleration_state_interface_ = false;
@@ -137,6 +128,7 @@ protected:
     input_joint_command_;
   realtime_tools::RealtimeThreadSafeBox<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
+  ControllerStateMsg state_msg_;
 
   // save the last commands in case of unable to get value from box
   trajectory_msgs::msg::JointTrajectoryPoint joint_command_msg_;

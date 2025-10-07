@@ -38,7 +38,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "test_asset_6d_robot_description.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 // TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
@@ -171,32 +171,32 @@ protected:
 
   void assign_interfaces()
   {
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
-    command_ifs.reserve(joint_command_values_.size());
+    loaned_command_ifs.reserve(joint_command_values_.size());
 
     for (auto i = 0u; i < joint_command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
     auto sc_fts = semantic_components::ForceTorqueSensor(ft_sensor_name_);
     fts_state_names_ = sc_fts.get_state_interface_names();
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
 
     const size_t num_state_ifs = joint_state_values_.size() + fts_state_names_.size();
     state_itfs_.reserve(num_state_ifs);
-    state_ifs.reserve(num_state_ifs);
+    loaned_state_ifs.reserve(num_state_ifs);
 
     for (auto i = 0u; i < joint_state_values_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
     std::vector<std::string> fts_itf_names = {"force.x",  "force.y",  "force.z",
@@ -205,12 +205,12 @@ protected:
     for (auto i = 0u; i < fts_state_names_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void broadcast_tfs()
@@ -396,8 +396,8 @@ protected:
   std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::vector<std::string> fts_state_names_;
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   // Test related parameters
   std::unique_ptr<TestableAdmittanceController> controller_;

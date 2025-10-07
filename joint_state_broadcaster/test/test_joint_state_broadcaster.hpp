@@ -87,29 +87,39 @@ protected:
   std::vector<double> joint_values_ = {1.1, 2.1, 3.1};
   double custom_joint_value_ = 3.5;
 
-  hardware_interface::StateInterface joint_1_pos_state_{
-    joint_names_[0], interface_names_[0], &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_pos_state_{
-    joint_names_[1], interface_names_[0], &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_pos_state_{
-    joint_names_[2], interface_names_[0], &joint_values_[2]};
-  hardware_interface::StateInterface joint_1_vel_state_{
-    joint_names_[0], interface_names_[1], &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_vel_state_{
-    joint_names_[1], interface_names_[1], &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_vel_state_{
-    joint_names_[2], interface_names_[1], &joint_values_[2]};
-  hardware_interface::StateInterface joint_1_eff_state_{
-    joint_names_[0], interface_names_[2], &joint_values_[0]};
-  hardware_interface::StateInterface joint_2_eff_state_{
-    joint_names_[1], interface_names_[2], &joint_values_[1]};
-  hardware_interface::StateInterface joint_3_eff_state_{
-    joint_names_[2], interface_names_[2], &joint_values_[2]};
+  hardware_interface::StateInterface::SharedPtr joint_1_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], interface_names_[0], &joint_values_[0]);
+  hardware_interface::StateInterface::SharedPtr joint_2_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[1], interface_names_[0], &joint_values_[1]);
+  hardware_interface::StateInterface::SharedPtr joint_3_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[2], interface_names_[0], &joint_values_[2]);
+  hardware_interface::StateInterface::SharedPtr joint_1_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], interface_names_[1], &joint_values_[0]);
+  hardware_interface::StateInterface::SharedPtr joint_2_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[1], interface_names_[1], &joint_values_[1]);
+  hardware_interface::StateInterface::SharedPtr joint_3_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[2], interface_names_[1], &joint_values_[2]);
+  hardware_interface::StateInterface::SharedPtr joint_1_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], interface_names_[2], &joint_values_[0]);
+  hardware_interface::StateInterface::SharedPtr joint_2_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[1], interface_names_[2], &joint_values_[1]);
+  hardware_interface::StateInterface::SharedPtr joint_3_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[2], interface_names_[2], &joint_values_[2]);
 
-  hardware_interface::StateInterface joint_X_custom_state{
-    joint_names_[0], custom_interface_name_, &custom_joint_value_};
+  hardware_interface::StateInterface::SharedPtr joint_X_custom_state =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], custom_interface_name_, &custom_joint_value_);
 
-  std::vector<hardware_interface::StateInterface> test_interfaces_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
   std::string frame_id_ = "base_link";

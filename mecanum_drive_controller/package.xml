@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mecanum_drive_controller</name>
-  <version>5.4.0</version>
+  <version>5.8.0</version>
   <description> Implementation of mecanum drive controller for 4 wheel drive.
   </description>
 
@@ -25,6 +25,7 @@
   <build_depend>generate_parameter_library</build_depend>
   <build_depend>ros2_control_cmake</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>
