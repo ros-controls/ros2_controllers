@@ -141,7 +141,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
@@ -176,7 +176,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_nam
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
@@ -203,7 +203,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the
@@ -231,7 +231,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_n
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
@@ -257,7 +257,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
@@ -285,7 +285,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_n
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";

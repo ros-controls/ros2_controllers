@@ -2,6 +2,13 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Fix: Remove deprecated `rclcpp::spin_some(node)` (`#1928 <https://github.com/ros-controls/ros2_controllers/issues/1928>`_)
+* Contributors: Christoph Fröhlich, Kostubh Khandelwal
+
 5.7.0 (2025-09-12)
 ------------------
 

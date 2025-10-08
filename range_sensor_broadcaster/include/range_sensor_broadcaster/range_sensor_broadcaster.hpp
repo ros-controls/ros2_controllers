@@ -60,6 +60,7 @@ protected:
   using StatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::Range>;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr sensor_state_publisher_;
   std::unique_ptr<StatePublisher> realtime_publisher_;
+  sensor_msgs::msg::Range range_msg_;
 };
 
 }  // namespace range_sensor_broadcaster

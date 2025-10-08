@@ -155,20 +155,20 @@ protected:
       controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
       controller_interface::return_type::OK);
 
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(dof_names_.size());
-    command_ifs.reserve(dof_names_.size());
+    loaned_command_ifs.reserve(dof_names_.size());
 
     for (size_t i = 0; i < dof_names_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           dof_names_[i], command_interface_, &dof_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-    state_ifs.reserve(dof_names_.size() * state_interfaces_.size());
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
+    loaned_state_ifs.reserve(dof_names_.size() * state_interfaces_.size());
     state_itfs_.reserve(dof_names_.size() * state_interfaces_.size());
     size_t index = 0;
     for (const auto & interface : state_interfaces_)
@@ -176,13 +176,14 @@ protected:
       for (const auto & dof_name : dof_names_)
       {
         state_itfs_.emplace_back(
-          hardware_interface::StateInterface(dof_name, interface, &dof_state_values_[index]));
-        state_ifs.emplace_back(state_itfs_.back());
+          std::make_shared<hardware_interface::StateInterface>(
+            dof_name, interface, &dof_state_values_[index]));
+        loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
         ++index;
       }
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void subscribe_and_get_messages(ControllerStateMsg & msg)
@@ -267,8 +268,8 @@ protected:
   std::vector<double> dof_command_values_;
   std::vector<std::string> reference_and_state_dof_names_;
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   // Test related parameters
   std::unique_ptr<TestablePidController> controller_;

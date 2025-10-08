@@ -72,17 +72,15 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
-  realtime_publisher_->lock();
-  realtime_publisher_->msg_.header.frame_id = params_.frame_id;
-  realtime_publisher_->msg_.radiation_type = static_cast<uint8_t>(params_.radiation_type);
-  realtime_publisher_->msg_.field_of_view = static_cast<float>(params_.field_of_view);
-  realtime_publisher_->msg_.min_range = static_cast<float>(params_.min_range);
-  realtime_publisher_->msg_.max_range = static_cast<float>(params_.max_range);
+  range_msg_.header.frame_id = params_.frame_id;
+  range_msg_.radiation_type = static_cast<uint8_t>(params_.radiation_type);
+  range_msg_.field_of_view = static_cast<float>(params_.field_of_view);
+  range_msg_.min_range = static_cast<float>(params_.min_range);
+  range_msg_.max_range = static_cast<float>(params_.max_range);
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
-  realtime_publisher_->msg_.variance = params_.variance;
+  range_msg_.variance = params_.variance;
 #endif
-  realtime_publisher_->unlock();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
   return CallbackReturn::SUCCESS;
@@ -122,11 +120,11 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_deactivate(
 controller_interface::return_type RangeSensorBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (realtime_publisher_ && realtime_publisher_->trylock())
+  if (realtime_publisher_)
   {
-    realtime_publisher_->msg_.header.stamp = time;
-    range_sensor_->get_values_as_message(realtime_publisher_->msg_);
-    realtime_publisher_->unlockAndPublish();
+    range_msg_.header.stamp = time;
+    range_sensor_->get_values_as_message(range_msg_);
+    realtime_publisher_->try_publish(range_msg_);
   }
 
   return controller_interface::return_type::OK;
