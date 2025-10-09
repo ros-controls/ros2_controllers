@@ -94,7 +94,7 @@ public:
   }
 
 protected:
-  std::array<double, 7> itfs_values_ = {
+  std::array<double, 7> itfs_values_ = {{
     0.0,  // 0 fieldViolation1
     1.0,  // 1 fieldViolation2
     0.0,  // 2 eStopManual1
@@ -102,7 +102,7 @@ protected:
     0.0,  // 4 eStopRemote1
     1.0,  // 5 eStopRemote2
     1.0,  // 6 eStopAutoack
-  };
+  }};
   hardware_interface::StateInterface fieldViolation1_itf_{
     "PLC_sensor1", "fieldViolation", &itfs_values_[0]};
   hardware_interface::StateInterface fieldViolation2_itf_{
