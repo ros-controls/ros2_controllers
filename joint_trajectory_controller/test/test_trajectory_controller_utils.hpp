@@ -279,11 +279,18 @@ public:
     traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
 
     auto node_options = rclcpp::NodeOptions();
+    // read-only parameters have to be set before init
     std::vector<rclcpp::Parameter> parameter_overrides;
     parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names_));
     parameter_overrides.push_back(
       rclcpp::Parameter("command_interfaces", command_interface_types_));
     parameter_overrides.push_back(rclcpp::Parameter("state_interfaces", state_interface_types_));
+    // avoid deprecation warning for legacy (default) antiwindup strategy
+    for (const auto & joint : joint_names_)
+    {
+      parameter_overrides.push_back(
+        rclcpp::Parameter("gains." + joint + ".antiwindup_strategy", "none"));
+    }
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
     traj_controller_->set_node_options(node_options);
@@ -303,7 +310,7 @@ public:
       const rclcpp::Parameter k_p(prefix + ".p", p_value);
       const rclcpp::Parameter k_i(prefix + ".i", 0.0);
       const rclcpp::Parameter k_d(prefix + ".d", 0.0);
-      const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 0.0);
+      const rclcpp::Parameter i_clamp(prefix + ".i_clamp", 1000.0);
       const rclcpp::Parameter ff_velocity_scale(prefix + ".ff_velocity_scale", ff_value);
       node->set_parameters({k_p, k_i, k_d, i_clamp, ff_velocity_scale});
     }
