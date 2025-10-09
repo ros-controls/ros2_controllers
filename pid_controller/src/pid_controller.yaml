@@ -85,12 +85,12 @@ pid_controller:
       }
       i_clamp_max: {
         type: double,
-        default_value: 0.0,
+        default_value: .inf,
         description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
       }
       i_clamp_min: {
         type: double,
-        default_value: 0.0,
+        default_value: -.inf,
         description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
       }
       antiwindup_strategy: {
