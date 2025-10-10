@@ -37,6 +37,6 @@ pid_controller
   * A new ``error_deadband`` parameter stops integration when the error is within a specified range.
 * PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
 
-motion_primitives_forward_controller
-*******************************************
-* 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
+swerve_drive_controller
+*********************************
+* The swerve_drive_controller was added  (`#1694 <https://github.com/ros-controls/ros2_controllers/pull/1694>`_).
