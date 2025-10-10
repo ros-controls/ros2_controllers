@@ -49,6 +49,9 @@ struct OdometryState
   double x;      // X position in meters
   double y;      // Y position in meters
   double theta;  // Orientation (yaw) in radians
+  double vx;     // Linear velocity in the x direction (m/s)
+  double vy;     // Linear velocity in the y direction (m/s)
+  double wz;     // Angular velocity about the z-axis (rad/s)
 };
 
 class SwerveDriveKinematics
