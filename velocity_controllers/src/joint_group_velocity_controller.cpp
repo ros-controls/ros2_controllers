@@ -29,6 +29,11 @@ JointGroupVelocityController::JointGroupVelocityController()
 
 controller_interface::CallbackReturn JointGroupVelocityController::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "'velocity_controllers/JointGroupVelocityController' is deprecated. "
+    "Use 'forward_command_controller/ForwardCommandController' instead by adding the "
+    "'interface_name' parameter and set it to 'velocity'.");
   try
   {
     // Explicitly set the interface parameter declared by the forward_command_controller
