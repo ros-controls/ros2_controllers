@@ -16,7 +16,7 @@
 namespace swerve_drive_controller
 {
 
-SwerveDriveKinematics::SwerveDriveKinematics() : odometry_{0.0, 0.0, 0.0} {}
+SwerveDriveKinematics::SwerveDriveKinematics() : odometry_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0} {}
 
 void SwerveDriveKinematics::calculate_wheel_position(
   double wheel_base, double track_width, double x_offset, double y_offset)
