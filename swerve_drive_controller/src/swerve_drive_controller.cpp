@@ -453,6 +453,9 @@ controller_interface::return_type SwerveController::update(
     odometry_message.pose.pose.orientation.y = orientation.y();
     odometry_message.pose.pose.orientation.z = orientation.z();
     odometry_message.pose.pose.orientation.w = orientation.w();
+    odometry_message.twist.twist.linear.x = odometry_.vx;
+    odometry_message.twist.twist.linear.y = odometry_.vy;
+    odometry_message.twist.twist.angular.z = odometry_.wz;
     realtime_odometry_publisher_->tryPublish(odometry_message);
   }
 
