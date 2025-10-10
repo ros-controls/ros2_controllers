@@ -110,6 +110,9 @@ OdometryState SwerveDriveKinematics::update_odometry(
   odometry_.x += vx_global * dt;
   odometry_.y += vy_global * dt;
   odometry_.theta = angles::normalize_angle(odometry_.theta + wz_robot * dt);
+  odometry_.vx = vx_robot;
+  odometry_.vy = vy_robot;
+  odometry_.wz = wz_robot;
   return odometry_;
 }
 }  // namespace swerve_drive_controller
