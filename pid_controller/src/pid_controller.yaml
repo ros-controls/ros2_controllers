@@ -60,6 +60,16 @@ pid_controller:
         default_value: 0.0,
         description: "Derivative gain for PID"
       }
+      derivative_filter_time: {
+        type: double,
+        default_value: 0.0,
+        description: "Time constant (seconds) of the first-order low-pass in the derivative path.
+        Continuous form: C_D(s) = D * s / (1 + s * derivative_filter_time). Smaller values => less
+        filtering (higher bandwidth); derivative_filter_time = 0 gives an ideal (unfiltered)
+        differentiator (not recommended). In discrete time the final difference equation depends on
+        'derivative_method' and sample time T.",
+        validation: { gt_eq<>: [0.0] }
+      }
       u_clamp_max: {
         type: double,
         default_value: .inf,
@@ -91,6 +101,38 @@ pid_controller:
             "back_calculation",
             "conditional_integration",
             "none"
+          ]]
+        }
+      }
+      integration_method: {
+        type: string,
+        default_value: "forward_euler",
+        description: "Discrete-time scheme for the integral (I) term. Options: 'forward_euler'
+        (explicit Euler), 'backward_euler' (implicit Euler), or 'trapezoidal'
+        (bilinear/Tustin). In general, 'trapezoidal' offers better accuracy and
+        phase characteristics; 'backward_euler' is more numerically stable for larger
+        time steps (more dissipative).",
+        validation: {
+          one_of<>: [[
+            "forward_euler",
+            "backward_euler",
+            "trapezoidal"
+          ]]
+        }
+      }
+      derivative_method: {
+        type: string,
+        default_value: "forward_euler",
+        description: "Selects the discrete-time scheme used to discretize the D term of the PID.
+        Options: 'forward_euler' (explicit Euler), 'backward_euler' (implicit Euler), or
+        'trapezoidal' (bilinear/Tustin). In general, 'trapezoidal' offers better accuracy and phase
+        characteristics; 'backward_euler' is more numerically stable for larger
+        time steps (more dissipative).",
+        validation: {
+          one_of<>: [[
+            "forward_euler",
+            "backward_euler",
+            "trapezoidal"
           ]]
         }
       }
