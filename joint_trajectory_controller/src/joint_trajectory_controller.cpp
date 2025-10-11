@@ -1764,8 +1764,9 @@ void JointTrajectoryController::update_pids()
     const auto & gains = params_.gains.joints_map.at(params_.joints.at(map_cmd_to_joints_[i]));
     control_toolbox::AntiWindupStrategy antiwindup_strat;
     antiwindup_strat.set_type(gains.antiwindup_strategy);
-    antiwindup_strat.i_max = gains.i_clamp;
-    antiwindup_strat.i_min = -gains.i_clamp;
+    // deprecated parameter i_clamp: i_clamp_max and i_clamp_min have precedence over i_clamp
+    antiwindup_strat.i_max = std::isfinite(gains.i_clamp_max) ? gains.i_clamp_max : gains.i_clamp;
+    antiwindup_strat.i_min = std::isfinite(gains.i_clamp_min) ? gains.i_clamp_min : -gains.i_clamp;
     antiwindup_strat.error_deadband = gains.error_deadband;
     antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
     if (pids_[i])

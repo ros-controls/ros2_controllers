@@ -132,8 +132,18 @@ joint_trajectory_controller:
       }
       i_clamp: {
         type: double,
-        default_value: 0.0,
-        description: "Integral clamp. Symmetrical in both positive and negative direction."
+        default_value: .inf,
+        description: "[Deprecated, use i_clamp_max/i_clamp_min] Integral clamp. Symmetrical in both positive and negative direction."
+      }
+      i_clamp_max: {
+        type: double,
+        default_value: .inf,
+        description: "Upper integral clamp."
+      }
+      i_clamp_min: {
+        type: double,
+        default_value: -.inf,
+        description: "Lower integral clamp."
       }
       ff_velocity_scale: {
         type: double,
@@ -149,16 +159,6 @@ joint_trajectory_controller:
         type: double,
         default_value: -.inf,
         description: "Lower output clamp."
-      }
-      i_clamp_max: {
-        type: double,
-        default_value: 0.0,
-        description: "[Deprecated, see antiwindup_strategy] Upper integral clamp."
-      }
-      i_clamp_min: {
-        type: double,
-        default_value: 0.0,
-        description: "[Deprecated, see antiwindup_strategy] Lower integral clamp."
       }
       antiwindup_strategy: {
         type: string,

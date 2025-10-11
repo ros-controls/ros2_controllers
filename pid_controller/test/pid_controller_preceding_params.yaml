@@ -9,3 +9,6 @@ test_pid_controller:
 
     reference_and_state_dof_names:
       - joint1state
+
+    gains:
+      joint1: {antiwindup_strategy: "none"}
