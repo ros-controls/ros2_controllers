@@ -2,8 +2,8 @@
   ros__parameters:
 # TODO(christohfroehlich): Remove this global parameters once the deprecated antiwindup parameters are removed.
     gains:
-      joint1: {antiwindup_strategy: "none", i_clamp_max: .inf, i_clamp_min: -.inf}
-      joint2: {antiwindup_strategy: "none", i_clamp_max: .inf, i_clamp_min: -.inf}
+      joint1: {antiwindup_strategy: "none",}
+      joint2: {antiwindup_strategy: "none",}
 
 test_pid_controller:
   ros__parameters:

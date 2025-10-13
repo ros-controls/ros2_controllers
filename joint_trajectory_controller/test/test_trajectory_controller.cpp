@@ -191,6 +191,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
+  SetPidParameters(0.0, 1.0);
   traj_controller_->get_node()->set_parameter(
     rclcpp::Parameter("allow_nonzero_velocity_at_trajectory_end", true));
   traj_controller_->get_node()->set_parameter(rclcpp::Parameter("update_rate", 10));
