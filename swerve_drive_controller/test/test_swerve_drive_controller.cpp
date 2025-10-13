@@ -278,7 +278,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   controller_->wait_for_twist(executor);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   std::vector<double> expected_wheel_vel_cmds = {10.0, 10.0, 10.0, 10.0};
@@ -298,7 +303,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
@@ -319,7 +329,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   controller_->wait_for_twist(executor);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
@@ -361,7 +376,12 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
   controller_->wait_for_twist(executor);
 
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_->update_reference_from_subscribers(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->update_and_write_commands(
+      rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
   std::vector<double> expected_wheel_vel_cmds = {10.0, 10.0, 10.0, 10.0};

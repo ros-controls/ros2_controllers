@@ -1,7 +1,7 @@
 <library path="swerve_drive_controller">
   <class name="swerve_drive_controller/SwerveController"
          type="swerve_drive_controller::SwerveController"
-         base_class_type="controller_interface::ControllerInterface">
+         base_class_type="controller_interface::ChainableControllerInterface">
     <description>
       A controller for a swerve drive robot.
     </description>

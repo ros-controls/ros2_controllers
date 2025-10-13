@@ -70,14 +70,8 @@ double Axle::get_feedback() { return Axle::feedback_.get().get_optional().value(
 
 SwerveController::SwerveController()
 
-: controller_interface::ControllerInterface()
+: controller_interface::ChainableControllerInterface()
 {
-  auto zero_twist = std::make_shared<TwistStamped>();
-  zero_twist->header.stamp = rclcpp::Time(0);
-  zero_twist->twist.linear.x = 0.0;
-  zero_twist->twist.linear.y = 0.0;
-  zero_twist->twist.angular.z = 0.0;
-  received_velocity_msg_ptr_.writeFromNonRT(zero_twist);
 }
 
 CallbackReturn SwerveController::on_init()
@@ -201,12 +195,17 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
       return CallbackReturn::ERROR;
     }
 
+    // Allocate reference interfaces for chainable controller (linear.x, linear.y, angular.z)
+    const int nr_ref_itfs = 3;
+    reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+
     TwistStamped empty_twist;
     empty_twist.header.stamp = get_node()->now();
     empty_twist.twist.linear.x = 0.0;
     empty_twist.twist.linear.y = 0.0;
     empty_twist.twist.angular.z = 0.0;
-    received_velocity_msg_ptr_.writeFromNonRT(std::make_shared<TwistStamped>(empty_twist));
+    command_msg_ = empty_twist;
+    received_velocity_msg_.set(empty_twist);
 
     velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
@@ -225,7 +224,7 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
             "time, this message will only be shown once");
           msg->header.stamp = get_node()->get_clock()->now();
         }
-        received_velocity_msg_ptr_.writeFromNonRT(std::move(msg));
+        received_velocity_msg_.try_set(*msg);
       });
 
     odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
@@ -327,49 +326,64 @@ CallbackReturn SwerveController::on_activate(const rclcpp_lifecycle::State &)
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type SwerveController::update(
+controller_interface::return_type SwerveController::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   auto logger = get_node()->get_logger();
 
-  if (this->get_lifecycle_state().id() == State::PRIMARY_STATE_INACTIVE)
+  auto current_ref_op = received_velocity_msg_.try_get();
+  if (current_ref_op.has_value())
   {
-    if (!is_halted_)
-    {
-      halt();
-      is_halted_ = true;
-    }
+    command_msg_ = current_ref_op.value();
+  }
 
+  const auto age_of_last_command = time - command_msg_.header.stamp;
+  // Brake if cmd_vel has timeout, override the stored command
+  if (age_of_last_command > cmd_vel_timeout_)
+  {
+    reference_interfaces_[0] = 0.0;
+    reference_interfaces_[1] = 0.0;
+    reference_interfaces_[2] = 0.0;
+  }
+  else if (
+    std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) &&
+    std::isfinite(command_msg_.twist.angular.z))
+  {
+    reference_interfaces_[0] = command_msg_.twist.linear.x;
+    reference_interfaces_[1] = command_msg_.twist.linear.y;
+    reference_interfaces_[2] = command_msg_.twist.angular.z;
+  }
+  else
+  {
+    RCLCPP_WARN_SKIPFIRST_THROTTLE(
+      logger, *get_node()->get_clock(),
+      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.count()),
+      "Command message contains NaNs. Not updating reference interfaces.");
+  }
+
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type SwerveController::update_and_write_commands(
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
+{
+  auto logger = get_node()->get_logger();
+
+  // If handles are empty (controller deactivated), return early
+  if (wheel_handles_.empty() || axle_handles_.empty())
+  {
     return controller_interface::return_type::OK;
   }
 
-  const auto current_time = time;
+  double linear_x_cmd = reference_interfaces_[0];
+  double linear_y_cmd = reference_interfaces_[1];
+  double angular_cmd = reference_interfaces_[2];
 
-  std::shared_ptr<TwistStamped> last_command_msg = *(received_velocity_msg_ptr_.readFromRT());
-
-  if (last_command_msg == nullptr)
+  if (!std::isfinite(linear_x_cmd) || !std::isfinite(linear_y_cmd) || !std::isfinite(angular_cmd))
   {
-    last_command_msg = std::make_shared<TwistStamped>();
-    last_command_msg->header.stamp = current_time;
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.linear.y = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
-    received_velocity_msg_ptr_.writeFromNonRT(last_command_msg);
+    // NaNs occur on initialization when the reference interfaces are not yet set
+    return controller_interface::return_type::OK;
   }
-
-  const auto age_of_last_command = current_time - last_command_msg->header.stamp;
-
-  if (age_of_last_command > cmd_vel_timeout_)
-  {
-    last_command_msg->twist.linear.x = 0.0;
-    last_command_msg->twist.linear.y = 0.0;
-    last_command_msg->twist.angular.z = 0.0;
-  }
-
-  TwistStamped command = *last_command_msg;
-  double & linear_x_cmd = command.twist.linear.x;
-  double & linear_y_cmd = command.twist.linear.y;
-  double & angular_cmd = command.twist.angular.z;
 
   auto wheel_command = swerveDriveKinematics_.compute_wheel_commands(
     linear_x_cmd, linear_y_cmd, angular_cmd, params_.wheel_radius);
@@ -416,10 +430,8 @@ controller_interface::return_type SwerveController::update(
     wheel_handles_[i]->set_velocity(wheel_command[i].drive_angular_velocity);
   }
 
-  const auto update_dt = current_time - previous_update_timestamp_;
-  previous_update_timestamp_ = current_time;
-
-  swerve_drive_controller::OdometryState odometry_;
+  const auto update_dt = time - previous_update_timestamp_;
+  previous_update_timestamp_ = time;
 
   std::array<double, 4> velocity_array{};
   std::array<double, 4> steering_angle_array{};
@@ -456,7 +468,7 @@ controller_interface::return_type SwerveController::update(
     odometry_message.twist.twist.linear.x = odometry_.vx;
     odometry_message.twist.twist.linear.y = odometry_.vy;
     odometry_message.twist.twist.angular.z = odometry_.wz;
-    realtime_odometry_publisher_->tryPublish(odometry_message);
+    realtime_odometry_publisher_->try_publish(odometry_message);
   }
 
   if (realtime_odometry_transform_publisher_)
@@ -470,7 +482,7 @@ controller_interface::return_type SwerveController::update(
     transform.transform.rotation.y = orientation.y();
     transform.transform.rotation.z = orientation.z();
     transform.transform.rotation.w = orientation.w();
-    realtime_odometry_transform_publisher_->tryPublish(odometry_transform_message_);
+    realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
   }
   previous_publish_timestamp_ = time;
   return controller_interface::return_type::OK;
@@ -479,6 +491,9 @@ controller_interface::return_type SwerveController::update(
 CallbackReturn SwerveController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
+  halt();
+  wheel_handles_.clear();
+  axle_handles_.clear();
   return CallbackReturn::SUCCESS;
 }
 
@@ -489,7 +504,8 @@ CallbackReturn SwerveController::on_cleanup(const rclcpp_lifecycle::State &)
     return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.writeFromNonRT(std::make_shared<TwistStamped>());
+  TwistStamped empty_twist;
+  received_velocity_msg_.set(empty_twist);
   return CallbackReturn::SUCCESS;
 }
 
@@ -507,12 +523,13 @@ bool SwerveController::reset()
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
-  auto zero_twist = std::make_shared<TwistStamped>();
-  zero_twist->header.stamp = get_node()->get_clock()->now();
-  zero_twist->twist.linear.x = 0.0;
-  zero_twist->twist.linear.y = 0.0;
-  zero_twist->twist.angular.z = 0.0;
-  received_velocity_msg_ptr_.writeFromNonRT(zero_twist);
+  TwistStamped zero_twist;
+  zero_twist.header.stamp = get_node()->get_clock()->now();
+  zero_twist.twist.linear.x = 0.0;
+  zero_twist.twist.linear.y = 0.0;
+  zero_twist.twist.angular.z = 0.0;
+  command_msg_ = zero_twist;
+  received_velocity_msg_.set(zero_twist);
   is_halted_ = false;
   return true;
 }
@@ -534,9 +551,31 @@ void SwerveController::halt()
   }
 }
 
+bool SwerveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
+
+std::vector<hardware_interface::CommandInterface> SwerveController::on_export_reference_interfaces()
+{
+  reference_interfaces_.resize(3, std::numeric_limits<double>::quiet_NaN());
+
+  std::vector<hardware_interface::CommandInterface> reference_interfaces;
+  reference_interfaces.reserve(reference_interfaces_.size());
+
+  std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
+
+  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  {
+    reference_interfaces.push_back(
+      hardware_interface::CommandInterface(
+        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
+        &reference_interfaces_[i]));
+  }
+
+  return reference_interfaces;
+}
+
 }  // namespace swerve_drive_controller
 
 #include "class_loader/register_macro.hpp"
 
 CLASS_LOADER_REGISTER_CLASS(
-  swerve_drive_controller::SwerveController, controller_interface::ControllerInterface)
+  swerve_drive_controller::SwerveController, controller_interface::ChainableControllerInterface)
