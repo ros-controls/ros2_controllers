@@ -26,6 +26,7 @@ class SwerveDriveControllerTest : public SwerveDriveControllerFixture<TestableSw
 {
 };
 
+// cppcheck-suppress syntaxError
 TEST_F(SwerveDriveControllerTest, init_fails_without_parameters)
 {
   const auto ret =
