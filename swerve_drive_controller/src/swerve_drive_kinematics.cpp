@@ -69,6 +69,31 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
   return wheel_commands;
 }
 
+std::array<WheelCommand, 4> SwerveDriveKinematics::optimize_wheel_commands(
+  const std::array<WheelCommand, 4> & wheel_commands,
+  const std::array<double, 4> & current_steering_angles)
+{
+  std::array<WheelCommand, 4> optimized_commands = wheel_commands;
+
+  for (std::size_t i = 0; i < 4; i++)
+  {
+    double target_angle = wheel_commands[i].steering_angle;
+    double current_angle = current_steering_angles[i];
+
+    double angle_diff = angles::shortest_angular_distance(current_angle, target_angle);
+
+    if (std::abs(angle_diff) > M_PI_2)
+    {
+      optimized_commands[i].drive_velocity = -wheel_commands[i].drive_velocity;
+      optimized_commands[i].drive_angular_velocity = -wheel_commands[i].drive_angular_velocity;
+
+      optimized_commands[i].steering_angle = angles::normalize_angle(target_angle + M_PI);
+    }
+  }
+
+  return optimized_commands;
+}
+
 OdometryState SwerveDriveKinematics::update_odometry(
   const std::array<double, 4> & wheel_velocities, const std::array<double, 4> & steering_angles,
   double dt)

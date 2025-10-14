@@ -388,6 +388,22 @@ controller_interface::return_type SwerveController::update_and_write_commands(
   auto wheel_command = swerveDriveKinematics_.compute_wheel_commands(
     linear_x_cmd, linear_y_cmd, angular_cmd, params_.wheel_radius);
 
+  std::array<double, 4> current_steering_angles{};
+  for (std::size_t i = 0; i < 4; ++i)
+  {
+    if (axle_handles_[i].has_value())
+    {
+      current_steering_angles[i] = axle_handles_[i]->get_feedback();
+    }
+    else
+    {
+      current_steering_angles[i] = previous_steering_angles_[i];
+    }
+  }
+
+  wheel_command =
+    swerveDriveKinematics_.optimize_wheel_commands(wheel_command, current_steering_angles);
+
   std::vector<std::tuple<WheelCommand &, double, std::string>> wheel_data = {
     {wheel_command[0], params_.front_left_velocity_threshold / params_.wheel_radius,
      "front_left_wheel"},
@@ -404,6 +420,33 @@ controller_interface::return_type SwerveController::update_and_write_commands(
     {
       wheel_command_.drive_velocity = threshold;
     }
+  }
+
+  const double min_steering_error = M_PI / 6.0;  // 30 degrees
+  for (std::size_t i = 0; i < 4; i++)
+  {
+    double steering_error = std::abs(
+      angles::shortest_angular_distance(
+        current_steering_angles[i], wheel_command[i].steering_angle));
+
+    double velocity_scale = 1.0;
+    if (steering_error > min_steering_error)
+    {
+      if (steering_error >= 1.5608)  // ~89.5 degrees
+      {
+        // cos(1.5608) = 0.01
+        velocity_scale = 0.01 / std::cos(min_steering_error);
+      }
+      else
+      {
+        // Scale velocity based on steering error using cosine function
+        velocity_scale = std::cos(steering_error) / std::cos(min_steering_error);
+      }
+    }
+
+    // Apply velocity scaling
+    wheel_command[i].drive_velocity *= velocity_scale;
+    wheel_command[i].drive_angular_velocity *= velocity_scale;
   }
 
   for (std::size_t i = 0; i < 4; i++)

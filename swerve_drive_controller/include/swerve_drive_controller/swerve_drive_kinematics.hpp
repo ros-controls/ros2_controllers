@@ -85,6 +85,18 @@ public:
     double wheel_radius);
 
   /**
+   * @brief Optimize wheel commands to minimize steering rotation.
+   * If a wheel needs to rotate more than 90 degrees, flip the wheel velocity
+   * and adjust the steering angle by 180 degrees instead.
+   * @param wheel_commands The computed wheel commands.
+   * @param current_steering_angles Array of current steering angles (radians).
+   * @return Optimized wheel commands with minimal steering rotation.
+   */
+  std::array<WheelCommand, 4> optimize_wheel_commands(
+    const std::array<WheelCommand, 4> & wheel_commands,
+    const std::array<double, 4> & current_steering_angles);
+
+  /**
    * @brief Update the odometry based on wheel velocities and elapsed time.
    * @param wheel_velocities Array of measured wheel velocities (m/s).
    * @param steering_angles Array of measured steering angles (radians).
