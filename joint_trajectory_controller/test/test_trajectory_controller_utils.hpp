@@ -202,11 +202,6 @@ public:
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_current_command() { return command_current_; }
 
-  control_msgs::msg::JointTrajectoryControllerState get_state_msg()
-  {
-    return state_publisher_->msg_;
-  }
-
   /**
    * a copy of the private member function
    */
@@ -232,7 +227,7 @@ class TrajectoryControllerTest : public ::testing::Test
 public:
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-  virtual void SetUp()
+  void SetUp() override
   {
     controller_name_ = "test_joint_trajectory_controller";
 
@@ -349,8 +344,8 @@ public:
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
-    std::vector<hardware_interface::LoanedCommandInterface> cmd_interfaces;
-    std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     pos_cmd_interfaces_.reserve(joint_names_.size());
     vel_cmd_interfaces_.reserve(joint_names_.size());
     acc_cmd_interfaces_.reserve(joint_names_.size());
@@ -361,65 +356,65 @@ public:
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       pos_cmd_interfaces_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           joint_names_[i], hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
       vel_cmd_interfaces_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           joint_names_[i], hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
       acc_cmd_interfaces_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           joint_names_[i], hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
       eff_cmd_interfaces_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           joint_names_[i], hardware_interface::HW_IF_EFFORT, &joint_eff_[i]));
 
       pos_state_interfaces_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           joint_names_[i], hardware_interface::HW_IF_POSITION,
           separate_cmd_and_state_values ? &joint_state_pos_[i] : &joint_pos_[i]));
       vel_state_interfaces_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           joint_names_[i], hardware_interface::HW_IF_VELOCITY,
           separate_cmd_and_state_values ? &joint_state_vel_[i] : &joint_vel_[i]));
       acc_state_interfaces_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
           separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
       // Add to export lists and set initial values (explicitly discarding return value)
-      cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
-      (void)cmd_interfaces.back().set_value(initial_pos_joints[i]);
-      cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
-      (void)cmd_interfaces.back().set_value(initial_vel_joints[i]);
-      cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
-      (void)cmd_interfaces.back().set_value(initial_acc_joints[i]);
-      cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
-      (void)cmd_interfaces.back().set_value(initial_eff_joints[i]);
+      loaned_command_ifs.emplace_back(pos_cmd_interfaces_.back(), nullptr);
+      (void)loaned_command_ifs.back().set_value(initial_pos_joints[i]);
+      loaned_command_ifs.emplace_back(vel_cmd_interfaces_.back(), nullptr);
+      (void)loaned_command_ifs.back().set_value(initial_vel_joints[i]);
+      loaned_command_ifs.emplace_back(acc_cmd_interfaces_.back(), nullptr);
+      (void)loaned_command_ifs.back().set_value(initial_acc_joints[i]);
+      loaned_command_ifs.emplace_back(eff_cmd_interfaces_.back(), nullptr);
+      (void)loaned_command_ifs.back().set_value(initial_eff_joints[i]);
       if (separate_cmd_and_state_values)
       {
         joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
         joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
         joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       }
-      state_interfaces.emplace_back(pos_state_interfaces_.back());
-      state_interfaces.emplace_back(vel_state_interfaces_.back());
-      state_interfaces.emplace_back(acc_state_interfaces_.back());
+      loaned_state_ifs.emplace_back(pos_state_interfaces_.back(), nullptr);
+      loaned_state_ifs.emplace_back(vel_state_interfaces_.back(), nullptr);
+      loaned_state_ifs.emplace_back(acc_state_interfaces_.back(), nullptr);
     }
 
     speed_scaling_factor_ = 1.0;
     target_speed_scaling_factor_ = 1.0;
     gpio_state_interfaces.emplace_back(
-      hardware_interface::StateInterface(
+      std::make_shared<hardware_interface::StateInterface>(
         "speed_scaling", "speed_scaling_factor",
         separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
-    state_interfaces.emplace_back(gpio_state_interfaces.back());
+    loaned_state_ifs.emplace_back(gpio_state_interfaces.back(), nullptr);
 
     gpio_command_interfaces_.emplace_back(
-      hardware_interface::CommandInterface(
+      std::make_shared<hardware_interface::CommandInterface>(
         "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
-    cmd_interfaces.emplace_back(gpio_command_interfaces_.back());
+    loaned_command_ifs.emplace_back(gpio_command_interfaces_.back(), nullptr);
 
-    traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
+    traj_controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
     return traj_controller_->get_node()->activate();
   }
 
@@ -434,6 +429,7 @@ public:
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
           lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        traj_controller_->release_interfaces();
       }
     }
   }
@@ -697,9 +693,9 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_optional().value(), joint_vel_[i]))
+            position.at(i) - pos_state_interfaces_[i]->get_optional().value(), joint_vel_[i]))
             << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_optional().value() << ", velocity command is "
+            << pos_state_interfaces_[i]->get_optional().value() << ", velocity command is "
             << joint_vel_[i];
         }
       }
@@ -708,10 +704,10 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i].get_optional().value() + effort.at(i),
+            position.at(i) - pos_state_interfaces_[i]->get_optional().value() + effort.at(i),
             joint_eff_[i]))
             << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i].get_optional().value() << ", effort command is "
+            << pos_state_interfaces_[i]->get_optional().value() << ", effort command is "
             << joint_eff_[i];
         }
       }
@@ -818,15 +814,15 @@ public:
   std::vector<double> joint_state_acc_;
   double speed_scaling_factor_;
   double target_speed_scaling_factor_;
-  std::vector<hardware_interface::CommandInterface> pos_cmd_interfaces_;
-  std::vector<hardware_interface::CommandInterface> vel_cmd_interfaces_;
-  std::vector<hardware_interface::CommandInterface> acc_cmd_interfaces_;
-  std::vector<hardware_interface::CommandInterface> eff_cmd_interfaces_;
-  std::vector<hardware_interface::CommandInterface> gpio_command_interfaces_;
-  std::vector<hardware_interface::StateInterface> pos_state_interfaces_;
-  std::vector<hardware_interface::StateInterface> vel_state_interfaces_;
-  std::vector<hardware_interface::StateInterface> acc_state_interfaces_;
-  std::vector<hardware_interface::StateInterface> gpio_state_interfaces;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> pos_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> vel_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> acc_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> eff_cmd_interfaces_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> gpio_command_interfaces_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> pos_state_interfaces_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> vel_state_interfaces_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> acc_state_interfaces_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> gpio_state_interfaces;
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
