@@ -25,13 +25,14 @@
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
 #include "control_msgs/msg/speed_scaling_factor.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
-#include "control_toolbox/pid.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "joint_trajectory_controller_plugins/trajectory_controller_base.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
@@ -41,6 +42,7 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -102,7 +104,10 @@ protected:
 
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
-
+#if RCLCPP_VERSION_MAJOR >= 17
+  // TODO(anyone) remove this if there is another way to lock command_joints parameter
+  rclcpp_lifecycle::LifecycleNode::PreSetParametersCallbackHandle::SharedPtr lock_cmd_joint_names;
+#endif
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
@@ -129,6 +134,11 @@ protected:
     scaling_state_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
     scaling_command_interface_;
+  std::vector<std::string> traj_ctr_state_interface_names_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+    traj_ctr_state_interfaces_;
+  std::vector<double> traj_ctr_state_interfaces_values_;
+  realtime_tools::RealtimeThreadSafeBox<std::vector<double>> traj_ctr_state_interfaces_box_;
 
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;
@@ -139,11 +149,13 @@ protected:
   bool has_effort_command_interface_ = false;
 
   /// If true, a velocity feedforward term plus corrective PID term is used
-  bool use_closed_loop_pid_adapter_ = false;
-  using PidPtr = std::shared_ptr<control_toolbox::Pid>;
-  std::vector<PidPtr> pids_;
-  // Feed-forward velocity weight factor when calculating closed loop pid adapter's command
-  std::vector<double> ff_velocity_scale_;
+  bool use_external_control_law_ = false;
+  // class loader for actual trajectory controller
+  std::shared_ptr<
+    pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>
+    traj_controller_loader_;
+  // The actual trajectory controller
+  std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> traj_contr_;
   // Configuration for every joint if it wraps around (ie. is continuous, position error is
   // normalized)
   std::vector<bool> joints_angle_wraparound_;
@@ -221,7 +233,9 @@ protected:
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
-  void add_new_trajectory_msg(
+  void add_new_trajectory_msg_nonRT(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
+  void add_new_trajectory_msg_RT(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
   bool validate_trajectory_point_field(
     size_t joint_names_size, const std::vector<double> & vector_field,
@@ -268,8 +282,6 @@ protected:
     std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response);
 
 private:
-  void update_pids();
-
   bool contains_interface_type(
     const std::vector<std::string> & interface_type_list, const std::string & interface_type);
 
