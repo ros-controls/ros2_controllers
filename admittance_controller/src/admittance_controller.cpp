@@ -22,7 +22,10 @@
 #include <vector>
 
 #include "admittance_controller/admittance_rule_impl.hpp"
+#include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
+#include "tf2_ros/buffer.h"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace
@@ -71,7 +74,10 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   try
   {
     parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
+    filter_chain_ = std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+      "geometry_msgs::msg::WrenchStamped");
+    admittance_ =
+      std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_, filter_chain_);
   }
   catch (const std::exception & e)
   {
@@ -183,6 +189,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   command_joint_names_ = admittance_->parameters_.command_joints;
+
   if (command_joint_names_.empty())
   {
     command_joint_names_ = admittance_->parameters_.joints;
@@ -298,6 +305,18 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     get_node()->get_logger(), "Command interfaces are [%s] and and state interfaces are [%s].",
     get_interface_list(admittance_->parameters_.command_interfaces).c_str(),
     get_interface_list(admittance_->parameters_.state_interfaces).c_str());
+
+  // configure filters
+  if (!filter_chain_->configure(
+        "sensor_filter_chain", get_node()->get_node_logging_interface(),
+        get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Could not configure sensor filter chain, please check if the "
+      "parameters are provided correctly.");
+    return CallbackReturn::FAILURE;
+  }
 
   // setup subscribers and publishers
   auto joint_command_callback =
