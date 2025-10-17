@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix upstream Pid class deprecation warnings (`#1959 <https://github.com/ros-controls/ros2_controllers/issues/1959>`_)
+* Fix JTC crashing when shutdown while executing (backport `#1960 <https://github.com/ros-controls/ros2_controllers/issues/1960>`_) (`#1962 <https://github.com/ros-controls/ros2_controllers/issues/1962>`_)
+* Remove unused `get_state_msg` method (backport `#1949 <https://github.com/ros-controls/ros2_controllers/issues/1949>`_) (`#1950 <https://github.com/ros-controls/ros2_controllers/issues/1950>`_)
+* Don't use `msg\_` field of realtime publisher (backport `#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_) (`#1948 <https://github.com/ros-controls/ros2_controllers/issues/1948>`_)
+* Contributors: Christoph Fröhlich, mergify[bot]
+
 4.33.0 (2025-10-03)
 -------------------
 * Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
