@@ -2,8 +2,8 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.33.1 (2025-10-17)
+-------------------
 * Fix upstream Pid class deprecation warnings (`#1959 <https://github.com/ros-controls/ros2_controllers/issues/1959>`_)
 * Contributors: Christoph Fröhlich
 

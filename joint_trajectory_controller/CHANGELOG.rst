@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.33.1 (2025-10-17)
+-------------------
 * Fix upstream Pid class deprecation warnings (`#1959 <https://github.com/ros-controls/ros2_controllers/issues/1959>`_)
 * Fix JTC crashing when shutdown while executing (backport `#1960 <https://github.com/ros-controls/ros2_controllers/issues/1960>`_) (`#1962 <https://github.com/ros-controls/ros2_controllers/issues/1962>`_)
 * Remove unused `get_state_msg` method (backport `#1949 <https://github.com/ros-controls/ros2_controllers/issues/1949>`_) (`#1950 <https://github.com/ros-controls/ros2_controllers/issues/1950>`_)
