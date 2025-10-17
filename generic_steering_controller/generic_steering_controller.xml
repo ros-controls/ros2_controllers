@@ -1,0 +1,10 @@
+<library path="generic_steering_controller">
+  <class
+      name="generic_steering_controller/GenericSteeringController"
+      type="generic_steering_controller::GenericSteeringController"
+    base_class_type="controller_interface::ChainableControllerInterface">
+             <description>
+      Generic, plugin-based steering controller for arbitrary kinematics.
+    </description>
+  </class>
+</library>
