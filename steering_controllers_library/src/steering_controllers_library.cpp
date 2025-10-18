@@ -45,15 +45,6 @@ void reset_controller_reference_msg(
 }
 
 void reset_controller_reference_msg(
-  const std::shared_ptr<ControllerSteeringReferenceMsg> & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
-{
-  msg->header.stamp = node->now();
-  msg->linear_velocity = std::numeric_limits<double>::quiet_NaN();
-  msg->steering_angle = std::numeric_limits<double>::quiet_NaN();
-}
-
-void reset_controller_reference_msg(
   ControllerSteeringReferenceMsg & msg,
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
@@ -646,10 +637,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
     const auto timeout =
       age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
-
-    // store (for open loop odometry) and set commands
-    last_linear_velocity_ = timeout ? 0.0 : reference_interfaces_[0];
-    last_angular_velocity_ = timeout ? 0.0 : reference_interfaces_[1];
 
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,

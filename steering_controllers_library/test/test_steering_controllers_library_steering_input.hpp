@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Stogl Robotics Consulting UG (haftungsbeschränkt)
+// Copyright (c) 2025, FaSTTUBe - Formula Student Team TU Berlin
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -331,7 +331,6 @@ protected:
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
-  std::string preceeding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;

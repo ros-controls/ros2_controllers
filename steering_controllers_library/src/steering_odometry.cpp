@@ -182,21 +182,24 @@ bool SteeringOdometry::update_from_velocity(
 
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
-  const double angular_velocity = std::tan(steer_pos_) * linear_velocity / wheel_base_;
+  const double angular_velocity =
+    convert_steering_angle_to_angular_velocity(linear_velocity, steer_pos_);
 
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
 void SteeringOdometry::update_open_loop(
-  const double v_bx, const double omega_bz, const double dt, const bool use_twist_input)
+  const double v_bx, const double last_angular_command_, const double dt,
+  const bool use_twist_input)
 {
   /// Save last linear and angular velocity:
   linear_ = v_bx;
-  angular_ =
-    use_twist_input ? omega_bz : convert_steering_angle_to_angular_velocity(v_bx, omega_bz);
+  angular_ = use_twist_input
+               ? last_angular_command_
+               : convert_steering_angle_to_angular_velocity(v_bx, last_angular_command_);
 
   /// Integrate odometry:
-  integrate_fk(v_bx, omega_bz, dt);
+  integrate_fk(v_bx, last_angular_command_, dt);
 }
 
 void SteeringOdometry::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
