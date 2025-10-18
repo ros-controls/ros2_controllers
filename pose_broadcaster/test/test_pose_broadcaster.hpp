@@ -42,17 +42,27 @@ protected:
   std::array<double, 7> pose_values_ = {
     {1.1, 2.2, 3.3, 0.39190382, 0.20056212, 0.53197575, 0.72331744}};
 
-  hardware_interface::StateInterface pose_position_x_{pose_name_, "position.x", &pose_values_[0]};
-  hardware_interface::StateInterface pose_position_y_{pose_name_, "position.x", &pose_values_[1]};
-  hardware_interface::StateInterface pose_position_z_{pose_name_, "position.x", &pose_values_[2]};
-  hardware_interface::StateInterface pose_orientation_x_{
-    pose_name_, "orientation.x", &pose_values_[3]};
-  hardware_interface::StateInterface pose_orientation_y_{
-    pose_name_, "orientation.y", &pose_values_[4]};
-  hardware_interface::StateInterface pose_orientation_z_{
-    pose_name_, "orientation.z", &pose_values_[5]};
-  hardware_interface::StateInterface pose_orientation_w_{
-    pose_name_, "orientation.w", &pose_values_[6]};
+  hardware_interface::StateInterface::SharedPtr pose_position_x_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "position.x", &pose_values_[0]);
+  hardware_interface::StateInterface::SharedPtr pose_position_y_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "position.y", &pose_values_[1]);
+  hardware_interface::StateInterface::SharedPtr pose_position_z_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "position.z", &pose_values_[2]);
+  hardware_interface::StateInterface::SharedPtr pose_orientation_x_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "orientation.x", &pose_values_[3]);
+  hardware_interface::StateInterface::SharedPtr pose_orientation_y_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "orientation.y", &pose_values_[4]);
+  hardware_interface::StateInterface::SharedPtr pose_orientation_z_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "orientation.z", &pose_values_[5]);
+  hardware_interface::StateInterface::SharedPtr pose_orientation_w_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      pose_name_, "orientation.w", &pose_values_[6]);
 
   std::unique_ptr<PoseBroadcaster> pose_broadcaster_;
 

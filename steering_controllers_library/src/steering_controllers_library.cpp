@@ -308,13 +308,12 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  rt_odom_state_publisher_->lock();
-  rt_odom_state_publisher_->msg_.header.stamp = get_node()->now();
-  rt_odom_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  rt_odom_state_publisher_->msg_.child_frame_id = params_.base_frame_id;
-  rt_odom_state_publisher_->msg_.pose.pose.position.z = 0;
+  odom_state_msg_.header.stamp = get_node()->now();
+  odom_state_msg_.header.frame_id = params_.odom_frame_id;
+  odom_state_msg_.child_frame_id = params_.base_frame_id;
+  odom_state_msg_.pose.pose.position.z = 0;
 
-  auto & covariance = rt_odom_state_publisher_->msg_.twist.covariance;
+  auto & covariance = odom_state_msg_.twist.covariance;
   constexpr size_t NUM_DIMENSIONS = 6;
   for (size_t index = 0; index < 6; ++index)
   {
@@ -323,7 +322,6 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
     covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
   }
-  rt_odom_state_publisher_->unlock();
 
   try
   {
@@ -341,13 +339,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  rt_tf_odom_state_publisher_->lock();
-  rt_tf_odom_state_publisher_->msg_.transforms.resize(1);
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.stamp = get_node()->now();
-  rt_tf_odom_state_publisher_->msg_.transforms[0].header.frame_id = params_.odom_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].child_frame_id = params_.base_frame_id;
-  rt_tf_odom_state_publisher_->msg_.transforms[0].transform.translation.z = 0.0;
-  rt_tf_odom_state_publisher_->unlock();
+  tf_odom_state_msg_.transforms.resize(1);
+  tf_odom_state_msg_.transforms[0].header.stamp = get_node()->now();
+  tf_odom_state_msg_.transforms[0].header.frame_id = params_.odom_frame_id;
+  tf_odom_state_msg_.transforms[0].child_frame_id = params_.base_frame_id;
+  tf_odom_state_msg_.transforms[0].transform.translation.z = 0.0;
 
   try
   {
@@ -365,10 +361,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  controller_state_publisher_->lock();
-  controller_state_publisher_->msg_.header.stamp = get_node()->now();
-  controller_state_publisher_->msg_.header.frame_id = params_.odom_frame_id;
-  controller_state_publisher_->unlock();
+  controller_state_msg_.header.stamp = get_node()->now();
+  controller_state_msg_.header.frame_id = params_.odom_frame_id;
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -700,38 +694,35 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   orientation.setRPY(0.0, 0.0, odometry_.get_heading());
 
   // Populate odom message and publish
-  if (rt_odom_state_publisher_->trylock())
+  if (rt_odom_state_publisher_)
   {
-    rt_odom_state_publisher_->msg_.header.stamp = time;
-    rt_odom_state_publisher_->msg_.pose.pose.position.x = odometry_.get_x();
-    rt_odom_state_publisher_->msg_.pose.pose.position.y = odometry_.get_y();
-    rt_odom_state_publisher_->msg_.pose.pose.orientation = tf2::toMsg(orientation);
-    rt_odom_state_publisher_->msg_.twist.twist.linear.x = odometry_.get_linear();
-    rt_odom_state_publisher_->msg_.twist.twist.angular.z = odometry_.get_angular();
-    rt_odom_state_publisher_->unlockAndPublish();
+    odom_state_msg_.header.stamp = time;
+    odom_state_msg_.pose.pose.position.x = odometry_.get_x();
+    odom_state_msg_.pose.pose.position.y = odometry_.get_y();
+    odom_state_msg_.pose.pose.orientation = tf2::toMsg(orientation);
+    odom_state_msg_.twist.twist.linear.x = odometry_.get_linear();
+    odom_state_msg_.twist.twist.angular.z = odometry_.get_angular();
+    rt_odom_state_publisher_->try_publish(odom_state_msg_);
   }
 
   // Publish tf /odom frame
-  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_->trylock())
+  if (params_.enable_odom_tf && rt_tf_odom_state_publisher_)
   {
-    rt_tf_odom_state_publisher_->msg_.transforms.front().header.stamp = time;
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.x =
-      odometry_.get_x();
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.translation.y =
-      odometry_.get_y();
-    rt_tf_odom_state_publisher_->msg_.transforms.front().transform.rotation =
-      tf2::toMsg(orientation);
-    rt_tf_odom_state_publisher_->unlockAndPublish();
+    tf_odom_state_msg_.transforms.front().header.stamp = time;
+    tf_odom_state_msg_.transforms.front().transform.translation.x = odometry_.get_x();
+    tf_odom_state_msg_.transforms.front().transform.translation.y = odometry_.get_y();
+    tf_odom_state_msg_.transforms.front().transform.rotation = tf2::toMsg(orientation);
+    rt_tf_odom_state_publisher_->try_publish(tf_odom_state_msg_);
   }
 
-  if (controller_state_publisher_->trylock())
+  if (controller_state_publisher_)
   {
-    controller_state_publisher_->msg_.header.stamp = time;
-    controller_state_publisher_->msg_.traction_wheels_position.clear();
-    controller_state_publisher_->msg_.traction_wheels_velocity.clear();
-    controller_state_publisher_->msg_.traction_command.clear();
-    controller_state_publisher_->msg_.steer_positions.clear();
-    controller_state_publisher_->msg_.steering_angle_command.clear();
+    controller_state_msg_.header.stamp = time;
+    controller_state_msg_.traction_wheels_position.clear();
+    controller_state_msg_.traction_wheels_velocity.clear();
+    controller_state_msg_.traction_command.clear();
+    controller_state_msg_.steer_positions.clear();
+    controller_state_msg_.steering_angle_command.clear();
 
     auto number_of_traction_wheels = params_.traction_joints_names.size();
     auto number_of_steering_wheels = params_.steering_joints_names.size();
@@ -748,7 +739,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         }
         else
         {
-          controller_state_publisher_->msg_.traction_wheels_position.push_back(
+          controller_state_msg_.traction_wheels_position.push_back(
             position_state_interface_op.value());
         }
       }
@@ -762,7 +753,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         }
         else
         {
-          controller_state_publisher_->msg_.traction_wheels_velocity.push_back(
+          controller_state_msg_.traction_wheels_velocity.push_back(
             velocity_state_interface_op.value());
         }
       }
@@ -774,8 +765,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       }
       else
       {
-        controller_state_publisher_->msg_.traction_command.push_back(
-          velocity_command_interface_op.value());
+        controller_state_msg_.traction_command.push_back(velocity_command_interface_op.value());
       }
     }
 
@@ -795,14 +785,12 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       }
       else
       {
-        controller_state_publisher_->msg_.steer_positions.push_back(
-          state_interface_value_op.value());
-        controller_state_publisher_->msg_.steering_angle_command.push_back(
-          command_interface_value_op.value());
+        controller_state_msg_.steer_positions.push_back(state_interface_value_op.value());
+        controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
 
-    controller_state_publisher_->unlockAndPublish();
+    controller_state_publisher_->try_publish(controller_state_msg_);
   }
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();

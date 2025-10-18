@@ -3,7 +3,7 @@ name: Jazzy Semi-Binary Build
 
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request: &event
     branches:
       - jazzy
       - '*feature*'
@@ -19,20 +19,7 @@ on:
       - '**/CMakeLists.txt'
       - 'ros2_controllers.jazzy.repos'
       - '**.xml'
-  push:
-    branches:
-      - jazzy
-    paths:
-      - '**.hpp'
-      - '**.h'
-      - '**.cpp'
-      - '**.py'
-      - '**.yaml'
-      - '.github/workflows/jazzy-semi-binary-build.yml'
-      - '**/package.xml'
-      - '**/CMakeLists.txt'
-      - 'ros2_controllers.jazzy.repos'
-      - '**.xml'
+  push: *event
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * MON-FRI'
