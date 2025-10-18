@@ -124,7 +124,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Steering configuration requires exactly two traction joints, but %zu were provided",
+        "Ackermann configuration requires exactly two traction joints, but %zu were provided",
         params_.traction_joints_names.size());
       return controller_interface::CallbackReturn::ERROR;
     }
@@ -158,7 +158,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "Steering configuration requires exactly two steering joints, but %zu were provided",
+        "Ackermann configuration requires exactly two steering joints, but %zu were provided",
         params_.steering_joints_names.size());
       return controller_interface::CallbackReturn::ERROR;
     }
@@ -199,7 +199,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Steering configuration requires exactly two traction joints, but %zu state interface "
+          "Ackermann configuration requires exactly two traction joints, but %zu state interface "
           "names were provided",
           params_.traction_joints_state_names.size());
         return controller_interface::CallbackReturn::ERROR;
@@ -244,7 +244,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       {
         RCLCPP_ERROR(
           get_node()->get_logger(),
-          "Steering configuration requires exactly two steering joints, but %zu state interface "
+          "Ackermann configuration requires exactly two steering joints, but %zu state interface "
           "names were provided",
           params_.steering_joints_state_names.size());
         return controller_interface::CallbackReturn::ERROR;
