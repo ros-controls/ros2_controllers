@@ -296,9 +296,9 @@ bool GravityCompensationPDController::on_set_chained_mode(bool /* chained_mode *
 
 void GravityCompensationPDController::compute_control_law_()
 {
-  Eigen::VectorXd current_positions = Eigen::Map<const Eigen::VectorXd>(
+  const Eigen::Map<const Eigen::VectorXd> current_positions(
     robot_joint_state_.positions.data(), robot_joint_state_.positions.size());
-  Eigen::VectorXd current_velocities = Eigen::Map<const Eigen::VectorXd>(
+  const Eigen::Map<const Eigen::VectorXd> current_velocities(
     robot_joint_state_.velocities.data(), robot_joint_state_.velocities.size());
 
   for (std::size_t i = 0; i < num_joints_; i++)
