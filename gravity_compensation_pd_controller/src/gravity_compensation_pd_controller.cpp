@@ -311,6 +311,10 @@ void GravityCompensationPDController::compute_control_law_()
   {
     eigen_effort_command_ = dynamics_solver_->getGravityVector(current_positions);
   }
+  else
+  {
+    eigen_effort_command_.setZero();
+  }
 
   eigen_effort_command_ += Kp_ * position_error_ - Kd_ * current_velocities;
 
