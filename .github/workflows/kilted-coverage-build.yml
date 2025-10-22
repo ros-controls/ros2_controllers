@@ -1,21 +1,21 @@
-name: Coverage Build - Jazzy
+name: Coverage Build - Kilted
 on:
   workflow_dispatch:
   pull_request: &event
     branches:
-      - jazzy
+      - kilted
     paths:
       - '**.hpp'
       - '**.h'
       - '**.cpp'
-      - '.github/workflows/jazzy-coverage-build.yml'
+      - '.github/workflows/kilted-coverage-build.yml'
       - '**.yaml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'codecov.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
-      - 'ros2_controllers.jazzy.repos'
+      - 'ros2_controllers.kilted.repos'
   push: *event
 
 concurrency:
@@ -24,8 +24,8 @@ concurrency:
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/heads') }}
 
 jobs:
-  coverage_jazzy:
+  coverage_kilted:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-build-coverage.yml@master
     secrets: inherit
     with:
-      ros_distro: jazzy
+      ros_distro: kilted

@@ -202,11 +202,6 @@ public:
   trajectory_msgs::msg::JointTrajectoryPoint get_state_error() { return state_error_; }
   trajectory_msgs::msg::JointTrajectoryPoint get_current_command() { return command_current_; }
 
-  control_msgs::msg::JointTrajectoryControllerState get_state_msg()
-  {
-    return state_publisher_->get_msg();
-  }
-
   /**
    * a copy of the private member function
    */
