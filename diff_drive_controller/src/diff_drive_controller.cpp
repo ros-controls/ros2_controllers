@@ -250,7 +250,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
         realtime_odometry_publisher_->try_publish(odometry_message_);
       }
 
-      if (params_.enable_odom_tf && realtime_odometry_transform_publisher_->trylock())
+      if (params_.enable_odom_tf && realtime_odometry_transform_publisher_
       {
         auto & transform = odometry_transform_message_.transforms.front();
         transform.header.stamp = time;
