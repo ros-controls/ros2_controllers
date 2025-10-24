@@ -1,33 +1,38 @@
 cmake_minimum_required(VERSION 3.8)
 project(battery_state_broadcaster)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
-endif()
+find_package(ros2_control_cmake REQUIRED)
+set_compiler_options()
+export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   builtin_interfaces
-  control_msgs
   controller_interface
+  hardware_interface
   generate_parameter_library
   pluginlib
+  rclcpp
   rclcpp_lifecycle
   realtime_tools
   sensor_msgs
-  control_msgs
   urdf
 )
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
+add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(battery_state_broadcaster_parameters
   src/battery_state_broadcaster.yaml
 )
 
-add_library(battery_state_broadcaster SHARED
+add_library(
+  battery_state_broadcaster
+  SHARED
   src/battery_state_broadcaster.cpp
 )
 
@@ -40,16 +45,17 @@ target_include_directories(battery_state_broadcaster
 target_link_libraries(battery_state_broadcaster PUBLIC
                       battery_state_broadcaster_parameters
                       controller_interface::controller_interface
+                      hardware_interface::hardware_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       ${sensor_msgs_TARGETS}
-                      ${control_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
 
 
-pluginlib_export_plugin_description_file(controller_interface battery_state_broadcaster.xml)
+pluginlib_export_plugin_description_file(
+  controller_interface battery_state_broadcaster.xml)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
