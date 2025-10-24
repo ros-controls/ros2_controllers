@@ -167,8 +167,14 @@ protected:
 
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
-
-    return controller_->init(controller_name, urdf_, 0, "", node_options);
+    
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = urdf_;
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = node_options;
+    return controller_->init(params);
   }
 
   const std::string controller_name = "test_tricycle_controller";
@@ -201,8 +207,14 @@ protected:
 
 TEST_F(TestTricycleController, init_fails_without_parameters)
 {
-  const auto ret =
-    controller_->init(controller_name, urdf_, 0, "", controller_->define_custom_node_options());
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "controller_name";
+  params.robot_description = urdf_;
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = controller_->define_custom_node_options();
+
+  const auto ret = controller_->init(params);
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 
