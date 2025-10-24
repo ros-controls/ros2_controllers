@@ -1,0 +1,114 @@
+battery_state_broadcaster:
+  state_joints: {
+    type: string_array,
+    description: "List of joints from which battery state interfaces will be read.",
+    read_only: true,
+    default_value: [],
+    validation: {
+      unique<>: null
+    }
+  }
+  interfaces:
+    __map_state_joints:
+      battery_temperature: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read battery temperature [°C] from this joint's state interface (If unmeasured NaN)."
+      }
+      battery_current: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read battery current [A] from this joint's state interface (If unmeasured NaN)."
+      }
+      battery_charge: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read battery charge [Ah] from this joint's state interface (If unmeasured NaN)."
+      }
+      battery_percentage: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read charge level [%] (0.0 to 100.0) from this joint's state interface. If unmeasured, linear percentage is calculated using min and max voltage parameters (if provided), otherwise NaN."
+      }
+      battery_power_supply_status: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read power supply status (e.g., Charging, Full) from this joint's state interface. If unmeasured, status is set to unknown."
+      }
+      battery_power_supply_health: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read power supply health (e.g., Good, Overheat) from this joint's state interface. If unmeasured, health is set to unknown."
+      }
+      battery_present: {
+        type: bool,
+        default_value: false,
+        description: "Whether to read battery presence status (true if battery is present) from this joint's state interface. If unmeasured, the presence will be set to true if any other state interfaces from this joint are available."
+      }
+  __map_state_joints:
+    minimum_voltage: {
+      type: double,
+      default_value: .nan,
+      description: "Minimum battery voltage (used to calculate percentage).",
+      read_only: true,
+    }
+    maximum_voltage: {
+      type: double,
+      default_value: .nan,
+      description: "Maximum battery voltage (used to calculate percentage).",
+      read_only: true,
+    }
+    capacity: {
+      type: double,
+      default_value: .nan,
+      description: "Last known full battery capacity [Ah] (If unmeasured NaN).",
+      read_only: true,
+    }
+    design_capacity: {
+      type: double,
+      default_value: .nan,
+      description: "Design capacity of the battery [Ah] (If unmeasured NaN).",
+      read_only: true,
+    }
+    power_supply_technology: {
+      type: int,
+      default_value: 0,
+      description: "Battery chemistry type as an enum. If unmeasured, the technology is set to unknown.",
+      read_only: true,
+      validation: {
+        bounds<>: [0, 8]
+      }
+    }
+    location: {
+      type: string,
+      default_value: "",
+      description: "Physical location of the battery (e.g., slot number or plug label).",
+      read_only: true,
+    }
+    serial_number: {
+      type: string,
+      default_value: "",
+      description: "Serial number of the battery.",
+      read_only: true,
+    }
+  sensor_name: {
+    type: string,
+    default_value: "",
+    description: "Sensor name of the battery. If provided, the 'voltage' state interface of this sensor will be used to populate the voltage field in the BatteryState message. If this parameter is used, the state joints and interfaces parameters are ignored.",
+    read_only: true,
+  }
+  design_capacity: {
+    type: double,
+    default_value: .nan,
+    description: "Design capacity of the battery [Ah] for the sensor_name mode (If unmeasured NaN).",
+    read_only: true,
+  }
+  power_supply_technology: {
+    type: int,
+    default_value: 0,
+    description: "Battery chemistry type as an enum for the sensor_name mode. If unmeasured, the technology is set to unknown.",
+    read_only: true,
+    validation: {
+      bounds<>: [0, 8]
+    }
+  }
