@@ -132,8 +132,14 @@ public:
 protected:
   void SetUpController(const std::string controller_name = "test_tricycle_steering_controller")
   {
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(
-      controller_->init(controller_name, "", 0, "", controller_->define_custom_node_options()),
+      controller_->init(params),
       controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
