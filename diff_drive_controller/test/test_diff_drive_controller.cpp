@@ -211,7 +211,7 @@ protected:
     params.robot_description = urdf_;
     params.update_rate = 0;
     params.node_namespace = ns;
-    params.node_options = node_options
+    params.node_options = node_options;
     return controller_->init(params);
   }
 
