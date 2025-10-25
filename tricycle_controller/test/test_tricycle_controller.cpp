@@ -167,7 +167,7 @@ protected:
 
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
-    
+
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
     params.robot_description = urdf_;

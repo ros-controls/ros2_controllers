@@ -71,8 +71,7 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  const auto result =
-    controller_->init(params);
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;

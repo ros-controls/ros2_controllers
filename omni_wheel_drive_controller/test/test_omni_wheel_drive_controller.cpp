@@ -33,8 +33,7 @@ TEST_F(OmniWheelDriveControllerTest, init_fails_without_parameters)
   params.node_namespace = "";
   params.node_options = controller_->define_custom_node_options();
 
-  const auto ret =
-    controller_->init(params);
+  const auto ret = controller_->init(params);
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 

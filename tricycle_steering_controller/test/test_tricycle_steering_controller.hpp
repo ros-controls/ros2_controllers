@@ -138,9 +138,7 @@ protected:
     params.update_rate = 0;
     params.node_namespace = "";
     params.node_options = controller_->define_custom_node_options();
-    ASSERT_EQ(
-      controller_->init(params),
-      controller_interface::return_type::OK);
+    ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
     {

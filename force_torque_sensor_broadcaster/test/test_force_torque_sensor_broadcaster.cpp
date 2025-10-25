@@ -60,8 +60,7 @@ void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster(std::string node_name
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = fts_broadcaster_->define_custom_node_options();
-  const auto result =
-    fts_broadcaster_->init(params);
+  const auto result = fts_broadcaster_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;

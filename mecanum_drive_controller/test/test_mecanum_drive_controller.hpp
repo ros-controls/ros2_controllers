@@ -179,8 +179,7 @@ protected:
     params.update_rate = 0;
     params.node_namespace = ns;
     params.node_options = node_options;
-    ASSERT_EQ(controller_->init(params),
-      controller_interface::return_type::OK);
+    ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());

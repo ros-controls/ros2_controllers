@@ -33,9 +33,7 @@ void PoseBroadcasterTest::SetUpPoseBroadcaster()
   params.node_namespace = "";
   params.node_options = pose_broadcaster_->define_custom_node_options();
 
-  ASSERT_EQ(
-    pose_broadcaster_->init(params),
-    controller_interface::return_type::OK);
+  ASSERT_EQ(pose_broadcaster_->init(params), controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(pose_position_x_, nullptr);

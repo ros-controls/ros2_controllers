@@ -501,8 +501,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
   assert_default_command_and_state_values();
   update_controller_loop();
   assert_default_command_and_state_values();
@@ -524,8 +523,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0, 1.0}),
@@ -552,8 +550,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"},
@@ -580,8 +577,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
@@ -610,8 +606,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command = createGpioCommand(
     {"gpio2", "gpio1"}, {createInterfaceValue({"ana.1"}, {30.0}),
@@ -640,8 +635,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command =
     createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0})});
@@ -669,8 +663,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio3"}, {createInterfaceValue({"dig.3", "dig.4"}, {20.0, 25.0}),
@@ -699,8 +692,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   auto command_pub = node->create_publisher<CmdType>(
     std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
@@ -730,8 +722,7 @@ TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurr
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  move_to_activate_state(
-    controller_->init(params));
+  move_to_activate_state(controller_->init(params));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
@@ -816,8 +807,7 @@ TEST_F(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = node_options;
-  const auto result_of_initialization =
-    controller_->init(params);
+  const auto result_of_initialization = controller_->init(params);
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   controller_->assign_interfaces({}, std::move(state_interfaces));

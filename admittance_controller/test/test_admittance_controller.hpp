@@ -166,8 +166,7 @@ protected:
     params.update_rate = 0;
     params.node_namespace = "";
     params.node_options = options;
-    auto result =
-      controller_->init(params);
+    auto result = controller_->init(params);
 
     controller_->export_reference_interfaces();
     assign_interfaces();

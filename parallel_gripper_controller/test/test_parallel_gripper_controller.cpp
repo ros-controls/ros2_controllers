@@ -57,7 +57,7 @@ void GripperControllerTest::SetUpController(
   params.node_namespace = "";
   params.node_options = controller_->define_custom_node_options();
 
-  const auto result =controller_->init(params);
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, expected_result);
 
   std::vector<LoanedCommandInterface> command_ifs;
