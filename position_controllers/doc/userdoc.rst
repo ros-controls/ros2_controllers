@@ -12,6 +12,10 @@ The package contains the following controllers:
 position_controllers/JointGroupPositionController
 -------------------------------------------------
 
+.. warning::
+
+  ``position_controllers/JointGroupPositionController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``position``.
+
 This is specialization of the :ref:`forward_command_controller <forward_command_controller_userdoc>` that works using the "position" joint interface.
 
 
