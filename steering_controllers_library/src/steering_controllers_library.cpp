@@ -631,13 +631,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
-    const auto age_of_last_command = params_.use_twist_input
-                                       ? time - current_ref_twist_.header.stamp
-                                       : time - current_ref_steering_.header.stamp;
-
-    const auto timeout =
-      age_of_last_command > ref_timeout_ && ref_timeout_ != rclcpp::Duration::from_seconds(0);
-
     auto [traction_commands, steering_commands] = odometry_.get_commands(
       reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached, params_.use_twist_input);
