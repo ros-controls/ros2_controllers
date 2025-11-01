@@ -1,0 +1,10 @@
+<library path="mock_kinematic_plugin">
+  <class
+      name="mock_kinematic_plugin/MockKinematicModel"
+      type="mock_kinematic_plugin::MockKinematicModel"
+      base_class_type="kinematic_model::KinematicModelBase">
+    <description>
+      Minimal mock kinematic model for testing.
+    </description>
+  </class>
+</library>
