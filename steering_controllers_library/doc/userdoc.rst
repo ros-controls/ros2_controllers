@@ -86,8 +86,8 @@ Subscribers
 Used when controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is activated (``twist_input == true``):
 - ``<controller_name>/reference``  [`geometry_msgs/msg/TwistStamped <twist_msg_>`_]
 In this configuration the controller uses :
-- **Linear Velocity (`linear`)**: Represents the linear speed of the robot (in meters per second, m/s).
-- **Angular Velocity (`angular`)**: Represents the angular speed of the robot (in meters per second, m/s).
+- **Linear Velocity (`linear`)**: Represents the linear velocity of the robot (in meters per second, m/s).
+- **Angular Velocity (`angular`)**: Represents the angular velocity of the robot (in meters per second, m/s).
 When the controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is not activated (``twist_input == false``):
 - ``<controller_name>/reference``  [`control_msgs/msg/SteeringControllerCommand <steering_controller_command_msg_>`_]
 In this configuration the controller uses :
