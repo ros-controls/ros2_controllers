@@ -78,11 +78,13 @@ public:
   void SetUp() override
   {
     controller_ = std::make_unique<CtrlType>();
-    ASSERT_EQ(
-      controller_->init(
-        "test_motion_primitives_forward_controller", "", 0, "",
-        controller_->define_custom_node_options()),
-      controller_interface::return_type::OK);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = "test_motion_primitives_forward_controller";
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = controller_->define_custom_node_options();
+    ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     node_ = std::make_shared<rclcpp::Node>("test_node");
 

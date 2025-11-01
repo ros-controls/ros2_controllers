@@ -54,8 +54,13 @@ void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullp
 
 void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster(std::string node_name)
 {
-  const auto result =
-    fts_broadcaster_->init(node_name, "", 0, "", fts_broadcaster_->define_custom_node_options());
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = node_name;
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = fts_broadcaster_->define_custom_node_options();
+  const auto result = fts_broadcaster_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
