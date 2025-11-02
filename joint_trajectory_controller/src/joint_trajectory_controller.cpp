@@ -237,6 +237,7 @@ controller_interface::return_type JointTrajectoryController::update(
     const bool valid_point = current_trajectory_->sample(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
+
     state_current_.time_from_start = time - current_trajectory_->time_from_start();
 
     if (valid_point)
