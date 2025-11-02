@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>parallel_gripper_controller</name>
-  <version>5.5.0</version>
+  <version>5.8.0</version>
   <description>The parallel_gripper_controller package</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

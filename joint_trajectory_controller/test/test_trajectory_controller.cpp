@@ -163,10 +163,9 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
 
-  auto state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  DeactivateTrajectoryController();
 
-  state = traj_controller_->get_node()->cleanup();
+  auto state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   executor.cancel();
@@ -237,8 +236,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   // deactivate
   std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
-  state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  DeactivateTrajectoryController();
 
   // it should be holding the current point
   expectHoldingPointDeactivated(deactivated_positions);
@@ -607,8 +605,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
@@ -699,8 +695,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};

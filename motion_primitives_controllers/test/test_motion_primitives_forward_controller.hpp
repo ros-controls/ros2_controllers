@@ -32,7 +32,7 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
+#include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
@@ -55,7 +55,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 
 // subclassing and friending so we can access member variables
 class TestableMotionPrimitivesForwardController
-: public motion_primitives_forward_controller::MotionPrimitivesForwardController
+: public motion_primitives_controllers::MotionPrimitivesForwardController
 {
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
@@ -66,7 +66,7 @@ public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    return motion_primitives_forward_controller::MotionPrimitivesForwardController::on_configure(
+    return motion_primitives_controllers::MotionPrimitivesForwardController::on_configure(
       previous_state);
   }
 };
@@ -113,34 +113,34 @@ public:
 protected:
   void SetUpController()
   {
-    std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
 
     command_itfs_.clear();
     command_itfs_.reserve(command_values_.size());
-    command_ifs.reserve(command_values_.size());
+    loaned_command_ifs.reserve(command_values_.size());
 
     for (size_t i = 0; i < command_values_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
+        std::make_shared<hardware_interface::CommandInterface>(
           interface_namespace_, command_interface_names_[i], &command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
     state_itfs_.clear();
     state_itfs_.reserve(state_values_.size());
-    state_ifs.reserve(state_values_.size());
+    loaned_state_ifs.reserve(state_values_.size());
 
     for (size_t i = 0; i < state_values_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
+        std::make_shared<hardware_interface::StateInterface>(
           interface_namespace_, state_interface_names_[i], &state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void send_single_motion_sequence_goal(
@@ -157,8 +157,7 @@ protected:
 
     auto goal_msg = ExecuteMotion::Goal();
     MotionPrimitive primitive;
-    primitive.type =
-      static_cast<uint8_t>(motion_primitives_forward_controller::MotionType::LINEAR_JOINT);
+    primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
     primitive.joint_positions = joint_positions;
     primitive.blend_radius = blend_radius;
 
@@ -199,15 +198,15 @@ protected:
 
   std::string interface_namespace_ = "motion_primitive";
   std::array<double, 2> state_values_ = {
-    {static_cast<uint8_t>(motion_primitives_forward_controller::ExecutionState::IDLE),
-     static_cast<uint8_t>(motion_primitives_forward_controller::ReadyForNewPrimitive::READY)}};
+    {static_cast<uint8_t>(motion_primitives_controllers::ExecutionState::IDLE),
+     static_cast<uint8_t>(motion_primitives_controllers::ReadyForNewPrimitive::READY)}};
   std::array<double, 25> command_values_ = {
     {101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
      101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
      101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101}};
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   std::unique_ptr<TestableMotionPrimitivesForwardController> controller_;
   rclcpp_action::Client<ExecuteMotion>::SharedPtr action_client_;
