@@ -791,7 +791,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     for (size_t i = 0; i < command_joint_names_.size(); i++)
     {
       RCLCPP_DEBUG(
-        logger, "Command joint %lu: '%s' maps to joint %lu: '%s'.", i,
+        logger, "Command joint %zu: '%s' maps to joint %zu: '%s'.", i,
         command_joint_names_[i].c_str(), map_cmd_to_joints_[i],
         params_.joints.at(map_cmd_to_joints_[i]).c_str());
     }
