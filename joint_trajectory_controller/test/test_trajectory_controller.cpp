@@ -468,18 +468,22 @@ TEST_F(TrajectoryControllerTest, time_from_start_populated)
   // schedule a single waypoint at 100ms:
   builtin_interfaces::msg::Duration tfs;
   tfs.sec = 0;
-  tfs.nanosec = 100000000;
+  tfs.nanosec = 100000000u;
   publish(tfs, {INITIAL_POS_JOINTS}, rclcpp::Time(0));
   traj_controller_->wait_for_trajectory(executor);
 
-  updateController();
+  // update for 0.2s
+  updateController(rclcpp::Duration::from_seconds(0.2));
   // give the publish timer one more spin
   executor.spin_some();
 
   auto state = getState();
   ASSERT_TRUE(state);
   EXPECT_EQ(state->feedback.time_from_start.sec, 0u);
-  EXPECT_EQ(state->feedback.time_from_start.nanosec, 100000000u);
+  EXPECT_EQ(state->reference.time_from_start.sec, 0u);
+  // should be around 0.2s
+  EXPECT_NEAR(state->feedback.time_from_start.nanosec, 200000000u, 10000000u);
+  EXPECT_NEAR(state->reference.time_from_start.nanosec, 200000000u, 10000000u);
 }
 
 /**
