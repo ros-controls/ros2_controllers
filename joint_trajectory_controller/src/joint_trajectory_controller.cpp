@@ -219,7 +219,8 @@ controller_interface::return_type JointTrajectoryController::update(
     TrajectoryPointConstIter start_segment_itr, end_segment_itr;
     const bool valid_point = traj_external_point_ptr_->sample(
       time, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
-    state_current_.time_from_start = time - traj_external_point_ptr_->time_from_start();
+    state_desired_.time_from_start = state_current_.time_from_start =
+      time - traj_external_point_ptr_->time_from_start();
 
     if (valid_point)
     {

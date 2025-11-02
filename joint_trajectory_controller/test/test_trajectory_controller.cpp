@@ -418,14 +418,14 @@ TEST_F(TrajectoryControllerTest, time_from_start_populated)
 
   auto state = getState();
   ASSERT_TRUE(state);
-  EXPECT_EQ(state->reference.time_from_start.sec, 0u);
-  EXPECT_EQ(state->reference.time_from_start.nanosec, 100000000u);
   // should be around 0.2s, but is 0.18s
+  EXPECT_EQ(state->reference.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->reference.time_from_start.nanosec, 200000000u, 20000000u);
   EXPECT_EQ(state->feedback.time_from_start.sec, 0u);
   EXPECT_NEAR(state->feedback.time_from_start.nanosec, 200000000u, 20000000u);
   // legacy
   EXPECT_EQ(state->desired.time_from_start.sec, 0u);
-  EXPECT_EQ(state->desired.time_from_start.nanosec, 100000000u);
+  EXPECT_NEAR(state->desired.time_from_start.nanosec, 200000000u, 20000000u);
   EXPECT_EQ(state->actual.time_from_start.sec, 0u);
   EXPECT_NEAR(state->actual.time_from_start.nanosec, 200000000u, 20000000u);
 }
