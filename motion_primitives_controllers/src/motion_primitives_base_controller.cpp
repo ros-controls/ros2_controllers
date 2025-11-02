@@ -120,7 +120,7 @@ void MotionPrimitivesBaseController::reset_command_interfaces()
   {
     if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
     {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to reset command interface %ld", i);
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to reset command interface %zu", i);
     }
   }
 }
