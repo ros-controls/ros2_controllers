@@ -117,7 +117,7 @@ Joint trajectory messages allow to specify the time at which a new trajectory sh
 
 .. warning::
 
-  As of now, this functionality is not ported to ROS 2, see `this issue <https://github.com/ros-controls/ros2_controllers/issues/84#issuecomment-2940787997>`__ for more information.
+  As of now, this functionality is not ported to ROS 2, see `this issue <https://github.com/ros-controls/ros2_controllers/issues/84>`__ for more information.
   The current implementation just forgets the old trajectory.
 
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
