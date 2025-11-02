@@ -1191,15 +1191,9 @@ void JointTrajectoryController::publish_state(
     state_publisher_->msg_.reference.velocities = desired_state.velocities;
     state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
     state_publisher_->msg_.reference.time_from_start = desired_state.time_from_start;
+    state_publisher_->msg_.feedback.time_from_start = current_state.time_from_start;
     state_publisher_->msg_.feedback.positions = current_state.positions;
-    // DESIRED and ACTUAL are deprecated in the message but we are still
-    // reporting on them
-    state_publisher_legacy_->msg_.desired.positions = desired_state.positions;
-    state_publisher_legacy_->msg_.desired.velocities = desired_state.velocities;
-    state_publisher_legacy_->msg_.desired.accelerations = desired_state.accelerations;
-    state_publisher_legacy_->msg_.actual.positions = current_state.positions;
     state_publisher_->msg_.error.positions = state_error.positions;
-    state_publisher_->msg_.feedback.time_from_start = desired_state.time_from_start;
     if (has_velocity_state_interface_)
     {
       state_publisher_->msg_.feedback.velocities = current_state.velocities;
@@ -1210,6 +1204,24 @@ void JointTrajectoryController::publish_state(
       state_publisher_->msg_.feedback.accelerations = current_state.accelerations;
       state_publisher_->msg_.error.accelerations = state_error.accelerations;
     }
+
+    // DESIRED and ACTUAL are deprecated in the message but we are still
+    // reporting on them
+    state_publisher_->msg_.desired.time_from_start = desired_state.time_from_start;
+    state_publisher_->msg_.desired.positions = desired_state.positions;
+    state_publisher_->msg_.desired.velocities = desired_state.velocities;
+    state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
+    state_publisher_->msg_.actual.time_from_start = current_state.time_from_start;
+    state_publisher_->msg_.actual.positions = current_state.positions;
+    if (has_velocity_state_interface_)
+    {
+      state_publisher_->msg_.actual.velocities = current_state.velocities;
+    }
+    if (has_acceleration_state_interface_)
+    {
+      state_publisher_->msg_.actual.accelerations = current_state.accelerations;
+    }
+
     if (read_commands_from_command_interfaces(command_current_))
     {
       state_publisher_->msg_.output = command_current_;
