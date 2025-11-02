@@ -459,6 +459,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency_command_jo
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
 }
+
 TEST_F(TrajectoryControllerTest, time_from_start_populated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
