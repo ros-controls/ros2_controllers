@@ -34,6 +34,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
+#include "rclcpp/node_interfaces/node_interfaces.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
@@ -215,7 +216,10 @@ protected:
 
   void broadcast_tfs()
   {
-    static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
+    static tf2_ros::TransformBroadcaster br(
+      rclcpp::node_interfaces::NodeInterfaces(
+        test_broadcaster_node_->get_node_parameters_interface(),
+        test_broadcaster_node_->get_node_topics_interface()));
     geometry_msgs::msg::TransformStamped transform_stamped;
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();
