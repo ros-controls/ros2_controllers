@@ -203,11 +203,14 @@ controller_interface::return_type JointTrajectoryController::update(
     // Sample expected state from the trajectory
     current_trajectory_->sample(
       traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
+    state_desired_.time_from_start = traj_time_ - current_trajectory_->time_from_start();
 
     // Sample setpoint for next control cycle
     const bool valid_point = current_trajectory_->sample(
       traj_time_ + update_period_, interpolation_method_, command_next_, start_segment_itr,
       end_segment_itr, false);
+
+    state_current_.time_from_start = time - current_trajectory_->time_from_start();
 
     if (valid_point)
     {
