@@ -199,7 +199,7 @@ public:
 
   std::unique_ptr<FriendGpioCommandController> controller_;
 
-  controller_interface::ControllerInterfaceParams create_default_params(
+  controller_interface::ControllerInterfaceParams create_ctrl_params(
     const rclcpp::NodeOptions & node_options, const std::string & robot_description = "")
   {
     controller_interface::ControllerInterfaceParams params;
@@ -232,7 +232,7 @@ public:
 
 TEST_F(GpioCommandControllerTestSuite, WhenNoParametersAreSetInitShouldFail)
 {
-  const auto result = controller_->init(create_default_params(
+  const auto result = controller_->init(create_ctrl_params(
     controller_->define_custom_node_options(), ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
@@ -241,7 +241,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenGpiosParameterIsEmptyInitShouldFail)
 {
   const auto node_options =
     create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
@@ -252,7 +252,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenInterfacesParameterForGpioIsEmptyInit
     {{"gpios", std::vector<std::string>{"gpio1"}},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
@@ -261,7 +261,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenInterfacesParameterForGpioIsNotSetIni
 {
   const auto node_options =
     create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{"gpio1"}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
@@ -277,7 +277,7 @@ TEST_F(
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
 
@@ -290,7 +290,7 @@ TEST_F(
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{}}});
   const auto result = controller_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
@@ -304,7 +304,7 @@ TEST_F(
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{}}});
   const auto result =
-    controller_->init(create_default_params(node_options, minimal_robot_urdf_with_gpio));
+    controller_->init(create_ctrl_params(node_options, minimal_robot_urdf_with_gpio));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -318,7 +318,7 @@ TEST_F(
     {{"gpios", std::vector<std::string>{"gpio1"}},
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
@@ -332,7 +332,7 @@ TEST_F(GpioCommandControllerTestSuite, ConfigureAndActivateParamsSuccess)
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -350,7 +350,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -378,7 +378,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -407,7 +407,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  const auto result = controller_->init(create_default_params(node_options));
+  const auto result = controller_->init(create_ctrl_params(node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
@@ -437,7 +437,7 @@ TEST_F(
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
   assert_default_command_and_state_values();
   update_controller_loop();
   assert_default_command_and_state_values();
@@ -453,7 +453,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0, 1.0}),
@@ -474,7 +474,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"},
@@ -495,7 +495,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio2"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0}),
@@ -518,7 +518,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command = createGpioCommand(
     {"gpio2", "gpio1"}, {createInterfaceValue({"ana.1"}, {30.0}),
@@ -541,7 +541,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command =
     createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1", "dig.2"}, {0.0, 1.0})});
@@ -563,7 +563,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   const auto command = createGpioCommand(
     {"gpio1", "gpio3"}, {createInterfaceValue({"dig.3", "dig.4"}, {20.0, 25.0}),
@@ -586,7 +586,7 @@ TEST_F(
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   auto command_pub = node->create_publisher<CmdType>(
     std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
@@ -610,7 +610,7 @@ TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurr
      {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
-  move_to_activate_state(controller_->init(create_default_params(node_options)));
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
 
   auto subscription = node->create_subscription<StateType>(
     std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
@@ -650,7 +650,7 @@ TEST_F(
   state_interfaces.emplace_back(gpio_2_ana_state, nullptr);
 
   const auto result_of_initialization =
-    controller_->init(create_default_params(node_options, minimal_robot_urdf_with_gpio));
+    controller_->init(create_ctrl_params(node_options, minimal_robot_urdf_with_gpio));
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
@@ -684,7 +684,7 @@ TEST_F(
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(gpio_1_1_dig_state, nullptr);
   state_interfaces.emplace_back(gpio_2_ana_state, nullptr);
-  const auto result_of_initialization = controller_->init(create_default_params(node_options));
+  const auto result_of_initialization = controller_->init(create_ctrl_params(node_options));
   ASSERT_EQ(result_of_initialization, controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   controller_->assign_interfaces({}, std::move(state_interfaces));

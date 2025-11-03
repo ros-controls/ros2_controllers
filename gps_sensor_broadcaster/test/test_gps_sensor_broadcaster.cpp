@@ -105,7 +105,7 @@ public:
     return gps_msg;
   }
 
-  controller_interface::ControllerInterfaceParams create_default_params(
+  controller_interface::ControllerInterfaceParams create_ctrl_params(
     const rclcpp::NodeOptions & node_options, const std::string & robot_description = "")
   {
     controller_interface::ControllerInterfaceParams params;
@@ -152,7 +152,7 @@ protected:
 
 TEST_F(GPSSensorBroadcasterTest, whenNoParamsAreSetThenInitShouldFail)
 {
-  const auto result = gps_broadcaster_->init(create_default_params(
+  const auto result = gps_broadcaster_->init(create_ctrl_params(
     gps_broadcaster_->define_custom_node_options(), ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
@@ -161,7 +161,7 @@ TEST_F(GPSSensorBroadcasterTest, whenOnlySensorNameIsSetThenInitShouldFail)
 {
   const auto node_options = create_node_options_with_overriden_parameters({sensor_name_param_});
   const auto result = gps_broadcaster_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
@@ -172,7 +172,7 @@ TEST_F(
   const auto node_options =
     create_node_options_with_overriden_parameters({sensor_name_param_, frame_id_});
   const auto result = gps_broadcaster_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -186,7 +186,7 @@ TEST_F(
   const auto node_options =
     create_node_options_with_overriden_parameters({sensor_name_param_, frame_id_});
   const auto result = gps_broadcaster_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -217,7 +217,7 @@ TEST_F(
      {"static_position_covariance",
       std::vector<double>{static_covariance.begin(), static_covariance.end()}}});
   const auto result = gps_broadcaster_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -245,7 +245,7 @@ TEST_F(
     {sensor_name_param_, frame_id_, {"read_covariance_from_interface", true}});
 
   const auto result = gps_broadcaster_->init(
-    create_default_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
