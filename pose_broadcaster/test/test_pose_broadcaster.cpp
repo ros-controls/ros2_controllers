@@ -32,13 +32,13 @@ void PoseBroadcasterTest::SetUpPoseBroadcaster()
     controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_interfaces;
-  state_interfaces.emplace_back(pose_position_x_);
-  state_interfaces.emplace_back(pose_position_y_);
-  state_interfaces.emplace_back(pose_position_z_);
-  state_interfaces.emplace_back(pose_orientation_x_);
-  state_interfaces.emplace_back(pose_orientation_y_);
-  state_interfaces.emplace_back(pose_orientation_z_);
-  state_interfaces.emplace_back(pose_orientation_w_);
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_position_x_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_position_y_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_position_z_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_orientation_x_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_orientation_y_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_orientation_z_, [](const hardware_interface::StateInterface*){}));
+  state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pose_orientation_w_, [](const hardware_interface::StateInterface*){}));
 
   pose_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
 }

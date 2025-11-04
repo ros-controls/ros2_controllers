@@ -43,9 +43,9 @@ void JointGroupEffortControllerTest::SetUpController()
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_cmd_);
-  command_ifs.emplace_back(joint_2_cmd_);
-  command_ifs.emplace_back(joint_3_cmd_);
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_1_cmd_, [](hardware_interface::CommandInterface*){}));
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_2_cmd_, [](hardware_interface::CommandInterface*){}));
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_3_cmd_, [](hardware_interface::CommandInterface*){}));
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }

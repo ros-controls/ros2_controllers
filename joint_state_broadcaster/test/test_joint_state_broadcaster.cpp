@@ -87,15 +87,15 @@ void JointStateBroadcasterTest::assign_state_interfaces(
 
   if (joint_names.empty() || interfaces.empty())
   {
-    state_ifs.emplace_back(joint_1_pos_state_);
-    state_ifs.emplace_back(joint_2_pos_state_);
-    state_ifs.emplace_back(joint_3_pos_state_);
-    state_ifs.emplace_back(joint_1_vel_state_);
-    state_ifs.emplace_back(joint_2_vel_state_);
-    state_ifs.emplace_back(joint_3_vel_state_);
-    state_ifs.emplace_back(joint_1_eff_state_);
-    state_ifs.emplace_back(joint_2_eff_state_);
-    state_ifs.emplace_back(joint_3_eff_state_);
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_pos_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_pos_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_pos_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_vel_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_vel_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_vel_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_eff_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_eff_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_eff_state_, [](const hardware_interface::StateInterface*){}));
   }
   else
   {
@@ -105,43 +105,43 @@ void JointStateBroadcasterTest::assign_state_interfaces(
       {
         if (joint == joint_names_[0] && interface == interface_names_[0])
         {
-          state_ifs.emplace_back(joint_1_pos_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_pos_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[1] && interface == interface_names_[0])
         {
-          state_ifs.emplace_back(joint_2_pos_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_pos_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[2] && interface == interface_names_[0])
         {
-          state_ifs.emplace_back(joint_3_pos_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_pos_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[0] && interface == interface_names_[1])
         {
-          state_ifs.emplace_back(joint_1_vel_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_vel_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[1] && interface == interface_names_[1])
         {
-          state_ifs.emplace_back(joint_2_vel_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_vel_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[2] && interface == interface_names_[1])
         {
-          state_ifs.emplace_back(joint_3_vel_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_vel_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[0] && interface == interface_names_[2])
         {
-          state_ifs.emplace_back(joint_1_eff_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_eff_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[1] && interface == interface_names_[2])
         {
-          state_ifs.emplace_back(joint_2_eff_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_eff_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (joint == joint_names_[2] && interface == interface_names_[2])
         {
-          state_ifs.emplace_back(joint_3_eff_state_);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_3_eff_state_, [](const hardware_interface::StateInterface*){}));
         }
         if (interface == custom_interface_name_)
         {
-          state_ifs.emplace_back(joint_X_custom_state);
+          state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_X_custom_state, [](const hardware_interface::StateInterface*){}));
         }
       }
     }
@@ -741,10 +741,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   // Manually assign existing interfaces --> one we need is missing
   std::vector<LoanedStateInterface> state_ifs;
 
-  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_pos_state_, [](const hardware_interface::StateInterface*){}));
   // Missing Joint 1 vel state interface
-  state_ifs.emplace_back(joint_2_pos_state_);
-  state_ifs.emplace_back(joint_2_vel_state_);
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_pos_state_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_2_vel_state_, [](const hardware_interface::StateInterface*){}));
 
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
@@ -1018,7 +1018,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
   std::vector<LoanedStateInterface> state_interfaces;
   for (const auto & tif : test_interfaces_)
   {
-    state_interfaces.emplace_back(tif);
+    state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&tif, [](const hardware_interface::StateInterface*){}));
   }
 
   state_broadcaster_->assign_interfaces({}, std::move(state_interfaces));

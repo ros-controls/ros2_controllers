@@ -56,16 +56,16 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster()
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(imu_orientation_x_);
-  state_ifs.emplace_back(imu_orientation_y_);
-  state_ifs.emplace_back(imu_orientation_z_);
-  state_ifs.emplace_back(imu_orientation_w_);
-  state_ifs.emplace_back(imu_angular_velocity_x_);
-  state_ifs.emplace_back(imu_angular_velocity_y_);
-  state_ifs.emplace_back(imu_angular_velocity_z_);
-  state_ifs.emplace_back(imu_linear_acceleration_x_);
-  state_ifs.emplace_back(imu_linear_acceleration_y_);
-  state_ifs.emplace_back(imu_linear_acceleration_z_);
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_orientation_x_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_orientation_y_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_orientation_z_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_orientation_w_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_angular_velocity_x_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_angular_velocity_y_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_angular_velocity_z_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_linear_acceleration_x_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_linear_acceleration_y_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&imu_linear_acceleration_z_, [](const hardware_interface::StateInterface*){}));
 
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }

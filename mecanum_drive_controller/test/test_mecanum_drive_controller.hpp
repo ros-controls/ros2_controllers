@@ -187,7 +187,7 @@ protected:
       command_itfs_.emplace_back(
         hardware_interface::CommandInterface(
           command_joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&command_itfs_.back(), [](hardware_interface::CommandInterface*){}));
     }
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -199,7 +199,7 @@ protected:
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           command_joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&state_itfs_.back(), [](const hardware_interface::StateInterface*){}));
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));

@@ -394,13 +394,13 @@ public:
           separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
 
       // Add to export lists and set initial values
-      cmd_interfaces.emplace_back(pos_cmd_interfaces_.back());
+      cmd_interfaces.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&pos_cmd_interfaces_.back(), [](hardware_interface::CommandInterface*){}));
       (void)cmd_interfaces.back().set_value(initial_pos_joints[i]);
-      cmd_interfaces.emplace_back(vel_cmd_interfaces_.back());
+      cmd_interfaces.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&vel_cmd_interfaces_.back(), [](hardware_interface::CommandInterface*){}));
       (void)cmd_interfaces.back().set_value(initial_vel_joints[i]);
-      cmd_interfaces.emplace_back(acc_cmd_interfaces_.back());
+      cmd_interfaces.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&acc_cmd_interfaces_.back(), [](hardware_interface::CommandInterface*){}));
       (void)cmd_interfaces.back().set_value(initial_acc_joints[i]);
-      cmd_interfaces.emplace_back(eff_cmd_interfaces_.back());
+      cmd_interfaces.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&eff_cmd_interfaces_.back(), [](hardware_interface::CommandInterface*){}));
       (void)cmd_interfaces.back().set_value(initial_eff_joints[i]);
       if (separate_cmd_and_state_values)
       {
@@ -408,9 +408,9 @@ public:
         joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
         joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       }
-      state_interfaces.emplace_back(pos_state_interfaces_.back());
-      state_interfaces.emplace_back(vel_state_interfaces_.back());
-      state_interfaces.emplace_back(acc_state_interfaces_.back());
+      state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&pos_state_interfaces_.back(), [](const hardware_interface::StateInterface*){}));
+      state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&vel_state_interfaces_.back(), [](const hardware_interface::StateInterface*){}));
+      state_interfaces.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&acc_state_interfaces_.back(), [](const hardware_interface::StateInterface*){}));
     }
 
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));

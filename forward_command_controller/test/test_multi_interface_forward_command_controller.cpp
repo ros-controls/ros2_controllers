@@ -59,9 +59,9 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
-  command_ifs.emplace_back(joint_1_vel_cmd_);
-  command_ifs.emplace_back(joint_1_eff_cmd_);
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_1_pos_cmd_, [](hardware_interface::CommandInterface*){}));
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_1_vel_cmd_, [](hardware_interface::CommandInterface*){}));
+  command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&joint_1_eff_cmd_, [](hardware_interface::CommandInterface*){}));
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 

@@ -155,12 +155,12 @@ protected:
   void assignResourcesPosFeedback()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(left_wheel_pos_state_);
-    state_ifs.emplace_back(right_wheel_pos_state_);
+    state_ifs.emplace_back(std::shared_ptr<hardware_interface::StateInterface>(&left_wheel_pos_state_, [](hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<hardware_interface::StateInterface>(&right_wheel_pos_state_, [](hardware_interface::StateInterface*){}));
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(left_wheel_vel_cmd_);
-    command_ifs.emplace_back(right_wheel_vel_cmd_);
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&left_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&right_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -168,12 +168,12 @@ protected:
   void assignResourcesVelFeedback()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(left_wheel_vel_state_);
-    state_ifs.emplace_back(right_wheel_vel_state_);
+    state_ifs.emplace_back(std::shared_ptr<hardware_interface::StateInterface>(&left_wheel_vel_state_, [](hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<hardware_interface::StateInterface>(&right_wheel_vel_state_, [](hardware_interface::StateInterface*){}));
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(left_wheel_vel_cmd_);
-    command_ifs.emplace_back(right_wheel_vel_cmd_);
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&left_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&right_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -181,8 +181,8 @@ protected:
   void assignResourcesNoFeedback()
   {
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(left_wheel_vel_cmd_);
-    command_ifs.emplace_back(right_wheel_vel_cmd_);
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&left_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&right_wheel_vel_cmd_, [](hardware_interface::CommandInterface*){}));
 
     controller_->assign_interfaces(std::move(command_ifs), {});
   }

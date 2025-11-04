@@ -59,12 +59,12 @@ void ForceTorqueSensorBroadcasterTest::SetUpFTSBroadcaster(std::string node_name
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(fts_force_x_);
-  state_ifs.emplace_back(fts_force_y_);
-  state_ifs.emplace_back(fts_force_z_);
-  state_ifs.emplace_back(fts_torque_x_);
-  state_ifs.emplace_back(fts_torque_y_);
-  state_ifs.emplace_back(fts_torque_z_);
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_force_x_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_force_y_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_force_z_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_torque_x_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_torque_y_, [](const hardware_interface::StateInterface*){}));
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&fts_torque_z_, [](const hardware_interface::StateInterface*){}));
 
   fts_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }

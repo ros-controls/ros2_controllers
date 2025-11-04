@@ -236,8 +236,8 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
   subscribe_and_get_messages(msg);
 
   // never received a valid command, linear velocity should have been reset
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_RIGHT_WHEEL], 0.0);
-  EXPECT_EQ(msg.linear_velocity_command[STATE_TRACTION_LEFT_WHEEL], 0.0);
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 0.0);
+  EXPECT_EQ(msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 0.0);
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands();
@@ -262,9 +262,9 @@ TEST_F(TricycleSteeringControllerTest, receive_message_and_publish_updated_statu
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
   EXPECT_NEAR(
-    msg.linear_velocity_command[STATE_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+    msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(
-    msg.linear_velocity_command[STATE_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+    msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 

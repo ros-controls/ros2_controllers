@@ -38,7 +38,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "test_asset_6d_robot_description.hpp"
-#include "tf2_ros/transform_broadcaster.hpp"
+#include <tf2_ros/transform_broadcaster.h>
 
 // TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
@@ -180,7 +180,7 @@ protected:
       command_itfs_.emplace_back(
         hardware_interface::CommandInterface(
           joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&command_itfs_.back(), [](hardware_interface::CommandInterface*){}));
     }
 
     auto sc_fts = semantic_components::ForceTorqueSensor(ft_sensor_name_);
@@ -196,7 +196,7 @@ protected:
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&state_itfs_.back(), [](const hardware_interface::StateInterface*){}));
     }
 
     std::vector<std::string> fts_itf_names = {"force.x",  "force.y",  "force.z",
@@ -207,7 +207,7 @@ protected:
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&state_itfs_.back(), [](const hardware_interface::StateInterface*){}));
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));

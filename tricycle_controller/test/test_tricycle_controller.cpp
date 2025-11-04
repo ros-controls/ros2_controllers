@@ -139,12 +139,12 @@ protected:
   void assignResources()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(steering_joint_pos_state_);
-    state_ifs.emplace_back(traction_joint_vel_state_);
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&steering_joint_pos_state_, [](const hardware_interface::StateInterface*){}));
+    state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&traction_joint_vel_state_, [](const hardware_interface::StateInterface*){}));
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(steering_joint_pos_cmd_);
-    command_ifs.emplace_back(traction_joint_vel_cmd_);
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&steering_joint_pos_cmd_, [](hardware_interface::CommandInterface*){}));
+    command_ifs.emplace_back(std::shared_ptr<hardware_interface::CommandInterface>(&traction_joint_vel_cmd_, [](hardware_interface::CommandInterface*){}));
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }

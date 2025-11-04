@@ -52,7 +52,7 @@ void ChainedFilterTest::SetUpController(
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(joint_1_pos_);
+  state_ifs.emplace_back(std::shared_ptr<const hardware_interface::StateInterface>(&joint_1_pos_, [](const hardware_interface::StateInterface*){}));
   controller_->assign_interfaces({}, std::move(state_ifs));
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
