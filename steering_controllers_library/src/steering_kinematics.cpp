@@ -19,14 +19,14 @@
 
 #define _USE_MATH_DEFINES
 
-#include "steering_controllers_library/steering_odometry.hpp"
+#include "steering_controllers_library/steering_kinematics.hpp"
 
 #include <cmath>
 #include <limits>
 
-namespace steering_odometry
+namespace steering_kinematics
 {
-SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
+SteeringKinematics::SteeringKinematics(size_t velocity_rolling_window_size)
 : timestamp_(0.0),
   x_(0.0),
   y_(0.0),
@@ -46,14 +46,14 @@ SteeringOdometry::SteeringOdometry(size_t velocity_rolling_window_size)
 {
 }
 
-void SteeringOdometry::init(const rclcpp::Time & time)
+void SteeringKinematics::init(const rclcpp::Time & time)
 {
   // Reset accumulators and timestamp:
   reset_accumulators();
   timestamp_ = time;
 }
 
-bool SteeringOdometry::update_odometry(
+bool SteeringKinematics::update_odometry(
   const double linear_velocity, const double angular_velocity, const double dt)
 {
   /// Integrate odometry:
@@ -75,7 +75,7 @@ bool SteeringOdometry::update_odometry(
   return true;
 }
 
-bool SteeringOdometry::update_from_position(
+bool SteeringKinematics::update_from_position(
   const double traction_wheel_pos, const double steer_pos, const double dt)
 {
   const double traction_wheel_est_pos_diff = traction_wheel_pos - traction_wheel_old_pos_;
@@ -86,7 +86,7 @@ bool SteeringOdometry::update_from_position(
   return update_from_velocity(traction_wheel_est_pos_diff / dt, steer_pos, dt);
 }
 
-bool SteeringOdometry::update_from_position(
+bool SteeringKinematics::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double steer_pos, const double dt)
 {
@@ -103,7 +103,7 @@ bool SteeringOdometry::update_from_position(
     traction_right_wheel_est_pos_diff / dt, traction_left_wheel_est_pos_diff / dt, steer_pos, dt);
 }
 
-bool SteeringOdometry::update_from_position(
+bool SteeringKinematics::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
@@ -121,7 +121,7 @@ bool SteeringOdometry::update_from_position(
     left_steer_pos, dt);
 }
 
-bool SteeringOdometry::update_from_velocity(
+bool SteeringKinematics::update_from_velocity(
   const double traction_wheel_vel, const double steer_pos, const double dt)
 {
   steer_pos_ = steer_pos;
@@ -131,7 +131,7 @@ bool SteeringOdometry::update_from_velocity(
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-double SteeringOdometry::get_linear_velocity_double_traction_axle(
+double SteeringKinematics::get_linear_velocity_double_traction_axle(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos)
 {
@@ -152,7 +152,7 @@ double SteeringOdometry::get_linear_velocity_double_traction_axle(
   return (vel_r + vel_l) * 0.5;
 }
 
-bool SteeringOdometry::update_from_velocity(
+bool SteeringKinematics::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos, const double dt)
 {
@@ -165,7 +165,7 @@ bool SteeringOdometry::update_from_velocity(
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-bool SteeringOdometry::update_from_velocity(
+bool SteeringKinematics::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
@@ -185,7 +185,7 @@ bool SteeringOdometry::update_from_velocity(
   return update_odometry(linear_velocity, angular_velocity, dt);
 }
 
-void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz, const double dt)
+void SteeringKinematics::update_open_loop(const double v_bx, const double omega_bz, const double dt)
 {
   /// Save last linear and angular velocity:
   linear_ = v_bx;
@@ -195,7 +195,7 @@ void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz
   integrate_fk(v_bx, omega_bz, dt);
 }
 
-void SteeringOdometry::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
+void SteeringKinematics::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
 {
   wheel_radius_ = wheel_radius;
   wheel_base_ = wheel_base;
@@ -203,7 +203,7 @@ void SteeringOdometry::set_wheel_params(double wheel_radius, double wheel_base, 
   wheel_track_steering_ = wheel_track;
 }
 
-void SteeringOdometry::set_wheel_params(
+void SteeringKinematics::set_wheel_params(
   double wheel_radius, double wheel_base, double wheel_track_steering, double wheel_track_traction)
 {
   wheel_radius_ = wheel_radius;
@@ -212,26 +212,26 @@ void SteeringOdometry::set_wheel_params(
   wheel_track_steering_ = wheel_track_steering;
 }
 
-void SteeringOdometry::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
+void SteeringKinematics::set_velocity_rolling_window_size(size_t velocity_rolling_window_size)
 {
   velocity_rolling_window_size_ = velocity_rolling_window_size;
 
   reset_accumulators();
 }
 
-void SteeringOdometry::set_odometry_type(const unsigned int type)
+void SteeringKinematics::set_odometry_type(const unsigned int type)
 {
   config_type_ = static_cast<int>(type);
 }
 
-double SteeringOdometry::convert_twist_to_steering_angle(double v_bx, double omega_bz)
+double SteeringKinematics::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
   // phi can be nan if both v_bx and omega_bz are zero
   const auto phi = std::atan(omega_bz * wheel_base_ / v_bx);
   return std::isfinite(phi) ? phi : 0.0;
 }
 
-std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
+std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_commands(
   const double v_bx, const double omega_bz, const bool open_loop,
   const bool reduce_wheel_speed_until_steering_reached)
 {
@@ -252,7 +252,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
 #endif
   // steering angle
-  phi = SteeringOdometry::convert_twist_to_steering_angle(v_bx, omega_bz);
+  phi = SteeringKinematics::convert_twist_to_steering_angle(v_bx, omega_bz);
   if (open_loop)
   {
     phi_IK = phi;
@@ -346,7 +346,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
 }
 
-void SteeringOdometry::reset_odometry()
+void SteeringKinematics::reset_odometry()
 {
   x_ = 0.0;
   y_ = 0.0;
@@ -354,7 +354,7 @@ void SteeringOdometry::reset_odometry()
   reset_accumulators();
 }
 
-void SteeringOdometry::integrate_runge_kutta_2(
+void SteeringKinematics::integrate_runge_kutta_2(
   const double v_bx, const double omega_bz, const double dt)
 {
   // Compute intermediate value of the heading
@@ -366,7 +366,7 @@ void SteeringOdometry::integrate_runge_kutta_2(
   heading_ += omega_bz * dt;
 }
 
-void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, const double dt)
+void SteeringKinematics::integrate_fk(const double v_bx, const double omega_bz, const double dt)
 {
   const double delta_x_b = v_bx * dt;
   const double delta_theta = omega_bz * dt;
@@ -387,10 +387,10 @@ void SteeringOdometry::integrate_fk(const double v_bx, const double omega_bz, co
   }
 }
 
-void SteeringOdometry::reset_accumulators()
+void SteeringKinematics::reset_accumulators()
 {
   linear_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
   angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
 }
 
-}  // namespace steering_odometry
+}  // namespace steering_kinematics
