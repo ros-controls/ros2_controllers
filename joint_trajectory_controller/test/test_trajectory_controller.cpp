@@ -397,6 +397,7 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency)
     EXPECT_EQ(n_joints, state->output.effort.size());
   }
 }
+
 TEST_F(TrajectoryControllerTest, time_from_start_populated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -410,14 +411,23 @@ TEST_F(TrajectoryControllerTest, time_from_start_populated)
   publish(tfs, {INITIAL_POS_JOINTS}, rclcpp::Time(0));
   traj_controller_->wait_for_trajectory(executor);
 
-  updateController();
+  // update for 0.2s
+  updateController(rclcpp::Duration::from_seconds(0.2));
   // give the publish timer one more spin
   executor.spin_some();
 
   auto state = getState();
   ASSERT_TRUE(state);
+  // should be around 0.2s, but is 0.18s
+  EXPECT_EQ(state->reference.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->reference.time_from_start.nanosec, 200000000u, 20000000u);
   EXPECT_EQ(state->feedback.time_from_start.sec, 0u);
-  EXPECT_EQ(state->feedback.time_from_start.nanosec, 100000000u);
+  EXPECT_NEAR(state->feedback.time_from_start.nanosec, 200000000u, 20000000u);
+  // legacy
+  EXPECT_EQ(state->desired.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->desired.time_from_start.nanosec, 200000000u, 20000000u);
+  EXPECT_EQ(state->actual.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->actual.time_from_start.nanosec, 200000000u, 20000000u);
 }
 
 /**
