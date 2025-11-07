@@ -1032,7 +1032,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
   }
 
   RCLCPP_INFO(
-    state_broadcaster_->get_node()->get_logger(), "Number of test interfaces: %lu",
+    state_broadcaster_->get_node()->get_logger(), "Number of test interfaces: %zu",
     test_interfaces_.size());
 
   std::vector<LoanedStateInterface> state_interfaces;
