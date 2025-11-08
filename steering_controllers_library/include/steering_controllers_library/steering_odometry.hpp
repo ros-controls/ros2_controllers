@@ -18,8 +18,7 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 
-#warning \
-  "This header (steering_odometry.hpp) is deprecated. Please include steering_kinematics.hpp instead."
+#warning "This header is deprecated. Please include steering_kinematics.hpp."
 #include "steering_controllers_library/steering_kinematics.hpp"
 
 #include <cmath>
