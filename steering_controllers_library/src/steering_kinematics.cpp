@@ -195,7 +195,8 @@ void SteeringKinematics::update_open_loop(const double v_bx, const double omega_
   integrate_fk(v_bx, omega_bz, dt);
 }
 
-void SteeringKinematics::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
+void SteeringKinematics::set_wheel_params(
+  double wheel_radius, double wheel_base, double wheel_track)
 {
   wheel_radius_ = wheel_radius;
   wheel_base_ = wheel_base;
