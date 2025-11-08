@@ -40,8 +40,8 @@ const unsigned int ACKERMANN_CONFIG = 2;
 inline bool is_close_to_zero(double val) { return std::fabs(val) < 1e-6; }
 
 /**
- * \brief The Odometry class handles odometry readings
- * (2D pose and velocity with related timestamp)
+ * \brief The SteeringKinematics class handles forward kinematics (odometry calculations) and
+ * inverse kinematics (getting commands) (2D pose and velocity with related timestamp)
  */
 class SteeringKinematics
 {
@@ -56,13 +56,13 @@ public:
   explicit SteeringKinematics(size_t velocity_rolling_window_size = 10);
 
   /**
-   * \brief Initialize the odometry
+   * \brief Initialize the SteeringKinematics class
    * \param time Current time
    */
   void init(const rclcpp::Time & time);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param traction_wheel_pos  traction wheel position [rad]
    * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
@@ -72,7 +72,7 @@ public:
     const double traction_wheel_pos, const double steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param right_traction_wheel_pos  Right traction wheel velocity [rad]
    * \param left_traction_wheel_pos  Left traction wheel velocity [rad]
    * \param steer_pos Steer wheel position [rad]
@@ -84,7 +84,7 @@ public:
     const double steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param right_traction_wheel_pos  Right traction wheel position [rad]
    * \param left_traction_wheel_pos  Left traction wheel position [rad]
    * \param right_steer_pos Right steer wheel position [rad]
@@ -97,7 +97,7 @@ public:
     const double right_steer_pos, const double left_steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
@@ -107,7 +107,7 @@ public:
     const double traction_wheel_vel, const double steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
@@ -119,7 +119,7 @@ public:
     const double steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest wheels position
+   * \brief Updates the SteeringKinematics class with latest wheels position
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param right_steer_pos Right steer wheel position [rad]
@@ -132,7 +132,7 @@ public:
     const double right_steer_pos, const double left_steer_pos, const double dt);
 
   /**
-   * \brief Updates the odometry class with latest velocity command
+   * \brief Updates the SteeringKinematics class with latest velocity command
    * \param v_bx  Linear velocity   [m/s]
    * \param omega_bz Angular velocity [rad/s]
    * \param dt      time difference to last call
