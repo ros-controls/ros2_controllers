@@ -14,6 +14,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     hardware_interface
     pluginlib
     rclcpp
+    rclcpp_action
     rclcpp_lifecycle
     realtime_tools
     rsl
