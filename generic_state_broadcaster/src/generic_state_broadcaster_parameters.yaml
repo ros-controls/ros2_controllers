@@ -1,0 +1,10 @@
+generic_state_broadcaster:
+  interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "The list of hardware interfaces information to be published by the generic state broadcaster.",
+    read_only: true,
+    validation: {
+      not_empty<>: []
+    }
+  }
