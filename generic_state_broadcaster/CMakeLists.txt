@@ -51,22 +51,22 @@ if(BUILD_TESTING)
   find_package(rclcpp REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
-  # ament_add_gmock(test_load_generic_state_broadcaster
-  #   test/test_load_generic_state_broadcaster.cpp
-  # )
-  # target_link_libraries(test_load_generic_state_broadcaster
-  #   generic_state_broadcaster
-  #   controller_manager::controller_manager
-  #   hardware_interface::hardware_interface
-  #   rclcpp::rclcpp
-  #   ros2_control_test_assets::ros2_control_test_assets)
+  ament_add_gmock(test_load_generic_state_broadcaster
+    test/test_load_generic_state_broadcaster.cpp
+  )
+  target_link_libraries(test_load_generic_state_broadcaster
+    generic_state_broadcaster
+    controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    rclcpp::rclcpp
+    ros2_control_test_assets::ros2_control_test_assets)
 
-  # ament_add_gmock(test_generic_state_broadcaster
-  #   test/test_generic_state_broadcaster.cpp
-  # )
-  # target_link_libraries(test_generic_state_broadcaster
-  #   generic_state_broadcaster
-  #   ros2_control_test_assets::ros2_control_test_assets)
+  ament_add_gmock(test_generic_state_broadcaster
+    test/test_generic_state_broadcaster.cpp
+  )
+  target_link_libraries(test_generic_state_broadcaster
+    generic_state_broadcaster
+    ros2_control_test_assets::ros2_control_test_assets)
 endif()
 
 install(

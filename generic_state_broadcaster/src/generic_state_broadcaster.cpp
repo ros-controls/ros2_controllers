@@ -43,7 +43,7 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_init()
     return CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return params_.interfaces.empty() ? CallbackReturn::ERROR : CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
