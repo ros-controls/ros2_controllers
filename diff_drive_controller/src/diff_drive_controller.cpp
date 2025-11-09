@@ -165,7 +165,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   if (params_.open_loop)
   {
     odometry_updated =
-      odometry_.tryUpdateOpenLoop(linear_command, angular_command, period.seconds());
+      odometry_.try_update_open_loop(linear_command, angular_command, period.seconds());
   }
   else
   {
@@ -204,12 +204,12 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     if (params_.position_feedback)
     {
       odometry_updated =
-        odometry_.updateFromPos(left_feedback_mean, right_feedback_mean, period.seconds());
+        odometry_.update_from_pos(left_feedback_mean, right_feedback_mean, period.seconds());
     }
     else
     {
       odometry_updated =
-        odometry_.updateFromVel(left_feedback_mean, right_feedback_mean, period.seconds());
+        odometry_.update_from_vel(left_feedback_mean, right_feedback_mean, period.seconds());
     }
   }
 
