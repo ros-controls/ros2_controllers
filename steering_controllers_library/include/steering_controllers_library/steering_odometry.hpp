@@ -18,7 +18,14 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_ODOMETRY_HPP_
 
-#warning "This header is deprecated. Please include steering_kinematics.hpp."
+#ifdef _WIN32
+#pragma message( \
+  "This header is deprecated. Please update your code to use 'steering_kinematics.hpp' header.")  // NOLINT
+#else
+#warning \
+  "This header is deprecated. Please update your code to use 'steering_kinematics.hpp' header." //NOLINT
+#endif
+
 #include "steering_controllers_library/steering_kinematics.hpp"
 
 #include <cmath>
