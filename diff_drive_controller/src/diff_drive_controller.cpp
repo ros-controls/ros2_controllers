@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "control_toolbox/tf_utils.hpp"
 #include "diff_drive_controller/diff_drive_controller.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -417,32 +418,17 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
       odometry_publisher_);
 
-  // Append the tf prefix if there is one
-  std::string tf_prefix = "";
-  if (params_.tf_frame_prefix_enable)
-  {
-    if (params_.tf_frame_prefix != "")
-    {
-      tf_prefix = params_.tf_frame_prefix;
-    }
-    else
-    {
-      tf_prefix = std::string(get_node()->get_namespace());
-    }
-
-    // Make sure prefix does not start with '/' and always ends with '/'
-    if (tf_prefix.back() != '/')
-    {
-      tf_prefix = tf_prefix + "/";
-    }
-    if (tf_prefix.front() == '/')
-    {
-      tf_prefix.erase(0, 1);
-    }
-  }
-
-  const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
-  const auto base_frame_id = tf_prefix + params_.base_frame_id;
+  // apply the TF prefix if not empty, otherwise use the node namespace
+  const auto odom_frame_id =
+    params_.tf_frame_prefix_enable
+      ? control_toolbox::apply_tf_prefix(
+          params_.tf_frame_prefix, get_node()->get_namespace(), params_.odom_frame_id)
+      : params_.odom_frame_id;
+  const auto base_frame_id =
+    params_.tf_frame_prefix_enable
+      ? control_toolbox::apply_tf_prefix(
+          params_.tf_frame_prefix, get_node()->get_namespace(), params_.base_frame_id)
+      : params_.base_frame_id;
 
   odometry_message_.header.frame_id = odom_frame_id;
   odometry_message_.child_frame_id = base_frame_id;
