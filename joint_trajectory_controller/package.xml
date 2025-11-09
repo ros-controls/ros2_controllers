@@ -28,6 +28,7 @@
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
   <depend>rsl</depend>
