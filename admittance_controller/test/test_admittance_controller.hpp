@@ -164,8 +164,13 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    auto result =
-      controller_->init(controller_name, controller_->robot_description_, 0, "", options);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = controller_->robot_description_;
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = options;
+    auto result = controller_->init(params);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
