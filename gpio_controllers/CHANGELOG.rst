@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix integer literal for size_t (backport `#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_) (`#1987 <https://github.com/ros-controls/ros2_controllers/issues/1987>`_)
+* Contributors: Christoph Fröhlich
+
 4.33.1 (2025-10-17)
 -------------------
 

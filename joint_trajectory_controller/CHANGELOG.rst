@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing dependency rclcpp_action (backport `#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_) (`#1994 <https://github.com/ros-controls/ros2_controllers/issues/1994>`_)
+* Add time_from_start to action feedback and state message (cherry-pick `#1755 <https://github.com/ros-controls/ros2_controllers/issues/1755>`_) (backport `#1820 <https://github.com/ros-controls/ros2_controllers/issues/1820>`_) (`#1988 <https://github.com/ros-controls/ros2_controllers/issues/1988>`_)
+* Fix integer literal for size_t (backport `#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_) (`#1987 <https://github.com/ros-controls/ros2_controllers/issues/1987>`_)
+* :memo: Remove wrong information about trajectory replacement (`#1979 <https://github.com/ros-controls/ros2_controllers/issues/1979>`_)
+* Contributors: Christoph Fröhlich, mergify[bot]
+
 4.33.1 (2025-10-17)
 -------------------
 * Fix upstream Pid class deprecation warnings (`#1959 <https://github.com/ros-controls/ros2_controllers/issues/1959>`_)
