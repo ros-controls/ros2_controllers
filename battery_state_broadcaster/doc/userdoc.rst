@@ -27,7 +27,7 @@ Published Topics
 
 The broadcaster publishes two topics:
 
-- ``~/raw_battery_states`` (``sensor_msgs/msg/BatteryStates``)
+- ``~/raw_battery_states`` (``sensor_msgs/msg/BatteryStateArray``)
   Publishes **per-joint battery state messages**, containing the raw values for each configured joint.
 
 - ``~/battery_state`` (``sensor_msgs/msg/BatteryState``)

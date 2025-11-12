@@ -35,10 +35,10 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 #include "sensor_msgs/msg/battery_state.hpp"
-#include "sensor_msgs/msg/battery_states.hpp"
+#include "sensor_msgs/msg/battery_state_array.hpp"
 
 using BatteryStateMsg = sensor_msgs::msg::BatteryState;
-using RawBatteryStatesMsg = sensor_msgs::msg::BatteryStates;
+using RawBatteryStatesMsg = sensor_msgs::msg::BatteryStateArray;
 using sensor_msgs::msg::BatteryState;
 using testing::IsEmpty;
 using testing::SizeIs;

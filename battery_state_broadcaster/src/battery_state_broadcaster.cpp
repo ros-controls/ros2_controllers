@@ -81,11 +81,12 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>(
         battery_state_publisher_);
 
-    raw_battery_states_publisher_ = get_node()->create_publisher<sensor_msgs::msg::BatteryStates>(
-      "~/raw_battery_states", rclcpp::SystemDefaultsQoS());
+    raw_battery_states_publisher_ =
+      get_node()->create_publisher<sensor_msgs::msg::BatteryStateArray>(
+        "~/raw_battery_states", rclcpp::SystemDefaultsQoS());
 
     raw_battery_states_realtime_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryStates>>(
+      std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryStateArray>>(
         raw_battery_states_publisher_);
   }
   catch (const std::exception & e)
