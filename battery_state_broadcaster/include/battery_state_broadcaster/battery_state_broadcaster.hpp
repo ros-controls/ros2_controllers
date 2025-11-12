@@ -30,7 +30,7 @@
 
 #include <battery_state_broadcaster/battery_state_broadcaster_parameters.hpp>
 #include "sensor_msgs/msg/battery_state.hpp"
-#include "sensor_msgs/msg/battery_states.hpp"
+#include "sensor_msgs/msg/battery_state_array.hpp"
 
 namespace battery_state_broadcaster
 {
@@ -59,8 +59,8 @@ namespace battery_state_broadcaster
  *
  * - \b battery_state (sensor_msgs::msg::BatteryState): battery state of the combined battery
  * joints.
- * - \b raw_battery_states (battery_state_broadcaster::msg::BatteryStates): battery states of the
- * individual battery joints.
+ * - \b raw_battery_states (battery_state_broadcaster::msg::BatteryStateArray): battery states of
+ * the individual battery joints.
  *
  */
 class BatteryStateBroadcaster : public controller_interface::ControllerInterface
@@ -93,7 +93,7 @@ protected:
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
     battery_state_realtime_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryStates>>
+  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryStateArray>>
     raw_battery_states_realtime_publisher_;
   struct BatteryInterfaceSums
   {
@@ -119,7 +119,8 @@ protected:
 private:
   std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryStates>> raw_battery_states_publisher_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryStateArray>>
+    raw_battery_states_publisher_;
 
   std::vector<bool> battery_presence_;
 };
