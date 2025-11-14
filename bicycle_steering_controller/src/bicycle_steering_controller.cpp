@@ -35,7 +35,7 @@ controller_interface::CallbackReturn BicycleSteeringController::configure_odomet
   const double traction_wheel_radius = bicycle_params_.traction_wheel_radius;
 
   odometry_.set_wheel_params(traction_wheel_radius, wheelbase);
-  odometry_.set_odometry_type(steering_odometry::BICYCLE_CONFIG);
+  odometry_.set_odometry_type(steering_kinematics::BICYCLE_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
