@@ -1,0 +1,61 @@
+generic_steering_controller_parameters:
+  plugin_name:
+    type: string
+    default_value: "mock_kinematic_plugin/MockKinematicModel"
+    description: "Name of the kinematics plugin to use"
+  ref_timeout:
+    type: double
+    default_value: 0.5
+    description: "Timeout for reference commands (seconds)"
+  enable_odom_tf:
+    type: bool
+    default_value: true
+    description: "Whether to publish odometry as TF"
+  wheelbase:
+    type: double
+    default_value: 1.0
+    description: "Wheelbase for kinematic plugin (meters)"
+  wheel_radius:
+    type: double
+    default_value: 0.15
+    description: "Wheel radius for kinematic plugin (meters)"
+  odom_frame_id:
+    type: string
+    default_value: "odom"
+    description: "Frame ID for odometry"
+  base_frame_id:
+    type: string
+    default_value: "base_link"
+    description: "Frame ID for robot base"
+  open_loop:
+    type: bool
+    default_value: false
+    description: "Use open loop kinematics"
+  reduce_wheel_speed_until_steering_reached:
+    type: bool
+    default_value: false
+    description: "Reduce wheel speed until steering angle is reached"
+  position_feedback:
+    type: bool
+    default_value: false
+    description: "Use position feedback for traction wheels"
+  traction_joints_names:
+    type: string_array
+    default_value: ["left_wheel_joint", "right_wheel_joint"]
+    description: "Names of the traction (drive) joints"
+  steering_joints_names:
+    type: string_array
+    default_value: ["steering_joint"]
+    description: "Names of the steering joints"
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
+    description: "diagonal values of pose covariance matrix.",
+    read_only: false,
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],
+    description: "diagonal values of twist covariance matrix.",
+    read_only: false,
+  }
