@@ -264,8 +264,9 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
   }
 #endif
   // steering angle
-  phi =
-    use_twist_input ? SteeringOdometry::convert_twist_to_steering_angle(v_bx, last_angular_command_) : last_angular_command_;
+  phi = use_twist_input
+          ? SteeringOdometry::convert_twist_to_steering_angle(v_bx, last_angular_command_)
+          : last_angular_command_;
   if (open_loop)
   {
     phi_IK = phi;
