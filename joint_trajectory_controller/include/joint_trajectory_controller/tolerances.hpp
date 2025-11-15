@@ -316,7 +316,7 @@ inline bool check_state_tolerance_per_joint(
   if (show_errors)
   {
     const auto logger = rclcpp::get_logger("tolerances");
-    RCLCPP_ERROR(logger, "State tolerances failed for joint %lu:", joint_idx);
+    RCLCPP_ERROR(logger, "State tolerances failed for joint %zu:", joint_idx);
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position)
     {

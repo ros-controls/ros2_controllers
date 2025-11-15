@@ -35,6 +35,10 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+#include "rclcpp/node_interfaces/node_interfaces.hpp"
+#endif
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 #include "test_asset_6d_robot_description.hpp"
@@ -160,8 +164,13 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    auto result =
-      controller_->init(controller_name, controller_->robot_description_, 0, "", options);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = controller_->robot_description_;
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = options;
+    auto result = controller_->init(params);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
@@ -215,7 +224,15 @@ protected:
 
   void broadcast_tfs()
   {
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+    static tf2_ros::TransformBroadcaster br(
+      rclcpp::node_interfaces::NodeInterfaces(
+        test_broadcaster_node_->get_node_parameters_interface(),
+        test_broadcaster_node_->get_node_topics_interface()));
+#else
     static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
+#endif
+
     geometry_msgs::msg::TransformStamped transform_stamped;
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();

@@ -313,7 +313,7 @@ bool GpioCommandController::check_if_configured_interfaces_matches_received(
   if (!(configured_interfaces.size() == interfaces_from_params.size()))
   {
     RCLCPP_ERROR(
-      get_node()->get_logger(), "Expected %ld interfaces, got %ld", interfaces_from_params.size(),
+      get_node()->get_logger(), "Expected %zu interfaces, got %zu", interfaces_from_params.size(),
       configured_interfaces.size());
     for (const auto & interface : interfaces_from_params)
     {
