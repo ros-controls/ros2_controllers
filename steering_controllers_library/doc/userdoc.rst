@@ -22,7 +22,7 @@ For an introduction to mobile robot kinematics and the nomenclature used here, s
 Execution logic of the controller
 ----------------------------------
 
-The controller uses velocity input, i.e., stamped `twist messages <twist_msg_>`_ where linear ``x`` and angular ``z`` components are used if ``twist_input == true``. If ``twist_input == false``, the controller uses `control_msgs/msg/SteeringControllerStatus <steering_controller_status_msg_>`_ where linear ``speed`` and angular ``steering_angle`` components are used.
+The controller uses velocity input, i.e., stamped `twist messages <twist_msg_>`_ where linear ``x`` and angular ``z`` components are used if ``twist_input == true``. If ``twist_input == false``, the controller uses `control_msgs/msg/SteeringCommandStatus <steering_controller_command_msg_>`_ where linear ``speed`` and angular ``steering_angle`` components are used.
 Values in other components are ignored.
 
 In the chain mode the controller provides two reference interfaces, one for linear velocity and one for steering angle position.
