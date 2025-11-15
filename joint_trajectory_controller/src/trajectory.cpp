@@ -177,6 +177,7 @@ bool Trajectory::sample(
       }
       start_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i);
       end_segment_itr = begin() + static_cast<TrajectoryPointConstIter::difference_type>(i + 1);
+      output_state.time_from_start = next_point.time_from_start;
       if (search_monotonically_increasing)
       {
         last_sample_idx_ = i;

@@ -2,6 +2,18 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.0.0 (2025-11-10)
+------------------
+* Add missing dependency rclcpp_action (`#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_)
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Add time_from_start to action feedback and state message (cherry-pick `#1755 <https://github.com/ros-controls/ros2_controllers/issues/1755>`_) (`#1820 <https://github.com/ros-controls/ros2_controllers/issues/1820>`_)
+* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
+* :memo: Add disclaimer on missing trajectory replacement implementation (`#1978 <https://github.com/ros-controls/ros2_controllers/issues/1978>`_)
+* Fix JTC crashing when shutdown while executing (`#1960 <https://github.com/ros-controls/ros2_controllers/issues/1960>`_)
+* Remove unused `get_state_msg` method (`#1949 <https://github.com/ros-controls/ros2_controllers/issues/1949>`_)
+* Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
+* Contributors: Anand Vardhan, Bence Magyar, Christoph Fröhlich, Marq Rasmussen, Noel Jiménez García
+
 5.8.0 (2025-10-02)
 ------------------
 * Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)

@@ -26,10 +26,14 @@ void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
 
 void PoseBroadcasterTest::SetUpPoseBroadcaster()
 {
-  ASSERT_EQ(
-    pose_broadcaster_->init(
-      "test_pose_broadcaster", "", 0, "", pose_broadcaster_->define_custom_node_options()),
-    controller_interface::return_type::OK);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_pose_broadcaster";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = pose_broadcaster_->define_custom_node_options();
+
+  ASSERT_EQ(pose_broadcaster_->init(params), controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(pose_position_x_, nullptr);
