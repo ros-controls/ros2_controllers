@@ -86,12 +86,12 @@ Subscribers
 Used when controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is activated (``twist_input == true``):
 - ``<controller_name>/reference``  [`geometry_msgs/msg/TwistStamped <twist_msg_>`_]
 In this configuration the controller uses :
-- **Linear Velocity (`linear`)**: Represents the linear speed of the robot (in meters per second, m/s).
-- **Angular Velocity (`angular`)**: Represents the angular speed of the robot (in meters per second, m/s).
+- **Linear Velocity (`linear`)**: Represents the linear velocity of the robot (in meters per second, m/s).
+- **Angular Velocity (`angular`)**: Represents the angular velocity of the robot (in meters per second, m/s).
 When the controller is not in chained mode (``in_chained_mode == false``) and the twist input mode is not activated (``twist_input == false``):
 - ``<controller_name>/reference``  [`control_msgs/msg/SteeringControllerCommand <steering_controller_command_msg_>`_]
 In this configuration the controller uses :
-- **Linear Velocity (`speed`)**: Represents the linear velocity of the robot (in meters per second, m/s).
+- **Linear Velocity (`linear_velocity`)**: Represents the linear velocity of the robot (in meters per second, m/s).
 - **Steering angle (`steering_angle`)**: Represents the angle of the imaginary, central steering wheel relative to the vehicle’s longitudinal axis. Specific angles for individual steering joints are computed internally based on the kinematic model of the robot. (in radians, rad)
 
 Publishers
