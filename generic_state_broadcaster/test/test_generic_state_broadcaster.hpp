@@ -34,21 +34,7 @@ class FriendGenericStateBroadcaster : public generic_state_broadcaster::GenericS
 {
   FRIEND_TEST(GenericStateBroadcasterTest, FailOnEmptyInterfaceListTest);
   FRIEND_TEST(GenericStateBroadcasterTest, ConfigureOnValidInterfaceListTest);
-  FRIEND_TEST(GenericStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithoutJointsParameter);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithJointsAndInterfaces);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing);
-  FRIEND_TEST(GenericStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing);
-  FRIEND_TEST(GenericStateBroadcasterTest, TestCustomInterfaceWithoutMapping);
-  FRIEND_TEST(GenericStateBroadcasterTest, TestCustomInterfaceMapping);
-  FRIEND_TEST(GenericStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
-  FRIEND_TEST(GenericStateBroadcasterTest, ExtraJointStatePublishTest);
+  FRIEND_TEST(GenericStateBroadcasterTest, StatePublishTest);
 };
 
 class GenericStateBroadcasterTest : public ::testing::Test
@@ -73,7 +59,7 @@ public:
   void test_published_dynamic_joint_state_message(const std::string & topic);
 
   void activate_and_get_state_message(
-    const std::string & topic, control_msgs::msg::ValuesArray & msg);
+    const std::string & topic, control_msgs::msg::InterfacesValues & msg);
 
 protected:
   // dummy joint state values used for tests

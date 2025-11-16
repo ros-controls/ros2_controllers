@@ -77,6 +77,7 @@ protected:
   std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::InterfacesValues>>
     realtime_values_publisher_;
   control_msgs::msg::InterfacesValues values_msg_;
+  control_msgs::msg::InterfacesNames names_msg_;
 };
 
 }  // namespace generic_state_broadcaster

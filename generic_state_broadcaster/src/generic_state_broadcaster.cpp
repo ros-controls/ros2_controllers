@@ -81,10 +81,9 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_configure(
   values_msg_.values.clear();
   values_msg_.values.resize(params_.interfaces.size(), std::numeric_limits<double>::quiet_NaN());
 
-  control_msgs::msg::InterfacesNames names_msg;
-  names_msg.names = params_.interfaces;
-  names_msg.header.stamp = get_node()->now();
-  names_publisher_->publish(names_msg);
+  names_msg_.names = params_.interfaces;
+  names_msg_.header.stamp = get_node()->now();
+  names_publisher_->publish(names_msg_);
 
   return CallbackReturn::SUCCESS;
 }
