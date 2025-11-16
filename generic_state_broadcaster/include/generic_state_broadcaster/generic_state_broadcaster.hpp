@@ -21,8 +21,8 @@
 #include <vector>
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
-#include "control_msgs/msg/string_array.hpp"
-#include "control_msgs/msg/values_array.hpp"
+#include "control_msgs/msg/interfaces_names.hpp"
+#include "control_msgs/msg/interfaces_values.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
@@ -72,11 +72,11 @@ protected:
   Params params_;
 
   // publishers and messages
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::StringArray>> names_publisher_;
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::ValuesArray>> values_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::ValuesArray>>
+  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::InterfacesNames>> names_publisher_;
+  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::InterfacesValues>> values_publisher_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::InterfacesValues>>
     realtime_values_publisher_;
-  control_msgs::msg::ValuesArray values_msg_;
+  control_msgs::msg::InterfacesValues values_msg_;
 };
 
 }  // namespace generic_state_broadcaster

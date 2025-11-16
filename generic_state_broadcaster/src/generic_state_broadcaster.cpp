@@ -70,18 +70,18 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  names_publisher_ = get_node()->create_publisher<control_msgs::msg::StringArray>(
+  names_publisher_ = get_node()->create_publisher<control_msgs::msg::InterfacesNames>(
     "~/names", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
-  values_publisher_ = get_node()->create_publisher<control_msgs::msg::ValuesArray>(
+  values_publisher_ = get_node()->create_publisher<control_msgs::msg::InterfacesValues>(
     "~/values", rclcpp::SystemDefaultsQoS());
   realtime_values_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::ValuesArray>>(
+    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::InterfacesValues>>(
       values_publisher_);
 
   values_msg_.values.clear();
   values_msg_.values.resize(params_.interfaces.size(), std::numeric_limits<double>::quiet_NaN());
 
-  control_msgs::msg::StringArray names_msg;
+  control_msgs::msg::InterfacesNames names_msg;
   names_msg.names = params_.interfaces;
   names_msg.header.stamp = get_node()->now();
   names_publisher_->publish(names_msg);
