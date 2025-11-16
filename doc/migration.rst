@@ -7,5 +7,5 @@ This list summarizes important changes between Kilted Kaiju (previous) and Lyric
 
 diff_drive_controller
 *****************************
-* Remove unused parameter ``tf_frame_prefix_enable``, use ``tf_frame_prefix`` instead. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
-* Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
+* Instead of using ``tf_frame_prefix_enable:=false``, set an empty ``tf_frame_prefix:=""`` parameter instead. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
+* For using node namespace as tf prefix: Set ``tf_frame_prefix:="~"``, where the ("~") character is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
