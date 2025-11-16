@@ -9,6 +9,26 @@ joint_trajectory_controller:
       size_gt<>: [0],
     }
   }
+  command_prefix: {
+    type: string_array,
+    default_value: [],
+    description: "Optional prefixes to add to each command interface name.
+      The size of this array must either be zero or equal to the number of command_joints.
+      If the size is zero, no prefixing is done.
+      If the size is 1, the single entry is prepended to all command joint names to form the full command interface name.
+      If the size is equal to the number of command_joints, each entry is prepended to the corresponding command joint name to form the full command interface name.
+      This config will not affect the command message, only the interface names used to read the state from the hardware.",
+  }
+  state_prefix: {
+    type: string_array,
+    default_value: [],
+    description: "Optional prefixes to add to each state interface name.
+      The size of this array must either be zero or equal to the number of joints.
+      If the size is zero, no prefixing is done.
+      If the size is 1, the single entry is prepended to all joint names to form the full state interface name.
+      If the size is equal to the number of joints, each entry is prepended to the corresponding joint name to form the full state interface name.
+      This config will not affect the command message, only the interface names used to read the state from the hardware.",
+  }
   command_joints: {
     type: string_array,
     default_value: [],

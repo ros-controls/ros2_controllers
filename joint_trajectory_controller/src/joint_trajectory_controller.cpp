@@ -106,7 +106,7 @@ JointTrajectoryController::command_interface_configuration() const
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(num_cmd_joints_ * params_.command_interfaces.size());
-  for (const auto & joint_name : command_joint_names_)
+  for (const auto & joint_name : command_full_joint_names_)
   {
     for (const auto & interface_type : params_.command_interfaces)
     {
@@ -122,7 +122,7 @@ JointTrajectoryController::state_interface_configuration() const
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * params_.state_interfaces.size());
-  for (const auto & joint_name : params_.joints)
+  for (const auto & joint_name : state_full_joint_names_)
   {
     for (const auto & interface_type : params_.state_interfaces)
     {
@@ -763,6 +763,39 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
+  // check command and state prefixes
+  if(params_.command_prefix.empty())
+  {
+    RCLCPP_INFO(
+      logger,
+      "No command prefix specified, will not set prefix for command interfaces.");
+      params_.command_prefix = std::vector<std::string>(params_.joints.size(), "");
+  }
+  else if(params_.command_prefix.size() != params_.joints.size())
+  {
+    RCLCPP_ERROR(
+      logger,
+      "Size of command prefix (%zu) does not match number of joints (%zu).",
+      params_.command_prefix.size(), params_.joints.size());
+    return CallbackReturn::FAILURE;
+  }
+
+  if(params_.state_prefix.empty())
+  {
+    RCLCPP_INFO(
+      logger,
+      "No state prefix specified, will not set prefix for state interfaces.");
+      params_.state_prefix = std::vector<std::string>(params_.joints.size(), "");
+  }
+  else if(params_.state_prefix.size() != params_.joints.size())
+  {
+    RCLCPP_ERROR(
+      logger,
+      "Size of state prefix (%zu) does not match number of joints (%zu).",
+      params_.state_prefix.size(), params_.joints.size());
+    return CallbackReturn::FAILURE;
+  }
+
   command_joint_names_ = params_.command_joints;
 
   if (command_joint_names_.empty())
@@ -771,6 +804,21 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     RCLCPP_INFO(
       logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
   }
+
+  // construct command_full_joint_names_ / state_full_joint_names_
+  command_full_joint_names_.resize(command_joint_names_.size());
+  state_full_joint_names_.resize(params_.joints.size());
+  for (size_t i = 0; i < command_joint_names_.size(); i++)
+  {
+    command_full_joint_names_[i] = (params_.command_prefix[i].empty() ? "" : params_.command_prefix[i] + "/") +
+                                      command_joint_names_[i];
+  }
+  for (size_t i = 0; i < params_.joints.size(); i++)
+  {
+    state_full_joint_names_[i] = (params_.state_prefix[i].empty() ? "" : params_.state_prefix[i] + "/") +
+                                    params_.joints[i];
+  }
+
   num_cmd_joints_ = command_joint_names_.size();
 
   if (num_cmd_joints_ > dof_)
@@ -1034,7 +1082,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
-          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
+          command_interfaces_, command_full_joint_names_, interface, joint_command_interface_[index]))
     {
       RCLCPP_ERROR(
         logger, "Expected %zu '%s' command interfaces, got %zu.", num_cmd_joints_,
@@ -1048,7 +1096,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
     auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
     if (!controller_interface::get_ordered_interfaces(
-          state_interfaces_, params_.joints, interface, joint_state_interface_[index]))
+          state_interfaces_, state_full_joint_names_, interface, joint_state_interface_[index]))
     {
       RCLCPP_ERROR(
         logger, "Expected %zu '%s' state interfaces, got %zu.", dof_, interface.c_str(),

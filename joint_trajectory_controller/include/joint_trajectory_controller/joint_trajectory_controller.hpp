@@ -101,6 +101,12 @@ protected:
   // Storing command joint names for interfaces
   std::vector<std::string> command_joint_names_;
 
+  // Storing prefixed joint names for command
+  std::vector<std::string> command_full_joint_names_;
+
+  // Storing prefixed joint names for state
+  std::vector<std::string> state_full_joint_names_;
+
   // Parameters from ROS for joint_trajectory_controller
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
