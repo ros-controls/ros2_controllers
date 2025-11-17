@@ -287,13 +287,34 @@ TEST(TestSteeringOdometry, tricycle_IK_linear)
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(2);
+
   odom.update_open_loop(1., 0., 1.);
   auto cmd = odom.get_commands(1., 0., true);
   auto cmd0 = std::get<0>(cmd);  // vel
-  EXPECT_EQ(cmd0[0], cmd0[1]);   // linear
-  EXPECT_GT(cmd0[0], 0);
+  ASSERT_THAT(cmd0.size(), 2);
+  EXPECT_EQ(cmd0[0], cmd0[1]);  // linear
+  EXPECT_GT(cmd0[0], 0.0);
   auto cmd1 = std::get<1>(cmd);  // steer
-  EXPECT_EQ(cmd1[0], 0);         // no steering
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_EQ(cmd1[0], 0.0);  // no steering
+}
+
+TEST(TestSteeringOdometry, tricycle_single_IK_linear)
+{
+  steering_odometry::SteeringOdometry odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(1);
+
+  odom.update_open_loop(1., 0., 1.);
+  auto cmd = odom.get_commands(1., 0., true);
+  auto cmd0 = std::get<0>(cmd);  // vel
+  ASSERT_THAT(cmd0.size(), 1);
+  EXPECT_GT(cmd0[0], 0.0);       // linear
+  auto cmd1 = std::get<1>(cmd);  // steer
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_EQ(cmd1[0], 0.0);  // no steering
 }
 
 TEST(TestSteeringOdometry, tricycle_IK_left)
@@ -301,6 +322,8 @@ TEST(TestSteeringOdometry, tricycle_IK_left)
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(2);
+
   odom.update_from_position(0., 0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., 0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
@@ -315,6 +338,8 @@ TEST(TestSteeringOdometry, tricycle_IK_right)
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(2);
+
   odom.update_from_position(0., -0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., -0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
@@ -329,6 +354,7 @@ TEST(TestSteeringOdometry, tricycle_IK_right_steering_limited)
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(2);
 
   {
     odom.update_from_position(0., -0.785, 1.);  // already steered
@@ -372,6 +398,8 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   steering_odometry::SteeringOdometry odom(1);
   odom.set_wheel_params(1., 1., 1.);
   odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_tricycle_config(2);
+
   ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1));
   EXPECT_NEAR(odom.get_linear(), 1.002, 1e-3);
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
