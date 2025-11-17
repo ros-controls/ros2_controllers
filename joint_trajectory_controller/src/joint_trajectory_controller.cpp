@@ -763,20 +763,35 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
+  command_joint_names_ = params_.command_joints;
+
+  if (command_joint_names_.empty())
+  {
+    command_joint_names_ = params_.joints;
+    RCLCPP_INFO(
+      logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+  }
+
   // check command and state prefixes
   if(params_.command_prefix.empty())
   {
     RCLCPP_INFO(
       logger,
       "No command prefix specified, will not set prefix for command interfaces.");
-      params_.command_prefix = std::vector<std::string>(params_.joints.size(), "");
+      params_.command_prefix = std::vector<std::string>(command_joint_names_.size(), "");
   }
-  else if(params_.command_prefix.size() != params_.joints.size())
+  else if(params_.command_prefix.size() == 1){
+    RCLCPP_INFO(
+      logger,
+      "Only one command prefix specified, will use it for all command interfaces.");
+      params_.command_prefix = std::vector<std::string>(command_joint_names_.size(), params_.command_prefix[0]);
+  }
+  else if(params_.command_prefix.size() != command_joint_names_.size())
   {
     RCLCPP_ERROR(
       logger,
       "Size of command prefix (%zu) does not match number of joints (%zu).",
-      params_.command_prefix.size(), params_.joints.size());
+      params_.command_prefix.size(), command_joint_names_.size());
     return CallbackReturn::FAILURE;
   }
 
@@ -787,6 +802,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "No state prefix specified, will not set prefix for state interfaces.");
       params_.state_prefix = std::vector<std::string>(params_.joints.size(), "");
   }
+  else if(params_.state_prefix.size() == 1){
+    RCLCPP_INFO(
+      logger,
+      "Only one state prefix specified, will use it for all state interfaces.");
+      params_.state_prefix = std::vector<std::string>(params_.joints.size(), params_.state_prefix[0]);
+  }
   else if(params_.state_prefix.size() != params_.joints.size())
   {
     RCLCPP_ERROR(
@@ -796,26 +817,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  command_joint_names_ = params_.command_joints;
-
-  if (command_joint_names_.empty())
-  {
-    command_joint_names_ = params_.joints;
-    RCLCPP_INFO(
-      logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
-  }
-
   // construct command_full_joint_names_ / state_full_joint_names_
   command_full_joint_names_.resize(command_joint_names_.size());
   state_full_joint_names_.resize(params_.joints.size());
   for (size_t i = 0; i < command_joint_names_.size(); i++)
   {
-    command_full_joint_names_[i] = (params_.command_prefix[i].empty() ? "" : params_.command_prefix[i] + "/") +
+    command_full_joint_names_[i] = std::string(params_.command_prefix[i].empty() ? "" : params_.command_prefix[i] + "/") +
                                       command_joint_names_[i];
   }
   for (size_t i = 0; i < params_.joints.size(); i++)
   {
-    state_full_joint_names_[i] = (params_.state_prefix[i].empty() ? "" : params_.state_prefix[i] + "/") +
+    state_full_joint_names_[i] = std::string(params_.state_prefix[i].empty() ? "" : params_.state_prefix[i] + "/") +
                                     params_.joints[i];
   }
 
