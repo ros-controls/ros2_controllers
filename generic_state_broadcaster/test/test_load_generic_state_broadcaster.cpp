@@ -32,6 +32,9 @@ TEST(TestLoadGenericStateBroadcaster, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
+  cm.set_parameter(
+    rclcpp::Parameter(
+      "test_generic_state_broadcaster.params_file", std::string(PARAMETERS_FILE_PATH)));
   ASSERT_NE(
     cm.load_controller(
       "test_generic_state_broadcaster", "generic_state_broadcaster/GenericStateBroadcaster"),

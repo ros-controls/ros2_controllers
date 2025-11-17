@@ -60,6 +60,9 @@ if(BUILD_TESTING)
     hardware_interface::hardware_interface
     rclcpp::rclcpp
     ros2_control_test_assets::ros2_control_test_assets)
+  target_compile_definitions(
+    test_load_generic_state_broadcaster
+    PRIVATE PARAMETERS_FILE_PATH="${CMAKE_CURRENT_LIST_DIR}/test/test_generic_state_broadcaster_params.yaml")
 
   ament_add_gmock(test_generic_state_broadcaster
     test/test_generic_state_broadcaster.cpp
