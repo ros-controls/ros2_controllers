@@ -29,7 +29,7 @@
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
-#include "test_generic_state_broadcaster.hpp"
+#include "test_interfaces_state_broadcaster.hpp"
 
 using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
@@ -47,24 +47,25 @@ constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
 constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 }  // namespace
 
-void GenericStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
+void InterfacesStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
-void GenericStateBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
+void InterfacesStateBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
 
-void GenericStateBroadcasterTest::SetUp()
+void InterfacesStateBroadcasterTest::SetUp()
 {
   // initialize broadcaster
-  state_broadcaster_ = std::make_unique<FriendGenericStateBroadcaster>();
+  state_broadcaster_ = std::make_unique<FriendInterfacesStateBroadcaster>();
 }
 
-void GenericStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
+void InterfacesStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
 
-controller_interface::return_type GenericStateBroadcasterTest::SetUpStateBroadcaster(
+controller_interface::return_type InterfacesStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & interfaces)
 {
   RCLCPP_INFO(
-    rclcpp::get_logger("GenericStateBroadcasterTest"),
-    "Setting up GenericStateBroadcaster with interfaces: %d", static_cast<int>(interfaces.size()));
+    rclcpp::get_logger("InterfacesStateBroadcasterTest"),
+    "Setting up InterfacesStateBroadcaster with interfaces: %d",
+    static_cast<int>(interfaces.size()));
   auto result = init_broadcaster_and_set_parameters("", interfaces);
   if (result == controller_interface::return_type::OK)
   {
@@ -73,11 +74,12 @@ controller_interface::return_type GenericStateBroadcasterTest::SetUpStateBroadca
   return result;
 }
 
-controller_interface::return_type GenericStateBroadcasterTest::init_broadcaster_and_set_parameters(
+controller_interface::return_type
+InterfacesStateBroadcasterTest::init_broadcaster_and_set_parameters(
   const std::string & robot_description, const std::vector<std::string> & interfaces)
 {
   controller_interface::ControllerInterfaceParams params;
-  params.controller_name = "generic_state_broadcaster";
+  params.controller_name = "interfaces_state_broadcaster";
   params.robot_description = robot_description;
   params.update_rate = 0;
   params.node_namespace = "";
@@ -90,7 +92,7 @@ controller_interface::return_type GenericStateBroadcasterTest::init_broadcaster_
   return state_broadcaster_->init(params);
 }
 
-void GenericStateBroadcasterTest::assign_state_interfaces(
+void InterfacesStateBroadcasterTest::assign_state_interfaces(
   const std::vector<std::string> & interfaces)
 {
   std::vector<LoanedStateInterface> state_ifs;
@@ -158,7 +160,7 @@ void GenericStateBroadcasterTest::assign_state_interfaces(
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
-void GenericStateBroadcasterTest::activate_and_get_state_message(
+void InterfacesStateBroadcasterTest::activate_and_get_state_message(
   const std::string & topic, control_msgs::msg::InterfacesValues & msg)
 {
   auto node_state = state_broadcaster_->configure();
@@ -204,7 +206,7 @@ void GenericStateBroadcasterTest::activate_and_get_state_message(
   msg = *received_msg;
 }
 
-TEST_F(GenericStateBroadcasterTest, FailOnEmptyInterfaceListTest)
+TEST_F(InterfacesStateBroadcasterTest, FailOnEmptyInterfaceListTest)
 {
   // publishers not initialized yet
   ASSERT_FALSE(state_broadcaster_->names_publisher_);
@@ -213,7 +215,7 @@ TEST_F(GenericStateBroadcasterTest, FailOnEmptyInterfaceListTest)
   ASSERT_EQ(SetUpStateBroadcaster({}), controller_interface::return_type::ERROR);
 }
 
-TEST_F(GenericStateBroadcasterTest, ConfigureOnValidInterfaceListTest)
+TEST_F(InterfacesStateBroadcasterTest, ConfigureOnValidInterfaceListTest)
 {
   // publishers not initialized yet
   ASSERT_FALSE(state_broadcaster_->names_publisher_);
@@ -254,7 +256,7 @@ TEST_F(GenericStateBroadcasterTest, ConfigureOnValidInterfaceListTest)
   ASSERT_THAT(state_broadcaster_->names_msg_.names, ElementsAreArray(interfaces));
 }
 
-TEST_F(GenericStateBroadcasterTest, StatePublishTest)
+TEST_F(InterfacesStateBroadcasterTest, StatePublishTest)
 {
   std::vector<std::string> all_interfaces;
   for (const auto & joint_name : joint_names_)
@@ -267,7 +269,7 @@ TEST_F(GenericStateBroadcasterTest, StatePublishTest)
   SetUpStateBroadcaster(all_interfaces);
 
   control_msgs::msg::InterfacesValues values_msg;
-  activate_and_get_state_message("generic_state_broadcaster/values", values_msg);
+  activate_and_get_state_message("interfaces_state_broadcaster/values", values_msg);
 
   ASSERT_THAT(values_msg.values, SizeIs(9));
   // all values are NaN since we did not set any value to the state interfaces

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "generic_state_broadcaster/generic_state_broadcaster.hpp"
+#include "interfaces_state_broadcaster/interfaces_state_broadcaster.hpp"
 
 #include <cstddef>
 #include <limits>
@@ -25,12 +25,12 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
 
-namespace generic_state_broadcaster
+namespace interfaces_state_broadcaster
 {
 
-GenericStateBroadcaster::GenericStateBroadcaster() {}
+InterfacesStateBroadcaster::InterfacesStateBroadcaster() {}
 
-controller_interface::CallbackReturn GenericStateBroadcaster::on_init()
+controller_interface::CallbackReturn InterfacesStateBroadcaster::on_init()
 {
   try
   {
@@ -47,14 +47,14 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_init()
 }
 
 controller_interface::InterfaceConfiguration
-GenericStateBroadcaster::command_interface_configuration() const
+InterfacesStateBroadcaster::command_interface_configuration() const
 {
   return controller_interface::InterfaceConfiguration{
     controller_interface::interface_configuration_type::NONE};
 }
 
 controller_interface::InterfaceConfiguration
-GenericStateBroadcaster::state_interface_configuration() const
+InterfacesStateBroadcaster::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -65,7 +65,7 @@ GenericStateBroadcaster::state_interface_configuration() const
   return state_interfaces_config;
 }
 
-controller_interface::CallbackReturn GenericStateBroadcaster::on_configure(
+controller_interface::CallbackReturn InterfacesStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
@@ -88,7 +88,7 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn GenericStateBroadcaster::on_activate(
+controller_interface::CallbackReturn InterfacesStateBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
@@ -97,7 +97,8 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_activate(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "State interface '%s' is not castable to double. The GenericStateBroadcaster only supports "
+        "State interface '%s' is not castable to double. The InterfacesStateBroadcaster only "
+        "supports "
         "state interfaces that can be casted to double.",
         params_.interfaces[i].c_str());
       return CallbackReturn::FAILURE;
@@ -107,7 +108,7 @@ controller_interface::CallbackReturn GenericStateBroadcaster::on_activate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type GenericStateBroadcaster::update(
+controller_interface::return_type InterfacesStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
@@ -128,9 +129,10 @@ controller_interface::return_type GenericStateBroadcaster::update(
   return controller_interface::return_type::OK;
 }
 
-}  // namespace generic_state_broadcaster
+}  // namespace interfaces_state_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  generic_state_broadcaster::GenericStateBroadcaster, controller_interface::ControllerInterface)
+  interfaces_state_broadcaster::InterfacesStateBroadcaster,
+  controller_interface::ControllerInterface)

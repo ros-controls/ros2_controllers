@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_GENERIC_STATE_BROADCASTER_HPP_
-#define TEST_GENERIC_STATE_BROADCASTER_HPP_
+#ifndef TEST_INTERFACES_STATE_BROADCASTER_HPP_
+#define TEST_INTERFACES_STATE_BROADCASTER_HPP_
 
 #include <gmock/gmock.h>
 
@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "generic_state_broadcaster/generic_state_broadcaster.hpp"
+#include "interfaces_state_broadcaster/interfaces_state_broadcaster.hpp"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
@@ -30,14 +30,15 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
 // subclassing and friending so we can access member variables
-class FriendGenericStateBroadcaster : public generic_state_broadcaster::GenericStateBroadcaster
+class FriendInterfacesStateBroadcaster
+: public interfaces_state_broadcaster::InterfacesStateBroadcaster
 {
-  FRIEND_TEST(GenericStateBroadcasterTest, FailOnEmptyInterfaceListTest);
-  FRIEND_TEST(GenericStateBroadcasterTest, ConfigureOnValidInterfaceListTest);
-  FRIEND_TEST(GenericStateBroadcasterTest, StatePublishTest);
+  FRIEND_TEST(InterfacesStateBroadcasterTest, FailOnEmptyInterfaceListTest);
+  FRIEND_TEST(InterfacesStateBroadcasterTest, ConfigureOnValidInterfaceListTest);
+  FRIEND_TEST(InterfacesStateBroadcasterTest, StatePublishTest);
 };
 
-class GenericStateBroadcasterTest : public ::testing::Test
+class InterfacesStateBroadcasterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -103,8 +104,8 @@ protected:
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
-  std::unique_ptr<FriendGenericStateBroadcaster> state_broadcaster_;
+  std::unique_ptr<FriendInterfacesStateBroadcaster> state_broadcaster_;
   std::string frame_id_ = "base_link";
 };
 
-#endif  // TEST_GENERIC_STATE_BROADCASTER_HPP_
+#endif  // TEST_INTERFACES_STATE_BROADCASTER_HPP_

@@ -22,7 +22,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadGenericStateBroadcaster, load_controller)
+TEST(TestLoadInterfacesStateBroadcaster, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -34,10 +34,11 @@ TEST(TestLoadGenericStateBroadcaster, load_controller)
 
   cm.set_parameter(
     rclcpp::Parameter(
-      "test_generic_state_broadcaster.params_file", std::string(PARAMETERS_FILE_PATH)));
+      "test_interfaces_state_broadcaster.params_file", std::string(PARAMETERS_FILE_PATH)));
   ASSERT_NE(
     cm.load_controller(
-      "test_generic_state_broadcaster", "generic_state_broadcaster/GenericStateBroadcaster"),
+      "test_interfaces_state_broadcaster",
+      "interfaces_state_broadcaster/InterfacesStateBroadcaster"),
     nullptr);
 
   rclcpp::shutdown();

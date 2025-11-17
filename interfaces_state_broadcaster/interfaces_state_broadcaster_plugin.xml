@@ -1,0 +1,7 @@
+<library path="interfaces_state_broadcaster">
+  <class name="interfaces_state_broadcaster/InterfacesStateBroadcaster" type="interfaces_state_broadcaster::InterfacesStateBroadcaster" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The interfaces state broadcaster publishes the values of the requested interfaces from ros2_control system.
+  </description>
+  </class>
+</library>

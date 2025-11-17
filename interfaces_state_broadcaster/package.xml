@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>generic_state_broadcaster</name>
+  <name>interfaces_state_broadcaster</name>
   <version>5.8.0</version>
-  <description>Broadcaster to publish desired hardware interface states</description>
+  <description>Broadcaster to publish desired hardware interface states that are castable to double</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>

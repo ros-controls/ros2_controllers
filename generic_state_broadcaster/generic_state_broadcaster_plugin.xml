@@ -1,7 +1,0 @@
-<library path="generic_state_broadcaster">
-  <class name="generic_state_broadcaster/GenericStateBroadcaster" type="generic_state_broadcaster::GenericStateBroadcaster" base_class_type="controller_interface::ControllerInterface">
-  <description>
-    The generic state broadcaster publishes the values of the requested interfaces from ros2_control system.
-  </description>
-  </class>
-</library>
