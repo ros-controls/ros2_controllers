@@ -150,10 +150,11 @@ public:
     double v_bx, double omega_bz, bool open_loop = true,
     bool reduce_wheel_speed_until_steering_reached = false)
   {
-    return impl_.get_commands(v_bx, omega_bz, open_loop, reduce_wheel_speed_until_steering_reached);
+    return sk_impl_.get_commands(
+      v_bx, omega_bz, open_loop, reduce_wheel_speed_until_steering_reached);
   }
 
-  void reset_odometry() { impl_.reset_odometry(); }
+  void reset_odometry() { sk_impl_.reset_odometry(); }
 
 private:
   steering_kinematics::SteeringKinematics sk_impl_;
