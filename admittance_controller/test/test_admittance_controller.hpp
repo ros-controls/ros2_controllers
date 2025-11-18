@@ -76,11 +76,17 @@ class TestableAdmittanceController : public admittance_controller::AdmittanceCon
 public:
   CallbackReturn on_init() override
   {
-    get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
-    get_node()->declare_parameter(
-      "robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
-    get_node()->set_parameter({"robot_description", robot_description_});
-    get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
+    if (!get_node()->has_parameter("robot_description"))
+    {
+      get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
+      get_node()->set_parameter({"robot_description", robot_description_});
+    }
+    if (!get_node()->has_parameter("robot_description_semantic"))
+    {
+      get_node()->declare_parameter(
+        "robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
+      get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
+    }
 
     return admittance_controller::AdmittanceController::on_init();
   }
