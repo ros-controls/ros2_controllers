@@ -267,9 +267,15 @@ protected:
   double front_wheels_radius_ = 0.45;
   double rear_wheels_radius_ = 0.45;
 
+<<<<<<< HEAD
   std::array<double, 2> joint_state_values_ = {3.3, 0.5};
   std::array<double, 2> joint_command_values_ = {1.1, 2.2};
   std::array<std::string, 2> joint_reference_interfaces_ = {"linear/velocity", "angular/velocity"};
+=======
+  std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
+  std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
+  std::array<std::string, 2> reference_interface_names_ = {{"linear", "angular"}};
+>>>>>>> 6ddb0b4 (Rename joint_reference_interfaces to reference_interface_names (#2008))
   std::string steering_interface_name_ = "position";
 
   // defined in setup

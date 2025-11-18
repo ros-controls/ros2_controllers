@@ -80,6 +80,7 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // check ref itfs
+<<<<<<< HEAD
   auto ref_if_conf = controller_->export_reference_interfaces();
   ASSERT_EQ(ref_if_conf.size(), joint_reference_interfaces_.size());
   for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
@@ -89,6 +90,19 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
     EXPECT_EQ(ref_if_conf[i].get_name(), ref_itf_name);
     EXPECT_EQ(ref_if_conf[i].get_prefix_name(), controller_->get_node()->get_name());
     EXPECT_EQ(ref_if_conf[i].get_interface_name(), joint_reference_interfaces_[i]);
+=======
+  auto reference_interfaces = controller_->export_reference_interfaces();
+  ASSERT_EQ(reference_interfaces.size(), reference_interface_names_.size());
+  for (size_t i = 0; i < reference_interface_names_.size(); ++i)
+  {
+    const std::string ref_itf_prefix_name =
+      std::string(controller_->get_node()->get_name()) + "/" + reference_interface_names_[i];
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
+>>>>>>> 6ddb0b4 (Rename joint_reference_interfaces to reference_interface_names (#2008))
   }
 }
 

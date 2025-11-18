@@ -70,14 +70,24 @@ TEST_F(BicycleSteeringControllerTest, check_exported_interfaces)
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
-  for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), reference_interface_names_.size());
+  for (size_t i = 0; i < reference_interface_names_.size(); ++i)
   {
+<<<<<<< HEAD
     const std::string ref_itf_name =
       std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
     EXPECT_EQ(reference_interfaces[i].get_name(), ref_itf_name);
     EXPECT_EQ(reference_interfaces[i].get_prefix_name(), controller_->get_node()->get_name());
     EXPECT_EQ(reference_interfaces[i].get_interface_name(), joint_reference_interfaces_[i]);
+=======
+    const std::string ref_itf_prefix_name =
+      std::string(controller_->get_node()->get_name()) + "/" + reference_interface_names_[i];
+    EXPECT_EQ(
+      reference_interfaces[i]->get_name(),
+      ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
+    EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
+    EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
+>>>>>>> 6ddb0b4 (Rename joint_reference_interfaces to reference_interface_names (#2008))
   }
 }
 
@@ -163,8 +173,13 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
+<<<<<<< HEAD
   EXPECT_FALSE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+=======
+  EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
+>>>>>>> 6ddb0b4 (Rename joint_reference_interfaces to reference_interface_names (#2008))
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -195,8 +210,13 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic_chained)
     controller_->command_interfaces_[CMD_STEER_WHEEL].get_value(), 1.4179821977774734,
     COMMON_THRESHOLD);
 
+<<<<<<< HEAD
   EXPECT_TRUE(std::isnan((*(controller_->input_ref_.readFromRT()))->twist.linear.x));
   EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+=======
+  EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
+  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
+>>>>>>> 6ddb0b4 (Rename joint_reference_interfaces to reference_interface_names (#2008))
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
