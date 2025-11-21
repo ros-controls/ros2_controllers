@@ -22,7 +22,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
-  parameter_traits
   pluginlib
   rclcpp
   rclcpp_lifecycle
@@ -49,6 +48,7 @@ target_include_directories(pid_controller PUBLIC
   $<INSTALL_INTERFACE:include/pid_controller>
 )
 target_link_libraries(pid_controller PUBLIC
+<<<<<<< HEAD
   pid_controller_parameters
 )
 ament_target_dependencies(pid_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
@@ -56,6 +56,20 @@ ament_target_dependencies(pid_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(pid_controller PRIVATE "PID_CONTROLLER_BUILDING_DLL")
+=======
+                      pid_controller_parameters
+                      angles::angles
+                      control_toolbox::control_toolbox
+                      controller_interface::controller_interface
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${std_srvs_TARGETS}
+                      ${control_msgs_TARGETS}
+                      ${std_srvs_TARGETS})
+>>>>>>> ec198b1 (Remove parameter_traits dependency (#2022))
 
 pluginlib_export_plugin_description_file(controller_interface pid_controller.xml)
 
