@@ -6,7 +6,8 @@ Changelog for package force_torque_sensor_broadcaster
 ------------------
 * Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
 * Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
-* Contributors: Anand Vardhan, Christoph Fröhlich
+* Add wrench transformer node for transforming wrench messages to different frames (`#1842 <https://github.com/ros-controls/ros2_controllers/issues/1842>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich, Julia Jia
 
 5.8.0 (2025-10-02)
 ------------------

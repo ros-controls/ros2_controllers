@@ -35,3 +35,39 @@ An example parameter file for this controller can be found in `the test director
 
 .. literalinclude:: ../test/force_torque_sensor_broadcaster_params.yaml
    :language: yaml
+
+Wrench Transformer Node
+-----------------------
+The package provides a standalone ROS2 node ``wrench_transformer_node`` that transforms wrench messages published by the ``ForceTorqueSensorBroadcaster`` controller to different target frames using TF2. This is useful when applications need force/torque data in coordinate frames other than the sensor frame.
+
+The node subscribes to wrench messages from the broadcaster (either raw or filtered) and publishes transformed versions to separate topics for each target frame.
+
+Usage
+^^^^^
+The wrench transformer node can be launched as a standalone executable:
+
+.. code-block:: bash
+
+   ros2 run force_torque_sensor_broadcaster wrench_transformer_node
+
+Parameters
+^^^^^^^^^^
+The wrench transformer uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file for the wrench transformer <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/src/wrench_transformer_parameters.yaml>`_ contains descriptions for all the parameters.
+
+Full list of parameters:
+
+.. generate_parameter_library_details:: ../src/wrench_transformer_parameters.yaml
+  parameters_context.yaml
+
+Topics
+^^^^^^
+The node subscribes to:
+- ``<broadcaster_namespace>/wrench`` (raw wrench messages) or ``<broadcaster_namespace>/wrench_filtered`` (filtered wrench messages) depending on the ``use_filtered_input`` parameter
+
+The node publishes:
+- ``<output_topic_prefix>_<target_frame>`` for each target frame specified in ``target_frames``
+
+Example parameter file:
+
+.. literalinclude:: ../test/test_wrench_transformer.yaml
+   :language: yaml
