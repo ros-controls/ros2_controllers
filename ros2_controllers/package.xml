@@ -41,6 +41,7 @@
   <exec_depend>steering_controllers_library</exec_depend>
   <exec_depend>tricycle_controller</exec_depend>
   <exec_depend>tricycle_steering_controller</exec_depend>
+  <exec_depend>vda5050_safety_state_broadcaster</exec_depend>
   <exec_depend>velocity_controllers</exec_depend>
 
   <export>
