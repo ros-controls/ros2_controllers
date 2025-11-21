@@ -33,7 +33,7 @@
 #include "tf2_msgs/msg/tf_message.hpp"
 
 #include "steering_controllers_library/steering_controllers_library_parameters.hpp"
-#include "steering_controllers_library/steering_odometry.hpp"
+#include "steering_controllers_library/steering_kinematics.hpp"
 
 namespace steering_controllers_library
 {
@@ -106,7 +106,7 @@ protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
   /// Odometry:
-  steering_odometry::SteeringOdometry odometry_;
+  steering_kinematics::SteeringKinematics odometry_;
 
   SteeringControllerStateMsg published_state_;
 

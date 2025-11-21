@@ -12,6 +12,10 @@ The package contains the following controllers:
 effort_controllers/JointGroupEffortController
 -------------------------------------------------
 
+.. warning::
+
+  ``effort_controllers/JointGroupEffortController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``effort``.
+
 This is specialization of the :ref:`forward_command_controller <forward_command_controller_userdoc>` that works using the "effort" joint interface.
 
 

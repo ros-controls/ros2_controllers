@@ -29,6 +29,11 @@ JointGroupEffortController::JointGroupEffortController()
 
 controller_interface::CallbackReturn JointGroupEffortController::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "'effort_controllers/JointGroupEffortController' is deprecated. "
+    "Use 'forward_command_controller/ForwardCommandController' instead by adding the "
+    "'interface_name' parameter and set it to 'effort'.");
   try
   {
     // Explicitly set the interface parameter declared by the forward_command_controller

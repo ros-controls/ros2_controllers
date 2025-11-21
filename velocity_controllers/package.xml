@@ -34,5 +34,10 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <deprecated>
+      This package will be removed in ROS 2 Lyrical Luth. Instead, use
+      forward_command_controller, see migration guides for details:
+      https://control.ros.org/rolling/doc/ros2_controllers/doc/migration.html
+    </deprecated>
   </export>
 </package>
