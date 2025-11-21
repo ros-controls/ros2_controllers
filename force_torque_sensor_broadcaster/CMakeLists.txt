@@ -112,6 +112,7 @@ if(BUILD_TESTING)
   )
 
   ament_add_gmock(test_wrench_transformer test/test_wrench_transformer.cpp)
+  target_compile_features(test_wrench_transformer PUBLIC cxx_std_17)
   target_include_directories(test_wrench_transformer PRIVATE include)
   target_compile_definitions(test_wrench_transformer PRIVATE
     TEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")

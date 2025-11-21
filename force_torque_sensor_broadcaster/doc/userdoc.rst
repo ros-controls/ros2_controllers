@@ -66,8 +66,3 @@ The node subscribes to:
 
 The node publishes:
 - ``<output_topic_prefix>_<target_frame>`` for each target frame specified in ``target_frames``
-
-Example parameter file:
-
-.. literalinclude:: ../test/test_wrench_transformer.yaml
-   :language: yaml

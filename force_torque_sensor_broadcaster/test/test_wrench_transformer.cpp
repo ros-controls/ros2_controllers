@@ -18,6 +18,8 @@
 
 #include <gmock/gmock.h>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -45,9 +47,9 @@ protected:
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
 
   void setup_static_transform(
-    const std::string & parent_frame, const std::string & child_frame,
-    double x = 0.0, double y = 0.0, double z = 0.0, double qx = 0.0, double qy = 0.0,
-    double qz = 0.0, double qw = 1.0)
+    const std::string & parent_frame, const std::string & child_frame, double x = 0.0,
+    double y = 0.0, double z = 0.0, double qx = 0.0, double qy = 0.0, double qz = 0.0,
+    double qw = 1.0)
   {
     auto tf_node = std::make_shared<rclcpp::Node>("static_tf_broadcaster");
     executor_->add_node(tf_node);
@@ -71,11 +73,9 @@ protected:
   }
 
   std::shared_ptr<force_torque_sensor_broadcaster::WrenchTransformer> create_transformer_node(
-    const std::string & broadcaster_namespace = "test_broadcaster",
-    bool use_filtered_input = false,
+    const std::string & broadcaster_namespace = "test_broadcaster", bool use_filtered_input = false,
     const std::vector<std::string> & target_frames = {"base_link"},
-    const std::string & output_topic_prefix = "~/wrench_transformed",
-    double tf_timeout = 0.1)
+    const std::string & output_topic_prefix = "~/wrench_transformed", double tf_timeout = 0.1)
   {
     rclcpp::NodeOptions options;
     std::vector<rclcpp::Parameter> parameters;
@@ -130,7 +130,7 @@ TEST_F(TestWrenchTransformer, NodeInitialization)
   rclcpp::NodeOptions options;
   std::vector<rclcpp::Parameter> parameters;
   parameters.emplace_back("target_frames", std::vector<std::string>{"base_link"});
-  
+
   options.parameter_overrides(parameters);
 
   auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
@@ -143,14 +143,23 @@ TEST_F(TestWrenchTransformer, NodeInitialization)
 
 TEST_F(TestWrenchTransformer, ParameterLoadingFromYamlFile)
 {
+  // Construct absolute path to YAML file
+  std::filesystem::path yaml_path =
+    std::filesystem::path(TEST_FILES_DIRECTORY) / "test_wrench_transformer.yaml";
+  yaml_path = std::filesystem::canonical(yaml_path);
+  const std::string yaml_file_path = yaml_path.string();
+
+  // Verify file exists before trying to load it
+  ASSERT_TRUE(std::filesystem::exists(yaml_path)) << "YAML file not found at: " << yaml_file_path;
+
   rclcpp::NodeOptions options;
-  options.arguments({"--ros-args", "--params-file", std::string(TEST_FILES_DIRECTORY) + "/test_wrench_transformer.yaml"});
+  options.arguments({"--ros-args", "--params-file", yaml_file_path});
   auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
   executor_->add_node(node);
   node->init();
-  
+
   ASSERT_NE(node, nullptr);
-  
+
   // Verify parameters were loaded from YAML
   EXPECT_EQ(node->get_parameter("broadcaster_namespace").as_string(), "test_broadcaster");
   EXPECT_EQ(node->get_parameter("use_filtered_input").as_bool(), false);
@@ -164,9 +173,7 @@ TEST_F(TestWrenchTransformer, ParameterLoadingFromYamlFile)
 
 TEST_F(TestWrenchTransformer, MultipleTargetFrames)
 {
-  auto node = create_transformer_node(
-    "test_broadcaster", false,
-    {"base_link", "end_effector"});
+  auto node = create_transformer_node("test_broadcaster", false, {"base_link", "end_effector"});
 
   executor_->spin_some(std::chrono::milliseconds(100));
 
@@ -188,8 +195,10 @@ TEST_F(TestWrenchTransformer, MultipleTargetFrames)
   wait_for_publisher(end_effector_sub);
 
   ASSERT_NE(node, nullptr);
-  EXPECT_GT(base_link_sub->get_publisher_count(), 0u) << "Publisher not found on /fts_wrench_transformer/wrench_transformed_base_link";
-  EXPECT_GT(end_effector_sub->get_publisher_count(), 0u) << "Publisher not found on /fts_wrench_transformer/wrench_transformed_end_effector";
+  EXPECT_GT(base_link_sub->get_publisher_count(), 0u)
+    << "Publisher not found on /fts_wrench_transformer/wrench_transformed_base_link";
+  EXPECT_GT(end_effector_sub->get_publisher_count(), 0u)
+    << "Publisher not found on /fts_wrench_transformer/wrench_transformed_end_effector";
 }
 
 TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
@@ -216,7 +225,8 @@ TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
   auto subscriber_node = std::make_shared<rclcpp::Node>("test_subscriber");
   auto output_subscriber = subscriber_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
     "/fts_wrench_transformer/wrench_transformed_base_link", rclcpp::SystemDefaultsQoS(),
-    [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg) { received_msg = msg; });
+    [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
+    { received_msg = msg; });
   executor_->add_node(subscriber_node);
 
   wait_for_discovery();
@@ -252,8 +262,8 @@ TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
 TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
 {
   // Create transformer node first so its TF listener can receive transforms
-  auto transformer_node = create_transformer_node(
-    "test_broadcaster", false, {"base_link", "end_effector"});
+  auto transformer_node =
+    create_transformer_node("test_broadcaster", false, {"base_link", "end_effector"});
   executor_->spin_some(std::chrono::milliseconds(100));
 
   // Setup static transforms
@@ -273,14 +283,18 @@ TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
   // Create subscriber nodes to receive output messages for both frames
   geometry_msgs::msg::WrenchStamped::SharedPtr received_base_link;
   geometry_msgs::msg::WrenchStamped::SharedPtr received_end_effector;
-  
+
   auto subscriber_node = std::make_shared<rclcpp::Node>("test_subscriber");
-  auto base_link_subscriber = subscriber_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "/fts_wrench_transformer/wrench_transformed_base_link", rclcpp::SystemDefaultsQoS(),
-    [&received_base_link](const geometry_msgs::msg::WrenchStamped::SharedPtr msg) { received_base_link = msg; });
-  auto end_effector_subscriber = subscriber_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "/fts_wrench_transformer/wrench_transformed_end_effector", rclcpp::SystemDefaultsQoS(),
-    [&received_end_effector](const geometry_msgs::msg::WrenchStamped::SharedPtr msg) { received_end_effector = msg; });
+  auto base_link_subscriber =
+    subscriber_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
+      "/fts_wrench_transformer/wrench_transformed_base_link", rclcpp::SystemDefaultsQoS(),
+      [&received_base_link](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
+      { received_base_link = msg; });
+  auto end_effector_subscriber =
+    subscriber_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
+      "/fts_wrench_transformer/wrench_transformed_end_effector", rclcpp::SystemDefaultsQoS(),
+      [&received_end_effector](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
+      { received_end_effector = msg; });
   executor_->add_node(subscriber_node);
 
   wait_for_discovery();
@@ -299,8 +313,10 @@ TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
 
   // Verify messages were received and transformed
   ASSERT_NE(transformer_node, nullptr);
-  ASSERT_TRUE(received_base_link != nullptr) << "Transformed message for base_link was not received";
-  ASSERT_TRUE(received_end_effector != nullptr) << "Transformed message for end_effector was not received";
+  ASSERT_TRUE(received_base_link != nullptr)
+    << "Transformed message for base_link was not received";
+  ASSERT_TRUE(received_end_effector != nullptr)
+    << "Transformed message for end_effector was not received";
   EXPECT_EQ(received_base_link->header.frame_id, "base_link");
   EXPECT_EQ(received_end_effector->header.frame_id, "end_effector");
 }

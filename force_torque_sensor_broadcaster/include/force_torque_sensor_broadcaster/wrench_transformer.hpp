@@ -48,8 +48,8 @@ public:
 private:
   void wrench_callback(const geometry_msgs::msg::WrenchStamped::SharedPtr msg);
   bool transform_wrench(
-    const geometry_msgs::msg::WrenchStamped & input_wrench,
-    const std::string & target_frame, geometry_msgs::msg::WrenchStamped & output_wrench);
+    const geometry_msgs::msg::WrenchStamped & input_wrench, const std::string & target_frame,
+    geometry_msgs::msg::WrenchStamped & output_wrench);
 
   void setup_subscriber();
   void setup_publishers();
@@ -71,4 +71,3 @@ private:
 }  // namespace force_torque_sensor_broadcaster
 
 #endif  // FORCE_TORQUE_SENSOR_BROADCASTER__WRENCH_TRANSFORMER_HPP_
-
