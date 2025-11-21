@@ -76,6 +76,9 @@ protected:
   size_t dof_;
   std::vector<double> measured_state_values_;
 
+  inline static const std::vector<std::string> GAIN_INTERFACES = {"p", "i", "d"};
+  inline static const std::vector<size_t> GAIN_TYPES_INDEX = {0, 1, 2};
+
   using PidPtr = std::shared_ptr<control_toolbox::PidROS>;
   std::vector<PidPtr> pids_;
 
