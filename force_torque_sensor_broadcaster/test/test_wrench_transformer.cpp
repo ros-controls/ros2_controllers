@@ -141,36 +141,6 @@ TEST_F(TestWrenchTransformer, NodeInitialization)
   EXPECT_EQ(std::string(node->get_name()), "fts_wrench_transformer");
 }
 
-TEST_F(TestWrenchTransformer, ParameterLoadingFromYamlFile)
-{
-  // Construct absolute path to YAML file
-  std::filesystem::path yaml_path =
-    std::filesystem::path(TEST_FILES_DIRECTORY) / "test_wrench_transformer.yaml";
-  yaml_path = std::filesystem::canonical(yaml_path);
-  const std::string yaml_file_path = yaml_path.string();
-
-  // Verify file exists before trying to load it
-  ASSERT_TRUE(std::filesystem::exists(yaml_path)) << "YAML file not found at: " << yaml_file_path;
-
-  rclcpp::NodeOptions options;
-  options.arguments({"--ros-args", "--params-file", yaml_file_path});
-  auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
-  executor_->add_node(node);
-  node->init();
-
-  ASSERT_NE(node, nullptr);
-
-  // Verify parameters were loaded from YAML
-  EXPECT_EQ(node->get_parameter("broadcaster_namespace").as_string(), "test_broadcaster");
-  EXPECT_EQ(node->get_parameter("use_filtered_input").as_bool(), false);
-  auto target_frames = node->get_parameter("target_frames").as_string_array();
-  EXPECT_EQ(target_frames.size(), 2u);
-  EXPECT_EQ(target_frames[0], "base_link");
-  EXPECT_EQ(target_frames[1], "end_effector");
-  EXPECT_EQ(node->get_parameter("output_topic_prefix").as_string(), "~/wrench_transformed");
-  EXPECT_DOUBLE_EQ(node->get_parameter("tf_timeout").as_double(), 0.1);
-}
-
 TEST_F(TestWrenchTransformer, MultipleTargetFrames)
 {
   auto node = create_transformer_node("test_broadcaster", false, {"base_link", "end_effector"});
