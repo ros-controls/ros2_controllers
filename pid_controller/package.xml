@@ -29,7 +29,6 @@
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
-  <depend>parameter_traits</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
