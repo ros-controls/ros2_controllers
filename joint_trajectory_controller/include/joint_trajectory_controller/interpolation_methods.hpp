@@ -22,43 +22,101 @@
 
 namespace joint_trajectory_controller
 {
+
+/// \brief Setup interpolation_methods' rclcpp::Logger instance.
 static const rclcpp::Logger LOGGER =
   rclcpp::get_logger("joint_trajectory_controller.interpolation_methods");
 
 namespace interpolation_methods
 {
+
+/**
+ * \brief Defines the available interpolation methods used for fitting data curves.
+ * This enumeration specifies how intermediate values between data points
+ * should be calculated.
+ */
 enum class InterpolationMethod
 {
+  /**
+   * \brief No interpolation is performed.
+   * This is typically used when data points are discrete and should not be
+   * connected by a curve.
+   */
   NONE,
+
+  /**
+   * \brief Uses a variable-degree spline interpolation.
+   * The degree of the spline is determined dynamically based on the number of
+   * available deriviatives. This provides a smooth, continuous curve between data points.
+   *
+   * Based on available deriviatives, it uses following degree interpolation,
+   * 1. Neither velocity nor acceleration is available: `Linear Interpolation`.
+   * 2. Velocity is available, but acceleration is not available: `Cubic Spline Interpolation`.
+   * 3. Both velocity and acceleration is available: `Quintic Spline Interpolation`.
+   */
   VARIABLE_DEGREE_SPLINE
 };
 
+/**
+ * \brief The default interpolation method is set to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
+ * As, it provides most realistic, jerk-free and smooth motion.
+ */
 const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 
-const std::unordered_map<InterpolationMethod, std::string> InterpolationMethodMap(
-  {{InterpolationMethod::NONE, "none"}, {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}});
+/**
+ * \brief Maps `InterpolationMethod` enum values to their string identifiers.
+ * This constant map is used to look up the InterpolationMethod for a given
+ * string (e.g., "splines" for `VARIABLE_DEGREE_SPLINE`).
+ */
+const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap({
+  {"none", InterpolationMethod::NONE},
+  {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}
+});
 
+/**
+ * \brief Reverse map of InterpolationMethodMap.
+ * This constant map is used to look up the string name for a given
+ * InterpolationMethod (e.g., `VARIABLE_DEGREE_SPLINE` for "splines").
+ */
+const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationMethodMap({
+  {InterpolationMethod::NONE, "none"},
+  {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}
+});
+
+/**
+ * \brief Creates a `InterpolationMethod` enum class value from a string.
+ * This function looks up `InterpolationMethodMap` for corresponding `InterpolationMethod` based
+ * on interpolation_method string.
+ *
+ * \param[in] `interpolation_method` The given interpolation method `string`.
+ * 
+ * \returns The corresponding InterpolationMethod.
+ *
+ * \note If interpolation_method do not have any corresponding InterpolationMethod (i.e., Unknown),
+ * It defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
+ */
 [[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
 {
-  if (interpolation_method.compare(InterpolationMethodMap.at(InterpolationMethod::NONE)) == 0)
+  // Iterator to InterpolationMethodMap
+  const auto iterator = InterpolationMethodMap.find(interpolation_method);
+
+  // If interpolation_method exists
+  if (iterator != InterpolationMethodMap.end())
   {
-    return InterpolationMethod::NONE;
-  }
-  else if (
-    interpolation_method.compare(
-      InterpolationMethodMap.at(InterpolationMethod::VARIABLE_DEGREE_SPLINE)) == 0)
-  {
-    return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
+    // Return corresponding `InterpolationMethod`
+    return iterator->second;
   }
   // Default
   else
   {
     RCLCPP_INFO(
       LOGGER,
-      "No interpolation method parameter was given. Using the default, VARIABLE_DEGREE_SPLINE.");
+      "Unknown interpolation method parameter '%s' was given. Using the default: VARIABLE_DEGREE_SPLINE.",
+      interpolation_method.c_str());
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
   }
 }
+
 }  // namespace interpolation_methods
 }  // namespace joint_trajectory_controller
 
