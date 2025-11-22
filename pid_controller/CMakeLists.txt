@@ -22,7 +22,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
-  parameter_traits
   pluginlib
   rclcpp
   rclcpp_lifecycle
