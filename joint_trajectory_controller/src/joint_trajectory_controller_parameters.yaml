@@ -17,7 +17,7 @@ joint_trajectory_controller:
         * JTC is used in a controller chain where command and state interfaces don't have same names.
 
         * If the number of command joints is smaller than the degrees-of-freedom. For example to track the state and error of passive joints. ``command_joints`` must then be a subset of ``joints``.",
-    read_only: true,
+    read_only: false, # should be set to true after configuration of the controller
     validation: {
       unique<>: null,
     }
@@ -133,73 +133,12 @@ joint_trajectory_controller:
      ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
      If zero, timeout is deactivated",
   }
-  gains:
-    __map_joints:
-      p: {
-        type: double,
-        default_value: 0.0,
-        description: "Proportional gain :math:`k_p` for PID"
-      }
-      i: {
-        type: double,
-        default_value: 0.0,
-        description: "Integral gain :math:`k_i` for PID"
-      }
-      d: {
-        type: double,
-        default_value: 0.0,
-        description: "Derivative gain :math:`k_d` for PID"
-      }
-      ff_velocity_scale: {
-        type: double,
-        default_value: 0.0,
-        description: "Feed-forward scaling :math:`k_{ff}` of velocity"
-      }
-      u_clamp_max: {
-        type: double,
-        default_value: .inf,
-        description: "Upper output clamp."
-      }
-      u_clamp_min: {
-        type: double,
-        default_value: -.inf,
-        description: "Lower output clamp."
-      }
-      i_clamp_max: {
-        type: double,
-        default_value: .inf,
-        description: "Upper integral clamp."
-      }
-      i_clamp_min: {
-        type: double,
-        default_value: -.inf,
-        description: "Lower integral clamp."
-      }
-      antiwindup_strategy: {
-        type: string,
-        default_value: "none",
-        description: "Specifies the anti-windup strategy. Options: 'back_calculation',
-        'conditional_integration' or 'none'. Note that the 'back_calculation' strategy use the
-        tracking_time_constant parameter to tune the anti-windup behavior.",
-        validation: {
-          one_of<>: [[
-            "back_calculation",
-            "conditional_integration",
-            "none"
-          ]]
-        }
-      }
-      tracking_time_constant: {
-        type: double,
-        default_value: 0.0,
-        description: "Specifies the tracking time constant for the 'back_calculation' strategy. If
-        set to 0.0 when this strategy is selected, a recommended default value will be applied."
-      }
-      error_deadband: {
-        type: double,
-        default_value: 0.0,
-        description: "Is used to stop integration when the error is within the given range."
-      }
+  controller_plugin: {
+      type: string,
+      default_value: "joint_trajectory_controller_plugins::PidTrajectoryPlugin",
+      description: "Type of the plugin for the trajectory controller",
+      read_only: true,
+  }
   constraints:
     stopped_velocity_tolerance: {
       type: double,
