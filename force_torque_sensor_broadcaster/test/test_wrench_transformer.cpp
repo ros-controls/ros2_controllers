@@ -38,7 +38,7 @@
 #include "tf2/exceptions.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 
 class TestWrenchTransformer : public ::testing::Test
 {
