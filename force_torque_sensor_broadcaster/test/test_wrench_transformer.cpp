@@ -259,6 +259,73 @@ TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
   EXPECT_DOUBLE_EQ(received_msg->wrench.torque.z, test_msg.wrench.torque.z);
 }
 
+TEST_F(TestWrenchTransformer, NonIdentityTransform)
+{
+  // Create transformer node first so its TF listener can receive transforms
+  auto transformer_node = create_transformer_node();
+  executor_->spin_some(std::chrono::milliseconds(100));
+
+  // Setup non-identity transform: 90-degree rotation around z-axis
+  // Use case: sensors can be mounted rotated (e.g., 90° around z) on links,
+  // grippers, or end-effectors, requiring rotation transforms.
+  // Quaternion for 90° rotation around z-axis: For a rotation of angle θ around axis (x,y,z),
+  // the quaternion is (x*sin(θ/2), y*sin(θ/2), z*sin(θ/2), cos(θ/2)).
+  // For 90° around z-axis: θ=90°, axis=(0,0,1), so (0, 0, sin(45°), cos(45°)) = (0, 0, 0.7071,
+  // 0.7071)
+  setup_static_transform("base_link", "sensor_frame", 0.0, 0.0, 0.0, 0.0, 0.0, 0.7071, 0.7071);
+
+  // Wait longer for TF buffer to receive the transform
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  executor_->spin_some(std::chrono::milliseconds(200));
+
+  // Create publisher and subscriber using helper functions
+  auto input_publisher = create_input_publisher("test_broadcaster/wrench");
+  geometry_msgs::msg::WrenchStamped::SharedPtr received_msg;
+  auto output_subscriber = create_output_subscriber(
+    "/fts_wrench_transformer/wrench_transformed_base_link",
+    [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
+    { received_msg = msg; });
+
+  wait_for_discovery();
+
+  // Wait for publisher to be discovered by the output subscriber
+  wait_for_publisher(output_subscriber);
+
+  // Publish test message with known values
+  auto test_msg = create_test_wrench(transformer_node->get_clock());
+  input_publisher->publish(test_msg);
+
+  // Wait for message to be processed
+  int max_attempts = 20;
+  while (max_attempts-- > 0 && !received_msg)
+  {
+    executor_->spin_some(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // Verify message was received and transformed
+  ASSERT_NE(transformer_node, nullptr);
+  ASSERT_TRUE(received_msg != nullptr) << "Transformed message was not received";
+  EXPECT_EQ(received_msg->header.frame_id, "base_link");
+
+  // With 90° counterclockwise rotation around z-axis, the transformation is:
+  // x' = -y, y' = x, z' = z (z-component unchanged since rotation is around z-axis)
+  // Force: (1.0, 2.0, 3.0) -> x'=-2.0, y'=1.0, z'=3.0 -> (-2.0, 1.0, 3.0)
+  // Torque: (0.1, 0.2, 0.3) -> x'=-0.2, y'=0.1, z'=0.3 -> (-0.2, 0.1, 0.3)
+  EXPECT_NEAR(received_msg->wrench.force.x, -2.0, 1e-5);
+  EXPECT_NEAR(received_msg->wrench.force.y, 1.0, 1e-5);
+  EXPECT_NEAR(received_msg->wrench.force.z, 3.0, 1e-5);
+  EXPECT_NEAR(received_msg->wrench.torque.x, -0.2, 1e-5);
+  EXPECT_NEAR(received_msg->wrench.torque.y, 0.1, 1e-5);
+  EXPECT_NEAR(received_msg->wrench.torque.z, 0.3, 1e-5);
+
+  // Verify values are different from input (non-identity transform applied)
+  EXPECT_NE(received_msg->wrench.force.x, test_msg.wrench.force.x);
+  EXPECT_NE(received_msg->wrench.force.y, test_msg.wrench.force.y);
+  EXPECT_NE(received_msg->wrench.torque.x, test_msg.wrench.torque.x);
+  EXPECT_NE(received_msg->wrench.torque.y, test_msg.wrench.torque.y);
+}
+
 TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
 {
   // Create transformer node first so its TF listener can receive transforms
