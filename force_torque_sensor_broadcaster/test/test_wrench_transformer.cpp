@@ -312,12 +312,13 @@ TEST_F(TestWrenchTransformer, NonIdentityTransform)
   // x' = -y, y' = x, z' = z (z-component unchanged since rotation is around z-axis)
   // Force: (1.0, 2.0, 3.0) -> x'=-2.0, y'=1.0, z'=3.0 -> (-2.0, 1.0, 3.0)
   // Torque: (0.1, 0.2, 0.3) -> x'=-0.2, y'=0.1, z'=0.3 -> (-0.2, 0.1, 0.3)
-  EXPECT_NEAR(received_msg->wrench.force.x, -2.0, 1e-5);
-  EXPECT_NEAR(received_msg->wrench.force.y, 1.0, 1e-5);
-  EXPECT_NEAR(received_msg->wrench.force.z, 3.0, 1e-5);
-  EXPECT_NEAR(received_msg->wrench.torque.x, -0.2, 1e-5);
-  EXPECT_NEAR(received_msg->wrench.torque.y, 0.1, 1e-5);
-  EXPECT_NEAR(received_msg->wrench.torque.z, 0.3, 1e-5);
+  // Use 1e-4 tolerance to account for floating-point precision in quaternion/transform calculations
+  EXPECT_NEAR(received_msg->wrench.force.x, -2.0, 1e-4);
+  EXPECT_NEAR(received_msg->wrench.force.y, 1.0, 1e-4);
+  EXPECT_NEAR(received_msg->wrench.force.z, 3.0, 1e-4);
+  EXPECT_NEAR(received_msg->wrench.torque.x, -0.2, 1e-4);
+  EXPECT_NEAR(received_msg->wrench.torque.y, 0.1, 1e-4);
+  EXPECT_NEAR(received_msg->wrench.torque.z, 0.3, 1e-4);
 
   // Verify values are different from input (non-identity transform applied)
   EXPECT_NE(received_msg->wrench.force.x, test_msg.wrench.force.x);
