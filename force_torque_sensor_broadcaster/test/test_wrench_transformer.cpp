@@ -19,8 +19,6 @@
 #include <gmock/gmock.h>
 #include <atomic>
 #include <chrono>
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <memory>
 #include <string>
@@ -33,6 +31,10 @@
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+#include "rclcpp/node_interfaces/node_interfaces.hpp"
+#endif
 #include "tf2/exceptions.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/static_transform_broadcaster.hpp"
@@ -58,7 +60,13 @@ protected:
   {
     auto tf_node = std::make_shared<rclcpp::Node>("static_tf_broadcaster");
     executor_->add_node(tf_node);
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+    tf2_ros::StaticTransformBroadcaster tf_broadcaster(
+      rclcpp::node_interfaces::NodeInterfaces(
+        tf_node->get_node_parameters_interface(), tf_node->get_node_topics_interface()));
+#else
     tf2_ros::StaticTransformBroadcaster tf_broadcaster(tf_node);
+#endif
 
     geometry_msgs::msg::TransformStamped transform;
     transform.header.stamp = tf_node->get_clock()->now();

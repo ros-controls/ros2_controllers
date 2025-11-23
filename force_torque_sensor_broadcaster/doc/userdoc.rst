@@ -38,7 +38,7 @@ An example parameter file for this controller can be found in `the test director
 
 Wrench Transformer Node
 -----------------------
-The package provides a standalone ROS2 node ``wrench_transformer_node`` that transforms wrench messages published by the ``ForceTorqueSensorBroadcaster`` controller to different target frames using TF2. This is useful when applications need force/torque data in coordinate frames other than the sensor frame.
+The package provides a standalone ROS 2 node ``wrench_transformer_node`` that transforms wrench messages published by the ``ForceTorqueSensorBroadcaster`` controller to different target frames using TF2. This is useful when applications need force/torque data in coordinate frames other than the sensor frame.
 
 The node subscribes to wrench messages from the broadcaster (either raw or filtered) and publishes transformed versions to separate topics for each target frame.
 
@@ -61,7 +61,9 @@ Full list of parameters:
 Topics
 ^^^^^^
 The node subscribes to:
+
 - ``<broadcaster_namespace>/wrench`` (raw wrench messages) or ``<broadcaster_namespace>/wrench_filtered`` (filtered wrench messages) depending on the ``use_filtered_input`` parameter
 
 The node publishes:
+
 - ``<output_topic_prefix>_<target_frame>`` for each target frame specified in ``target_frames``
