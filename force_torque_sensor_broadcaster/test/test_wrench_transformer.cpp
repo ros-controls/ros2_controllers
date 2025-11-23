@@ -35,8 +35,8 @@
 #if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
-#include "tf2/exceptions.h"
-#include "tf2_ros/buffer.h"
+#include "tf2/exceptions.hpp"
+#include "tf2_ros/buffer.hpp"
 #include "tf2_ros/static_transform_broadcaster.hpp"
 #include "tf2_ros/transform_listener.h"
 
