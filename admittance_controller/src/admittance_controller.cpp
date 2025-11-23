@@ -93,7 +93,7 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   reference_admittance_ = last_reference_;
   joint_state_ = last_reference_;
 
-  std::string robot_description = get_node()->get_parameter("robot_description").as_string();
+  std::string robot_description = this->get_robot_description();
 
   if (robot_description.empty())
   {
