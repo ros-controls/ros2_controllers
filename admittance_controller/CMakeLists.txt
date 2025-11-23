@@ -23,6 +23,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_geometry_msgs
   tf2_kdl
   tf2_ros
+  tinyxml2
   trajectory_msgs
 )
 
