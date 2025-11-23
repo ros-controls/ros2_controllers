@@ -514,7 +514,7 @@ controller_interface::return_type SwerveController::update_and_write_commands(
     realtime_odometry_publisher_->try_publish(odometry_message);
   }
 
-  if (realtime_odometry_transform_publisher_)
+  if (params_.enable_odom_tf && realtime_odometry_transform_publisher_)
   {
     auto & transform = odometry_transform_message_.transforms.front();
     transform.header.stamp = time;
