@@ -68,6 +68,9 @@ private:
   std::vector<std::string> target_frames_;
 };
 
+// Function to run wrench transformer (extracted from main for testability)
+int run_wrench_transformer(int argc, char ** argv);
+
 }  // namespace force_torque_sensor_broadcaster
 
 #endif  // FORCE_TORQUE_SENSOR_BROADCASTER__WRENCH_TRANSFORMER_HPP_

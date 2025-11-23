@@ -17,15 +17,8 @@
  */
 
 #include "force_torque_sensor_broadcaster/wrench_transformer.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
-  rclcpp::NodeOptions options;
-  auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
-  node->init();
-  rclcpp::spin(node);
-  rclcpp::shutdown();
-  return 0;
+  return force_torque_sensor_broadcaster::run_wrench_transformer(argc, argv);
 }

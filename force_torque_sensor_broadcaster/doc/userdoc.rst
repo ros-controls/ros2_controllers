@@ -50,14 +50,13 @@ The wrench transformer node can be launched as a standalone executable:
 
    ros2 run force_torque_sensor_broadcaster wrench_transformer_node
 
-Parameters
-^^^^^^^^^^
+Wrench Transformer Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The wrench transformer uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters. The parameter `definition file for the wrench transformer <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/force_torque_sensor_broadcaster/src/wrench_transformer_parameters.yaml>`_ contains descriptions for all the parameters.
 
 Full list of parameters:
 
 .. generate_parameter_library_details:: ../src/wrench_transformer_parameters.yaml
-  parameters_context.yaml
 
 Topics
 ^^^^^^

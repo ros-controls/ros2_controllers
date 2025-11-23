@@ -144,8 +144,18 @@ void WrenchTransformer::setup_publishers()
         "Failed to create publisher for target frame %s", target_frame.c_str());
       return;
     }
-    RCLCPP_INFO(this->get_logger(), "Created publisher for target frame %s", target_frame.c_str());
   }
+}
+
+int run_wrench_transformer(int argc, char ** argv)
+{
+  rclcpp::init(argc, argv);
+  rclcpp::NodeOptions options;
+  auto node = std::make_shared<WrenchTransformer>(options);
+  node->init();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
 }
 
 }  // namespace force_torque_sensor_broadcaster
