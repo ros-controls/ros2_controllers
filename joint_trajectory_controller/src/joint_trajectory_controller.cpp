@@ -942,7 +942,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   RCLCPP_INFO(
     logger, "Using '%s' interpolation method.",
-    interpolation_methods::ReverseInterpolationMethodMap.at(interpolation_method_).c_str());
+    interpolation_string.c_str());
 
   // prepare hold_position_msg
   init_hold_position_msg();
