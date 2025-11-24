@@ -35,7 +35,7 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
   const double wheelbase = tricycle_params_.wheelbase;
 
   odometry_.set_wheel_params(traction_wheels_radius, wheelbase, traction_track_width);
-  odometry_.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odometry_.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 

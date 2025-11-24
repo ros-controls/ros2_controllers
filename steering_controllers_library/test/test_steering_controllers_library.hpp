@@ -121,7 +121,7 @@ public:
   {
     set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
     odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
-    odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+    odometry_.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
 
     return controller_interface::CallbackReturn::SUCCESS;
   }
@@ -320,7 +320,7 @@ protected:
   std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
   std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
 
-  std::array<std::string, 2> joint_reference_interfaces_ = {{"linear", "angular"}};
+  std::array<std::string, 2> reference_interface_names_ = {{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
