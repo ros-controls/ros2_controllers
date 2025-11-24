@@ -68,20 +68,16 @@ const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_
  * This constant map is used to look up the InterpolationMethod for a given
  * string (e.g., "splines" for `VARIABLE_DEGREE_SPLINE`).
  */
-const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap({
-  {"none", InterpolationMethod::NONE},
-  {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}
-});
+const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
+  {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
 
 /**
  * \brief Reverse map of InterpolationMethodMap.
  * This constant map is used to look up the string name for a given
  * InterpolationMethod (e.g., `VARIABLE_DEGREE_SPLINE` for "splines").
  */
-const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationMethodMap({
-  {InterpolationMethod::NONE, "none"},
-  {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}
-});
+const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationMethodMap(
+  {{InterpolationMethod::NONE, "none"}, {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}});
 
 /**
  * \brief Creates a `InterpolationMethod` enum class value from a string.
@@ -89,7 +85,7 @@ const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationM
  * on interpolation_method string.
  *
  * \param[in] `interpolation_method` The given interpolation method `string`.
- * 
+ *
  * \returns The corresponding InterpolationMethod.
  *
  * \note If interpolation_method do not have any corresponding InterpolationMethod (i.e., Unknown),
@@ -111,7 +107,8 @@ const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationM
   {
     RCLCPP_INFO(
       LOGGER,
-      "Unknown interpolation method parameter '%s' was given. Using the default: VARIABLE_DEGREE_SPLINE.",
+      "Unknown interpolation method parameter '%s' was given. Using the default: "
+      "VARIABLE_DEGREE_SPLINE.",
       interpolation_method.c_str());
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
   }
