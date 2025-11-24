@@ -85,7 +85,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   configure_odometry();
 
   // Check if the number of traction joints is correct
-  if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+  if (odometry_.get_odometry_type() == steering_kinematics::BICYCLE_CONFIG)
   {
     if (params_.traction_joints_names.size() != 1)
     {
@@ -96,7 +96,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       return controller_interface::CallbackReturn::ERROR;
     }
   }
-  else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+  else if (odometry_.get_odometry_type() == steering_kinematics::TRICYCLE_CONFIG)
   {
     if (params_.traction_joints_names.size() != 2)
     {
@@ -107,7 +107,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       return controller_interface::CallbackReturn::ERROR;
     }
   }
-  else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+  else if (odometry_.get_odometry_type() == steering_kinematics::ACKERMANN_CONFIG)
   {
     if (params_.traction_joints_names.size() != 2)
     {
@@ -119,7 +119,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     }
   }
   // Check if the number of steering joints is correct
-  if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+  if (odometry_.get_odometry_type() == steering_kinematics::BICYCLE_CONFIG)
   {
     if (params_.steering_joints_names.size() != 1)
     {
@@ -130,7 +130,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       return controller_interface::CallbackReturn::ERROR;
     }
   }
-  else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+  else if (odometry_.get_odometry_type() == steering_kinematics::TRICYCLE_CONFIG)
   {
     if (params_.steering_joints_names.size() != 1)
     {
@@ -141,7 +141,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       return controller_interface::CallbackReturn::ERROR;
     }
   }
-  else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+  else if (odometry_.get_odometry_type() == steering_kinematics::ACKERMANN_CONFIG)
   {
     if (params_.steering_joints_names.size() != 2)
     {
@@ -158,7 +158,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 
   if (!params_.traction_joints_state_names.empty())
   {
-    if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+    if (odometry_.get_odometry_type() == steering_kinematics::BICYCLE_CONFIG)
     {
       if (params_.traction_joints_state_names.size() != 1)
       {
@@ -170,7 +170,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
         return controller_interface::CallbackReturn::ERROR;
       }
     }
-    else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+    else if (odometry_.get_odometry_type() == steering_kinematics::TRICYCLE_CONFIG)
     {
       if (params_.traction_joints_state_names.size() != 2)
       {
@@ -182,7 +182,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
         return controller_interface::CallbackReturn::ERROR;
       }
     }
-    else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+    else if (odometry_.get_odometry_type() == steering_kinematics::ACKERMANN_CONFIG)
     {
       if (params_.traction_joints_state_names.size() != 2)
       {
@@ -203,7 +203,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
 
   if (!params_.steering_joints_state_names.empty())
   {
-    if (odometry_.get_odometry_type() == steering_odometry::BICYCLE_CONFIG)
+    if (odometry_.get_odometry_type() == steering_kinematics::BICYCLE_CONFIG)
     {
       if (params_.steering_joints_state_names.size() != 1)
       {
@@ -215,7 +215,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
         return controller_interface::CallbackReturn::ERROR;
       }
     }
-    else if (odometry_.get_odometry_type() == steering_odometry::TRICYCLE_CONFIG)
+    else if (odometry_.get_odometry_type() == steering_kinematics::TRICYCLE_CONFIG)
     {
       if (params_.steering_joints_state_names.size() != 1)
       {
@@ -227,7 +227,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
         return controller_interface::CallbackReturn::ERROR;
       }
     }
-    else if (odometry_.get_odometry_type() == steering_odometry::ACKERMANN_CONFIG)
+    else if (odometry_.get_odometry_type() == steering_kinematics::ACKERMANN_CONFIG)
     {
       if (params_.steering_joints_state_names.size() != 2)
       {

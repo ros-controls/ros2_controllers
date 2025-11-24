@@ -121,7 +121,7 @@ public:
   {
     set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
     odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
-    odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+    odometry_.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
 
     return controller_interface::CallbackReturn::SUCCESS;
   }

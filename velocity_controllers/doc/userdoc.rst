@@ -12,6 +12,10 @@ The package contains the following controllers:
 velocity_controllers/JointGroupVelocityController
 -------------------------------------------------
 
+.. warning::
+
+  ``velocity_controllers/JointGroupVelocityController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``velocity``.
+
 This is specialization of the :ref:`forward_command_controller <forward_command_controller_userdoc>` that works using the "velocity" joint interface.
 
 
