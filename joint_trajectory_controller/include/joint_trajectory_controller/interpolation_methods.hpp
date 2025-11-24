@@ -80,8 +80,8 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  *
  * \returns The corresponding InterpolationMethod.
  *
- * \note If interpolation_method does not have any corresponding InterpolationMethod (i.e., "Unknown"),
- * It defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
+ * \note If interpolation_method does not have any corresponding InterpolationMethod (i.e.,
+ * "Unknown"), It defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
  */
 [[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
 {
