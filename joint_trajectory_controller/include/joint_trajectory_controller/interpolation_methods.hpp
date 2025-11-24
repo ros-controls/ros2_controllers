@@ -72,14 +72,6 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
   {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
 
 /**
- * \brief Reverse map of InterpolationMethodMap.
- * This constant map is used to look up the string name for a given
- * InterpolationMethod (e.g., `VARIABLE_DEGREE_SPLINE` for "splines").
- */
-const std::unordered_map<InterpolationMethod, std::string> ReverseInterpolationMethodMap(
-  {{InterpolationMethod::NONE, "none"}, {InterpolationMethod::VARIABLE_DEGREE_SPLINE, "splines"}});
-
-/**
  * \brief Creates a `InterpolationMethod` enum class value from a string.
  * This function looks up `InterpolationMethodMap` for corresponding `InterpolationMethod` based
  * on interpolation_method string.
