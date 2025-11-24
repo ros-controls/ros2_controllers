@@ -76,7 +76,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  * This function looks up `InterpolationMethodMap` for corresponding `InterpolationMethod` based
  * on interpolation_method string.
  *
- * \param[in] `interpolation_method` The given interpolation method `string`.
+ * \param[in] interpolation_method The given interpolation method string.
  *
  * \returns The corresponding InterpolationMethod.
  *
