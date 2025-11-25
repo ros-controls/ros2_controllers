@@ -150,6 +150,10 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
       return "splines";
     // Default
     default:
+      RCLCPP_WARN(
+        LOGGER,
+        "Unknown interpolation method enum value was given. Returing default: "
+        "UNKNOWN");
       return "UNKNOWN";
   }
 }
