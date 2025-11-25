@@ -97,7 +97,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
   // Default
   else
   {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       LOGGER,
       "Unknown interpolation method parameter '%s' was given. Using the default: "
       "VARIABLE_DEGREE_SPLINE.",
