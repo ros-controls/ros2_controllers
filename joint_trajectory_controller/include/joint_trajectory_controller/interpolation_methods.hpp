@@ -40,8 +40,7 @@ inline std::string convert_to_lowercase(const std::string & str)
   return s;
 }
 
-} //  namespace
-
+}  //  namespace
 
 /// \brief Setup interpolation_methods' rclcpp::Logger instance.
 static const rclcpp::Logger LOGGER =
@@ -100,7 +99,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  *
  * \returns The corresponding InterpolationMethod.
  *
- * \note If interpolation_method does not have any corresponding InterpolationMethod 
+ * \note If interpolation_method does not have any corresponding InterpolationMethod
  * (i.e., "Unknown"), it defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
  */
 [[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
@@ -108,7 +107,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
   // Convert to lowercase, so we have an case-agnostic checking,
   // (i.e., None and none, etc are treated same.)
   std::string method = convert_to_lowercase(interpolation_method);
-  
+
   // Iterator to InterpolationMethodMap
   const auto iterator = InterpolationMethodMap.find(method);
 
