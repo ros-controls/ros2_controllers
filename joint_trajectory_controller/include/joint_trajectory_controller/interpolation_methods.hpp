@@ -28,14 +28,16 @@ namespace
 {
 
 /// Converts a string to lowercase for case-agnostic checking.
-void convert_to_lowercase(std::string& str)
+inline std::string convert_to_lowercase(const std::string& str)
 {
-  for (char& c : str)
+  std::string s = str;
+  for (char& c : s)
   {
     // C++ std requires the argument passed to std::tolower must be representable as
     // unsigned char or equal to EOF.
     c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   }
+  return s;
 }
 
 } // namespace
@@ -94,17 +96,20 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  * This function looks up `InterpolationMethodMap` for corresponding `InterpolationMethod` based
  * on interpolation_method string.
  *
- * \param[in] `interpolation_method` The given interpolation method `string`.
+ * \param[in] interpolation_method The given interpolation method string.
  *
  * \returns The corresponding InterpolationMethod.
  *
- * \note If interpolation_method do not have any corresponding InterpolationMethod (i.e., Unknown),
+ * \note If interpolation_method does not have any corresponding InterpolationMethod (i.e., "Unknown"),
  * It defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
  */
-[[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
+[[nodiscard]] inline InterpolationMethod from_string(const std::string& interpolation_method)
 {
+  // Convert to lowercase, so we have an case-agnostic checking. (i.e., None and none, etc are treated same.)
+  std::string method = convert_to_lowercase(interpolation_method);
+  
   // Iterator to InterpolationMethodMap
-  const auto iterator = InterpolationMethodMap.find(interpolation_method);
+  const auto iterator = InterpolationMethodMap.find(method);
 
   // If interpolation_method exists
   if (iterator != InterpolationMethodMap.end())
@@ -121,6 +126,28 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
       "VARIABLE_DEGREE_SPLINE.",
       interpolation_method.c_str());
     return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
+  }
+}
+
+/**
+ * \brief Returns corresponding string value for the `InterpolationMethod`.
+ * This function uses simple switch-case lookup to directly assign string value to
+ * `InterpolationMethod`.
+ *
+ * \param[in] interpolation_method The InterpolationMethod enum value.
+ *
+ * \returns The corresponding string.
+ *
+ * \note Defaults to return "UNKNOWN".
+ */
+[[nodiscard]] inline std::string to_string(const InterpolationMethod& interpolation_method)
+{
+  switch(interpolation_method)
+  {
+    case InterpolationMethod::NONE: return "none";
+    case InterpolationMethod::VARIABLE_DEGREE_SPLINE: return "splines";
+    // Default
+    default: return "UNKNOWN";
   }
 }
 
