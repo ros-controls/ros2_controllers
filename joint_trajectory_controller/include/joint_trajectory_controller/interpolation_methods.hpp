@@ -152,7 +152,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
     default:
       RCLCPP_WARN(
         LOGGER,
-        "Unknown interpolation method enum value was given. Returing default: "
+        "Unknown interpolation method enum value was given. Returning default: "
         "UNKNOWN");
       return "UNKNOWN";
   }
