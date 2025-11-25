@@ -28,10 +28,10 @@ namespace
 {
 
 /// Converts a string to lowercase for case-agnostic checking.
-inline std::string convert_to_lowercase(const std::string& str)
+inline std::string convert_to_lowercase(const std::string & str)
 {
   std::string s = str;
-  for (char& c : s)
+  for (char & c : s)
   {
     // C++ std requires the argument passed to std::tolower must be representable as
     // unsigned char or equal to EOF.
@@ -40,7 +40,7 @@ inline std::string convert_to_lowercase(const std::string& str)
   return s;
 }
 
-} // namespace
+} //  namespace
 
 
 /// \brief Setup interpolation_methods' rclcpp::Logger instance.
@@ -100,12 +100,13 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  *
  * \returns The corresponding InterpolationMethod.
  *
- * \note If interpolation_method does not have any corresponding InterpolationMethod (i.e., "Unknown"),
- * It defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
+ * \note If interpolation_method does not have any corresponding InterpolationMethod 
+ * (i.e., "Unknown"), it defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
  */
-[[nodiscard]] inline InterpolationMethod from_string(const std::string& interpolation_method)
+[[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
 {
-  // Convert to lowercase, so we have an case-agnostic checking. (i.e., None and none, etc are treated same.)
+  // Convert to lowercase, so we have an case-agnostic checking,
+  // (i.e., None and none, etc are treated same.)
   std::string method = convert_to_lowercase(interpolation_method);
   
   // Iterator to InterpolationMethodMap
@@ -140,14 +141,17 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  *
  * \note Defaults to return "UNKNOWN".
  */
-[[nodiscard]] inline std::string to_string(const InterpolationMethod& interpolation_method)
+[[nodiscard]] inline std::string to_string(const InterpolationMethod & interpolation_method)
 {
-  switch(interpolation_method)
+  switch (interpolation_method)
   {
-    case InterpolationMethod::NONE: return "none";
-    case InterpolationMethod::VARIABLE_DEGREE_SPLINE: return "splines";
+    case InterpolationMethod::NONE:
+      return "none";
+    case InterpolationMethod::VARIABLE_DEGREE_SPLINE:
+      return "splines";
     // Default
-    default: return "UNKNOWN";
+    default:
+      return "UNKNOWN";
   }
 }
 
