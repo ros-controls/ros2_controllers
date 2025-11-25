@@ -66,9 +66,9 @@ enum class InterpolationMethod
   /**
    * \brief Uses a variable-degree spline interpolation.
    * The degree of the spline is determined dynamically based on the number of
-   * available deriviatives. This provides a smooth, continuous curve between data points.
+   * available derivatives. This provides a smooth, continuous curve between data points.
    *
-   * Based on available deriviatives, it uses following degree interpolation,
+   * Based on available derivatives, it uses the following degree interpolation,
    * 1. Neither velocity nor acceleration is available: `Linear Interpolation`.
    * 2. Velocity is available, but acceleration is not available: `Cubic Spline Interpolation`.
    * 3. Both velocity and acceleration is available: `Quintic Spline Interpolation`.
@@ -78,13 +78,13 @@ enum class InterpolationMethod
 
 /**
  * \brief The default interpolation method is set to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
- * As, it provides most realistic, jerk-free and smooth motion.
+ * As it provides the most realistic, jerk-free and smooth motion.
  */
 const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 
 /**
  * \brief Maps `InterpolationMethod` enum values to their string identifiers.
- * This constant map is used to look up the InterpolationMethod for a given
+ * This constant map is used for the lookup of the InterpolationMethod for a given
  * string (e.g., "splines" for `VARIABLE_DEGREE_SPLINE`).
  */
 const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
@@ -104,7 +104,7 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
  */
 [[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
 {
-  // Convert to lowercase, so we have an case-agnostic checking,
+  // Convert to lowercase, so we have a case-agnostic checking,
   // (i.e., None and none, etc are treated same.)
   std::string method = convert_to_lowercase(interpolation_method);
 
