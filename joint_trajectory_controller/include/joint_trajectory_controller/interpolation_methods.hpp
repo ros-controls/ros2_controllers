@@ -15,32 +15,14 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 #define JOINT_TRAJECTORY_CONTROLLER__INTERPOLATION_METHODS_HPP_
 
-#include <cctype>
 #include <string>
 #include <unordered_map>
 
+#include "hardware_interface/lexical_casts.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace joint_trajectory_controller
 {
-
-namespace
-{
-
-/// Converts a string to lowercase for case-agnostic checking.
-inline std::string convert_to_lowercase(const std::string & str)
-{
-  std::string s = str;
-  for (char & c : s)
-  {
-    // C++ std requires the argument passed to std::tolower must be representable as
-    // unsigned char or equal to EOF.
-    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  }
-  return s;
-}
-
-}  //  namespace
 
 /// \brief Setup interpolation_methods' rclcpp::Logger instance.
 static const rclcpp::Logger LOGGER =
