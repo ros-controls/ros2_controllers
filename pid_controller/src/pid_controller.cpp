@@ -525,7 +525,7 @@ controller_interface::return_type PidController::update_and_write_commands(
     size_t gains_start_index = dof_reference_size;
     for (size_t i = 0; i < dof_; ++i)
     {
-      const auto current_antiwindup_strat = pids_[i]->get_gains().antiwindup_strat_;
+      auto current_pid_gains = pids_[i]->get_gains();
       for (size_t j = 0; j < GAIN_INTERFACES.size(); ++j)
       {
         const size_t buffer_index = gains_start_index + i + j * dof_;
@@ -536,22 +536,16 @@ controller_interface::return_type PidController::update_and_write_commands(
           switch (gain_type)
           {
             case 0:  // P gain
-              pids_[i]->set_gains(
-                new_gain_value, std::numeric_limits<double>::quiet_NaN(),
-                std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                std::numeric_limits<double>::quiet_NaN(), current_antiwindup_strat);
+              current_pid_gains.p_gain_ = new_gain_value;
+              pids_[i]->set_gains(current_pid_gains);
               break;
             case 1:  // I gain
-              pids_[i]->set_gains(
-                std::numeric_limits<double>::quiet_NaN(), new_gain_value,
-                std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                std::numeric_limits<double>::quiet_NaN(), current_antiwindup_strat);
+              current_pid_gains.i_gain_ = new_gain_value;
+              pids_[i]->set_gains(current_pid_gains);
               break;
             case 2:  // D gain
-              pids_[i]->set_gains(
-                std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                new_gain_value, std::numeric_limits<double>::quiet_NaN(),
-                std::numeric_limits<double>::quiet_NaN(), current_antiwindup_strat);
+              current_pid_gains.d_gain_ = new_gain_value;
+              pids_[i]->set_gains(current_pid_gains);
               break;
           }
           reference_interfaces_[buffer_index] = std::numeric_limits<double>::quiet_NaN();
