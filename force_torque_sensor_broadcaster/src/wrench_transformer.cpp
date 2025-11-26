@@ -112,12 +112,7 @@ bool WrenchTransformer::transform_wrench(
 
 void WrenchTransformer::setup_subscriber()
 {
-  input_topic_ =
-    params_.broadcaster_namespace.empty() ? "~/wrench" : params_.broadcaster_namespace + "/wrench";
-  if (params_.use_filtered_input)
-  {
-    input_topic_ += "_filtered";
-  }
+  input_topic_ = "~/wrench";
   wrench_subscriber_ = this->create_subscription<geometry_msgs::msg::WrenchStamped>(
     input_topic_, rclcpp::SystemDefaultsQoS(),
     std::bind(&WrenchTransformer::wrench_callback, this, std::placeholders::_1));
@@ -127,13 +122,55 @@ void WrenchTransformer::setup_subscriber()
       this->get_logger(), *this->get_clock(), 5000, "Failed to create wrench subscriber");
     return;
   }
+
+  // Detect if input topic is filtered by checking the actual subscribed topic name
+  // This handles remapping: if ~/wrench is remapped to wrench_filtered, output should reflect it
+  try
+  {
+    const std::string actual_topic = wrench_subscriber_->get_topic_name();
+    if (actual_topic.find("filtered") != std::string::npos)
+    {
+      output_topic_suffix_ = "_filtered";
+    }
+    else
+    {
+      output_topic_suffix_ = "";
+    }
+  }
+  catch (const std::exception &)
+  {
+    // If we can't get topic name yet, default to empty suffix
+    output_topic_suffix_ = "";
+  }
+}
+
+std::string WrenchTransformer::normalize_namespace_for_topics() const
+{
+  std::string ns = this->get_namespace();
+  // If namespace is empty or root ("/"), use node name as namespace
+  if (ns.empty() || ns == "/")
+  {
+    return "/" + std::string(this->get_name());
+  }
+  // Otherwise, normalize the namespace (ensure it starts with / and doesn't end with /)
+  if (ns.front() != '/')
+  {
+    ns = "/" + ns;
+  }
+  if (ns.back() == '/')
+  {
+    ns.pop_back();
+  }
+  return ns;
 }
 
 void WrenchTransformer::setup_publishers()
 {
+  const std::string ns = normalize_namespace_for_topics();
+
   for (const auto & target_frame : params_.target_frames)
   {
-    std::string topic_name = params_.output_topic_prefix + "_" + target_frame;
+    std::string topic_name = ns + "/" + target_frame + "/wrench" + output_topic_suffix_;
     transformed_wrench_publishers_[target_frame] =
       this->create_publisher<geometry_msgs::msg::WrenchStamped>(
         topic_name, rclcpp::SystemDefaultsQoS());

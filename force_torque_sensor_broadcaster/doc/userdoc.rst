@@ -62,8 +62,12 @@ Topics
 ^^^^^^
 The node subscribes to:
 
-- ``<broadcaster_namespace>/wrench`` (raw wrench messages) or ``<broadcaster_namespace>/wrench_filtered`` (filtered wrench messages) depending on the ``use_filtered_input`` parameter
+- ``~/wrench`` (raw wrench messages). To subscribe to filtered wrench messages, use topic remapping: ``ros2 run ... --ros-args -r ~/wrench:=<namespace>/wrench_filtered``
 
 The node publishes:
 
-- ``<output_topic_prefix>_<target_frame>`` for each target frame specified in ``target_frames``
+- ``<namespace>/<target_frame>/wrench`` for each target frame specified in ``target_frames``
+
+  - If the node is in the root namespace (``/``), the namespace defaults to the node name (e.g., ``/fts_wrench_transformer/<target_frame>/wrench``)
+  - If the input topic is remapped to a filtered topic (contains "filtered" in the name), the output topics automatically append ``_filtered`` suffix (e.g., ``<namespace>/<target_frame>/wrench_filtered``)
+  - This allows users to distinguish between transformed raw wrench data and transformed filtered wrench data

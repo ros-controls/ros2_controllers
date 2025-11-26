@@ -54,6 +54,14 @@ private:
   void setup_subscriber();
   void setup_publishers();
 
+  /**
+   * Normalize namespace for topic construction.
+   * If namespace is empty or root ("/"), returns node name with leading "/".
+   * Otherwise, normalizes namespace to start with "/" and not end with "/".
+   * @return Normalized namespace string
+   */
+  std::string normalize_namespace_for_topics() const;
+
   std::shared_ptr<force_torque_wrench_transformer::ParamListener> param_listener_;
   force_torque_wrench_transformer::Params params_;
 
@@ -65,6 +73,7 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   std::string input_topic_;
+  std::string output_topic_suffix_;  // e.g., "" or "_filtered" based on input topic
   std::vector<std::string> target_frames_;
 };
 

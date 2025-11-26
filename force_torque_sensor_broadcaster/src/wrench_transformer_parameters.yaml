@@ -1,14 +1,4 @@
 force_torque_wrench_transformer:
-  broadcaster_namespace: {
-    type: string,
-    default_value: "",
-    description: "Full namespace path to the force_torque_sensor_broadcaster controller node. The broadcaster publishes geometry_msgs::msg::WrenchStamped messages to topics ``wrench`` (raw) and ``wrench_filtered`` (filtered). Input topics will be constructed as ``<broadcaster_namespace>/wrench`` or ``<broadcaster_namespace>/wrench_filtered``. If empty, assumes the broadcaster is in the same namespace as this node and uses ``~/wrench``.",
-  }
-  use_filtered_input: {
-    type: bool,
-    default_value: false,
-    description: "If true, subscribes to the filtered WrenchStamped topic (``<broadcaster_namespace>/wrench_filtered``), otherwise subscribes to the raw WrenchStamped topic (``<broadcaster_namespace>/wrench``). The filtered topic is only available if the broadcaster has a sensor_filter_chain configured.",
-  }
   target_frames: {
     type: string_array,
     default_value: [],
@@ -16,11 +6,6 @@ force_torque_wrench_transformer:
     validation: {
       not_empty<>: null
     }
-  }
-  output_topic_prefix: {
-    type: string,
-    default_value: "~/wrench_transformed",
-    description: "Prefix for output topic names. Each output topic publishes transformed WrenchStamped messages in a different frame. Output topics will be named as ``<output_topic_prefix>_<frame_name>``. Default uses node namespace.",
   }
   tf_timeout: {
     type: double,

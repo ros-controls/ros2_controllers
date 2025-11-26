@@ -86,18 +86,34 @@ protected:
   }
 
   std::shared_ptr<force_torque_sensor_broadcaster::WrenchTransformer> create_transformer_node(
-    const std::string & broadcaster_namespace = "test_broadcaster", bool use_filtered_input = false,
-    const std::vector<std::string> & target_frames = {"base_link"},
-    const std::string & output_topic_prefix = "~/wrench_transformed", double tf_timeout = 0.1)
+    const std::vector<std::string> & target_frames = {"base_link"}, double tf_timeout = 0.1,
+    const std::string & input_topic_remap = "test_broadcaster/wrench",
+    const std::string & node_namespace = "")
   {
     rclcpp::NodeOptions options;
     std::vector<rclcpp::Parameter> parameters;
-    parameters.emplace_back("broadcaster_namespace", broadcaster_namespace);
-    parameters.emplace_back("use_filtered_input", use_filtered_input);
     parameters.emplace_back("target_frames", target_frames);
-    parameters.emplace_back("output_topic_prefix", output_topic_prefix);
     parameters.emplace_back("tf_timeout", tf_timeout);
     options.parameter_overrides(parameters);
+
+    // Build arguments for namespace and topic remapping
+    std::vector<std::string> args = {"--ros-args"};
+    if (!node_namespace.empty())
+    {
+      args.push_back("-r");
+      args.push_back("__ns:=" + node_namespace);
+    }
+    // Apply topic remapping - when node is namespaced, ~/wrench expands to <namespace>/wrench
+    // For tests, we remap to the broadcaster's topic. For filtered topics, remap to wrench_filtered
+    if (!input_topic_remap.empty())
+    {
+      args.push_back("-r");
+      args.push_back("~/wrench:=" + input_topic_remap);
+    }
+    if (args.size() > 1)
+    {
+      options.arguments(args);
+    }
 
     auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
     executor_->add_node(node);
@@ -111,14 +127,50 @@ protected:
     executor_->spin_some(std::chrono::milliseconds(100));
   }
 
+  bool check_publisher_exists_via_graph(
+    rclcpp::Node::SharedPtr node, const std::string & topic_name)
+  {
+    try
+    {
+      auto publishers_info = node->get_publishers_info_by_topic(topic_name);
+      return publishers_info.size() > 0;
+    }
+    catch (const std::exception &)
+    {
+      return false;
+    }
+  }
+
   void wait_for_publisher(
     rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr subscriber,
-    int max_attempts = 10)
+    int max_attempts = 20)
   {
-    while (max_attempts-- > 0 && subscriber->get_publisher_count() == 0)
+    int attempts = 0;
+    while (attempts < max_attempts && subscriber->get_publisher_count() == 0)
     {
-      executor_->spin_some(std::chrono::milliseconds(50));
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      executor_->spin_some(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      attempts++;
+    }
+  }
+
+  void wait_for_publisher(
+    rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr subscriber,
+    rclcpp::Node::SharedPtr query_node, const std::string & topic_name, int max_attempts = 20)
+  {
+    int attempts = 0;
+    while (attempts < max_attempts)
+    {
+      // Check both methods: subscription count and graph API
+      if (
+        subscriber->get_publisher_count() > 0 ||
+        check_publisher_exists_via_graph(query_node, topic_name))
+      {
+        return;
+      }
+      executor_->spin_some(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      attempts++;
     }
   }
 
@@ -177,7 +229,7 @@ TEST_F(TestWrenchTransformer, NodeInitialization)
 
 TEST_F(TestWrenchTransformer, MultipleTargetFrames)
 {
-  auto node = create_transformer_node("test_broadcaster", false, {"base_link", "end_effector"});
+  auto node = create_transformer_node({"base_link", "end_effector"});
 
   executor_->spin_some(std::chrono::milliseconds(100));
 
@@ -185,24 +237,34 @@ TEST_F(TestWrenchTransformer, MultipleTargetFrames)
   // Use fully qualified topic name since ~/ expands to the transformer node's namespace
   auto test_sub_node = std::make_shared<rclcpp::Node>("test_sub_check");
   auto base_link_sub = test_sub_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "/fts_wrench_transformer/wrench_transformed_base_link", rclcpp::SystemDefaultsQoS(),
+    "/fts_wrench_transformer/base_link/wrench", rclcpp::SystemDefaultsQoS(),
     [](const geometry_msgs::msg::WrenchStamped::SharedPtr) {});
   auto end_effector_sub = test_sub_node->create_subscription<geometry_msgs::msg::WrenchStamped>(
-    "/fts_wrench_transformer/wrench_transformed_end_effector", rclcpp::SystemDefaultsQoS(),
+    "/fts_wrench_transformer/end_effector/wrench", rclcpp::SystemDefaultsQoS(),
     [](const geometry_msgs::msg::WrenchStamped::SharedPtr) {});
   executor_->add_node(test_sub_node);
 
+  // Spin more aggressively to allow discovery
   wait_for_discovery();
+  executor_->spin_some(std::chrono::milliseconds(200));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // Wait for each publisher to be discovered
-  wait_for_publisher(base_link_sub);
-  wait_for_publisher(end_effector_sub);
+  wait_for_publisher(base_link_sub, test_sub_node, "/fts_wrench_transformer/base_link/wrench");
+  wait_for_publisher(
+    end_effector_sub, test_sub_node, "/fts_wrench_transformer/end_effector/wrench");
+
+  // Final spin to ensure discovery is complete
+  executor_->spin_some(std::chrono::milliseconds(200));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   ASSERT_NE(node, nullptr);
+
+  // Dump available publishers for debugging if publishers are not found
   EXPECT_GT(base_link_sub->get_publisher_count(), 0u)
-    << "Publisher not found on /fts_wrench_transformer/wrench_transformed_base_link";
+    << "Publisher not found on /fts_wrench_transformer/base_link/wrench";
   EXPECT_GT(end_effector_sub->get_publisher_count(), 0u)
-    << "Publisher not found on /fts_wrench_transformer/wrench_transformed_end_effector";
+    << "Publisher not found on /fts_wrench_transformer/end_effector/wrench";
 }
 
 TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
@@ -222,7 +284,7 @@ TEST_F(TestWrenchTransformer, PublishSubscribeFlow)
   auto input_publisher = create_input_publisher("test_broadcaster/wrench");
   geometry_msgs::msg::WrenchStamped::SharedPtr received_msg;
   auto output_subscriber = create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench",
     [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
     { received_msg = msg; });
 
@@ -282,7 +344,7 @@ TEST_F(TestWrenchTransformer, NonIdentityTransform)
   auto input_publisher = create_input_publisher("test_broadcaster/wrench");
   geometry_msgs::msg::WrenchStamped::SharedPtr received_msg;
   auto output_subscriber = create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench",
     [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
     { received_msg = msg; });
 
@@ -324,8 +386,7 @@ TEST_F(TestWrenchTransformer, NonIdentityTransform)
 TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
 {
   // Create transformer node first so its TF listener can receive transforms
-  auto transformer_node =
-    create_transformer_node("test_broadcaster", false, {"base_link", "end_effector"});
+  auto transformer_node = create_transformer_node({"base_link", "end_effector"});
   executor_->spin_some(std::chrono::milliseconds(100));
 
   // Setup static transforms
@@ -341,11 +402,11 @@ TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
   geometry_msgs::msg::WrenchStamped::SharedPtr received_base_link;
   geometry_msgs::msg::WrenchStamped::SharedPtr received_end_effector;
   auto base_link_subscriber = create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench",
     [&received_base_link](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
     { received_base_link = msg; });
   auto end_effector_subscriber = create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_end_effector",
+    "/fts_wrench_transformer/end_effector/wrench",
     [&received_end_effector](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
     { received_end_effector = msg; });
 
@@ -380,7 +441,7 @@ TEST_F(TestWrenchTransformer, PublishSubscribeMultipleFrames)
 TEST_F(TestWrenchTransformer, TransformFailureNoPublication)
 {
   // Create transformer node with target frame
-  auto transformer_node = create_transformer_node("test_broadcaster", false, {"base_link"});
+  auto transformer_node = create_transformer_node();
   executor_->spin_some(std::chrono::milliseconds(100));
 
   // Skip setting up transform - this will cause transform_wrench to return false
@@ -392,7 +453,7 @@ TEST_F(TestWrenchTransformer, TransformFailureNoPublication)
   auto input_publisher = create_input_publisher("test_broadcaster/wrench");
   bool message_received = false;
   create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench",
     [&message_received](const geometry_msgs::msg::WrenchStamped::SharedPtr)
     { message_received = true; });
 
@@ -472,7 +533,7 @@ TEST_F(TestWrenchTransformer, InvalidMessageHandling)
   auto input_publisher = create_input_publisher("test_broadcaster/wrench");
   bool message_received = false;
   create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench",
     [&message_received](const geometry_msgs::msg::WrenchStamped::SharedPtr)
     { message_received = true; });
 
@@ -495,10 +556,11 @@ TEST_F(TestWrenchTransformer, InvalidMessageHandling)
   EXPECT_FALSE(message_received) << "Message with empty frame_id should not trigger publication";
 }
 
-TEST_F(TestWrenchTransformer, FilteredInputTopic)
+TEST_F(TestWrenchTransformer, TopicRemappingFilteredInput)
 {
-  // Test that transformer subscribes to wrench_filtered topic when use_filtered_input is true
-  auto transformer_node = create_transformer_node("test_broadcaster", true, {"base_link"});
+  // Test that transformer subscribes to wrench_filtered topic using topic remapping
+  auto transformer_node =
+    create_transformer_node({"base_link"}, 0.1, "test_broadcaster/wrench_filtered");
   executor_->spin_some(std::chrono::milliseconds(100));
 
   // Setup static transform
@@ -510,7 +572,7 @@ TEST_F(TestWrenchTransformer, FilteredInputTopic)
   auto input_publisher = create_input_publisher("test_broadcaster/wrench_filtered");
   geometry_msgs::msg::WrenchStamped::SharedPtr received_msg;
   auto output_subscriber = create_output_subscriber(
-    "/fts_wrench_transformer/wrench_transformed_base_link",
+    "/fts_wrench_transformer/base_link/wrench_filtered",
     [&received_msg](const geometry_msgs::msg::WrenchStamped::SharedPtr msg)
     { received_msg = msg; });
 
@@ -536,6 +598,45 @@ TEST_F(TestWrenchTransformer, FilteredInputTopic)
   ASSERT_TRUE(received_msg != nullptr)
     << "Transformed message from filtered topic was not received";
   EXPECT_EQ(received_msg->header.frame_id, "base_link");
+}
+
+TEST_F(TestWrenchTransformer, NamespaceNormalizationRootNamespace)
+{
+  // Test with root namespace ("/") - should use node name
+  auto node = create_transformer_node({"base_link"}, 0.1, "test_broadcaster/wrench", "/");
+  executor_->spin_some(std::chrono::milliseconds(100));
+
+  // Get the publisher and check its topic name directly
+  auto topic_names_and_types = node->get_topic_names_and_types();
+  bool found = false;
+  for (const auto & [topic_name, topic_types] : topic_names_and_types)
+  {
+    if (topic_name == "/fts_wrench_transformer/base_link/wrench")
+    {
+      found = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found) << "Publisher topic should be /fts_wrench_transformer/base_link/wrench";
+}
+
+TEST_F(TestWrenchTransformer, NamespaceNormalizationCustomNamespace)
+{
+  // Test with custom namespace - should use the namespace
+  auto node = create_transformer_node({"base_link"}, 0.1, "test_broadcaster/wrench", "/my_robot");
+  executor_->spin_some(std::chrono::milliseconds(100));
+
+  auto topic_names_and_types = node->get_topic_names_and_types();
+  bool found = false;
+  for (const auto & [topic_name, topic_types] : topic_names_and_types)
+  {
+    if (topic_name == "/my_robot/base_link/wrench")
+    {
+      found = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found) << "Publisher topic should be /my_robot/base_link/wrench";
 }
 
 TEST_F(TestWrenchTransformer, RunWrenchTransformerFunction)
