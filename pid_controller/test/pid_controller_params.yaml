@@ -28,7 +28,7 @@ test_pid_controller_unlimited:
 
     reference_and_state_interfaces: ["position"]
 
-    export_gain_references: false
+    export_gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0}
@@ -42,7 +42,7 @@ test_pid_controller_angle_wraparound_on:
 
     reference_and_state_interfaces: ["position"]
 
-    export_gain_references: false
+    export_gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, angle_wraparound: true}
@@ -56,7 +56,7 @@ test_pid_controller_with_feedforward_gain:
 
     reference_and_state_interfaces: ["position"]
 
-    export_gain_references: false
+    export_gain_references: true
 
     gains:
       joint1: {p: 0.5, i: 0.0, d: 0.0, feedforward_gain: 1.0}
@@ -71,7 +71,7 @@ test_pid_controller_with_feedforward_gain_dual_interface:
 
     reference_and_state_interfaces: ["position", "velocity"]
 
-    export_gain_references: false
+    export_gain_references: true
 
     gains:
       joint1: {p: 0.5, i: 0.3, d: 0.4, feedforward_gain: 1.0}
@@ -100,7 +100,7 @@ test_save_i_term_on:
 
     reference_and_state_interfaces: ["position"]
 
-    export_gain_references: false
+    export_gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, save_i_term: true}
