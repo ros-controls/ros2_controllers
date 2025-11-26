@@ -86,7 +86,7 @@ TEST_F(PidControllerTest, check_exported_interfaces)
   // check ref itfs
   auto ref_if_conf = controller_->export_reference_interfaces();
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_gain_references
+                             (controller_->params_.export_params.gain_references
                                 ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
                                 : 0);
   ASSERT_EQ(ref_if_conf.size(), expected_ref_size);
@@ -151,7 +151,7 @@ TEST_F(PidControllerTest, activate_success)
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_gain_references
+                             (controller_->params_.export_params.gain_references
                                 ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
                                 : 0);
   EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
@@ -241,7 +241,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_gain_references
+                             (controller_->params_.export_params.gain_references
                                 ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
                                 : 0);
   EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
@@ -301,7 +301,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
 
   ASSERT_TRUE(controller_->is_in_chained_mode());
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_gain_references
+                             (controller_->params_.export_params.gain_references
                                 ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
                                 : 0);
 
@@ -460,7 +460,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   {
     ASSERT_EQ(controller_->reference_interfaces_[i], 0.45);
   }
-  if (controller_->params_.export_gain_references)
+  if (controller_->params_.export_params.gain_references)
   {
     for (size_t i = num_control_references; i < controller_->reference_interfaces_.size(); ++i)
     {
