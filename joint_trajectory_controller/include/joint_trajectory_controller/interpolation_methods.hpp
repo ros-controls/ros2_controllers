@@ -126,8 +126,7 @@ const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_
       LOGGER,
       "Unknown interpolation method parameter '%s' was given. Using the default: "
       "DEFAULT_INTERPOLATION (%s).",
-      interpolation_method.c_str(),
-      to_string(DEFAULT_INTERPOLATION).c_str());
+      interpolation_method.c_str(), to_string(DEFAULT_INTERPOLATION).c_str());
     return DEFAULT_INTERPOLATION;
   }
 }
