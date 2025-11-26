@@ -163,13 +163,15 @@ protected:
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
     // Extract robot_description from parameter overrides
-    for (const auto& param : options.parameter_overrides())
-    {
-      if (param.get_name() == "robot_description")
+    auto it = std::find_if(
+      options.parameter_overrides().begin(), options.parameter_overrides().end(),
+      [](const rclcpp::Parameter & p)
       {
-      controller_->robot_description_ = param.as_string();
-      break;
-      }
+        return p.get_name() == "robot_description";
+      });
+
+    if (it != options.parameter_overrides().end()) {
+      controller_->robot_description_ = it->as_string();
     }
     params.robot_description = controller_->robot_description_;
     params.update_rate = 0;
