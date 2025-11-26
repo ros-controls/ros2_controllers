@@ -65,53 +65,6 @@ enum class InterpolationMethod
 const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 
 /**
- * \brief Maps `InterpolationMethod` enum values to their string identifiers.
- * This constant map is used for the lookup of the InterpolationMethod for a given
- * string (e.g., "splines" for `VARIABLE_DEGREE_SPLINE`).
- */
-const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
-  {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
-
-/**
- * \brief Creates a `InterpolationMethod` enum class value from a string.
- * This function looks up `InterpolationMethodMap` for corresponding `InterpolationMethod` based
- * on interpolation_method string.
- *
- * \param[in] interpolation_method The given interpolation method string.
- *
- * \returns The corresponding InterpolationMethod.
- *
- * \note If interpolation_method does not have any corresponding InterpolationMethod
- * (i.e., "Unknown"), it defaults to `InterpolationMethod::VARIABLE_DEGREE_SPLINE`.
- */
-[[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
-{
-  // Convert to lowercase, so we have a case-agnostic checking,
-  // (i.e., None and none, etc are treated same.)
-  std::string method = convert_to_lowercase(interpolation_method);
-
-  // Iterator to InterpolationMethodMap
-  const auto iterator = InterpolationMethodMap.find(method);
-
-  // If interpolation_method exists
-  if (iterator != InterpolationMethodMap.end())
-  {
-    // Return corresponding `InterpolationMethod`
-    return iterator->second;
-  }
-  // Default
-  else
-  {
-    RCLCPP_WARN(
-      LOGGER,
-      "Unknown interpolation method parameter '%s' was given. Using the default: "
-      "VARIABLE_DEGREE_SPLINE.",
-      interpolation_method.c_str());
-    return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
-  }
-}
-
-/**
  * \brief Returns corresponding string value for the `InterpolationMethod`.
  * This function uses simple switch-case lookup to directly assign string value to
  * `InterpolationMethod`.
@@ -137,6 +90,45 @@ const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMa
         "Unknown interpolation method enum value was given. Returning default: "
         "UNKNOWN");
       return "UNKNOWN";
+  }
+}
+
+/**
+ * \brief Creates a `InterpolationMethod` enum class value from a string.
+ * This function directly looks up for corresponding `InterpolationMethod` based
+ * on interpolation_method string (case-agnostic).
+ *
+ * \param[in] interpolation_method The given interpolation method string.
+ *
+ * \returns The corresponding InterpolationMethod.
+ *
+ * \note If interpolation_method does not have any corresponding InterpolationMethod
+ * (i.e., "Unknown"), it defaults to `DEFAULT_INTERPOLATION`.
+ */
+[[nodiscard]] inline InterpolationMethod from_string(const std::string & interpolation_method)
+{
+  // Convert to lowercase, so we have a case-agnostic checking,
+  // (i.e., "None, NONE, and none" are treated same.)
+  std::string method = ::hardware_interface::to_lower_case(interpolation_method);
+
+  if (method == "none")
+  {
+    return InterpolationMethod::NONE;
+  }
+  else if (method == "splines")
+  {
+    return InterpolationMethod::VARIABLE_DEGREE_SPLINE;
+  }
+  // Default
+  else
+  {
+    RCLCPP_WARN(
+      LOGGER,
+      "Unknown interpolation method parameter '%s' was given. Using the default: "
+      "DEFAULT_INTERPOLATION (%s).",
+      interpolation_method.c_str(),
+      to_string(DEFAULT_INTERPOLATION).c_str());
+    return DEFAULT_INTERPOLATION;
   }
 }
 
