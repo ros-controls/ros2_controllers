@@ -76,10 +76,8 @@ class TestableAdmittanceController : public admittance_controller::AdmittanceCon
 public:
   CallbackReturn on_init() override
   {
-    if (!get_node()->has_parameter("robot_description"))
-    {
-      get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
-      get_node()->set_parameter({"robot_description", robot_description_});
+    get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
+    get_node()->set_parameter({"robot_description", robot_description_});
 
     return admittance_controller::AdmittanceController::on_init();
   }
@@ -164,6 +162,15 @@ protected:
   {
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
+    // Extract robot_description from parameter overrides
+    for (const auto& param : options.parameter_overrides())
+    {
+      if (param.get_name() == "robot_description")
+      {
+      controller_->robot_description_ = param.as_string();
+      break;
+      }
+    }
     params.robot_description = controller_->robot_description_;
     params.update_rate = 0;
     params.node_namespace = "";
