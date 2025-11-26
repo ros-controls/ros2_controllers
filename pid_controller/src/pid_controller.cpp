@@ -349,7 +349,7 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
   const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
 
   size_t total_reference_size = dof_reference_size;
-  if (params_.export_gain_references)
+  if (params_.export_params.gain_references)
   {
     total_reference_size += dof_ * GAIN_INTERFACES.size();
   }
@@ -370,7 +370,7 @@ std::vector<hardware_interface::CommandInterface> PidController::on_export_refer
     }
   }
 
-  if (params_.export_gain_references)
+  if (params_.export_params.gain_references)
   {
     size_t gains_start_index = dof_reference_size;
     for (const auto & gain_name : GAIN_INTERFACES)
@@ -520,7 +520,7 @@ controller_interface::return_type PidController::update_and_write_commands(
   // Calculate size of DOF references for indexing
   const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
 
-  if (params_.export_gain_references)
+  if (params_.export_params.gain_references)
   {
     size_t gains_start_index = dof_reference_size;
     for (size_t i = 0; i < dof_; ++i)
