@@ -85,11 +85,11 @@ TEST_F(PidControllerTest, check_exported_interfaces)
 
   // check ref itfs
   auto ref_if_conf = controller_->export_reference_interfaces();
-  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_params.gain_references
-                                ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                                : 0);
-  ASSERT_EQ(ref_if_conf.size(), expected_ref_size);
+  size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
+                           (controller_->params_.export_params.gain_references
+                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
+                              : 0);
+  ASSERT_EQ(ref_if_conf.size(), actual_ref_size);
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
   {
@@ -145,11 +145,11 @@ TEST_F(PidControllerTest, activate_success)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_params.gain_references
-                                ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                                : 0);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
+                           (controller_->params_.export_params.gain_references
+                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
+                              : 0);
+  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -233,12 +233,12 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_params.gain_references
-                                ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                                : 0);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
+                           (controller_->params_.export_params.gain_references
+                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
+                              : 0);
+  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
+  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
     EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
@@ -293,13 +293,13 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
     controller_interface::return_type::OK);
 
   ASSERT_TRUE(controller_->is_in_chained_mode());
-  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_params.gain_references
-                                ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                                : 0);
+  size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
+                           (controller_->params_.export_params.gain_references
+                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
+                              : 0);
 
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
+  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
 
   // check the command value
   // ref = 5.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
