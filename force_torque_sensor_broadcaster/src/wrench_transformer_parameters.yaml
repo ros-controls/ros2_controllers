@@ -1,0 +1,14 @@
+force_torque_wrench_transformer:
+  target_frames: {
+    type: string_array,
+    default_value: [],
+    description: "Array of target frame names to transform the input wrench to. For each frame, a separate output topic will be published.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  tf_timeout: {
+    type: double,
+    default_value: 0.1,
+    description: "Timeout in seconds for TF lookups when transforming wrenches between frames.",
+  }

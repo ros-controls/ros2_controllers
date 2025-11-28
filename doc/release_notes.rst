@@ -4,6 +4,7 @@ Release Notes: Humble to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Humble (previous) and Jazzy (current) releases.
 
+<<<<<<< HEAD
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
@@ -107,3 +108,10 @@ force_torque_sensor_broadcaster
 *******************************
 * Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
 * Added support for filter chains, allowing users to configure a sequence of filter plugins with their parameters. The force/torque sensor readings are filtered sequentially and published on a separate topic.
+=======
+This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
+
+force_torque_sensor_broadcaster
+*******************************
+* Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
+>>>>>>> 3d03572 (Add utility node to transform wrench messages for a list of frames (#2021))
