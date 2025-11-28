@@ -48,6 +48,11 @@ References (from a preceding controller)
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 - <reference_and_state_dof_names[i]>/<reference_and_state_interfaces[j]>  [double]
   **NOTE**: ``reference_and_state_dof_names[i]`` can be from ``reference_and_state_dof_names`` parameter, or if it is empty then ``dof_names``.
+- If the parameter **`export_params.gain_references`** is set to **`true`**, the following interfaces are also exported as references for preceding controllers to claim, **when the PID controller is used in a chained mode**:
+
+   * ``<dof_names[i]>/p`` [double]
+   * ``<dof_names[i]>/i`` [double]
+   * ``<dof_names[i]>/d`` [double]
 
 Commands
 ,,,,,,,,,
