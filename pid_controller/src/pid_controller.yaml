@@ -130,6 +130,6 @@ pid_controller:
       gain_references: {
         type: bool,
         default_value: false,
-        description: "If true, exports P, I, D gains as reference interfaces to be claimed by preceding controllers",
+        description: "If true, exports P, I, and D gains as reference interfaces to be claimed by preceding controllers",
         read_only: true
       }

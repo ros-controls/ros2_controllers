@@ -528,7 +528,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       auto current_pid_gains = pids_[i]->get_gains();
       for (size_t j = 0; j < GAIN_INTERFACES.size(); ++j)
       {
-        const size_t buffer_index = gains_start_index + i + j * dof_;
+        const size_t buffer_index = gains_start_index + (j * dof_) + i;
         const double new_gain_value = reference_interfaces_[buffer_index];
         if (std::isfinite(new_gain_value))
         {
