@@ -4,6 +4,7 @@ Release Notes: Jazzy to Kilted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Jazzy (previous) and Kilted (current) releases.
 
+<<<<<<< HEAD
 chained_filter_controller
 *******************************
 * The chained_filter_controller was added to use generic filter plugins (`#1634 <https://github.com/ros-controls/ros2_controllers/pull/1634>`__).
@@ -40,3 +41,10 @@ pid_controller
 motion_primitives_forward_controller
 *******************************************
 * 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
+=======
+This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
+
+force_torque_sensor_broadcaster
+*******************************
+* Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
+>>>>>>> 3d03572 (Add utility node to transform wrench messages for a list of frames (#2021))
