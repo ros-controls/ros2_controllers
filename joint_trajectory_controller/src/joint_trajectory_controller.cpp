@@ -940,9 +940,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
-  RCLCPP_INFO(
-    logger, "Using '%s' interpolation method.",
-    interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
+  RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
 
   // prepare hold_position_msg
   init_hold_position_msg();
