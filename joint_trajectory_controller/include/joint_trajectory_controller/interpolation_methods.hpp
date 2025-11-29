@@ -56,7 +56,7 @@ enum class InterpolationMethod
    * Based on available derivatives, it uses the following degree interpolation,
    * 1. If only position is available: `Linear Interpolation`.
    * 2. If position, and velocity are available: `Cubic Spline Interpolation`.
-   * 3. If position, velocity, and acceleration is available: `Quintic Spline Interpolation`.
+   * 3. If position, velocity, and acceleration are available: `Quintic Spline Interpolation`.
    *
    * \note
    * `Linear Interpolation` is discouraged, due to it yields trajectories with discontinuous
