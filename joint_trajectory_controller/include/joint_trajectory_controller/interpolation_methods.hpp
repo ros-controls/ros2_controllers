@@ -42,6 +42,9 @@ enum class InterpolationMethod
    * \brief No interpolation is performed.
    * This is typically used when data points are discrete and should not be
    * connected by a curve.
+   *
+   * It returns the initial point until the time for the first trajectory data
+   * point is reached. Then, it simply takes the next given datapoint.
    */
   NONE,
 
@@ -51,9 +54,13 @@ enum class InterpolationMethod
    * available derivatives. This provides a smooth, continuous curve between data points.
    *
    * Based on available derivatives, it uses the following degree interpolation,
-   * 1. Neither velocity nor acceleration is available: `Linear Interpolation`.
-   * 2. Velocity is available, but acceleration is not available: `Cubic Spline Interpolation`.
-   * 3. Both velocity and acceleration is available: `Quintic Spline Interpolation`.
+   * 1. If only position is available: `Linear Interpolation`.
+   * 2. If position, and velocity are available: `Cubic Spline Interpolation`.
+   * 3. If position, velocity, and acceleration is available: `Quintic Spline Interpolation`.
+   *
+   * \note
+   * `Linear Interpolation` is discouraged, due to it yields trajectories with discontinuous
+   * velocities at the waypoints.
    */
   VARIABLE_DEGREE_SPLINE
 };
@@ -70,7 +77,9 @@ const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_
  * @deprecated This map is deprecated. Use the direct lookup methods instead.
  * (Original use: Converting strings into the InterpolationMethod).
  */
-[[deprecated("InterpolationMethodMap is deprecated. Use the direct lookup methods instead.")]]
+[[deprecated(
+  "InterpolationMethodMap is expected to be removed in future iterations of JTC.
+  Instead, use the direct lookup methods instead.")]]
 const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
   {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
 
