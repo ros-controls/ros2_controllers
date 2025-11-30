@@ -221,7 +221,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     bool should_publish = false;
     try
     {
-      if (previous_publish_timestamp_ + publish_period_ < time)
+      if (previous_publish_timestamp_ + publish_period_ <= time)
       {
         previous_publish_timestamp_ += publish_period_;
         should_publish = true;

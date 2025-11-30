@@ -121,6 +121,10 @@ bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcp
 
 bool Odometry::update_from_vel(double left_vel, double right_vel, double dt)
 {
+  if (std::fabs(dt) < 1e-6)
+  {
+    return false;  // Interval too small to integrate with
+  }
   // Compute linear and angular velocities of the robot:
   const double linear_vel = (left_vel * left_wheel_radius_ + right_vel * right_wheel_radius_) * 0.5;
   const double angular_vel =
@@ -214,6 +218,11 @@ void Odometry::integrateExact(double linear, double angular)
 
 void Odometry::integrate(double linear_vel, double angular_vel, double dt)
 {
+  // Skip integration for invalid time intervals
+  if (std::fabs(dt) < 1e-6)
+  {
+    return;
+  }
   const double dx = linear_vel * dt;
   const double dheading = angular_vel * dt;
   if (fabs(dheading) < 1e-6)
