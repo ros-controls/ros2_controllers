@@ -43,12 +43,12 @@ public:
     "Replaced by bool update_from_pos(double left_pos, double right_pos, double "
     "dt).")]]
   bool update(double left_pos, double right_pos, const rclcpp::Time & time);
- [[deprecated(
+  [[deprecated(
     "Replaced by bool update_from_vel(double left_vel, double right_vel, double "
     "dt).")]]
   bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
   [[deprecated(
-       "Replaced by bool try_update_open_loop(double linear_vel, double angular_vel, double "
+    "Replaced by bool try_update_open_loop(double linear_vel, double angular_vel, double "
     "dt).")]]
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
 
