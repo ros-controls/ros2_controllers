@@ -688,6 +688,40 @@ TEST_F(TestWrenchTransformer, RunWrenchTransformerFunction)
   rclcpp::init(0, nullptr);
 }
 
+TEST_F(TestWrenchTransformer, RunWrenchTransformerWithPositionalArgs)
+{
+  rclcpp::shutdown();
+
+  // Prepare test arguments with positional arguments 
+  // This simulates how the node would be launched with positional arguments directly
+  int argc = 3;
+  char arg0[] = "test_wrench_transformer";
+  char arg1[] = "base_link";
+  char arg2[] = "end_effector";
+  char * argv[] = {arg0, arg1, arg2, nullptr};
+
+  std::atomic<bool> function_started{false};
+  std::thread test_thread(
+    [&]()
+    {
+      function_started = true;
+      force_torque_sensor_broadcaster::run_wrench_transformer(argc, argv);
+    });
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_TRUE(function_started);
+
+  rclcpp::shutdown();
+
+  if (test_thread.joinable())
+  {
+    test_thread.join();
+  }
+
+  rclcpp::init(0, nullptr);
+}
+
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleMock(&argc, argv);

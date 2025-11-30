@@ -21,6 +21,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "tf2/utils.hpp"
 
@@ -186,8 +187,17 @@ void WrenchTransformer::setup_publishers()
 
 int run_wrench_transformer(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
+  std::vector<std::string> non_ros_args = rclcpp::init_and_remove_ros_arguments(argc, argv);
+  std::vector<std::string> target_frames_cli;
+  for (size_t i = 1; i < non_ros_args.size(); ++i)
+  {
+    target_frames_cli.push_back(non_ros_args[i]);
+  }
   rclcpp::NodeOptions options;
+  if (!target_frames_cli.empty())
+  {
+    options.append_parameter_override("target_frames", rclcpp::ParameterValue(target_frames_cli));
+  }
   auto node = std::make_shared<WrenchTransformer>(options);
   node->init();
   rclcpp::spin(node);
