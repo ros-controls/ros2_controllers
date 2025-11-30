@@ -112,6 +112,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
+  )
 
   ament_add_gmock(test_wrench_transformer test/test_wrench_transformer.cpp)
   target_compile_features(test_wrench_transformer PUBLIC cxx_std_17)
