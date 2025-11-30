@@ -692,7 +692,7 @@ TEST_F(TestWrenchTransformer, RunWrenchTransformerWithPositionalArgs)
 {
   rclcpp::shutdown();
 
-  // Prepare test arguments with positional arguments 
+  // Prepare test arguments with positional arguments
   // This simulates how the node would be launched with positional arguments directly
   int argc = 3;
   char arg0[] = "test_wrench_transformer";
@@ -720,7 +720,6 @@ TEST_F(TestWrenchTransformer, RunWrenchTransformerWithPositionalArgs)
 
   rclcpp::init(0, nullptr);
 }
-
 
 int main(int argc, char ** argv)
 {
