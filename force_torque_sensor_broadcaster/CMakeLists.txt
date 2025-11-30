@@ -110,10 +110,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_force_torque_sensor_broadcaster
     force_torque_sensor_broadcaster
   )
-<<<<<<< HEAD
   ament_target_dependencies(test_force_torque_sensor_broadcaster
     hardware_interface
-=======
 
   ament_add_gmock(test_wrench_transformer test/test_wrench_transformer.cpp)
   target_compile_features(test_wrench_transformer PUBLIC cxx_std_17)
@@ -127,7 +125,6 @@ if(BUILD_TESTING)
 
   add_library(dummy_filter SHARED
     test/dummy_filter.cpp
->>>>>>> 3d03572 (Add utility node to transform wrench messages for a list of frames (#2021))
   )
 endif()
 
