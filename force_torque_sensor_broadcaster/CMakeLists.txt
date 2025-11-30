@@ -123,10 +123,6 @@ if(BUILD_TESTING)
     wrench_transformer
     tf2_ros::tf2_ros
   )
-
-  add_library(dummy_filter SHARED
-    test/dummy_filter.cpp
-  )
 endif()
 
 install(
