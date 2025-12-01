@@ -165,12 +165,10 @@ protected:
     // Extract robot_description from parameter overrides
     auto it = std::find_if(
       options.parameter_overrides().begin(), options.parameter_overrides().end(),
-      [](const rclcpp::Parameter & p)
-      {
-        return p.get_name() == "robot_description";
-      });
+      [](const rclcpp::Parameter & p) { return p.get_name() == "robot_description"; });
 
-    if (it != options.parameter_overrides().end()) {
+    if (it != options.parameter_overrides().end())
+    {
       controller_->robot_description_ = it->as_string();
     }
     params.robot_description = controller_->robot_description_;
