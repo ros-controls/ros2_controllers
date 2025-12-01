@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.1.0 (2025-12-01)
+------------------
 * Update odometry implementation in diff_drive (`#1854 <https://github.com/ros-controls/ros2_controllers/issues/1854>`_)
 * Contributors: Aarav Gupta
 

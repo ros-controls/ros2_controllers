@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.1.0 (2025-12-01)
+------------------
 * Rename Odometry Class to SteeringKinematics (`#1996 <https://github.com/ros-controls/ros2_controllers/issues/1996>`_)
 * Rename joint_reference_interfaces to reference_interface_names (`#2008 <https://github.com/ros-controls/ros2_controllers/issues/2008>`_)
 * Contributors: Sanjeev, Surya!

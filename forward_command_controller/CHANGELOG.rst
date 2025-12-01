@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.1.0 (2025-12-01)
+------------------
 * Deprecate forward_command_controller specializations (`#1913 <https://github.com/ros-controls/ros2_controllers/issues/1913>`_)
 * Contributors: Christoph Fröhlich
 
