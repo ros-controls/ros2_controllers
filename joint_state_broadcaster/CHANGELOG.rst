@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use UnorderedElementsAreArray for JSB tests (`#1971 <https://github.com/ros-controls/ros2_controllers/issues/1971>`_)
+* Contributors: Christoph Fröhlich
+
 2.50.2 (2025-10-17)
 -------------------
 

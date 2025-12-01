@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove parameter_traits dependency (backport `#2022 <https://github.com/ros-controls/ros2_controllers/issues/2022>`_) (`#2023 <https://github.com/ros-controls/ros2_controllers/issues/2023>`_)
+* Contributors: mergify[bot]
+
 2.50.2 (2025-10-17)
 -------------------
 
