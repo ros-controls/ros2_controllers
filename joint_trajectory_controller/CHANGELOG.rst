@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.51.0 (2025-12-01)
+-------------------
 * Add missing dependency rclcpp_action (backport `#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_) (`#1993 <https://github.com/ros-controls/ros2_controllers/issues/1993>`_)
 * Fix JTC state_msg (`#1985 <https://github.com/ros-controls/ros2_controllers/issues/1985>`_)
 * Fix integer literal in logging macro (`#1984 <https://github.com/ros-controls/ros2_controllers/issues/1984>`_)
