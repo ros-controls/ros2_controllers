@@ -78,7 +78,7 @@ const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_
  * (Original use: Converting strings into the InterpolationMethod).
  */
 [[deprecated(
-  "InterpolationMethodMap is expected to be removed in future iterations of JTC. "
+  "InterpolationMethodMap will be removed in future releases. "
   "Instead, use the direct lookup methods.")]]
 const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
   {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
