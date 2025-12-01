@@ -57,10 +57,6 @@ enum class InterpolationMethod
    * 1. If only position is available: `Linear Interpolation`.
    * 2. If position, and velocity are available: `Cubic Spline Interpolation`.
    * 3. If position, velocity, and acceleration are available: `Quintic Spline Interpolation`.
-   *
-   * \note
-   * `Linear Interpolation` is discouraged, due to it yields trajectories with discontinuous
-   * velocities at the waypoints.
    */
   VARIABLE_DEGREE_SPLINE
 };
