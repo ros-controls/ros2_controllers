@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add utility node to transform wrench messages for a list of frames (`#2021 <https://github.com/ros-controls/ros2_controllers/issues/2021>`_)
+* Contributors: Julia Jia
+
 6.0.0 (2025-11-10)
 ------------------
 * Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)

@@ -2,6 +2,9 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.0.0 (2025-11-10)
 ------------------
 * fix issue of not listing new JTCs (`#1891 <https://github.com/ros-controls/ros2_controllers/issues/1891>`_)

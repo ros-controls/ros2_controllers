@@ -2,6 +2,9 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.0.0 (2025-11-10)
 ------------------
 * Use NodeInterfaces for TransformBroadcaster construction (`#1981 <https://github.com/ros-controls/ros2_controllers/issues/1981>`_)

@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Refactor interpolation_method class (`#2019 <https://github.com/ros-controls/ros2_controllers/issues/2019>`_)
+* Contributors: Surya!
+
 6.0.0 (2025-11-10)
 ------------------
 * Add missing dependency rclcpp_action (`#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_)
