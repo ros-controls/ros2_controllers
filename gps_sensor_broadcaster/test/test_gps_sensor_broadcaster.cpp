@@ -75,16 +75,16 @@ public:
   void setup_gps_broadcaster()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(gps_status_);
-    state_ifs.emplace_back(gps_service_);
-    state_ifs.emplace_back(gps_latitude_);
-    state_ifs.emplace_back(gps_longitude_);
-    state_ifs.emplace_back(gps_altitude_);
+    state_ifs.emplace_back(gps_status_, nullptr);
+    state_ifs.emplace_back(gps_service_, nullptr);
+    state_ifs.emplace_back(gps_latitude_, nullptr);
+    state_ifs.emplace_back(gps_longitude_, nullptr);
+    state_ifs.emplace_back(gps_altitude_, nullptr);
     if constexpr (sensor_option == semantic_components::GPSSensorOption::WithCovariance)
     {
-      state_ifs.emplace_back(latitude_covariance_);
-      state_ifs.emplace_back(longitude_covariance_);
-      state_ifs.emplace_back(altitude_covariance_);
+      state_ifs.emplace_back(latitude_covariance_, nullptr);
+      state_ifs.emplace_back(longitude_covariance_, nullptr);
+      state_ifs.emplace_back(altitude_covariance_, nullptr);
     }
 
     gps_broadcaster_->assign_interfaces({}, std::move(state_ifs));
@@ -105,31 +105,55 @@ public:
     return gps_msg;
   }
 
+  controller_interface::ControllerInterfaceParams create_ctrl_params(
+    const rclcpp::NodeOptions & node_options, const std::string & robot_description = "")
+  {
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = "test_gps_sensor_broadcaster";
+    params.robot_description = robot_description;
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = node_options;
+    return params;
+  }
+
 protected:
   const rclcpp::Parameter sensor_name_param_ = rclcpp::Parameter("sensor_name", "gps_sensor");
   const std::string sensor_name_ = sensor_name_param_.get_value<std::string>();
   const rclcpp::Parameter frame_id_ = rclcpp::Parameter("frame_id", "gps_sensor_frame");
   std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
-  hardware_interface::StateInterface gps_status_{sensor_name_, "status", &sensor_values_[0]};
-  hardware_interface::StateInterface gps_service_{sensor_name_, "service", &sensor_values_[1]};
-  hardware_interface::StateInterface gps_latitude_{sensor_name_, "latitude", &sensor_values_[2]};
-  hardware_interface::StateInterface gps_longitude_{sensor_name_, "longitude", &sensor_values_[3]};
-  hardware_interface::StateInterface gps_altitude_{sensor_name_, "altitude", &sensor_values_[4]};
-  hardware_interface::StateInterface latitude_covariance_{
-    sensor_name_, "latitude_covariance", &sensor_values_[5]};
-  hardware_interface::StateInterface longitude_covariance_{
-    sensor_name_, "longitude_covariance", &sensor_values_[6]};
-  hardware_interface::StateInterface altitude_covariance_{
-    sensor_name_, "altitude_covariance", &sensor_values_[7]};
+  hardware_interface::StateInterface::SharedPtr gps_status_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "status", &sensor_values_[0]);
+  hardware_interface::StateInterface::SharedPtr gps_service_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "service", &sensor_values_[1]);
+  hardware_interface::StateInterface::SharedPtr gps_latitude_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "latitude", &sensor_values_[2]);
+  hardware_interface::StateInterface::SharedPtr gps_longitude_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "longitude", &sensor_values_[3]);
+  hardware_interface::StateInterface::SharedPtr gps_altitude_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "altitude", &sensor_values_[4]);
+  hardware_interface::StateInterface::SharedPtr latitude_covariance_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "latitude_covariance", &sensor_values_[5]);
+  hardware_interface::StateInterface::SharedPtr longitude_covariance_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "longitude_covariance", &sensor_values_[6]);
+  hardware_interface::StateInterface::SharedPtr altitude_covariance_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      sensor_name_, "altitude_covariance", &sensor_values_[7]);
 
   std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> gps_broadcaster_;
 };
 
 TEST_F(GPSSensorBroadcasterTest, whenNoParamsAreSetThenInitShouldFail)
 {
-  const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    gps_broadcaster_->define_custom_node_options());
+  const auto result = gps_broadcaster_->init(create_ctrl_params(
+    gps_broadcaster_->define_custom_node_options(), ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
@@ -137,8 +161,7 @@ TEST_F(GPSSensorBroadcasterTest, whenOnlySensorNameIsSetThenInitShouldFail)
 {
   const auto node_options = create_node_options_with_overriden_parameters({sensor_name_param_});
   const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    node_options);
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
@@ -149,8 +172,7 @@ TEST_F(
   const auto node_options =
     create_node_options_with_overriden_parameters({sensor_name_param_, frame_id_});
   const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    node_options);
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -164,8 +186,7 @@ TEST_F(
   const auto node_options =
     create_node_options_with_overriden_parameters({sensor_name_param_, frame_id_});
   const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    node_options);
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -196,8 +217,7 @@ TEST_F(
      {"static_position_covariance",
       std::vector<double>{static_covariance.begin(), static_covariance.end()}}});
   const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    node_options);
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
@@ -223,9 +243,9 @@ TEST_F(
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {sensor_name_param_, frame_id_, {"read_covariance_from_interface", true}});
+
   const auto result = gps_broadcaster_->init(
-    "test_gps_sensor_broadcaster", ros2_control_test_assets::minimal_robot_urdf, 0, "",
-    node_options);
+    create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_EQ(
     gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);

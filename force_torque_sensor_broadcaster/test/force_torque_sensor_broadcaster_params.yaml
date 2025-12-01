@@ -1,4 +1,11 @@
 test_force_torque_sensor_broadcaster:
   ros__parameters:
-
     frame_id:  "fts_sensor_frame"
+test_force_torque_sensor_broadcaster_with_chain:
+  ros__parameters:
+    frame_id:  "fts_sensor_frame"
+    sensor_name: "fts_sensor"
+    sensor_filter_chain:
+      filter1:
+        name: dummy
+        type: filters/IncrementFilterWrench

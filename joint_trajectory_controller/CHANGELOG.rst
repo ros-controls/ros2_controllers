@@ -2,6 +2,42 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.0.0 (2025-11-10)
+------------------
+* Add missing dependency rclcpp_action (`#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_)
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Add time_from_start to action feedback and state message (cherry-pick `#1755 <https://github.com/ros-controls/ros2_controllers/issues/1755>`_) (`#1820 <https://github.com/ros-controls/ros2_controllers/issues/1820>`_)
+* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
+* :memo: Add disclaimer on missing trajectory replacement implementation (`#1978 <https://github.com/ros-controls/ros2_controllers/issues/1978>`_)
+* Fix JTC crashing when shutdown while executing (`#1960 <https://github.com/ros-controls/ros2_controllers/issues/1960>`_)
+* Remove unused `get_state_msg` method (`#1949 <https://github.com/ros-controls/ros2_controllers/issues/1949>`_)
+* Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
+* Contributors: Anand Vardhan, Bence Magyar, Christoph Fröhlich, Marq Rasmussen, Noel Jiménez García
+
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Remove wrong and unnecessary docstrings (`#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_)
+* Use auto dependency management for windows workflow (`#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_)
+* Remove unused variables and correctly override test class method (`#1918 <https://github.com/ros-controls/ros2_controllers/issues/1918>`_)
+* Don't call `release_interfaces` from controllers (`#1910 <https://github.com/ros-controls/ros2_controllers/issues/1910>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+* [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+* Filling `index` field in feedback message of the action interface (`#1850 <https://github.com/ros-controls/ros2_controllers/issues/1850>`_)
+* Contributors: Giuseppe Monetti
+
 5.5.0 (2025-07-31)
 ------------------
 * Reset JTC PID's to zero on_activate() (`#1840 <https://github.com/ros-controls/ros2_controllers/issues/1840>`_)

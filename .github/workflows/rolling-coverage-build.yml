@@ -1,7 +1,7 @@
 name: Coverage Build - Rolling
 on:
   workflow_dispatch:
-  push:
+  pull_request: &event
     branches:
       - master
     paths:
@@ -16,21 +16,7 @@ on:
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
       - '**.xml'
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '**.hpp'
-      - '**.h'
-      - '**.cpp'
-      - '**.py'
-      - '**.yaml'
-      - '.github/workflows/rolling-coverage-build.yml'
-      - 'codecov.yml'
-      - '**/package.xml'
-      - '**/CMakeLists.txt'
-      - 'ros2_controllers.rolling.repos'
-      - '**.xml'
+  push: *event
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on given branches

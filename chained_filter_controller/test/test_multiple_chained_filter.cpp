@@ -48,12 +48,18 @@ void MultipleChainedFilterTest::SetUpController(
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
 
-  const auto result = controller_->init(node_name, "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = node_name;
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(joint_1_pos_);
-  state_ifs.emplace_back(joint_2_pos_);
+  state_ifs.emplace_back(joint_1_pos_, nullptr);
+  state_ifs.emplace_back(joint_2_pos_, nullptr);
   controller_->assign_interfaces({}, std::move(state_ifs));
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
@@ -118,23 +124,23 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input state interface should not change
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
-  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 
-  ASSERT_TRUE(joint_1_pos_.set_value(2.0));
-  ASSERT_TRUE(joint_2_pos_.set_value(3.0));
+  ASSERT_TRUE(joint_1_pos_->set_value(2.0));
+  ASSERT_TRUE(joint_2_pos_->set_value(3.0));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
-  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.6);
 
   ASSERT_EQ(
@@ -155,23 +161,23 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input state interface should not change
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
-  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 
-  ASSERT_TRUE(joint_1_pos_.set_value(2.0));
-  ASSERT_TRUE(joint_2_pos_.set_value(2.8));
+  ASSERT_TRUE(joint_1_pos_->set_value(2.0));
+  ASSERT_TRUE(joint_2_pos_->set_value(2.8));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
-  EXPECT_EQ(joint_2_pos_.get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   // second update call, mean of (2.2, 2.8)
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.5);
 

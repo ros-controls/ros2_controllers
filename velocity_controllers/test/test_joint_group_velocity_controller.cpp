@@ -42,14 +42,19 @@ void JointGroupVelocityControllerTest::SetUpController(
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
 
-  const auto result =
-    controller_->init("test_joint_group_velocity_controller", "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_joint_group_velocity_controller";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_cmd_);
-  command_ifs.emplace_back(joint_2_cmd_);
-  command_ifs.emplace_back(joint_3_cmd_);
+  command_ifs.emplace_back(joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(joint_2_cmd_, nullptr);
+  command_ifs.emplace_back(joint_3_cmd_, nullptr);
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
@@ -75,9 +80,9 @@ TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 3.1);
 
   // send command
   forward_command_controller::CmdType command;
@@ -90,9 +95,9 @@ TEST_F(JointGroupVelocityControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands have been modified
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
@@ -112,9 +117,9 @@ TEST_F(JointGroupVelocityControllerTest, WrongCommandCheckTest)
     controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
@@ -129,9 +134,9 @@ TEST_F(JointGroupVelocityControllerTest, NoCommandCheckTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
@@ -139,9 +144,9 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
   SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // default values
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 3.1);
 
   auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -172,9 +177,9 @@ TEST_F(JointGroupVelocityControllerTest, CommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest)
@@ -185,15 +190,15 @@ TEST_F(JointGroupVelocityControllerTest, StopJointsOnDeactivateTest)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 3.1);
 
   // stop the controller
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // check joint commands are now zero
-  ASSERT_EQ(joint_1_cmd_.get_optional().value(), 0.0);
-  ASSERT_EQ(joint_2_cmd_.get_optional().value(), 0.0);
-  ASSERT_EQ(joint_3_cmd_.get_optional().value(), 0.0);
+  ASSERT_EQ(joint_1_cmd_->get_optional().value(), 0.0);
+  ASSERT_EQ(joint_2_cmd_->get_optional().value(), 0.0);
+  ASSERT_EQ(joint_3_cmd_->get_optional().value(), 0.0);
 }

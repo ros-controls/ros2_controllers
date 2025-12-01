@@ -813,7 +813,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     for (size_t i = 0; i < command_joint_names_.size(); i++)
     {
       RCLCPP_DEBUG(
-        logger, "Command joint %lu: '%s' maps to joint %lu: '%s'.", i,
+        logger, "Command joint %zu: '%s' maps to joint %zu: '%s'.", i,
         command_joint_names_[i].c_str(), map_cmd_to_joints_[i],
         params_.joints.at(map_cmd_to_joints_[i]).c_str());
     }
@@ -834,6 +834,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // Check if only allowed interface types are used and initialize storage to avoid memory
   // allocation during activation
   joint_command_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_command_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_command_interface_ =
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_POSITION);
@@ -870,6 +874,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // allocation during activation
   // Note: 'effort' storage is also here, but never used. Still, for this is OK.
   joint_state_interface_.resize(allowed_interface_types_.size());
+  for (auto & itf : joint_state_interface_)
+  {
+    itf.reserve(params_.joints.size());
+  }
 
   has_position_state_interface_ =
     contains_interface_type(params_.state_interfaces, hardware_interface::HW_IF_POSITION);
@@ -932,9 +940,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
-  RCLCPP_INFO(
-    logger, "Using '%s' interpolation method.",
-    interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
+  RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
 
   // prepare hold_position_msg
   init_hold_position_msg();
@@ -949,41 +955,38 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     "~/controller_state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
 
-  state_publisher_->lock();
-  state_publisher_->msg_.joint_names = params_.joints;
-  state_publisher_->msg_.reference.positions.resize(dof_);
-  state_publisher_->msg_.reference.velocities.resize(dof_);
-  state_publisher_->msg_.reference.accelerations.resize(dof_);
-  state_publisher_->msg_.feedback.positions.resize(dof_);
-  state_publisher_->msg_.error.positions.resize(dof_);
+  state_msg_.joint_names = params_.joints;
+  state_msg_.reference.positions.resize(dof_);
+  state_msg_.reference.velocities.resize(dof_);
+  state_msg_.reference.accelerations.resize(dof_);
+  state_msg_.feedback.positions.resize(dof_);
+  state_msg_.error.positions.resize(dof_);
   if (has_velocity_state_interface_)
   {
-    state_publisher_->msg_.feedback.velocities.resize(dof_);
-    state_publisher_->msg_.error.velocities.resize(dof_);
+    state_msg_.feedback.velocities.resize(dof_);
+    state_msg_.error.velocities.resize(dof_);
   }
   if (has_acceleration_state_interface_)
   {
-    state_publisher_->msg_.feedback.accelerations.resize(dof_);
-    state_publisher_->msg_.error.accelerations.resize(dof_);
+    state_msg_.feedback.accelerations.resize(dof_);
+    state_msg_.error.accelerations.resize(dof_);
   }
   if (has_position_command_interface_)
   {
-    state_publisher_->msg_.output.positions.resize(dof_);
+    state_msg_.output.positions.resize(dof_);
   }
   if (has_velocity_command_interface_)
   {
-    state_publisher_->msg_.output.velocities.resize(dof_);
+    state_msg_.output.velocities.resize(dof_);
   }
   if (has_acceleration_command_interface_)
   {
-    state_publisher_->msg_.output.accelerations.resize(dof_);
+    state_msg_.output.accelerations.resize(dof_);
   }
   if (has_effort_command_interface_)
   {
-    state_publisher_->msg_.output.effort.resize(dof_);
+    state_msg_.output.effort.resize(dof_);
   }
-
-  state_publisher_->unlock();
 
   // action server configuration
   if (params_.allow_partial_joints_goal)
@@ -1265,7 +1268,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
-  release_interfaces();
 
   subscriber_is_active_ = false;
 
@@ -1306,31 +1308,33 @@ void JointTrajectoryController::publish_state(
   const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
   const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
 {
-  if (state_publisher_->trylock())
+  if (state_publisher_)
   {
-    state_publisher_->msg_.header.stamp = time;
-    state_publisher_->msg_.reference.positions = desired_state.positions;
-    state_publisher_->msg_.reference.velocities = desired_state.velocities;
-    state_publisher_->msg_.reference.accelerations = desired_state.accelerations;
-    state_publisher_->msg_.feedback.positions = current_state.positions;
-    state_publisher_->msg_.error.positions = state_error.positions;
+    state_msg_.header.stamp = time;
+    state_msg_.reference.time_from_start = desired_state.time_from_start;
+    state_msg_.reference.positions = desired_state.positions;
+    state_msg_.reference.velocities = desired_state.velocities;
+    state_msg_.reference.accelerations = desired_state.accelerations;
+    state_msg_.feedback.time_from_start = current_state.time_from_start;
+    state_msg_.feedback.positions = current_state.positions;
+    state_msg_.error.positions = state_error.positions;
     if (has_velocity_state_interface_)
     {
-      state_publisher_->msg_.feedback.velocities = current_state.velocities;
-      state_publisher_->msg_.error.velocities = state_error.velocities;
+      state_msg_.feedback.velocities = current_state.velocities;
+      state_msg_.error.velocities = state_error.velocities;
     }
     if (has_acceleration_state_interface_)
     {
-      state_publisher_->msg_.feedback.accelerations = current_state.accelerations;
-      state_publisher_->msg_.error.accelerations = state_error.accelerations;
+      state_msg_.feedback.accelerations = current_state.accelerations;
+      state_msg_.error.accelerations = state_error.accelerations;
     }
     if (read_commands_from_command_interfaces(command_current_))
     {
-      state_publisher_->msg_.output = command_current_;
+      state_msg_.output = command_current_;
     }
-    state_publisher_->msg_.speed_scaling_factor = scaling_factor_;
+    state_msg_.speed_scaling_factor = scaling_factor_;
 
-    state_publisher_->unlockAndPublish();
+    state_publisher_->try_publish(state_msg_);
   }
 }
 
@@ -1890,8 +1894,8 @@ void JointTrajectoryController::update_pids()
     const auto & gains = params_.gains.joints_map.at(params_.joints.at(map_cmd_to_joints_[i]));
     control_toolbox::AntiWindupStrategy antiwindup_strat;
     antiwindup_strat.set_type(gains.antiwindup_strategy);
-    antiwindup_strat.i_max = gains.i_clamp;
-    antiwindup_strat.i_min = -gains.i_clamp;
+    antiwindup_strat.i_max = gains.i_clamp_max;
+    antiwindup_strat.i_min = gains.i_clamp_min;
     antiwindup_strat.error_deadband = gains.error_deadband;
     antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
     if (pids_[i])

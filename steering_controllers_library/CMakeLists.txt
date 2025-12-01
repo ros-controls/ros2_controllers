@@ -39,6 +39,7 @@ add_library(
   steering_controllers_library
   SHARED
   src/steering_controllers_library.cpp
+  src/steering_kinematics.cpp
   src/steering_odometry.cpp
 )
 target_compile_features(steering_controllers_library PUBLIC cxx_std_17)

@@ -40,7 +40,6 @@ using testing::SizeIs;
 namespace
 {
 constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 }  // namespace
 
 void IMUSensorBroadcasterTest::SetUpTestCase() {}
@@ -60,22 +59,26 @@ void IMUSensorBroadcasterTest::SetUpIMUBroadcaster(
 {
   auto node_options = imu_broadcaster_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
-
-  const auto result =
-    imu_broadcaster_->init("test_imu_sensor_broadcaster", "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_imu_sensor_broadcaster";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = imu_broadcaster_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(imu_orientation_x_);
-  state_ifs.emplace_back(imu_orientation_y_);
-  state_ifs.emplace_back(imu_orientation_z_);
-  state_ifs.emplace_back(imu_orientation_w_);
-  state_ifs.emplace_back(imu_angular_velocity_x_);
-  state_ifs.emplace_back(imu_angular_velocity_y_);
-  state_ifs.emplace_back(imu_angular_velocity_z_);
-  state_ifs.emplace_back(imu_linear_acceleration_x_);
-  state_ifs.emplace_back(imu_linear_acceleration_y_);
-  state_ifs.emplace_back(imu_linear_acceleration_z_);
+  state_ifs.emplace_back(imu_orientation_x_, nullptr);
+  state_ifs.emplace_back(imu_orientation_y_, nullptr);
+  state_ifs.emplace_back(imu_orientation_z_, nullptr);
+  state_ifs.emplace_back(imu_orientation_w_, nullptr);
+  state_ifs.emplace_back(imu_angular_velocity_x_, nullptr);
+  state_ifs.emplace_back(imu_angular_velocity_y_, nullptr);
+  state_ifs.emplace_back(imu_angular_velocity_z_, nullptr);
+  state_ifs.emplace_back(imu_linear_acceleration_x_, nullptr);
+  state_ifs.emplace_back(imu_linear_acceleration_y_, nullptr);
+  state_ifs.emplace_back(imu_linear_acceleration_z_, nullptr);
 
   imu_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }

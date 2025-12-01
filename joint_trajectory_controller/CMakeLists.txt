@@ -14,6 +14,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   hardware_interface
   pluginlib
   rclcpp
+  rclcpp_action
   rclcpp_lifecycle
   realtime_tools
   rsl
@@ -38,6 +39,9 @@ add_library(joint_trajectory_controller SHARED
   src/trajectory.cpp
 )
 target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
+if(WIN32)
+  target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
+endif()
 target_include_directories(joint_trajectory_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/joint_trajectory_controller>
@@ -49,6 +53,7 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
+                      rclcpp_action::rclcpp_action
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       rsl::rsl
@@ -66,23 +71,26 @@ if(BUILD_TESTING)
   find_package(ros2_control_test_assets REQUIRED)
 
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
-  target_link_libraries(test_trajectory joint_trajectory_controller)
-  target_link_libraries(test_trajectory ros2_control_test_assets::ros2_control_test_assets)
+  target_link_libraries(test_trajectory
+    joint_trajectory_controller
+    ros2_control_test_assets::ros2_control_test_assets
+  )
   target_compile_definitions(test_trajectory PRIVATE _USE_MATH_DEFINES)
 
   ament_add_gmock(test_tolerances test/test_tolerances.cpp)
-  target_link_libraries(test_tolerances joint_trajectory_controller)
-  target_link_libraries(test_tolerances ros2_control_test_assets::ros2_control_test_assets)
-  target_compile_definitions(test_tolerances PRIVATE _USE_MATH_DEFINES)
+  target_link_libraries(test_tolerances
+    joint_trajectory_controller
+    ros2_control_test_assets::ros2_control_test_assets
+  )
 
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
+    ros2_control_test_assets::ros2_control_test_assets
   )
-  target_link_libraries(test_trajectory_controller ros2_control_test_assets::ros2_control_test_assets)
-  target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
+  target_compile_definitions(test_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_joint_trajectory_controller

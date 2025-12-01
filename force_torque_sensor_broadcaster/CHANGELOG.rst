@@ -2,6 +2,30 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.0.0 (2025-11-10)
+------------------
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich
+
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+* FTS: Don't make a temporary copy of semantic component (`#1902 <https://github.com/ros-controls/ros2_controllers/issues/1902>`_)
+* Add filtering capability to ft_broadcaster (`#1814 <https://github.com/ros-controls/ros2_controllers/issues/1814>`_)
+* Contributors: Christoph Fröhlich, Óscar Martínez Martínez
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+
 5.5.0 (2025-07-31)
 ------------------
 
