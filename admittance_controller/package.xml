@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>admittance_controller</name>
-  <version>5.9.0</version>
+  <version>5.10.0</version>
   <description>Implementation of admittance controllers for different input and output interface.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

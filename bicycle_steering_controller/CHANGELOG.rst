@@ -2,8 +2,8 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.10.0 (2025-12-01)
+-------------------
 * Rename Odometry Class to SteeringKinematics (backport `#1996 <https://github.com/ros-controls/ros2_controllers/issues/1996>`_) (`#2014 <https://github.com/ros-controls/ros2_controllers/issues/2014>`_)
 * Rename joint_reference_interfaces\_ to reference_interface_names (backport `#2008 <https://github.com/ros-controls/ros2_controllers/issues/2008>`_) (`#2012 <https://github.com/ros-controls/ros2_controllers/issues/2012>`_)
 * Contributors: mergify[bot]
