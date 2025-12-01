@@ -1,8 +1,8 @@
 repositories:
   ros2_control:
     type: git
-    url: https://github.com/kuralme/ros2_control.git
-    version: tf_prefix_helper
+    url: https://github.com/ros-controls/ros2_control.git
+    version: master
   realtime_tools:
     type: git
     url: https://github.com/ros-controls/realtime_tools.git
