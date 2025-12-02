@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>position_controllers</name>
-  <version>5.4.0</version>
+  <version>6.1.0</version>
   <description>Generic position controller for forwarding position commands.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -34,5 +34,10 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <deprecated>
+      This package will be removed in ROS 2 Lyrical Luth. Instead, use
+      forward_command_controller, see migration guides for details:
+      https://control.ros.org/rolling/doc/ros2_controllers/doc/migration.html
+    </deprecated>
   </export>
 </package>

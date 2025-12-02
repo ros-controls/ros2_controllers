@@ -2,6 +2,35 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.1.0 (2025-12-01)
+------------------
+* Deprecate forward_command_controller specializations (`#1913 <https://github.com/ros-controls/ros2_controllers/issues/1913>`_)
+* Contributors: Christoph Fröhlich
+
+6.0.0 (2025-11-10)
+------------------
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Contributors: Anand Vardhan
+
+5.8.0 (2025-10-02)
+------------------
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+* Remove usage of `get_ordered_interfaces` but update parameter validation instead (`#1816 <https://github.com/ros-controls/ros2_controllers/issues/1816>`_)
+* Contributors: Christoph Fröhlich
+
+5.5.0 (2025-07-31)
+------------------
+
 5.4.0 (2025-07-23)
 ------------------
 * Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)

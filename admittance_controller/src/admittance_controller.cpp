@@ -226,8 +226,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     }
   }
 
-  // Check if only allowed interface types are used and initialize storage to avoid memory
-  // allocation during activation
+  // Check if only allowed interface types are used
   auto contains_interface_type =
     [](const std::vector<std::string> & interface_type_list, const std::string & interface_type)
   {
@@ -235,7 +234,6 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
            interface_type_list.end();
   };
 
-  joint_command_interface_.resize(allowed_interface_types_.size());
   for (const auto & interface : admittance_->parameters_.command_interfaces)
   {
     auto it =
@@ -257,9 +255,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   has_effort_command_interface_ = contains_interface_type(
     admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
-  // Check if only allowed interface types are used and initialize storage to avoid memory
-  // allocation during activation
-  joint_state_interface_.resize(allowed_interface_types_.size());
+  // Check if only allowed interface types are used
   for (const auto & interface : admittance_->parameters_.state_interfaces)
   {
     auto it =
@@ -336,13 +332,11 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     std::make_unique<realtime_tools::RealtimePublisher<ControllerStateMsg>>(s_publisher_);
 
   // Initialize state message
-  state_publisher_->lock();
-  state_publisher_->msg_ = admittance_->get_controller_state();
-  state_publisher_->unlock();
+  state_msg_ = admittance_->get_controller_state();
 
   // Initialize FTS semantic semantic_component
   force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-    semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
+    admittance_->parameters_.ft_sensor.name);
 
   // configure admittance rule
   if (
@@ -362,37 +356,6 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   if (!admittance_)
   {
     return controller_interface::CallbackReturn::ERROR;
-  }
-
-  // order all joints in the storage
-  for (const auto & interface : admittance_->parameters_.state_interfaces)
-  {
-    auto it =
-      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
-    if (!controller_interface::get_ordered_interfaces(
-          state_interfaces_, admittance_->parameters_.joints, interface,
-          joint_state_interface_[index]))
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' state interfaces, got %zu.", num_joints_,
-        interface.c_str(), joint_state_interface_[index].size());
-      return CallbackReturn::ERROR;
-    }
-  }
-  for (const auto & interface : admittance_->parameters_.command_interfaces)
-  {
-    auto it =
-      std::find(allowed_interface_types_.begin(), allowed_interface_types_.end(), interface);
-    auto index = static_cast<size_t>(std::distance(allowed_interface_types_.begin(), it));
-    if (!controller_interface::get_ordered_interfaces(
-          command_interfaces_, command_joint_names_, interface, joint_command_interface_[index]))
-    {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Expected %zu '%s' command interfaces, got %zu.", num_joints_,
-        interface.c_str(), joint_command_interface_[index].size());
-      return CallbackReturn::ERROR;
-    }
   }
 
   // update parameters if any have changed
@@ -492,9 +455,11 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   write_state_to_hardware(reference_admittance_);
 
   // Publish controller state
-  state_publisher_->lock();
-  state_publisher_->msg_ = admittance_->get_controller_state();
-  state_publisher_->unlockAndPublish();
+  if (state_publisher_)
+  {
+    state_msg_ = admittance_->get_controller_state();
+    state_publisher_->try_publish(state_msg_);
+  }
 
   return controller_interface::return_type::OK;
 }
@@ -522,11 +487,6 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
     }
   }
 
-  for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
-  {
-    joint_command_interface_[index].clear();
-    joint_state_interface_[index].clear();
-  }
   release_interfaces();
   admittance_->reset(num_joints_);
 

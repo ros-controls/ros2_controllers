@@ -45,7 +45,6 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].p, 1.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].i, 2.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].d, 3.0);
-    ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].antiwindup);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_max, 5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].u_clamp_min, -5.0);
     ASSERT_EQ(controller_->params_.gains.dof_names_map[dof_name].feedforward_gain, 0.0);

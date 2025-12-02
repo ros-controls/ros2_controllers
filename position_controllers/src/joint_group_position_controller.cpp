@@ -29,18 +29,16 @@ JointGroupPositionController::JointGroupPositionController()
 
 controller_interface::CallbackReturn JointGroupPositionController::on_init()
 {
-  auto ret = forward_command_controller::ForwardCommandController::on_init();
-  if (ret != CallbackReturn::SUCCESS)
-  {
-    return ret;
-  }
-
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "'position_controllers/JointGroupPositionController' is deprecated. "
+    "Use 'forward_command_controller/ForwardCommandController' instead by adding the "
+    "'interface_name' parameter and set it to 'position'.");
   try
   {
     // Explicitly set the interface parameter declared by the forward_command_controller
     // to match the value set in the JointGroupPositionController constructor.
-    get_node()->set_parameter(
-      rclcpp::Parameter("interface_name", hardware_interface::HW_IF_POSITION));
+    auto_declare<std::string>("interface_name", interface_name_);
   }
   catch (const std::exception & e)
   {
@@ -48,7 +46,7 @@ controller_interface::CallbackReturn JointGroupPositionController::on_init()
     return CallbackReturn::ERROR;
   }
 
-  return CallbackReturn::SUCCESS;
+  return forward_command_controller::ForwardCommandController::on_init();
 }
 }  // namespace position_controllers
 

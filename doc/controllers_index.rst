@@ -36,16 +36,6 @@ Controllers for Wheeled Mobile Robots
 Controllers for Manipulators and Other Robots
 *********************************************
 
-The controllers are using `common hardware interface definitions`_, and may use namespaces depending on the following command interface types:
-
-  - ``position_controllers``: ``hardware_interface::HW_IF_POSITION``
-  - ``velocity_controller``: ``hardware_interface::HW_IF_VELOCITY``
-  - ``effort_controllers``: ``hardware_interface::HW_IF_ACCELERATION``
-  - ``effort_controllers``: ``hardware_interface::HW_IF_EFFORT``
-
-.. _common hardware interface definitions: https://github.com/ros-controls/ros2_control/blob/{REPOS_FILE_BRANCH}/hardware_interface/include/hardware_interface/types/hardware_interface_type_values.hpp
-
-
 .. toctree::
    :titlesonly:
 
@@ -58,7 +48,7 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
-
+   Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
 
 Broadcasters
 **********************
@@ -75,6 +65,16 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
    Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
    GPS Sensor Broadcaster <../gps_sensor_broadcaster/doc/userdoc.rst>
+
+Filters
+**********************
+
+Chainable controllers for filtering of state interfaces. They export the filtered values as state interfaces, which can be used by other controllers or broadcasters, and don't publish to ROS topics.
+
+.. toctree::
+   :titlesonly:
+
+   Chained Filter Controller <../chained_filter_controller/doc/userdoc.rst>
 
 Common Controller Parameters
 ****************************
