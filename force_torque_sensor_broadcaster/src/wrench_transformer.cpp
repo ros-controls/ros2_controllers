@@ -188,15 +188,15 @@ void WrenchTransformer::setup_publishers()
 int run_wrench_transformer(int argc, char ** argv)
 {
   std::vector<std::string> non_ros_args = rclcpp::init_and_remove_ros_arguments(argc, argv);
-  std::vector<std::string> target_frames_cli;
+  std::vector<std::string> target_frames_args;
   for (size_t i = 1; i < non_ros_args.size(); ++i)
   {
-    target_frames_cli.push_back(non_ros_args[i]);
+    target_frames_args.push_back(non_ros_args[i]);
   }
   rclcpp::NodeOptions options;
-  if (!target_frames_cli.empty())
+  if (!target_frames_args.empty())
   {
-    options.append_parameter_override("target_frames", rclcpp::ParameterValue(target_frames_cli));
+    options.append_parameter_override("target_frames", rclcpp::ParameterValue(target_frames_args));
   }
   auto node = std::make_shared<WrenchTransformer>(options);
   node->init();
