@@ -430,8 +430,19 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
       odometry_publisher_);
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
-  const auto tf_prefix =
+  std::string tf_prefix = "";
+  if (params_.tf_frame_prefix_enable)
+  {
+    if (params_.tf_frame_prefix != "")
+    {
+      tf_prefix =
     controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
+    }
+    else
+    {
+      tf_prefix = std::string(get_node()->get_namespace());
+    }    
+  }
 
   // prepend resolved TF prefix to frame ids
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
