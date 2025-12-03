@@ -23,7 +23,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_geometry_msgs
   tf2_kdl
   tf2_ros
-  tinyxml2
+  TinyXML2
   trajectory_msgs
 )
 
@@ -66,7 +66,8 @@ target_link_libraries(admittance_controller PUBLIC
                       ${geometry_msgs_TARGETS}
                       ${trajectory_msgs_TARGETS}
                       ${control_msgs_TARGETS}
-                      ${tf2_geometry_msgs_TARGETS})
+                      ${tf2_geometry_msgs_TARGETS}
+                      ${TinyXML2_LIBRARIES})
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
