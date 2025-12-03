@@ -227,7 +227,13 @@ protected:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    return controller_->init(controller_name_, urdf_, 0, ns, node_options);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name_;
+    params.robot_description = urdf_;
+    params.update_rate = 0;
+    params.node_namespace = ns;
+    params.node_options = node_options;
+    return controller_->init(params);
   }
 
   std::vector<double> wheels_pos_states_ = {1, 1, 1, 1};
