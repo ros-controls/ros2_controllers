@@ -433,15 +433,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
-    if (params_.tf_frame_prefix != "")
-    {
-      tf_prefix = controller_interface::resolve_tf_prefix(
-        params_.tf_frame_prefix, get_node()->get_namespace());
-    }
-    else
-    {
-      tf_prefix = std::string(get_node()->get_namespace());
-    }
+    tf_prefix =
+      controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
   }
 
   // prepend resolved TF prefix to frame ids
