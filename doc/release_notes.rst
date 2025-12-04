@@ -45,6 +45,10 @@ joint_trajectory_controller
             allowed to move without restriction.
 
 * Add the boolean parameter ``set_last_command_interface_value_as_state_on_activation``. When set to ``true``, the last command interface value is used as both the current state and the last commanded state upon activation. When set to ``false``, the current state is used for both (`#1231 <https://github.com/ros-controls/ros2_controllers/pull/1231>`_).
+* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
+  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
+  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
+  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 
 mecanum_drive_controller
 ************************
