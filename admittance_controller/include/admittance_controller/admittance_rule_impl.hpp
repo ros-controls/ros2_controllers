@@ -273,7 +273,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   F_control.block<3, 1>(0, 0) = rot_base_control.transpose() * F_base.block<3, 1>(0, 0);
   F_control.block<3, 1>(3, 0) = rot_base_control.transpose() * F_base.block<3, 1>(3, 0);
 
-  // select the axis to apply the zeroing to
+  // zero out forces/torques for axes not in selected_axes
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
 
   // rotate to base frame
