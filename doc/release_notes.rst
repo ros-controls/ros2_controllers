@@ -8,3 +8,10 @@ This list summarizes important changes between Kilted Kaiju (previous) and Lyric
 force_torque_sensor_broadcaster
 *******************************
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
+
+joint_trajectory_controller
+***************************
+* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
+  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
+  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
+  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
