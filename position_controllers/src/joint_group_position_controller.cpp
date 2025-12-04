@@ -29,6 +29,11 @@ JointGroupPositionController::JointGroupPositionController()
 
 controller_interface::CallbackReturn JointGroupPositionController::on_init()
 {
+  RCLCPP_WARN(
+    get_node()->get_logger(),
+    "'position_controllers/JointGroupPositionController' is deprecated. "
+    "Use 'forward_command_controller/ForwardCommandController' instead by adding the "
+    "'interface_name' parameter and set it to 'position'.");
   try
   {
     // Explicitly set the interface parameter declared by the forward_command_controller

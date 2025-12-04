@@ -9,7 +9,7 @@ multi_interface_forward_command_controller:
   }
   interface_names: {
     type: string_array,
-    description: "Names of the interfaces to command",
+    description: "Names of the interfaces per joint to claim",
     validation: {
       not_empty<>: []
     },
