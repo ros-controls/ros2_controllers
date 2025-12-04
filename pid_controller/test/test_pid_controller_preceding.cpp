@@ -74,7 +74,11 @@ TEST_F(PidControllerTest, check_exported_interfaces)
 
   // check ref itfs
   auto ref_if_conf = controller_->export_reference_interfaces();
-  ASSERT_EQ(ref_if_conf.size(), dof_state_values_.size());
+  size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
+                           (controller_->params_.export_params.gain_references
+                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
+                              : 0);
+  ASSERT_EQ(ref_if_conf.size(), actual_ref_size);
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
   {
