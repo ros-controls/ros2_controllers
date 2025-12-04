@@ -51,7 +51,7 @@ test_admittance_controller:
       frame:
         id: link_6  # Where the sensor is located in the kinematics (usually tool frame)
         external: false # force torque frame exists within URDF kinematic chain
-      meas_frame:
+      measurement_frame:
         id: ft_mount  # Wrench measurements are in this frame
         external: true  # not part of robot URDF, (depends on sensor thickness for instance)
 
@@ -150,7 +150,7 @@ test_admittance_controller_no_mass:
       frame:
         id: link_6  # Where the sensor is located in the kinematics (usually tool frame)
         external: false # force torque frame exists within URDF kinematic chain
-      meas_frame:
+      measurement_frame:
         id: ft_mount  # Wrench measurements are in this frame
         external: true  # not part of robot URDF, (depends on sensor thickness for instance)
 

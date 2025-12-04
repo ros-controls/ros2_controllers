@@ -123,7 +123,9 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.name, ft_sensor_name_);
   ASSERT_EQ(controller_->admittance_->parameters_.kinematics.base, ik_base_frame_);
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.frame.id, sensor_frame_);
-  ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.meas_frame.id, sensor_meas_frame_);
+  ASSERT_EQ(
+    controller_->admittance_->parameters_.ft_sensor.measurement_frame.id,
+    sensor_measurement_frame_);
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.selected_axes.empty());
   ASSERT_TRUE(

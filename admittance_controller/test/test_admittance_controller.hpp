@@ -270,7 +270,7 @@ protected:
     // no sensor_frame transform, as it must be one kinematic link it is attached to
     // the test robot has its last link joint rotation axis along x. so shift along x
     transform_stamped.transform.translation.x = 0.0;
-    transform_stamped.child_frame_id = sensor_meas_frame_;
+    transform_stamped.child_frame_id = sensor_measurement_frame_;
     // kinematic tip to sensor measurement frame
     br.sendTransform(transform_stamped);
     // the test robot has its last tip joint rotation axis along x. so shift along x
@@ -399,7 +399,7 @@ protected:
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";
   const std::string sensor_frame_ = "link_6";
-  const std::string sensor_meas_frame_ = "ft_mount";
+  const std::string sensor_measurement_frame_ = "ft_mount";
 
   std::array<bool, 6> admittance_selected_axes_ = {{true, true, true, true, true, true}};
   std::array<double, 6> admittance_mass_ = {{5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};

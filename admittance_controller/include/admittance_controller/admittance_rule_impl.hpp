@@ -311,8 +311,8 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
 
 bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench)
 {
-  // pass the measured_wrench in its ft_sensor meas_frame
-  measured_wrench_.header.frame_id = parameters_.ft_sensor.meas_frame.id;
+  // pass the measured_wrench in its ft_sensor measurement_frame
+  measured_wrench_.header.frame_id = parameters_.ft_sensor.measurement_frame.id;
   measured_wrench_.wrench = measured_wrench;
   // output should be ft_sensor frame (because kinematics is only up to there)
   measured_wrench_filtered_.header.frame_id = parameters_.ft_sensor.frame.id;
@@ -324,9 +324,10 @@ bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrenc
     RCLCPP_ERROR_ONCE(
       rclcpp::get_logger("AdmittanceRule"),
       "Wrench frame transformation missing.\n"
-      "If ft_sensor.frame != ft_sensor.meas_frame, kinematics has no idea about "
-      "ft_sensor.meas_frame.\n"
-      "Fix the frames or provide a filter that transforms the wrench from ft_sensor.meas_frame"
+      "If ft_sensor.frame != ft_sensor.measurement_frame, kinematics has no idea about "
+      "ft_sensor.measurement_frame.\n"
+      "Fix the frames or provide a filter that transforms the wrench from "
+      "ft_sensor.measurement_frame"
       " to ft_sensor.frame");
     return false;
   }
