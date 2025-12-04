@@ -1,0 +1,9 @@
+<library path="gravity_compensation_pd_controller">
+  <class name="gravity_compensation_pd_controller/GravityCompensationPDController"
+         type="gravity_compensation_pd_controller::GravityCompensationPDController"
+         base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      A gravity compensation PD controller developed by the Automatic Control Group of the University of Salerno, Italy.
+    </description>
+  </class>
+</library>
