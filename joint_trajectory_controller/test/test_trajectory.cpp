@@ -725,6 +725,59 @@ TEST(TestTrajectory, sample_trajectory_acceleration_with_interpolation)
   }
 }
 
+TEST(TestTrajectory, fill_point_before_with_same_degree_as_traj)
+{
+  auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  full_msg->header.stamp = rclcpp::Time(0);
+
+  // definitions
+  double time_first_seg = 1.0;
+  double time_second_seg = 2.0;
+  double position_first_seg = 1.0;
+  double position_second_seg = 2.0;
+  double velocity_first_seg = 0.0;
+  double velocity_second_seg = 0.0;
+  double acceleration_first_seg = 0.0;
+  double acceleration_second_seg = 0.0;
+
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.time_from_start = rclcpp::Duration::from_seconds(time_first_seg);
+  p1.positions.push_back(position_first_seg);
+  p1.velocities.push_back(velocity_first_seg);
+  p1.accelerations.push_back(acceleration_first_seg);
+  full_msg->points.push_back(p1);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.time_from_start = rclcpp::Duration::from_seconds(time_second_seg);
+  p2.positions.push_back(position_second_seg);
+  p2.velocities.push_back(velocity_second_seg);
+  p2.accelerations.push_back(acceleration_second_seg);
+  full_msg->points.push_back(p2);
+
+  trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
+  point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
+  point_before_msg.positions.push_back(0.0);
+
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+
+  trajectory_msgs::msg::JointTrajectoryPoint expected_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+
+  // sample at trajectory starting time
+  // Since the trajectory defines positions, velocities, and accelerations, we expect quintic
+  // spline interpolation. Due to the unspecified initial acceleration, it should be zero.
+  {
+    traj.sample(time_now, DEFAULT_INTERPOLATION, expected_state, start, end);
+    EXPECT_EQ(0, traj.last_sample_index());
+    ASSERT_EQ(traj.begin(), start);
+    ASSERT_EQ(traj.begin(), end);
+    EXPECT_NEAR(point_before_msg.positions[0], expected_state.positions[0], EPS);
+    EXPECT_NEAR(0.0, expected_state.velocities[0], EPS);
+    EXPECT_NEAR(0.0, expected_state.accelerations[0], EPS);
+  }
+}
+
 TEST(TestTrajectory, skip_interpolation)
 {
   // Simple passthrough without extra interpolation

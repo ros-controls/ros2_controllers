@@ -63,6 +63,10 @@ joint_trajectory_controller
 * Feed-forward effort trajectories are supported now (`#1200 <https://github.com/ros-controls/ros2_controllers/pull/1200>`_).
 * Parameter ``open_loop_control`` is replaced by ``interpolate_from_desired_state`` and setting the feedback gains to zero (`#1525 <https://github.com/ros-controls/ros2_controllers/pull/1525>`_).
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
+* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
+  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
+  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
+  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 
 mecanum_drive_controller
 ************************
