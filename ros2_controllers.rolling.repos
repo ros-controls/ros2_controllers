@@ -9,8 +9,8 @@ repositories:
     version: master
   control_msgs:
     type: git
-    url: https://github.com/ros-controls/control_msgs.git
-    version: master
+    url: https://github.com/b-robotized-forks/control_msgs.git
+    version: add-vda5050-safety-state-msg
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
