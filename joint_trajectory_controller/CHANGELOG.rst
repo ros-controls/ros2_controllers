@@ -2,6 +2,9 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.35.0 (2025-12-01)
+-------------------
+
 4.34.0 (2025-11-10)
 -------------------
 * Add missing dependency rclcpp_action (backport `#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_) (`#1994 <https://github.com/ros-controls/ros2_controllers/issues/1994>`_)

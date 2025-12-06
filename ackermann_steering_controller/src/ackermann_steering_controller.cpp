@@ -104,7 +104,7 @@ controller_interface::CallbackReturn AckermannSteeringController::configure_odom
 
   odometry_.set_wheel_params(
     traction_wheels_radius, wheelbase, steering_track_width, traction_track_width);
-  odometry_.set_odometry_type(steering_odometry::ACKERMANN_CONFIG);
+  odometry_.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
 
   set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
 
