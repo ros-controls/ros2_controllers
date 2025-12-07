@@ -427,9 +427,7 @@ public:
   {
     if (traj_controller_)
     {
-      if (
-        traj_controller_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (traj_controller_->get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
