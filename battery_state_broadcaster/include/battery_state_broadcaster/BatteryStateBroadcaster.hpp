@@ -30,5 +30,6 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_state_pub_;
   std::unique_ptr<BatterySensor> battery_sensor_;
   std::unique_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>> realtime_publisher_;
+  sensor_msgs::msg::BatteryState msg_;
 };
 }  // namespace battery_state_broadcaster
