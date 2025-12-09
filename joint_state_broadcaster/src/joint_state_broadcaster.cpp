@@ -144,13 +144,15 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
         joint_state_publisher_);
 
-    dynamic_joint_state_publisher_ =
-      get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-        topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-
-    realtime_dynamic_joint_state_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-        dynamic_joint_state_publisher_);
+    if (params_.publish_dynamic_joint_states)
+    {
+      dynamic_joint_state_publisher_ =
+        get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
+          topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+      realtime_dynamic_joint_state_publisher_ =
+        std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
+          dynamic_joint_state_publisher_);
+    }
   }
   catch (const std::exception & e)
   {
@@ -202,7 +204,11 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
-  init_dynamic_joint_state_msg();
+
+  if (params_.publish_dynamic_joint_states)
+  {
+    init_dynamic_joint_state_msg();
+  }
 
   return CallbackReturn::SUCCESS;
 }

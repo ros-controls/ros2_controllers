@@ -60,3 +60,9 @@ joint_state_broadcaster:
     read_only: true,
     description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
   }
+  publish_dynamic_joint_states: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+    description: "Whether to publish dynamic joint states."
+  }
