@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use get_lifecycle_id instead of get_lifecycle_state (backport `#2053 <https://github.com/ros-controls/ros2_controllers/issues/2053>`_) (`#2056 <https://github.com/ros-controls/ros2_controllers/issues/2056>`_)
+* Fill point_before_trajectory with same information as trajectory (backport `#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_) (`#2051 <https://github.com/ros-controls/ros2_controllers/issues/2051>`_)
+* Contributors: mergify[bot]
+
 5.10.0 (2025-12-01)
 -------------------
 

@@ -2,6 +2,9 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.10.0 (2025-12-01)
 -------------------
 

@@ -2,6 +2,9 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.10.0 (2025-12-01)
 -------------------
 
