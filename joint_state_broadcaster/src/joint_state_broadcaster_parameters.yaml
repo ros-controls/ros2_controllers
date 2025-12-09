@@ -2,11 +2,13 @@ joint_state_broadcaster:
   use_local_topics: {
     type: bool,
     default_value: false,
+    read_only: true,
     description: "Defining if ``joint_states`` and ``dynamic_joint_states`` messages should be published into local namespace, e.g., ``/my_state_broadcaster/joint_states``."
   }
   joints: {
     type: string_array,
     default_value: [],
+    read_only: true,
     description: "Parameter to support broadcasting of only specific joints and interfaces.
     It has to be used in combination with the ``interfaces`` parameter.
     If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
@@ -16,11 +18,13 @@ joint_state_broadcaster:
   extra_joints: {
     type: string_array,
     default_value: [],
+    read_only: true,
     description: "Names of extra joints to be added to ``joint_states`` and ``dynamic_joint_states`` with state set to 0."
   }
   interfaces: {
     type: string_array,
     default_value: [],
+    read_only: true,
     description: "Parameter to support broadcasting of only specific joints and interfaces.
     It has to be used in combination with the ``joints`` parameter.
     If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
@@ -30,18 +34,22 @@ joint_state_broadcaster:
     position: {
       type: string,
       default_value: "position",
+      read_only: true,
     }
     velocity: {
       type: string,
       default_value: "velocity",
+      read_only: true,
     }
     effort: {
       type: string,
       default_value: "effort",
+      read_only: true,
     }
   use_urdf_to_filter: {
     type: bool,
     default_value: true,
+    read_only: true,
     description: "Uses the robot_description to filter the ``joint_states`` topic.
     If true, the broadcaster will publish the data of the joints present in the URDF alone.
     If false, the broadcaster will publish the data of any interface that has type ``position``, ``velocity``, or ``effort``."
@@ -49,5 +57,6 @@ joint_state_broadcaster:
   frame_id: {
     type: string,
     default_value: "base_link",
+    read_only: true,
     description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
   }

@@ -60,28 +60,35 @@ void JointStateBroadcasterTest::SetUp()
 void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
 
 void JointStateBroadcasterTest::SetUpStateBroadcaster(
-  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces)
+  const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces,
+  const std::vector<rclcpp::Parameter> & parameter_overrides)
 {
-  init_broadcaster_and_set_parameters("", joint_names, interfaces);
+  init_broadcaster_and_set_parameters("", joint_names, interfaces, parameter_overrides);
   assign_state_interfaces(joint_names, interfaces);
 }
 
 void JointStateBroadcasterTest::init_broadcaster_and_set_parameters(
   const std::string & robot_description, const std::vector<std::string> & joint_names,
-  const std::vector<std::string> & interfaces)
+  const std::vector<std::string> & interfaces,
+  const std::vector<rclcpp::Parameter> & parameter_overrides)
 {
+  auto local_parameter_overrides = parameter_overrides;
+  local_parameter_overrides.push_back(rclcpp::Parameter("frame_id", frame_id_));
+  local_parameter_overrides.push_back(rclcpp::Parameter("joints", joint_names));
+  local_parameter_overrides.push_back(rclcpp::Parameter("interfaces", interfaces));
+
   controller_interface::ControllerInterfaceParams params;
   params.controller_name = "joint_state_broadcaster";
   params.robot_description = robot_description;
   params.update_rate = 0;
   params.node_namespace = "";
-  params.node_options = state_broadcaster_->define_custom_node_options();
+  params.node_options = state_broadcaster_->define_custom_node_options()
+                          .allow_undeclared_parameters(false)
+                          .parameter_overrides(local_parameter_overrides)
+                          .automatically_declare_parameters_from_overrides(false);
+  ;
   const auto result = state_broadcaster_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
-
-  state_broadcaster_->get_node()->set_parameter({"joints", joint_names});
-  state_broadcaster_->get_node()->set_parameter({"interfaces", interfaces});
-  state_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 }
 
 void JointStateBroadcasterTest::assign_state_interfaces(
@@ -846,10 +853,10 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
 {
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
   const std::vector<std::string> IF_NAMES = {custom_interface_name_};
-  SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
-
-  state_broadcaster_->get_node()->set_parameter(
-    {std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_});
+  SetUpStateBroadcaster(
+    JOINT_NAMES, IF_NAMES,
+    {rclcpp::Parameter(
+      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
 
   // configure ok
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -901,10 +908,10 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
 {
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
   const std::vector<std::string> IF_NAMES = {custom_interface_name_};
-  SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
-
-  state_broadcaster_->get_node()->set_parameter(
-    {std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_});
+  SetUpStateBroadcaster(
+    JOINT_NAMES, IF_NAMES,
+    {rclcpp::Parameter(
+      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
 
   sensor_msgs::msg::JointState joint_state_msg;
   activate_and_get_joint_state_message("joint_states", joint_state_msg);
@@ -1164,8 +1171,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTest)
 
 TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
 {
-  SetUpStateBroadcaster();
-  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+  SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("use_local_topics", true)});
 
   test_published_joint_state_message("joint_state_broadcaster/joint_states");
 }
@@ -1245,8 +1251,7 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTest)
 
 TEST_F(JointStateBroadcasterTest, DynamicJointStatePublishTestLocalTopic)
 {
-  SetUpStateBroadcaster();
-  state_broadcaster_->get_node()->set_parameter({"use_local_topics", true});
+  SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("use_local_topics", true)});
 
   test_published_dynamic_joint_state_message("joint_state_broadcaster/dynamic_joint_states");
 }
@@ -1257,11 +1262,9 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
   ASSERT_FALSE(state_broadcaster_->realtime_dynamic_joint_state_publisher_);
 
-  SetUpStateBroadcaster();
-
   // Add extra joints as parameters
   const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
-  state_broadcaster_->get_node()->set_parameter({"extra_joints", extra_joint_names});
+  SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("extra_joints", extra_joint_names)});
 
   // configure ok
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
