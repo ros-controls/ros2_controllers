@@ -390,22 +390,6 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
   return params_.joints.empty() || params_.interfaces.empty();
 }
 
-double get_value(
-  const std::unordered_map<std::string, std::unordered_map<std::string, double>> & map,
-  const std::string & name, const std::string & interface_name)
-{
-  const auto & interfaces_and_values = map.at(name);
-  const auto interface_and_value = interfaces_and_values.find(interface_name);
-  if (interface_and_value != interfaces_and_values.cend())
-  {
-    return interface_and_value->second;
-  }
-  else
-  {
-    return kUninitializedValue;
-  }
-}
-
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
