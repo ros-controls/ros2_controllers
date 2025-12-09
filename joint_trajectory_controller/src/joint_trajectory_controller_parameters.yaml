@@ -216,49 +216,43 @@ joint_trajectory_controller:
       }
     }
     __map_joints:
-      trajectory: {
-        type: double,
-        default_value: 0.0,
-        description: "DEPRECATED: Per-joint trajectory offset tolerance during movement. Use 'trajectory/position', 'trajectory/velocity', and 'trajectory/acceleration' instead. If this is set, it will be used for all other constraints (i.e., 'trajectory/position', 'trajectory/velocity', and 'trajectory/acceleration').",
-        deprecated: true,
-      }
-      goal: {
-        type: double,
-        default_value: 0.0,
-        description: "DEPRECATED: Per-joint trajectory offset tolerance at the goal position. Use 'goal/position', 'goal/velocity', and 'goal/acceleration' instead. If this is set, it will be used for all other constraints (i.e., 'goal/position', 'goal/velocity', and 'goal/acceleration').",
-        deprecated: true,
-      }
-      
       trajectory:
-        position: {
-          type: double,
-          default_value: 0.0,
-          description: "Position tolerance during trajectory execution."
-        }
-        velocity: {
-          type: double,
-          default_value: 0.0,
-          description: "Velocity tolerance during trajectory execution."
-        }
-        acceleration: {
-          type: double,
-          default_value: 0.0,
-          description: "Acceleration tolerance during trajectory execution."
-        }
+        one_of:
+          - type: double
+          - type: struct
+            fields:
+              position: {
+                type: double,
+                default_value: 0.0,
+                description: "Position tolerance for the trajectory execution."
+              }
+              velocity: {
+                type: double,
+                default_value: 0.0,
+                description: "Velocity tolerance for the trajectory execution."
+              }
+              acceleration: {
+                type: double,
+                default_value: 0.0,
+                description: "Acceleration tolerance for the trajectory execution."
+             }
       goal:
-        position: {
-          type: double,
-          default_value: 0.0,
-          description: "Position tolerance for the final goal state."
-        }
-        velocity: {
-          type: double,
-          default_value: 0.0,
-          description: "Velocity tolerance for the final goal state.
-          If 'stopped_velocity_tolerance' is higher, then it will override this."
-        }
-        acceleration: {
-          type: double,
-          default_value: 0.0,
-          description: "Acceleration tolerance for the final goal state."
-        }
+        one_of:
+          - type: double
+          - type: struct
+            fields:
+              position: {
+                type: double,
+                default_value: 0.0,
+                description: "Position tolerance for the final goal state."
+              }
+              velocity: {
+                type: double,
+                default_value: 0.0,
+                description: "Velocity tolerance for the final goal state."
+              }
+              acceleration: {
+                type: double,
+                default_value: 0.0,
+                description: "Acceleration tolerance for the final goal state."
+             }
