@@ -16,8 +16,8 @@ diff_drive_controller
 
 joint_state_broadcaster
 ************************
-* Make all parameters read-only (the never got re-evaluated after initialization anyway).
-* Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states.
+* Make all parameters read-only (the never got re-evaluated after initialization anyway). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_).
+* Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_).
 
 joint_trajectory_controller
 ***************************
