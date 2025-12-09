@@ -217,7 +217,7 @@ joint_trajectory_controller:
     }
     __map_joints:
       trajectory:
-        one_of:
+        one_of<>:
           - type: double
           - type: struct
             fields:
@@ -237,7 +237,7 @@ joint_trajectory_controller:
                 description: "Acceleration tolerance for the trajectory execution."
              }
       goal:
-        one_of:
+        one_of<>:
           - type: double
           - type: struct
             fields:
