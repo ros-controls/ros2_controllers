@@ -41,7 +41,7 @@ namespace interfaces_state_broadcaster
  * - \b ~/names (control_msgs::msg::Keys): The list of the interface names that are selected
  * to be published by the interfaces state broadcaster. This is published with transient local
  * durability.
- * - \b ~/values (control_msgs::msg::ValuesArray): The list of the values corresponding to the
+ * - \b ~/values (control_msgs::msg::Float64Values): The list of the values corresponding to the
  * interface names that are selected to be published by the interfaces state broadcaster.
  *
  * \note The values are published at the same rate as the controller update rate.
@@ -72,12 +72,11 @@ protected:
   Params params_;
 
   // publishers and messages
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::InterfacesNames>> names_publisher_;
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::InterfacesValues>> values_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::InterfacesValues>>
-    realtime_values_publisher_;
-  control_msgs::msg::InterfacesValues values_msg_;
+  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::Keys>> names_publisher_;
+  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::Float64Values>> values_publisher_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::Float64Values>>
   control_msgs::msg::InterfacesNames names_msg_;
+  control_msgs::msg::InterfacesValues values_msg_;
 };
 
 }  // namespace interfaces_state_broadcaster
