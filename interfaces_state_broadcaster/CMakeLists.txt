@@ -69,7 +69,9 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_interfaces_state_broadcaster
     interfaces_state_broadcaster
-    ros2_control_test_assets::ros2_control_test_assets)
+    ros2_control_test_assets::ros2_control_test_assets
+    rclcpp::rclcpp
+    ${control_msgs_TARGETS})
 endif()
 
 install(
