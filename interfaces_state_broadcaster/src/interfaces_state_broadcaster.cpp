@@ -70,9 +70,9 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  names_publisher_ = get_node()->create_publisher<control_msgs::msg::InterfacesNames>(
+  names_publisher_ = get_node()->create_publisher<control_msgs::msg::Keys>(
     "~/names", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
-  values_publisher_ = get_node()->create_publisher<control_msgs::msg::InterfacesValues>(
+  values_publisher_ = get_node()->create_publisher<control_msgs::msg::Float64Values>(
     "~/values", rclcpp::SystemDefaultsQoS());
   realtime_values_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::Float64Values>>(
