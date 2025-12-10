@@ -161,7 +161,7 @@ void InterfacesStateBroadcasterTest::assign_state_interfaces(
 }
 
 void InterfacesStateBroadcasterTest::activate_and_get_state_message(
-  const std::string & topic, control_msgs::msg::InterfacesValues & msg)
+  const std::string & topic, control_msgs::msg::Float64Values & msg)
 {
   auto node_state = state_broadcaster_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -169,12 +169,12 @@ void InterfacesStateBroadcasterTest::activate_and_get_state_message(
   node_state = state_broadcaster_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-  control_msgs::msg::InterfacesValues::SharedPtr received_msg;
+  control_msgs::msg::Float64Values::SharedPtr received_msg;
   rclcpp::Node test_node("test_node");
-  auto subs_callback = [&](const control_msgs::msg::InterfacesValues::SharedPtr cb_msg)
+  auto subs_callback = [&](const control_msgs::msg::Float64Values::SharedPtr cb_msg)
   { received_msg = cb_msg; };
   auto subscription =
-    test_node.create_subscription<control_msgs::msg::InterfacesValues>(topic, 10, subs_callback);
+    test_node.create_subscription<control_msgs::msg::Float64Values>(topic, 10, subs_callback);
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(test_node.get_node_base_interface());
@@ -236,14 +236,14 @@ TEST_F(InterfacesStateBroadcasterTest, ConfigureOnValidInterfaceListTest)
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[0]));
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[1]));
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[2]));
-  ASSERT_THAT(state_broadcaster_->names_msg_.names, ElementsAreArray(interfaces));
+  ASSERT_THAT(state_broadcaster_->names_msg_.keys, ElementsAreArray(interfaces));
 
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(state_broadcaster_->values_msg_.values.size(), 3);
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[0]));
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[1]));
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[2]));
-  ASSERT_THAT(state_broadcaster_->names_msg_.names, ElementsAreArray(interfaces));
+  ASSERT_THAT(state_broadcaster_->names_msg_.keys, ElementsAreArray(interfaces));
 
   ASSERT_EQ(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -253,7 +253,7 @@ TEST_F(InterfacesStateBroadcasterTest, ConfigureOnValidInterfaceListTest)
   ASSERT_DOUBLE_EQ(state_broadcaster_->values_msg_.values[0], joint_values_[0]);
   ASSERT_DOUBLE_EQ(state_broadcaster_->values_msg_.values[1], joint_values_[1]);
   ASSERT_DOUBLE_EQ(state_broadcaster_->values_msg_.values[2], joint_values_[2]);
-  ASSERT_THAT(state_broadcaster_->names_msg_.names, ElementsAreArray(interfaces));
+  ASSERT_THAT(state_broadcaster_->names_msg_.keys, ElementsAreArray(interfaces));
 }
 
 TEST_F(InterfacesStateBroadcasterTest, StatePublishTest)
@@ -268,7 +268,7 @@ TEST_F(InterfacesStateBroadcasterTest, StatePublishTest)
   }
   SetUpStateBroadcaster(all_interfaces);
 
-  control_msgs::msg::InterfacesValues values_msg;
+  control_msgs::msg::Float64Values values_msg;
   activate_and_get_state_message("interfaces_state_broadcaster/values", values_msg);
 
   ASSERT_THAT(values_msg.values, SizeIs(9));

@@ -75,13 +75,13 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_configure(
   values_publisher_ = get_node()->create_publisher<control_msgs::msg::InterfacesValues>(
     "~/values", rclcpp::SystemDefaultsQoS());
   realtime_values_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::InterfacesValues>>(
+    std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::Float64Values>>(
       values_publisher_);
 
   values_msg_.values.clear();
   values_msg_.values.resize(params_.interfaces.size(), std::numeric_limits<double>::quiet_NaN());
 
-  names_msg_.names = params_.interfaces;
+  names_msg_.keys = params_.interfaces;
   names_msg_.header.stamp = get_node()->now();
   names_publisher_->publish(names_msg_);
 

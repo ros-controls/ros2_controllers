@@ -60,7 +60,7 @@ public:
   void test_published_dynamic_joint_state_message(const std::string & topic);
 
   void activate_and_get_state_message(
-    const std::string & topic, control_msgs::msg::InterfacesValues & msg);
+    const std::string & topic, control_msgs::msg::Float64Values & msg);
 
 protected:
   // dummy joint state values used for tests
