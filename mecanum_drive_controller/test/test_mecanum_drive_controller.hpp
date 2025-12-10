@@ -173,10 +173,13 @@ protected:
     const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
   {
     const auto urdf = "";
-
-    ASSERT_EQ(
-      controller_->init(controller_name, urdf, 0, ns, node_options),
-      controller_interface::return_type::OK);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = urdf;
+    params.update_rate = 0;
+    params.node_namespace = ns;
+    params.node_options = node_options;
+    ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_itfs_.reserve(joint_command_values_.size());

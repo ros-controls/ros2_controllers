@@ -38,8 +38,13 @@ void JointGroupEffortControllerTest::TearDown() { controller_.reset(nullptr); }
 
 void JointGroupEffortControllerTest::SetUpController()
 {
-  const auto result = controller_->init(
-    "test_joint_group_effort_controller", "", 0, "", controller_->define_custom_node_options());
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_joint_group_effort_controller";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = controller_->define_custom_node_options();
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;

@@ -48,7 +48,13 @@ void MultipleChainedFilterTest::SetUpController(
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
 
-  const auto result = controller_->init(node_name, "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = node_name;
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
