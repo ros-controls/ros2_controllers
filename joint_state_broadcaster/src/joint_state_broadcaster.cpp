@@ -144,13 +144,15 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
         joint_state_publisher_);
 
-    dynamic_joint_state_publisher_ =
-      get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-        topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-
-    realtime_dynamic_joint_state_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-        dynamic_joint_state_publisher_);
+    if (params_.publish_dynamic_joint_states)
+    {
+      dynamic_joint_state_publisher_ =
+        get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
+          topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+      realtime_dynamic_joint_state_publisher_ =
+        std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
+          dynamic_joint_state_publisher_);
+    }
   }
   catch (const std::exception & e)
   {
@@ -202,7 +204,11 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
-  init_dynamic_joint_state_msg();
+
+  if (params_.publish_dynamic_joint_states)
+  {
+    init_dynamic_joint_state_msg();
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -388,22 +394,6 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
   return params_.joints.empty() || params_.interfaces.empty();
-}
-
-double get_value(
-  const std::unordered_map<std::string, std::unordered_map<std::string, double>> & map,
-  const std::string & name, const std::string & interface_name)
-{
-  const auto & interfaces_and_values = map.at(name);
-  const auto interface_and_value = interfaces_and_values.find(interface_name);
-  if (interface_and_value != interfaces_and_values.cend())
-  {
-    return interface_and_value->second;
-  }
-  else
-  {
-    return kUninitializedValue;
-  }
 }
 
 controller_interface::return_type JointStateBroadcaster::update(
