@@ -22,7 +22,6 @@
 
 #include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "control_msgs/msg/float64_values.hpp"
-#include "control_msgs/msg/interfaces_names.hpp"
 #include "control_msgs/msg/keys.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
