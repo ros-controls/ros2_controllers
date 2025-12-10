@@ -82,11 +82,11 @@ TEST_F(AckermannSteeringControllerTest, check_exported_interfaces)
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
-  for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), reference_interface_names_.size());
+  for (size_t i = 0; i < reference_interface_names_.size(); ++i)
   {
     const std::string ref_itf_prefix_name =
-      std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
+      std::string(controller_->get_node()->get_name()) + "/" + reference_interface_names_[i];
     EXPECT_EQ(
       reference_interfaces[i]->get_name(),
       ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
@@ -186,7 +186,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic)
     1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));
@@ -226,7 +226,7 @@ TEST_F(AckermannSteeringControllerTest, test_update_logic_chained)
     1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), joint_reference_interfaces_.size());
+  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));

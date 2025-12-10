@@ -66,11 +66,11 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
 
   // check ref itfs
   auto reference_interfaces = controller_->export_reference_interfaces();
-  ASSERT_EQ(reference_interfaces.size(), joint_reference_interfaces_.size());
-  for (size_t i = 0; i < joint_reference_interfaces_.size(); ++i)
+  ASSERT_EQ(reference_interfaces.size(), reference_interface_names_.size());
+  for (size_t i = 0; i < reference_interface_names_.size(); ++i)
   {
     const std::string ref_itf_prefix_name =
-      std::string(controller_->get_node()->get_name()) + "/" + joint_reference_interfaces_[i];
+      std::string(controller_->get_node()->get_name()) + "/" + reference_interface_names_[i];
     EXPECT_EQ(reference_interfaces[i]->get_prefix_name(), ref_itf_prefix_name);
     EXPECT_EQ(
       reference_interfaces[i]->get_name(),
