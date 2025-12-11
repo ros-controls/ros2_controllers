@@ -145,7 +145,6 @@ install(
 install(
   TARGETS
     wrench_transformer_node
-  EXPORT export_force_torque_sensor_broadcaster
   RUNTIME DESTINATION lib/force_torque_sensor_broadcaster
 )
 
