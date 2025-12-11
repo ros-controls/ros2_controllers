@@ -18,6 +18,7 @@ mecanum_drive_controller
 *****************************
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
+
 joint_state_broadcaster
 ************************
 * Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
