@@ -49,31 +49,135 @@ test_admittance_controller:
     ft_sensor:
       name: ft_sensor_name
       frame:
-        id: link_6  # tool0 Wrench measurements are in this frame
+        id: link_6  # Where the sensor is located in the kinematics (usually tool frame)
         external: false # force torque frame exists within URDF kinematic chain
-      filter_coefficient: 0.005
+      measurement_frame:
+        id: ft_mount  # Wrench measurements are in this frame
+        external: true  # not part of robot URDF, (depends on sensor thickness for instance)
+
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"
+        name: "low_pass_filter"
+        params:
+          # this filter converges almost immediately (similar to expSmoothing 0.995)
+          sampling_frequency: 100.0
+          damping_frequency: 134.0
+          damping_intensity: 1.0
+          divider: 1
+      filter2:
+        type: "control_filters/GravityCompensationWrench"
+        name: "gravity_compensation"
+        params:
+          world_frame: "fixed_world_frame"
+          sensor_frame: "ft_mount"
+          tool:
+            CoG: [0.0, 0.1, 0.0]  # in sensor_frame
+            gravity_field: [0.0, 0.0, -10.0]  # in world_frame
+            mass: 2.3  # kg
 
     control:
       frame:
         id: tool0 # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
         external: false # control frame exists within URDF kinematic chain
 
-    fixed_world_frame:   # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
+    admittance:
+      selected_axes:
+        - true # x
+        - true # y
+        - true # z
+        - true # rx
+        - true # ry
+        - true # rz
+
+      # Having ".0" at the end is MUST, otherwise there is a loading error
+      # F = M*a + D*v + S*(x - x_d)
+      mass:
+        - 5.5
+        - 6.6
+        - 7.7
+        - 8.8
+        - 9.9
+        - 10.10
+
+      damping_ratio: # damping can be used instead: zeta = D / (2 * sqrt( M * S ))
+        - 2.828427 # x
+        - 2.828427 # y
+        - 2.828427 # z
+        - 2.828427 # rx
+        - 2.828427 # ry
+        - 2.828427 # rz
+
+      stiffness:
+        - 214.1
+        - 214.2
+        - 214.3
+        - 214.4
+        - 214.5
+        - 214.6
+
+test_admittance_controller_no_mass:
+  # contains minimal needed parameters for kuka_kr6 with no mass at end-effector (causes deviations for some tests)
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    chainable_command_interfaces:
+      - position
+      - velocity
+
+    kinematics:
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
+      plugin_package: kinematics_interface
+      base: base_link # Assumed to be stationary
+      tip: tool0
+      group_name: arm
+      alpha: 0.0005
+
+    ft_sensor:
+      name: ft_sensor_name
       frame:
-        id: base_link # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
+        id: link_6  # Where the sensor is located in the kinematics (usually tool frame)
+        external: false # force torque frame exists within URDF kinematic chain
+      measurement_frame:
+        id: ft_mount  # Wrench measurements are in this frame
+        external: true  # not part of robot URDF, (depends on sensor thickness for instance)
+
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"
+        name: "low_pass_filter"
+        params:
+          # coefficients make up for same value of alpha = 0.005 of the exponentialSmooth filter
+          sampling_frequency: 1000.0
+          damping_frequency: 0.63
+          damping_intensity: 1.0
+          divider: 1
+      filter2:
+        type: "control_filters/GravityCompensationWrench"
+        name: "gravity_compensation"
+        params:
+          world_frame: "fixed_world_frame"
+          sensor_frame: "ft_mount"
+          tool:
+            CoG: [0.0, 0.0, 0.0]  # in sensor_frame
+            mass: 0.0  # kg
+
+    control:
+      frame:
+        id: tool0 # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
         external: false # control frame exists within URDF kinematic chain
-
-    gravity_compensation:
-      frame:
-        id: tool0
-        external: false
-
-      CoG: # specifies the center of gravity of the end effector
-        pos:
-          - 0.1 # x
-          - 0.0 # y
-          - 0.0 # z
-        force: 23.0 # mass * 9.81
 
     admittance:
       selected_axes:

@@ -25,7 +25,9 @@
 
 #include "admittance_controller/admittance_controller_parameters.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
-#include "controller_interface/controller_interface_base.hpp"
+#include "controller_interface/controller_interface.hpp"
+#include "filters/filter_chain.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -72,9 +74,11 @@ class AdmittanceRule
 {
 public:
   explicit AdmittanceRule(
-    const std::shared_ptr<admittance_controller::ParamListener> & parameter_handler)
+    const std::shared_ptr<admittance_controller::ParamListener> & parameter_handler,
+    const std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> & filter_chain)
   {
     parameter_handler_ = parameter_handler;
+    filter_chain_ = filter_chain;
     parameters_ = parameter_handler_->get_params();
     num_joints_ = parameters_.joints.size();
     admittance_state_ = AdmittanceState(num_joints_);
@@ -130,29 +134,29 @@ public:
   // admittance config parameters
   std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
   admittance_controller::Params parameters_;
+  // Filter chain for Wrench data
+  std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
 
 protected:
   /**
    * Calculates the admittance rule from given the robot's current joint angles. The admittance
    * controller state input is updated with the new calculated values. A boolean value is returned
-   * indicating if any of the kinematics plugin calls failed. \param[in] admittance_state contains
-   * all the information needed to calculate the admittance offset \param[in] dt controller period
+   * indicating if any of the kinematics plugin calls failed.
+   * \param[in] admittance_state contains all the information needed to calculate
+   * the admittance offset
+   * \param[in] dt controller period
    * \param[out] success true if no calls to the kinematics interface fail
    */
   bool calculate_admittance_rule(AdmittanceState & admittance_state, double dt);
 
   /**
-   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement
-   * `measured_wrench`, the sensor to base frame rotation `sensor_world_rot`, and the center of
-   * gravity frame to base frame rotation `cog_world_rot`. The `wrench_world_` estimate includes
-   * gravity compensation \param[in] measured_wrench  most recent measured wrench from force torque
-   * sensor \param[in] sensor_world_rot rotation matrix from world frame to sensor frame \param[in]
-   * cog_world_rot rotation matrix from world frame to center of gravity frame
+   * Updates internal estimate of wrench in ft frame `measured_wrench_filtered_`
+   * given the new measurement `measured_wrench`
+   * The `measured_wrench_filtered_` might include gravity compensation if such a filter is loaded
+   * \param[in] measured_wrench  most recent measured wrench from force torque sensor
+   * \param[out] success false if processing failed (=filter update failed)
    */
-  void process_wrench_measurements(
-    const geometry_msgs::msg::Wrench & measured_wrench,
-    const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
-    const Eigen::Matrix<double, 3, 3> & cog_world_rot);
+  bool process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench);
 
   template <typename T1, typename T2>
   void vec_to_eigen(const std::vector<T1> & data, T2 & matrix);
@@ -165,17 +169,16 @@ protected:
     kinematics_loader_;
   std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
 
-  // filtered wrench in world frame
-  Eigen::Matrix<double, 6, 1> wrench_world_;
+  // filtered wrench in base frame
+  Eigen::Matrix<double, 6, 1> wrench_base_;
+  // input wrench in sensor frame
+  geometry_msgs::msg::WrenchStamped measured_wrench_;
+  // filtered wrench in sensor_frame
+  geometry_msgs::msg::WrenchStamped measured_wrench_filtered_;
+  Eigen::Matrix<double, 6, 1> wrench_filtered_ft_;
 
   // admittance controllers internal state
   AdmittanceState admittance_state_{0};
-
-  // position of center of gravity in cog_frame
-  Eigen::Vector3d cog_pos_;
-
-  // force applied to sensor due to weight of end effector
-  Eigen::Vector3d end_effector_weight_;
 
   // ROS
   control_msgs::msg::AdmittanceControllerState state_message_;

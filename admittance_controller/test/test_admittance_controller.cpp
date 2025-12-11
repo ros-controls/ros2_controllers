@@ -29,17 +29,27 @@ INSTANTIATE_TEST_SUITE_P(
   MissingMandatoryParameterDuringInit, AdmittanceControllerTestParameterizedMissingParameters,
   ::testing::Values(
     "admittance.mass", "admittance.selected_axes", "admittance.stiffness", "command_interfaces",
-    "control.frame.id", "fixed_world_frame.frame.id", "ft_sensor.frame.id", "ft_sensor.name",
-    "gravity_compensation.CoG.pos", "gravity_compensation.frame.id", "joints", "kinematics.base",
+    "control.frame.id", "ft_sensor.frame.id", "ft_sensor.name", "joints", "kinematics.base",
     "kinematics.plugin_name", "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
 
+// Test on_configure returns FAILURE when a required parameter is missing
+TEST_P(
+  AdmittanceControllerTestParameterizedMissingConfigParameters, one_config_parameter_is_missing)
+{
+  SetUpController(GetParam());
+  ASSERT_THROW(controller_->on_configure(rclcpp_lifecycle::State()), std::runtime_error);
+}
+
 INSTANTIATE_TEST_SUITE_P(
-  InvalidParameterDuringConfiguration, AdmittanceControllerTestParameterizedInvalidParameters,
+  MissingMandatoryParameterDuringConfiguration,
+  AdmittanceControllerTestParameterizedMissingConfigParameters,
   ::testing::Values(
-    // wrong length COG
-    std::make_tuple(
-      std::string("gravity_compensation.CoG.pos"),
-      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3, 4})),
+    "sensor_filter_chain.filter2.params.tool.CoG",
+    "sensor_filter_chain.filter2.params.sensor_frame"));
+
+INSTANTIATE_TEST_SUITE_P(
+  InvalidParameterDuringInit, AdmittanceControllerTestParameterizedInvalidParameters,
+  ::testing::Values(
     // wrong length stiffness
     std::make_tuple(
       std::string("admittance.stiffness"),
@@ -113,6 +123,9 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.name, ft_sensor_name_);
   ASSERT_EQ(controller_->admittance_->parameters_.kinematics.base, ik_base_frame_);
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.frame.id, sensor_frame_);
+  ASSERT_EQ(
+    controller_->admittance_->parameters_.ft_sensor.measurement_frame.id,
+    sensor_measurement_frame_);
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.selected_axes.empty());
   ASSERT_TRUE(
@@ -302,14 +315,15 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  //   // Check that wrench command are all zero since not used
-  //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.x, 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.y, 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.force.z > 0.15);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.x != 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.y != 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.torque.z, 0.0);
+  //   // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 23.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.1 * 23, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, 0.03);
 
   //   // Check joint command message
   //   for (auto i = 0ul; i < joint_names_.size(); i++)
@@ -321,9 +335,44 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   //   }
 }
 
-TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+TEST_F(AdmittanceControllerTest, compensation_success)
 {
   SetUpController();
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  // set the force on the force torque sensor to simulate gravity pulling
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  broadcast_tfs();
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after first update, Low-Pass filter output is null
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after second update, Low-Pass filter output not yet to 100 % output
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, COMMON_THRESHOLD);
+}
+
+TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+{
+  SetUpController("test_admittance_controller_no_mass");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -353,7 +402,10 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
+  for (auto i = 0ul; i < joint_state_values_.size(); i++)
+  {
+    EXPECT_NEAR(joint_state_values_[i], joint_command_values_[i], COMMON_THRESHOLD);
+  }
 
   subscribe_and_get_messages(msg);
 }

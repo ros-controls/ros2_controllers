@@ -10,6 +10,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   control_toolbox
   controller_interface
+  Eigen3
+  filters
   generate_parameter_library
   geometry_msgs
   hardware_interface
@@ -55,6 +57,7 @@ target_link_libraries(admittance_controller PUBLIC
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       angles::angles
+                      filters::filter_chain
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       tf2::tf2
