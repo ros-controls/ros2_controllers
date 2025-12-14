@@ -61,6 +61,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
 
    Force Torque Sensor Broadcaster <../force_torque_sensor_broadcaster/doc/userdoc.rst>
    IMU Sensor Broadcaster <../imu_sensor_broadcaster/doc/userdoc.rst>
+   Interfaces State Broadcaster <../interfaces_state_broadcaster/doc/userdoc.rst>
    Joint State Broadcaster <../joint_state_broadcaster/doc/userdoc.rst>
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
    Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>

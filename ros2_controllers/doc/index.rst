@@ -42,6 +42,10 @@ For more information of the ros2_control framework see `control.ros.org <https:/
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/imu_sensor_broadcaster/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/imu_sensor_broadcaster/>`__
     - `ROS Index <https://index.ros.org/p/imu_sensor_broadcaster/>`__
+  * - interfaces_state_broadcaster
+    - `Documentation <https://control.ros.org/master/doc/ros2_controllers/interfaces_state_broadcaster/doc/userdoc.html>`__
+    - `API <http://docs.ros.org/en/rolling/p/interfaces_state_broadcaster/>`__
+    - `ROS Index <https://index.ros.org/p/interfaces_state_broadcaster/>`__
   * - joint_state_broadcaster
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/joint_state_broadcaster/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/joint_state_broadcaster/>`__
