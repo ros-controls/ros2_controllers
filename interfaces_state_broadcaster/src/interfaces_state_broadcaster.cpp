@@ -113,7 +113,7 @@ controller_interface::return_type InterfacesStateBroadcaster::update(
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    const auto & opt = state_interfaces_[i].get_optional();
+    const auto & opt = state_interfaces_[i].get_optional(0);
     if (opt.has_value())
     {
       values_msg_.values[i] = opt.value();
