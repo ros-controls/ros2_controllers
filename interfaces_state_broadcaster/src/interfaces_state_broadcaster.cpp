@@ -98,8 +98,7 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_activate(
       RCLCPP_ERROR(
         get_node()->get_logger(),
         "State interface '%s' is not castable to double. The InterfacesStateBroadcaster only "
-        "supports "
-        "state interfaces that can be casted to double.",
+        "supports state interfaces that can be casted to double.",
         params_.interfaces[i].c_str());
       return CallbackReturn::FAILURE;
     }
