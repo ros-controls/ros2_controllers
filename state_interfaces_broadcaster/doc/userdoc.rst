@@ -4,7 +4,7 @@
 
 State Interfaces Broadcaster
 --------------------------------
-The State Interfaces Broadcaster publishes the state of specified hardware interfaces that support double data type.
+The State Interfaces Broadcaster publishes the state of specified hardware interfaces of double data type.
 The broadcaster publishes two topics:
 
 - ``/state_interfaces_broadcaster/names``: Publishes the names of the hardware interfaces being monitored with a message type of ``control_msgs/msg/Keys``.
