@@ -18,7 +18,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"

@@ -22,7 +22,6 @@
   <build_depend>ros2_control_cmake</build_depend>
 
   <depend>backward_ros</depend>
-  <depend>builtin_interfaces</depend>
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>generate_parameter_library</depend>
@@ -33,7 +32,6 @@
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
-  <test_depend>hardware_interface_testing</test_depend>
   <test_depend>hardware_interface</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
 
