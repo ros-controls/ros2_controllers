@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_INTERFACES_STATE_BROADCASTER_HPP_
-#define TEST_INTERFACES_STATE_BROADCASTER_HPP_
+#ifndef TEST_STATE_INTERFACES_BROADCASTER_HPP_
+#define TEST_STATE_INTERFACES_BROADCASTER_HPP_
 
 #include <gmock/gmock.h>
 
@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "interfaces_state_broadcaster/interfaces_state_broadcaster.hpp"
+#include "state_interfaces_broadcaster/state_interfaces_broadcaster.hpp"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
@@ -30,15 +30,15 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
 // subclassing and friending so we can access member variables
-class FriendInterfacesStateBroadcaster
-: public interfaces_state_broadcaster::InterfacesStateBroadcaster
+class FriendStateInterfacesBroadcaster
+: public state_interfaces_broadcaster::StateInterfacesBroadcaster
 {
-  FRIEND_TEST(InterfacesStateBroadcasterTest, FailOnEmptyInterfaceListTest);
-  FRIEND_TEST(InterfacesStateBroadcasterTest, ConfigureOnValidInterfaceListTest);
-  FRIEND_TEST(InterfacesStateBroadcasterTest, StatePublishTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, FailOnEmptyInterfaceListTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, ConfigureOnValidInterfaceListTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, StatePublishTest);
 };
 
-class InterfacesStateBroadcasterTest : public ::testing::Test
+class StateInterfacesBroadcasterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -104,8 +104,8 @@ protected:
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
-  std::unique_ptr<FriendInterfacesStateBroadcaster> state_broadcaster_;
+  std::unique_ptr<FriendStateInterfacesBroadcaster> state_broadcaster_;
   std::string frame_id_ = "base_link";
 };
 
-#endif  // TEST_INTERFACES_STATE_BROADCASTER_HPP_
+#endif  // TEST_STATE_INTERFACES_BROADCASTER_HPP_

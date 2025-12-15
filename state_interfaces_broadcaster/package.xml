@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>interfaces_state_broadcaster</name>
-  <version>5.8.0</version>
+  <name>state_interfaces_broadcaster</name>
+  <version>6.1.0</version>
   <description>Broadcaster to publish desired hardware interface states that are castable to double</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

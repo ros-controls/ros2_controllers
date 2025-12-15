@@ -1,4 +1,4 @@
-interfaces_state_broadcaster:
+state_interfaces_broadcaster:
   interfaces: {
     type: string_array,
     default_value: [],

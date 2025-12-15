@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "interfaces_state_broadcaster/interfaces_state_broadcaster.hpp"
+#include "state_interfaces_broadcaster/state_interfaces_broadcaster.hpp"
 
 #include <cstddef>
 #include <limits>
@@ -25,12 +25,12 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
 
-namespace interfaces_state_broadcaster
+namespace state_interfaces_broadcaster
 {
 
-InterfacesStateBroadcaster::InterfacesStateBroadcaster() {}
+StateInterfacesBroadcaster::StateInterfacesBroadcaster() {}
 
-controller_interface::CallbackReturn InterfacesStateBroadcaster::on_init()
+controller_interface::CallbackReturn StateInterfacesBroadcaster::on_init()
 {
   try
   {
@@ -47,14 +47,14 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_init()
 }
 
 controller_interface::InterfaceConfiguration
-InterfacesStateBroadcaster::command_interface_configuration() const
+StateInterfacesBroadcaster::command_interface_configuration() const
 {
   return controller_interface::InterfaceConfiguration{
     controller_interface::interface_configuration_type::NONE};
 }
 
 controller_interface::InterfaceConfiguration
-InterfacesStateBroadcaster::state_interface_configuration() const
+StateInterfacesBroadcaster::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -65,7 +65,7 @@ InterfacesStateBroadcaster::state_interface_configuration() const
   return state_interfaces_config;
 }
 
-controller_interface::CallbackReturn InterfacesStateBroadcaster::on_configure(
+controller_interface::CallbackReturn StateInterfacesBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
@@ -88,7 +88,7 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn InterfacesStateBroadcaster::on_activate(
+controller_interface::CallbackReturn StateInterfacesBroadcaster::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
@@ -97,7 +97,7 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_activate(
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "State interface '%s' is not castable to double. The InterfacesStateBroadcaster only "
+        "State interface '%s' is not castable to double. The StateInterfacesBroadcaster only "
         "supports state interfaces that can be casted to double.",
         params_.interfaces[i].c_str());
       return CallbackReturn::FAILURE;
@@ -107,7 +107,7 @@ controller_interface::CallbackReturn InterfacesStateBroadcaster::on_activate(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type InterfacesStateBroadcaster::update(
+controller_interface::return_type StateInterfacesBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
@@ -128,10 +128,10 @@ controller_interface::return_type InterfacesStateBroadcaster::update(
   return controller_interface::return_type::OK;
 }
 
-}  // namespace interfaces_state_broadcaster
+}  // namespace state_interfaces_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  interfaces_state_broadcaster::InterfacesStateBroadcaster,
+  state_interfaces_broadcaster::StateInterfacesBroadcaster,
   controller_interface::ControllerInterface)
