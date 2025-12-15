@@ -4,22 +4,14 @@ Release Notes: Humble to Jazzy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes the changes between Humble (previous) and Jazzy (current) releases.
 
-<<<<<<< HEAD
 admittance_controller
 ************************
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
 * Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
-=======
-This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
 
 state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
-
-force_torque_sensor_broadcaster
-*******************************
-* Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
->>>>>>> ef3167d (Add state_interfaces_broadcaster (#2006))
 
 diff_drive_controller
 *****************************
