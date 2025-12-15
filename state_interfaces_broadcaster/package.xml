@@ -2,7 +2,7 @@
 <package format="3">
   <name>state_interfaces_broadcaster</name>
   <version>6.1.0</version>
-  <description>Broadcaster to publish desired hardware interface states that are castable to double</description>
+  <description>Broadcaster to publish the requested hardware interface states</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis@stoglrobotics.de">Denis Štogl</maintainer>

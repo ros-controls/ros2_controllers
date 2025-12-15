@@ -93,13 +93,13 @@ controller_interface::CallbackReturn StateInterfacesBroadcaster::on_activate(
 {
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    if (!state_interfaces_[i].is_castable_to_double())
+    if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
-        "State interface '%s' is not castable to double. The StateInterfacesBroadcaster only "
-        "supports state interfaces that can be casted to double.",
-        params_.interfaces[i].c_str());
+        "State interface '%s' (%s) is not of type double. The StateInterfacesBroadcaster only "
+        "supports state interfaces that support double datatype.",
+        params_.interfaces[i].c_str(), state_interfaces_[i].get_data_type().to_string().c_str());
       return CallbackReturn::FAILURE;
     }
   }
