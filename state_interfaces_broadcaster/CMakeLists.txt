@@ -40,6 +40,7 @@ target_link_libraries(state_interfaces_broadcaster PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       ${control_msgs_TARGETS}
+)
 pluginlib_export_plugin_description_file(controller_interface state_interfaces_broadcaster_plugin.xml)
 
 if(BUILD_TESTING)
