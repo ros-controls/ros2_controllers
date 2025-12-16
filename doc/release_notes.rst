@@ -9,6 +9,10 @@ admittance_controller
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
 * Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
 
+state_interfaces_broadcaster
+*********************************
+* 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
+
 diff_drive_controller
 *****************************
 * The twist message on ``~/cmd_vel`` is now required to be of stamped type (`#812 <https://github.com/ros-controls/ros2_controllers/pull/812>`_).
