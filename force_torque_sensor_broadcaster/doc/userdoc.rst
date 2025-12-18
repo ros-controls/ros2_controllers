@@ -44,11 +44,20 @@ The node subscribes to wrench messages from the broadcaster (either raw or filte
 
 Usage
 ^^^^^
-The wrench transformer node can be launched as a standalone executable:
+The wrench transformer can be launched with target frames passed directly as positional arguments:
 
 .. code-block:: bash
 
-   ros2 run force_torque_sensor_broadcaster wrench_transformer_node
+   ros2 run force_torque_sensor_broadcaster wrench_transformer_node frame1 frame2
+
+Target frames may also be set via the ``target_frames`` parameter:
+
+.. code-block:: bash
+
+   ros2 run force_torque_sensor_broadcaster wrench_transformer_node \
+     --ros-args -p target_frames:="['frame1','frame2']"
+
+Positional arguments override the parameter value when both are provided.
 
 Wrench Transformer Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
