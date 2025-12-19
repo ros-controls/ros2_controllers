@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright (c) 2025, PAL Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_JOINT_STATE_BROADCASTER_HPP_
-#define TEST_JOINT_STATE_BROADCASTER_HPP_
+#ifndef TEST_STATE_INTERFACES_BROADCASTER_HPP_
+#define TEST_STATE_INTERFACES_BROADCASTER_HPP_
 
 #include <gmock/gmock.h>
 
@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "joint_state_broadcaster/joint_state_broadcaster.hpp"
+#include "state_interfaces_broadcaster/state_interfaces_broadcaster.hpp"
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
@@ -30,29 +30,15 @@ using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
 // subclassing and friending so we can access member variables
-class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
+class FriendStateInterfacesBroadcaster
+: public state_interfaces_broadcaster::StateInterfacesBroadcaster
 {
-  FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyWithoutDynamicJointStatesPublisherTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing);
-  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping);
-  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMapping);
-  FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
-  FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, FailOnEmptyInterfaceListTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, ConfigureOnValidInterfaceListTest);
+  FRIEND_TEST(StateInterfacesBroadcasterTest, StatePublishTest);
 };
 
-class JointStateBroadcasterTest : public ::testing::Test
+class StateInterfacesBroadcasterTest : public ::testing::Test
 {
 public:
   static void SetUpTestCase();
@@ -61,26 +47,20 @@ public:
   void SetUp();
   void TearDown();
 
-  void SetUpStateBroadcaster(
-    const std::vector<std::string> & joint_names = {},
-    const std::vector<std::string> & interfaces = {},
-    const std::vector<rclcpp::Parameter> & parameter_overrides = {});
-
-  void init_broadcaster_and_set_parameters(
-    const std::string & robot_description, const std::vector<std::string> & joint_names,
-    const std::vector<std::string> & interfaces,
-    const std::vector<rclcpp::Parameter> & parameter_overrides = {});
-
-  void assign_state_interfaces(
-    const std::vector<std::string> & joint_names = {},
+  controller_interface::return_type SetUpStateBroadcaster(
     const std::vector<std::string> & interfaces = {});
+
+  controller_interface::return_type init_broadcaster_and_set_parameters(
+    const std::string & robot_description, const std::vector<std::string> & interfaces);
+
+  void assign_state_interfaces(const std::vector<std::string> & interfaces = {});
 
   void test_published_joint_state_message(const std::string & topic);
 
   void test_published_dynamic_joint_state_message(const std::string & topic);
 
-  void activate_and_get_joint_state_message(
-    const std::string & topic, sensor_msgs::msg::JointState & msg);
+  void activate_and_get_state_message(
+    const std::string & topic, control_msgs::msg::Float64Values & msg);
 
 protected:
   // dummy joint state values used for tests
@@ -124,8 +104,8 @@ protected:
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
-  std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
+  std::unique_ptr<FriendStateInterfacesBroadcaster> state_broadcaster_;
   std::string frame_id_ = "base_link";
 };
 
-#endif  // TEST_JOINT_STATE_BROADCASTER_HPP_
+#endif  // TEST_STATE_INTERFACES_BROADCASTER_HPP_
