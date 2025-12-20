@@ -277,28 +277,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   }
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
-  std::string tf_prefix = "";
-  if (params_.tf_frame_prefix != "")
-  {
-    tf_prefix =
-      controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
-  }
-  else
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Please use tilde ('~') character in 'tf_frame_prefix' as it replaced with node namespace");
-
-    tf_prefix = std::string(get_node()->get_namespace());
-    if (tf_prefix.back() != '/')
-    {
-      tf_prefix = tf_prefix + "/";
-    }
-    if (tf_prefix.front() == '/')
-    {
-      tf_prefix.erase(0, 1);
-    }
-  }
+  const std::string tf_prefix =
+    controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
 
   // prepend resolved TF prefix to frame ids
   const std::string odom_frame_id = tf_prefix + params_.odom_frame_id;
