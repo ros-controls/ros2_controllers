@@ -79,6 +79,112 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
   }
 }
 
+// TF prefix tests
+TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_no_namespace)
+{
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->odom_state_msg_;
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+
+  // frame_prefix is not blank so should be prepended to the frame id's
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+}
+TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_blank_prefix_no_namespace)
+{
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->odom_state_msg_;
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+
+  // frame_prefix is blank so nothing added to the frame id's
+  ASSERT_EQ(test_odom_frame_id, odom_id);
+  ASSERT_EQ(test_base_frame_id, base_link_id);
+}
+TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "test_prefix";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+  node_options.append_parameter_override(
+    "traction_joints_names", std::vector<std::string>{"joint1", "joint2"});
+  node_options.append_parameter_override(
+    "steering_joints_names", std::vector<std::string>{"joint3", "joint4"});
+
+  SetUpController("test_steering_controllers_library", node_options, test_namespace);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->odom_state_msg_;
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+
+  // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
+  ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
+  ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
+}
+TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+  std::string odom_id = "odom";
+  std::string base_link_id = "base_link";
+  std::string frame_prefix = "~";
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
+  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
+  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
+  node_options.append_parameter_override(
+    "traction_joints_names", std::vector<std::string>{"joint1", "joint2"});
+  node_options.append_parameter_override(
+    "steering_joints_names", std::vector<std::string>{"joint3", "joint4"});
+
+  SetUpController("test_steering_controllers_library", node_options, test_namespace);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto odometry_message = controller_->odom_state_msg_;
+  std::string test_odom_frame_id = odometry_message.header.frame_id;
+  std::string test_base_frame_id = odometry_message.child_frame_id;
+  std::string ns_prefix = test_namespace.erase(0, 1) + "/";
+
+  // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
+  ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
+  ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
+}
+
 // Tests controller update_reference_from_subscribers and
 // for position_feedback behavior
 // when too old msg is sent i.e age_of_last_command > ref_timeout case
