@@ -277,6 +277,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   }
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
+  // Note: resolve_tf_prefix handles empty tf_frame_prefix by returning an empty string
   const std::string tf_prefix =
     controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
 
