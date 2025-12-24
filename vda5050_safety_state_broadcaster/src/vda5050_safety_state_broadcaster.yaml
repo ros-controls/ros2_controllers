@@ -1,0 +1,21 @@
+vda5050_safety_state_broadcaster:
+  fieldViolation_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "names of interfaces that are used to acknowledge field violation events by setting the interface to 1.0.",
+  }
+  eStop_manual_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "names of interfaces that are used to manually acknowledge eStop events by setting the interface to 1.0.",
+  }
+  eStop_remote_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "names of interfaces that are used to remotely acknowledge eStop events by setting the interface to 1.0.",
+  }
+  eStop_autoack_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "names of interfaces that are used to autoacknowledge eStop events by setting the interface to 1.0.",
+  }
