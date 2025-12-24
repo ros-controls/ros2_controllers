@@ -50,6 +50,7 @@ const char steering_joint_name[] = "steering_joint";
 class TestableTricycleController : public tricycle_controller::TricycleController
 {
 public:
+  using TricycleController::odometry_;
   using TricycleController::TricycleController;
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
@@ -368,6 +369,75 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
   EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
   EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
 
+  state = controller_->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(TestTricycleController, odometry_reset_service)
+{
+  // 0. correctly initialize and activate the controller
+  ASSERT_EQ(
+    InitController(
+      traction_joint_name, steering_joint_name,
+      {rclcpp::Parameter("wheelbase", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  auto state = controller_->configure();
+  assignResources();
+
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(position_, steering_joint_pos_cmd_->get_optional().value());
+  EXPECT_EQ(velocity_, traction_joint_vel_cmd_->get_optional().value());
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
+
+  // 1. move the robot first
+  const double linear = 1.0;
+  const double angular = 0.0;
+  publish(linear, angular);
+  controller_->wait_for_twist(executor);
+  controller_->update(test_time, period);
+  test_time += period;
+
+  // verify it actually moved
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. stop the robot and trigger the reset callback
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto response = std::make_shared<std_srvs::srv::Empty::Response>();
+  controller_->reset_odometry(nullptr, request, response);
+
+  // run update to process the reset request
+  // then, verify the odometry values are now back to 0.0
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_EQ(controller_->odometry_.getX(), 0.0);
+  EXPECT_EQ(controller_->odometry_.getY(), 0.0);
+
+  // 3. move the robot again
+  publish(linear, angular);
+  controller_->wait_for_twist(executor);
+
+  // run update twice to ensure velocity integrated and the reset flag was cleared
+  controller_->update(test_time, period);
+  test_time += period;
+  controller_->update(test_time, period);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 4. deactivate and cleanup
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
