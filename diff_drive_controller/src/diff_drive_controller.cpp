@@ -220,18 +220,10 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
     bool should_publish = false;
-    try
+
+    if (previous_publish_timestamp_ + publish_period_ <= time)
     {
-      if (previous_publish_timestamp_ + publish_period_ <= time)
-      {
-        previous_publish_timestamp_ += publish_period_;
-        should_publish = true;
-      }
-    }
-    catch (const std::runtime_error &)
-    {
-      // Handle exceptions when the time source changes and initialize publish timestamp
-      previous_publish_timestamp_ = time;
+      previous_publish_timestamp_ += publish_period_;
       should_publish = true;
     }
 
@@ -491,7 +483,8 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_transform_message_.transforms.resize(1);
   odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
-
+  
+  previous_publish_timestamp_ = get_node()->get_clock()->now();
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
