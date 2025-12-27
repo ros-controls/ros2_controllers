@@ -33,6 +33,7 @@ void SteeringOdometry::init(const rclcpp::Time & time) { sk_impl_.init(time); }
 bool SteeringOdometry::update_from_position(
   const double traction_wheel_pos, const double steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_wheel_pos) || !std::isfinite(steer_pos)) return false;
   return sk_impl_.update_from_position(traction_wheel_pos, steer_pos, dt);
 }
 
@@ -40,6 +41,8 @@ bool SteeringOdometry::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_right_wheel_pos) ||
+     !std::isfinite(traction_left_wheel_pos) || !std::isfinite(steer_pos)) return false;
   return sk_impl_.update_from_position(
     traction_right_wheel_pos, traction_left_wheel_pos, steer_pos, dt);
 }
@@ -48,6 +51,8 @@ bool SteeringOdometry::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_right_wheel_pos) ||
+     !std::isfinite(traction_left_wheel_pos) || !std::isfinite(right_steer_pos) || !std::isfinite(left_steer_pos)) return false;
   return sk_impl_.update_from_position(
     traction_right_wheel_pos, traction_left_wheel_pos, right_steer_pos, left_steer_pos, dt);
 }
@@ -55,6 +60,7 @@ bool SteeringOdometry::update_from_position(
 bool SteeringOdometry::update_from_velocity(
   const double traction_wheel_vel, const double steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_wheel_vel) || !std::isfinite(steer_pos)) return false;
   return sk_impl_.update_from_velocity(traction_wheel_vel, steer_pos, dt);
 }
 
@@ -62,6 +68,8 @@ bool SteeringOdometry::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(right_traction_wheel_vel) ||
+     !std::isfinite(left_traction_wheel_vel) || !std::isfinite(steer_pos)) return false;
   return sk_impl_.update_from_velocity(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos, dt);
 }
@@ -70,13 +78,22 @@ bool SteeringOdometry::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(right_traction_wheel_vel) ||
+     !std::isfinite(left_traction_wheel_vel) || !std::isfinite(right_steer_pos) || !std::isfinite(left_steer_pos)) return false;
   return sk_impl_.update_from_velocity(
     right_traction_wheel_vel, left_traction_wheel_vel, right_steer_pos, left_steer_pos, dt);
 }
 
 void SteeringOdometry::update_open_loop(const double v_bx, const double omega_bz, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(v_bx) || !std::isfinite(omega_bz)) return;
   sk_impl_.update_open_loop(v_bx, omega_bz, dt);
+}
+
+bool SteeringOdometry::try_update_open_loop(const double v_bx, const double omega_bz, const double dt){
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(v_bx) || !std::isfinite(omega_bz)) return false;
+  sk_impl_.try_update_open_loop(v_bx, omega_bz, dt);
+  return true;
 }
 
 void SteeringOdometry::set_wheel_params(double wheel_radius, double wheel_base, double wheel_track)
@@ -109,38 +126,4 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
 }
 
 void SteeringOdometry::reset_odometry() { sk_impl_.reset_odometry(); }
-
-bool SteeringOdometry::try_update_open_loop(double linear, double angular, double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  update_open_loop(linear, angular, delTime);
-  return true;
-}
-
-bool SteeringOdometry::try_update_from_position(
-  double right_traction, double left_traction, double right_steering, double left_steering,
-  double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  if (
-    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
-    !std::isfinite(right_steering) || !std::isfinite(left_steering))
-    return false;
-  update_from_position(right_traction, left_traction, right_steering, left_steering, delTime);
-  return true;
-}
-
-bool SteeringOdometry::try_update_from_velocity(
-  double right_traction, double left_traction, double right_steering, double left_steering,
-  double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  if (
-    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
-    !std::isfinite(right_steering) || !std::isfinite(left_steering))
-    return false;
-  update_from_velocity(right_traction, left_traction, right_steering, left_steering, delTime);
-  return true;
-}
-
 }  // namespace steering_odometry

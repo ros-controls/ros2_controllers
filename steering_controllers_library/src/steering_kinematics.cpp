@@ -78,6 +78,9 @@ bool SteeringKinematics::update_odometry(
 bool SteeringKinematics::update_from_position(
   const double traction_wheel_pos, const double steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_wheel_pos) || !std::isfinite(steer_pos)) return false;
+
   const double traction_wheel_est_pos_diff = traction_wheel_pos - traction_wheel_old_pos_;
 
   /// Update old position with current:
@@ -90,6 +93,11 @@ bool SteeringKinematics::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_right_wheel_pos) 
+    || !std::isfinite(traction_left_wheel_pos) || !std::isfinite(steer_pos)) 
+    return false;
+
   const double traction_right_wheel_est_pos_diff =
     traction_right_wheel_pos - traction_right_wheel_old_pos_;
   const double traction_left_wheel_est_pos_diff =
@@ -107,6 +115,11 @@ bool SteeringKinematics::update_from_position(
   const double traction_right_wheel_pos, const double traction_left_wheel_pos,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_right_wheel_pos) 
+    || !std::isfinite(traction_left_wheel_pos) || !std::isfinite(right_steer_pos) || !std::isfinite(left_steer_pos)) 
+    return false;
+
   const double traction_right_wheel_est_pos_diff =
     traction_right_wheel_pos - traction_right_wheel_old_pos_;
   const double traction_left_wheel_est_pos_diff =
@@ -124,6 +137,9 @@ bool SteeringKinematics::update_from_position(
 bool SteeringKinematics::update_from_velocity(
   const double traction_wheel_vel, const double steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(traction_wheel_vel) || !std::isfinite(steer_pos)) return false;
+
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
   const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheel_base_;
@@ -156,6 +172,9 @@ bool SteeringKinematics::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(right_traction_wheel_vel) || !std::isfinite(left_traction_wheel_vel) || !std::isfinite(steer_pos)) return false;
+
   steer_pos_ = steer_pos;
   double linear_velocity = get_linear_velocity_double_traction_axle(
     right_traction_wheel_vel, left_traction_wheel_vel, steer_pos_);
@@ -169,6 +188,11 @@ bool SteeringKinematics::update_from_velocity(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double right_steer_pos, const double left_steer_pos, const double dt)
 {
+
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(right_traction_wheel_vel) || 
+    !std::isfinite(left_traction_wheel_vel) || !std::isfinite(right_steer_pos) || !std::isfinite(left_steer_pos)) return false;
+
+  
   // overdetermined, we take the average
   const double right_steer_pos_est = std::atan(
     wheel_base_ * std::tan(right_steer_pos) /
@@ -187,12 +211,27 @@ bool SteeringKinematics::update_from_velocity(
 
 void SteeringKinematics::update_open_loop(const double v_bx, const double omega_bz, const double dt)
 {
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(v_bx) || !std::isfinite(omega_bz)) return;
   /// Save last linear and angular velocity:
   linear_ = v_bx;
+
   angular_ = omega_bz;
 
   /// Integrate odometry:
   integrate_fk(v_bx, omega_bz, dt);
+}
+
+bool SteeringKinematics::try_update_open_loop(const double v_bx, const double omega_bz, const double dt)
+{
+  if(std::fabs(dt) < std::numeric_limits<double>::epsilon() || !std::isfinite(v_bx) || !std::isfinite(omega_bz)) return false;
+  /// Save last linear and angular velocity:
+  linear_ = v_bx;
+
+  angular_ = omega_bz;
+
+  /// Integrate odometry:
+  integrate_fk(v_bx, omega_bz, dt);
+  return true;
 }
 
 void SteeringKinematics::set_wheel_params(
@@ -393,38 +432,4 @@ void SteeringKinematics::reset_accumulators()
   linear_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
   angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
 }
-
-bool SteeringKinematics::try_update_open_loop(double linear, double angular, double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  update_open_loop(linear, angular, delTime);
-  return true;
-}
-
-bool SteeringKinematics::try_update_from_position(
-  double right_traction, double left_traction, double right_steering, double left_steering,
-  double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  if (
-    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
-    !std::isfinite(right_steering) || !std::isfinite(left_steering))
-    return false;
-  update_from_position(right_traction, left_traction, right_steering, left_steering, delTime);
-  return true;
-}
-
-bool SteeringKinematics::try_update_from_velocity(
-  double right_traction, double left_traction, double right_steering, double left_steering,
-  double delTime)
-{
-  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
-  if (
-    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
-    !std::isfinite(right_steering) || !std::isfinite(left_steering))
-    return false;
-  update_from_velocity(right_traction, left_traction, right_steering, left_steering, delTime);
-  return true;
-}
-
 }  // namespace steering_kinematics

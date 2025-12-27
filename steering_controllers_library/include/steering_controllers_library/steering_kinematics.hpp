@@ -141,14 +141,6 @@ public:
 
   bool try_update_open_loop(double linear, double angular, double delTime);
 
-  bool try_update_from_position(
-    double right_traction, double left_traction, double right_steering, double left_steering,
-    double delTime);
-
-  bool try_update_from_velocity(
-    double right_traction, double left_traction, double right_steering, double left_steering,
-    double delTime);
-
   /**
    * \brief Set odometry type
    * \param type odometry type
