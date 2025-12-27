@@ -116,6 +116,12 @@ public:
 
   void reset_odometry();
 
+  bool try_update_open_loop(double linear, double angular, double delTime);
+
+  bool try_update_from_position(double right_traction, double left_traction, double right_steering, double left_steering, double delTime);
+
+  bool try_update_from_velocity(double right_traction, double left_traction, double right_steering, double left_steering, double delTime);
+
 private:
   steering_kinematics::SteeringKinematics sk_impl_;
 };
