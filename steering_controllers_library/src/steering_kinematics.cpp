@@ -394,4 +394,37 @@ void SteeringKinematics::reset_accumulators()
   angular_acc_ = RollingMeanAccumulator(velocity_rolling_window_size_);
 }
 
+bool SteeringKinematics::try_update_open_loop(double linear, double angular, double delTime)
+{
+  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
+  update_open_loop(linear, angular, delTime);
+  return true;
+}
+
+bool SteeringKinematics::try_update_from_position(
+  double right_traction, double left_traction, double right_steering, double left_steering,
+  double delTime)
+{
+  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
+  if (
+    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
+    !std::isfinite(right_steering) || !std::isfinite(left_steering))
+    return false;
+  update_from_position(right_traction, left_traction, right_steering, left_steering, delTime);
+  return true;
+}
+
+bool SteeringKinematics::try_update_from_velocity(
+  double right_traction, double left_traction, double right_steering, double left_steering,
+  double delTime)
+{
+  if (std::fabs(delTime) < std::numeric_limits<double>::epsilon()) return false;
+  if (
+    !std::isfinite(right_traction) || !std::isfinite(left_traction) ||
+    !std::isfinite(right_steering) || !std::isfinite(left_steering))
+    return false;
+  update_from_velocity(right_traction, left_traction, right_steering, left_steering, delTime);
+  return true;
+}
+
 }  // namespace steering_kinematics
