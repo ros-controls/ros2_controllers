@@ -219,16 +219,10 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    bool should_publish = false;
-
     if (previous_publish_timestamp_ + publish_period_ <= time)
     {
       previous_publish_timestamp_ += publish_period_;
-      should_publish = true;
-    }
 
-    if (should_publish)
-    {
       if (realtime_odometry_publisher_)
       {
         odometry_message_.header.stamp = time;
@@ -483,7 +477,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_transform_message_.transforms.resize(1);
   odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
-  
+
   previous_publish_timestamp_ = get_node()->get_clock()->now();
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
