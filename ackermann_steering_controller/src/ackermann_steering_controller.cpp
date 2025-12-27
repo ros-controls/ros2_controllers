@@ -59,11 +59,9 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
 
   if (params_.open_loop)
   {
-    if (!odometry_.try_update_open_loop(
-          last_linear_velocity_, last_angular_velocity_, period.seconds()))
-    {
-      return false;
-    }
+    if(!odometry_.try_update_open_loop(
+          last_linear_velocity_, last_angular_velocity_, period.seconds()
+        ))return false;
   }
   else
   {
@@ -105,14 +103,14 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        success = odometry_.try_update_from_position(
+        success = odometry_.update_from_position(
           traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
           steering_left_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        success = odometry_.try_update_from_velocity(
+        success = odometry_.update_from_velocity(
           traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
           steering_left_position, period.seconds());
       }
