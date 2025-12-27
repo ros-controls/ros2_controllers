@@ -139,6 +139,8 @@ public:
    */
   void update_open_loop(const double v_bx, const double omega_bz, const double dt);
 
+  bool try_update_open_loop(double linear, double angular, double delTime);
+
   /**
    * \brief Set odometry type
    * \param type odometry type
