@@ -126,3 +126,10 @@ pid_controller:
         default_value: false,
         description: "Individual state publisher activation for each DOF. If true, the controller will publish the state of each DOF to the topic `/<controller_name>/<dof_name>/pid_state`."
       }
+  export_params:
+      gain_references: {
+        type: bool,
+        default_value: false,
+        description: "If true, exports P, I, and D gains as reference interfaces to be claimed by preceding controllers",
+        read_only: true
+      }
