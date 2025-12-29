@@ -99,22 +99,17 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
   }
 
   // Reserve memory in state publisher depending on the message type
-  battery_state_realtime_publisher_->lock();
-  battery_state_realtime_publisher_->msg_.location.reserve(MAX_LENGTH);
-  battery_state_realtime_publisher_->msg_.serial_number.reserve(MAX_LENGTH);
-  battery_state_realtime_publisher_->unlock();
+  battery_state_msg.location.reserve(MAX_LENGTH);
+  battery_state_msg.serial_number.reserve(MAX_LENGTH);
 
-  raw_battery_states_realtime_publisher_->lock();
-  auto & msg = raw_battery_states_realtime_publisher_->msg_;
-  msg.battery_states.reserve(params_.state_joints.size());
+  raw_battery_states_msg.battery_states.reserve(params_.state_joints.size());
   for (size_t i = 0; i < params_.state_joints.size(); ++i)
   {
     sensor_msgs::msg::BatteryState battery;
     battery.location.reserve(MAX_LENGTH);
     battery.serial_number.reserve(MAX_LENGTH);
-    msg.battery_states.emplace_back(std::move(battery));
+    raw_battery_states_msg.battery_states.emplace_back(std::move(battery));
   }
-  raw_battery_states_realtime_publisher_->unlock();
 
   // Get count of enabled joints for each interface
   for (size_t i = 0; i < params_.state_joints.size(); ++i)
@@ -245,7 +240,6 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
   std::string combined_serial_number = "";
 
   // handle individual battery states initializations
-  auto & raw_battery_states_msg = raw_battery_states_realtime_publisher_->msg_;
   for (size_t i = 0; i < params_.state_joints.size(); ++i)
   {
     auto & battery_state = raw_battery_states_msg.battery_states[i];
@@ -277,10 +271,9 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
     combined_location += battery_state.location + ", ";
     combined_serial_number += battery_state.serial_number + ", ";
   }
+  raw_battery_states_realtime_publisher_->try_publish(raw_battery_states_msg);
 
   // handle aggregate battery state initialization
-  auto & battery_state_msg = battery_state_realtime_publisher_->msg_;
-
   battery_state_msg.voltage = kUninitializedValue;
   battery_state_msg.temperature = kUninitializedValue;
   battery_state_msg.current = kUninitializedValue;
@@ -298,6 +291,8 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
   battery_state_msg.cell_temperature = {};
   battery_state_msg.location = combined_location;
   battery_state_msg.serial_number = combined_serial_number;
+
+  battery_state_realtime_publisher_->try_publish(battery_state_msg);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -318,9 +313,8 @@ controller_interface::return_type BatteryStateBroadcaster::update(
   uint8_t combined_power_supply_health =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
 
-  if (raw_battery_states_realtime_publisher_ && raw_battery_states_realtime_publisher_->trylock())
+  if (raw_battery_states_realtime_publisher_)
   {
-    auto & raw_battery_states_msg = raw_battery_states_realtime_publisher_->msg_;
     for (size_t i = 0; i < params_.state_joints.size(); ++i)
     {
       const auto & interfaces = params_.interfaces.state_joints_map.at(params_.state_joints.at(i));
@@ -418,7 +412,7 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         }
       }
     }
-    raw_battery_states_realtime_publisher_->unlockAndPublish();
+    raw_battery_states_realtime_publisher_->try_publish(raw_battery_states_msg);
   }
 
   if (!params_.sensor_name.empty())
@@ -427,10 +421,8 @@ controller_interface::return_type BatteryStateBroadcaster::update(
       static_cast<float>(state_interfaces_[0].get_optional<double>().value_or(kUninitializedValue));
   }
 
-  if (battery_state_realtime_publisher_ && battery_state_realtime_publisher_->trylock())
+  if (battery_state_realtime_publisher_)
   {
-    auto & battery_state_msg = battery_state_realtime_publisher_->msg_;
-
     battery_state_msg.header.stamp = time;
     battery_state_msg.voltage = sums_.voltage_sum / static_cast<float>(state_joints_.size());
 
@@ -450,7 +442,7 @@ controller_interface::return_type BatteryStateBroadcaster::update(
     battery_state_msg.power_supply_status = combined_power_supply_status;
     battery_state_msg.power_supply_health = combined_power_supply_health;
 
-    battery_state_realtime_publisher_->unlockAndPublish();
+    battery_state_realtime_publisher_->try_publish(battery_state_msg);
   }
 
   return controller_interface::return_type::OK;

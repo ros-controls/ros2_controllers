@@ -121,6 +121,8 @@ private:
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::BatteryStateArray>>
     raw_battery_states_publisher_;
+  sensor_msgs::msg::BatteryState battery_state_msg;
+  control_msgs::msg::BatteryStateArray raw_battery_states_msg;
 
   std::vector<bool> battery_presence_;
 };
