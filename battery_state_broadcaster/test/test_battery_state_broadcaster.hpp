@@ -34,11 +34,11 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+#include "control_msgs/msg/battery_state_array.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
-#include "sensor_msgs/msg/battery_state_array.hpp"
 
 using BatteryStateMsg = sensor_msgs::msg::BatteryState;
-using RawBatteryStatesMsg = sensor_msgs::msg::BatteryStateArray;
+using RawBatteryStatesMsg = control_msgs::msg::BatteryStateArray;
 using sensor_msgs::msg::BatteryState;
 using testing::IsEmpty;
 using testing::SizeIs;
@@ -122,7 +122,6 @@ protected:
     2.0,     // 10 right_status
     4.0      // 11 right_health
   }};
-  // std::array<double, 13> itfs_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
 
   hardware_interface::StateInterface left_voltage_itf_{
     "left_wheel", "battery_voltage", &itfs_values_[0]};
