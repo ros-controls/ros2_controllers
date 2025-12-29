@@ -299,7 +299,7 @@ TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
   ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(left_voltage_itf_.set_value(10.0));
+  ASSERT_TRUE(left_voltage_itf_->set_value(10.0));
 
   RawBatteryStatesMsg raw_battery_states_msg;
   BatteryStateMsg battery_state_msg;
@@ -333,7 +333,7 @@ TEST_F(BatteryStateBroadcasterTest, publish_nan_voltage)
   ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(left_voltage_itf_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_TRUE(left_voltage_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
 
   RawBatteryStatesMsg raw_battery_states_msg;
   BatteryStateMsg battery_state_msg;
