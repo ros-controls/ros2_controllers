@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.36.0 (2025-12-31)
+-------------------
 * Fix open_loop odometry of steering controllers (backport `#2087 <https://github.com/ros-controls/ros2_controllers/issues/2087>`_) (`#2088 <https://github.com/ros-controls/ros2_controllers/issues/2088>`_)
 * Controller interface api update to ros2_controller packages (backport `#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_) (`#2068 <https://github.com/ros-controls/ros2_controllers/issues/2068>`_)
 * Contributors: mergify[bot]
