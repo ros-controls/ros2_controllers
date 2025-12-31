@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.52.0 (2025-12-31)
+-------------------
 * Fill point_before_trajectory with same information as trajectory (backport `#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_) (`#2049 <https://github.com/ros-controls/ros2_controllers/issues/2049>`_)
 * Contributors: mergify[bot]
 

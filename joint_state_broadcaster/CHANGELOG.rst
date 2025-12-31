@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.52.0 (2025-12-31)
+-------------------
 * Add parameter for deactivating dynamic_joint_states (backport `#2064 <https://github.com/ros-controls/ros2_controllers/issues/2064>`_) (`#2065 <https://github.com/ros-controls/ros2_controllers/issues/2065>`_)
 * Contributors: mergify[bot]
 
