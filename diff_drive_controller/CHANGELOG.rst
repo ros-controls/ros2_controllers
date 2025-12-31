@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.2.0 (2025-12-31)
+------------------
 * Use TF prefix helper for diff drive controller (`#1997 <https://github.com/ros-controls/ros2_controllers/issues/1997>`_)
 * Contributors: Ege Kural
 

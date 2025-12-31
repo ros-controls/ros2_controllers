@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.2.0 (2025-12-31)
+------------------
 * Tf prefix helper for mecanum drive controller (`#2063 <https://github.com/ros-controls/ros2_controllers/issues/2063>`_)
 * Contributors: Ege Kural
 

@@ -2,8 +2,8 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.2.0 (2025-12-31)
+------------------
 * Remove export of wrench_transformer_node (`#2069 <https://github.com/ros-controls/ros2_controllers/issues/2069>`_)
 * Add support for positional target frame arguments for transform wrench node (`#2040 <https://github.com/ros-controls/ros2_controllers/issues/2040>`_)
 * Contributors: Sai Kishor Kothakota, Vedh
