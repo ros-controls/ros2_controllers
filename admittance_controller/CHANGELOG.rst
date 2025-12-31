@@ -2,6 +2,9 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.51.0 (2025-12-01)
 -------------------
 

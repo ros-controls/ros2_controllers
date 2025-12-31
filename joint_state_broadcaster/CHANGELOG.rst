@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add parameter for deactivating dynamic_joint_states (backport `#2064 <https://github.com/ros-controls/ros2_controllers/issues/2064>`_) (`#2065 <https://github.com/ros-controls/ros2_controllers/issues/2065>`_)
+* Contributors: mergify[bot]
+
 2.51.0 (2025-12-01)
 -------------------
 * Use UnorderedElementsAreArray for JSB tests (`#1971 <https://github.com/ros-controls/ros2_controllers/issues/1971>`_)

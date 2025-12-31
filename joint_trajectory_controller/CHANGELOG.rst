@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fill point_before_trajectory with same information as trajectory (backport `#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_) (`#2049 <https://github.com/ros-controls/ros2_controllers/issues/2049>`_)
+* Contributors: mergify[bot]
+
 2.51.0 (2025-12-01)
 -------------------
 * Add missing dependency rclcpp_action (backport `#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_) (`#1993 <https://github.com/ros-controls/ros2_controllers/issues/1993>`_)
