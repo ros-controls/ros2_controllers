@@ -582,8 +582,12 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
 controller_interface::return_type SteeringControllersLibrary::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  update_odometry(period);
   auto logger = get_node()->get_logger();
+
+  // store current ref (for open loop odometry) and update odometry
+  last_linear_velocity_ = reference_interfaces_[0];
+  last_angular_velocity_ = reference_interfaces_[1];
+  update_odometry(period);
 
   // MOVE ROBOT
 
