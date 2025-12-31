@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add state_interfaces_broadcaster (`#2006 <https://github.com/ros-controls/ros2_controllers/issues/2006>`_)
+* Contributors: Sai Kishor Kothakota
+
 6.1.0 (2025-12-01)
 ------------------
 

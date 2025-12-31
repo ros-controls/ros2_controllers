@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use TF prefix helper for diff drive controller (`#1997 <https://github.com/ros-controls/ros2_controllers/issues/1997>`_)
+* Contributors: Ege Kural
+
 6.1.0 (2025-12-01)
 ------------------
 * Update odometry implementation in diff_drive (`#1854 <https://github.com/ros-controls/ros2_controllers/issues/1854>`_)

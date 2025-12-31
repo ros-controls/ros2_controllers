@@ -2,6 +2,12 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix open_loop odometry of steering controllers (`#2087 <https://github.com/ros-controls/ros2_controllers/issues/2087>`_)
+* tf prefix helper used in steering controllers library (`#2080 <https://github.com/ros-controls/ros2_controllers/issues/2080>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
 6.1.0 (2025-12-01)
 ------------------
 * Rename Odometry Class to SteeringKinematics (`#1996 <https://github.com/ros-controls/ros2_controllers/issues/1996>`_)
