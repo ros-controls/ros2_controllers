@@ -59,9 +59,7 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
 
   if (params_.open_loop)
   {
-    if(!odometry_.try_update_open_loop(
-          last_linear_velocity_, last_angular_velocity_, period.seconds()
-        ))return false;
+    odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
   }
   else
   {
@@ -91,31 +89,23 @@ bool AckermannSteeringController::update_odometry(const rclcpp::Duration & perio
     const double steering_left_position = steering_left_position_op.value();
 
     if (
-      !std::isfinite(traction_right_wheel_value) || !std::isfinite(traction_left_wheel_value) ||
-      !std::isfinite(steering_right_position) || !std::isfinite(steering_left_position))
+      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+      std::isfinite(steering_right_position) && std::isfinite(steering_left_position))
     {
-      RCLCPP_DEBUG(logger, "Odometery failed! : sensors returning infinity or NaN!");
-      return false;
-    }
-    else
-    {
-      bool success = false;
       if (params_.position_feedback)
       {
         // Estimate linear and angular velocity using joint information
-        success = odometry_.update_from_position(
+        odometry_.update_from_position(
           traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
           steering_left_position, period.seconds());
       }
       else
       {
         // Estimate linear and angular velocity using joint information
-        success = odometry_.update_from_velocity(
+        odometry_.update_from_velocity(
           traction_right_wheel_value, traction_left_wheel_value, steering_right_position,
           steering_left_position, period.seconds());
       }
-
-      return success;
     }
   }
   return true;

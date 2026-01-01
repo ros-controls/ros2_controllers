@@ -116,8 +116,6 @@ public:
 
   void reset_odometry();
 
-  bool try_update_open_loop(double linear, double angular, double delTime);
-
 private:
   steering_kinematics::SteeringKinematics sk_impl_;
 };

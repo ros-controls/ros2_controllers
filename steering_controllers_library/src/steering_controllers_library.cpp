@@ -520,8 +520,14 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   auto logger = get_node()->get_logger();
 
   // store current ref (for open loop odometry) and update odometry
-  last_linear_velocity_ = reference_interfaces_[0];
-  last_angular_velocity_ = reference_interfaces_[1];
+  if (std::isfinite(reference_interfaces_[0]))
+  {
+    last_linear_velocity_ = reference_interfaces_[0];
+  }
+  if (std::isfinite(reference_interfaces_[1]))
+  {
+    last_angular_velocity_ = reference_interfaces_[1];
+  }
   update_odometry(period);
 
   // MOVE ROBOT
