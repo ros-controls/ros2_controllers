@@ -40,22 +40,6 @@ namespace vda5050_safety_state_broadcaster
 /**
  * \brief VDA5050 safety state broadcaster for all or some state in a ros2_control system.
  *
- * Vda5050SafetyStateBroadcaster publishes state interfaces from ros2_control as ROS messages.
- * The state interfaces published can be configured via parameters:
- *
- * \param fieldViolation_interfaces that are used to acknowledge field violation events by setting
- * the interface to 1.0.
- * \param eStop_manual_interfaces that are used to manually acknowledge eStop events by setting the
- * interface to 1.0.
- * \param eStop_remote_interfaces that are used to remotely acknowledge eStop events by setting the
- * interface to 1.0.
- * \param eStop_autoack_interfaces that are used to autoacknowledge eStop events by setting the
- * interface to 1.0.
- *
- * Publishes to:
- *
- * - \b vda5050_safety_state (control_msgs::msg::VDA5050SafetyState): safety state of the combined
- * safety interfaces according the priority: eStop_manual > eStop_remote > eStop_autoack.
  *
  */
 class Vda5050SafetyStateBroadcaster : public controller_interface::ControllerInterface
