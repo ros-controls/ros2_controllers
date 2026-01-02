@@ -13,10 +13,10 @@ Interfaces
 
 The broadcaster can read the following state interfaces, configured via parameters:
 
-- ``fieldViolation_interfaces`` (string_array)
-- ``eStop_manual_interfaces`` (string_array)
-- ``eStop_remote_interfaces`` (string_array)
-- ``eStop_autoack_interfaces`` (string_array)
+- ``fieldViolation_interfaces`` (string_array): interface names used for field violation events by setting value to 1.0.
+- ``eStop_manual_interfaces`` (string_array): interface names used for manual eStop events by setting value to 1.0.
+- ``eStop_remote_interfaces`` (string_array): interface names used for remote eStop events by setting value to 1.0.
+- ``eStop_autoack_interfaces`` (string_array): interface names used for autoAck eStop events by setting value to 1.0.
 
 Published Topics
 ^^^^^^^^^^^^^^^^
@@ -24,7 +24,7 @@ Published Topics
 The broadcaster publishes the following topic:
 
 - ``~/vda5050_safety_state`` (``control_msgs/msg/VDA5050SafetyState``)
-  Publishes the **combined safety state** of the system, reflecting the current field violation and E-stop status according to the configured interfaces and their priorities.
+  Publishes the **combined safety state** of the fieldViolation and eStop interfaces, with priority: eStop_manual > eStop_remote > eStop_autoack for eStop.
 
 Message Fields
 ^^^^^^^^^^^^^^
