@@ -14,15 +14,14 @@
 //
 // Authors: Julia Jia
 
-#include "admittance_controller/admittance_rule.hpp"
-
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <memory>
+#include <gtest/gtest.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <memory>
 
+#include "admittance_controller/admittance_rule.hpp"
 #include "kinematics_interface/kinematics_interface.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/utilities.hpp"
@@ -45,12 +44,12 @@ class MockKinematicsInterface : public kinematics_interface::KinematicsInterface
 public:
   MOCK_METHOD(
     bool, initialize,
-    (const std::string &, std::shared_ptr<rclcpp::node_interfaces::NodeParametersInterface>, const std::string &),
+    (const std::string &, std::shared_ptr<rclcpp::node_interfaces::NodeParametersInterface>,
+     const std::string &),
     (override));
   MOCK_METHOD(
     bool, calculate_link_transform,
-    (const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d &),
-    (override));
+    (const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d &), (override));
   MOCK_METHOD(
     bool, convert_cartesian_deltas_to_joint_deltas,
     (const Eigen::VectorXd &, const Vector6d &, const std::string &, Eigen::VectorXd &),
@@ -60,17 +59,13 @@ public:
     (const Eigen::VectorXd &, const Eigen::VectorXd &, const std::string &, Vector6d &),
     (override));
   MOCK_METHOD(
-    bool, calculate_jacobian,
-    (const Eigen::VectorXd &, const std::string &, Jacobian6xN &),
+    bool, calculate_jacobian, (const Eigen::VectorXd &, const std::string &, Jacobian6xN &),
     (override));
   MOCK_METHOD(
-    bool, calculate_jacobian_inverse,
-    (const Eigen::VectorXd &, const std::string &, JacobianNx6 &),
+    bool, calculate_jacobian_inverse, (const Eigen::VectorXd &, const std::string &, JacobianNx6 &),
     (override));
   MOCK_METHOD(
-    bool, calculate_frame_difference,
-    (Vector7d &, Vector7d &, double, Vector6d &),
-    (override));
+    bool, calculate_frame_difference, (Vector7d &, Vector7d &, double, Vector6d &), (override));
 };
 
 // Testable AdmittanceRule exposes protected members for direct testing
@@ -112,11 +107,11 @@ protected:
   {
     // Initialize node with required parameters for admittance controller
     createNodeWithParameters();
-    
+
     // Create admittance rule with mock kinematics
     param_listener_ = std::make_shared<admittance_controller::ParamListener>(node_);
     admittance_rule_ = std::make_unique<TestableAdmittanceRule>(param_listener_);
-    
+
     // Inject mock kinematics interface
     auto mock_kinematics = std::make_unique<MockKinematicsInterface>();
     mock_kinematics_ptr_ = mock_kinematics.get();
@@ -128,7 +123,8 @@ private:
   void createNodeWithParameters()
   {
     std::vector<rclcpp::Parameter> params = {
-      {"joints", std::vector<std::string>{"joint1", "joint2", "joint3", "joint4", "joint5", "joint6"}},
+      {"joints",
+       std::vector<std::string>{"joint1", "joint2", "joint3", "joint4", "joint5", "joint6"}},
       {"command_interfaces", std::vector<std::string>{"position"}},
       {"state_interfaces", std::vector<std::string>{"position", "velocity"}},
       {"chainable_command_interfaces", std::vector<std::string>{"position", "velocity"}},
@@ -148,15 +144,14 @@ private:
       {"fixed_world_frame.frame.id", std::string("base_link")},
       {"gravity_compensation.frame.id", std::string("tool0")},
       {"gravity_compensation.CoG.pos", std::vector<double>{0.0, 0.0, 0.0}},
-      {"gravity_compensation.CoG.force", 0.0}
-    };
-    
+      {"gravity_compensation.CoG.force", 0.0}};
+
     rclcpp::NodeOptions options;
     options.parameter_overrides(params);
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
     node_ = std::make_shared<rclcpp::Node>("test_node", options);
-    
+
     // Ensure all parameters are properly declared
     for (const auto & param : params)
     {
@@ -168,56 +163,63 @@ private:
   }
 
 protected:
-
   // Configure mock kinematics to use identity transformations
   // This isolates mass matrix transformation logic from actual robot kinematics
   void setupMockKinematics()
   {
     // All transforms are identity - no rotation or translation
-    EXPECT_CALL(*mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
-      .WillRepeatedly(::testing::DoAll(
-        ::testing::SetArgReferee<2>(Eigen::Isometry3d::Identity()),
-        ::testing::Return(true)));
-    
+    EXPECT_CALL(
+      *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
+      .WillRepeatedly(
+        ::testing::DoAll(
+          ::testing::SetArgReferee<2>(Eigen::Isometry3d::Identity()), ::testing::Return(true)));
+
     // Use identity Jacobian: cartesian deltas = joint deltas
     // This allows mass matrix effects to propagate directly to joint space
-    EXPECT_CALL(*mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-      .WillRepeatedly(::testing::Invoke(
-        [](const Eigen::VectorXd &, const Vector6d & cartesian_deltas,
-           const std::string &, Eigen::VectorXd & joint_deltas) -> bool {
-          joint_deltas = cartesian_deltas;
-          return true;
-        }));
-    
+    EXPECT_CALL(
+      *mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(
+                               ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+      .WillRepeatedly(
+        ::testing::Invoke(
+          [](
+            const Eigen::VectorXd &, const Vector6d & cartesian_deltas, const std::string &,
+            Eigen::VectorXd & joint_deltas) -> bool
+          {
+            joint_deltas = cartesian_deltas;
+            return true;
+          }));
+
     // Mock inverse kinematics: convert joint space back to Cartesian space
     // Used by admittance rule to update admittance_velocity from joint_vel
-    EXPECT_CALL(*mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-      .WillRepeatedly(::testing::Invoke(
-        [](const Eigen::VectorXd &, const Eigen::VectorXd & joint_deltas,
-           const std::string &, Vector6d & cartesian_deltas) -> bool {
-          cartesian_deltas = joint_deltas;
-          return true;
-        }));
+    EXPECT_CALL(
+      *mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(
+                               ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+      .WillRepeatedly(
+        ::testing::Invoke(
+          [](
+            const Eigen::VectorXd &, const Eigen::VectorXd & joint_deltas, const std::string &,
+            Vector6d & cartesian_deltas) -> bool
+          {
+            cartesian_deltas = joint_deltas;
+            return true;
+          }));
   }
 
   // Create admittance state with specified parameters
   AdmittanceState createAdmittanceState(
-    const Eigen::Matrix3d & rot_base_control,
-    const Vector6d & mass,
-    const Vector6d & stiffness,
-    const Vector6d & damping,
-    const Vector6d & wrench_base)
+    const Eigen::Matrix3d & rot_base_control, const Vector6d & mass, const Vector6d & stiffness,
+    const Vector6d & damping, const Vector6d & wrench_base)
   {
     AdmittanceState state(6);
     state.rot_base_control = rot_base_control;
     state.mass = mass;
-    
+
     // Calculate inverse mass for admittance dynamics
     for (size_t i = 0; i < 6; ++i)
     {
       state.mass_inv[i] = 1.0 / state.mass[i];
     }
-    
+
     state.stiffness = stiffness;
     state.damping = damping;
     state.selected_axes = Vector6d::Ones();  // All axes active
@@ -230,7 +232,7 @@ protected:
     state.wrench_base = wrench_base;
     state.ref_trans_base_ft = Eigen::Isometry3d::Identity();
     state.ft_sensor_frame = "link_6";
-    
+
     return state;
   }
 
@@ -252,14 +254,14 @@ protected:
 
   // Test parameters - organized by domain
   static constexpr double DEFAULT_DT = 0.01;  // Time step for integration
-  
+
   // Translational dynamics
   static constexpr double DEFAULT_MASS = 1.0;
   static constexpr double HIGH_MASS = 100.0;
   static constexpr double DEFAULT_STIFFNESS = 50.0;
   static constexpr double DEFAULT_DAMPING = 10.0;
   static constexpr double DEFAULT_FORCE = 5.0;
-  
+
   // Rotational dynamics (typically smaller values)
   static constexpr double DEFAULT_ROT_VALUE = 0.1;  // Generic rotational parameter
   static constexpr double DEFAULT_ROT_MASS = 0.05;
@@ -279,14 +281,14 @@ TEST_F(MassMatrixTransformationTest, mass_matrix_transformation_consistency)
 {
   // Setup: Control frame rotated so control z-axis aligns with base x-axis
   Eigen::Matrix3d rot_base_control = getControlFrameRotation();
-  
+
   // High mass in control z-direction (which maps to base x-direction)
   Vector6d mass = createTranslationalParameters(DEFAULT_MASS, DEFAULT_MASS, HIGH_MASS);
-  Vector6d stiffness = createTranslationalParameters(
-    DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
-  Vector6d damping = createTranslationalParameters(
-    DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
-  
+  Vector6d stiffness =
+    createTranslationalParameters(DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
+  Vector6d damping =
+    createTranslationalParameters(DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
+
   // Force applied in base x-direction
   Vector6d wrench;
   wrench << DEFAULT_FORCE, 0.0, 0.0, 0.0, 0.0, 0.0;
@@ -308,25 +310,25 @@ TEST_F(MassMatrixTransformationTest, mass_affects_motion_in_rotated_frame)
 {
   // Setup: Control frame rotated so control z-axis aligns with base x-axis
   Eigen::Matrix3d rot_base_control = getControlFrameRotation();
-  
-  Vector6d stiffness = createTranslationalParameters(
-    DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
-  Vector6d damping = createTranslationalParameters(
-    DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
-  
+
+  Vector6d stiffness =
+    createTranslationalParameters(DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
+  Vector6d damping =
+    createTranslationalParameters(DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
+
   // Force applied in base x-direction
   Vector6d wrench;
   wrench << DEFAULT_FORCE, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // Case 1: Low mass in control z-direction
   Vector6d mass_low = createTranslationalParameters(DEFAULT_MASS, DEFAULT_MASS, DEFAULT_MASS);
-  AdmittanceState state_low = createAdmittanceState(
-    rot_base_control, mass_low, stiffness, damping, wrench);
+  AdmittanceState state_low =
+    createAdmittanceState(rot_base_control, mass_low, stiffness, damping, wrench);
 
   // Case 2: High mass in control z-direction
   Vector6d mass_high = createTranslationalParameters(DEFAULT_MASS, DEFAULT_MASS, HIGH_MASS);
-  AdmittanceState state_high = createAdmittanceState(
-    rot_base_control, mass_high, stiffness, damping, wrench);
+  AdmittanceState state_high =
+    createAdmittanceState(rot_base_control, mass_high, stiffness, damping, wrench);
 
   setupMockKinematics();
 
@@ -341,9 +343,8 @@ TEST_F(MassMatrixTransformationTest, mass_affects_motion_in_rotated_frame)
   // Verify physics: higher mass -> less motion
   double motion_low = state_low.joint_pos.norm();
   double motion_high = state_high.joint_pos.norm();
-  
-  EXPECT_GT(motion_low, motion_high)
-    << "Higher mass should result in smaller motion (F=ma)";
+
+  EXPECT_GT(motion_low, motion_high) << "Higher mass should result in smaller motion (F=ma)";
 }
 
 // Test 3: Verify mass matrix transformation from control frame to base frame
@@ -354,12 +355,12 @@ TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_resp
   // Setup: Control frame rotated 90° around Y-axis
   // This means control z-axis is aligned with base x-axis
   Eigen::Matrix3d rot_base_control = getControlFrameRotation();
-  
-  Vector6d stiffness = createTranslationalParameters(
-    DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
-  Vector6d damping = createTranslationalParameters(
-    DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
-  
+
+  Vector6d stiffness =
+    createTranslationalParameters(DEFAULT_STIFFNESS, DEFAULT_STIFFNESS, DEFAULT_STIFFNESS);
+  Vector6d damping =
+    createTranslationalParameters(DEFAULT_DAMPING, DEFAULT_DAMPING, DEFAULT_DAMPING);
+
   // Force applied in base x-direction
   Vector6d wrench;
   wrench << DEFAULT_FORCE, 0.0, 0.0, 0.0, 0.0, 0.0;
@@ -368,28 +369,28 @@ TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_resp
 
   // Case 1: Low mass in control z (which is aligned with base x)
   Vector6d mass_low = createTranslationalParameters(DEFAULT_MASS, DEFAULT_MASS, DEFAULT_MASS);
-  AdmittanceState state_low = createAdmittanceState(
-    rot_base_control, mass_low, stiffness, damping, wrench);
+  AdmittanceState state_low =
+    createAdmittanceState(rot_base_control, mass_low, stiffness, damping, wrench);
   bool success_low = admittance_rule_->calculate_admittance_rule(state_low, DEFAULT_DT);
   EXPECT_TRUE(success_low) << "Low mass case should succeed";
 
   // Case 2: High mass in control z (which is aligned with base x)
   Vector6d mass_high = createTranslationalParameters(DEFAULT_MASS, DEFAULT_MASS, HIGH_MASS);
-  AdmittanceState state_high = createAdmittanceState(
-    rot_base_control, mass_high, stiffness, damping, wrench);
+  AdmittanceState state_high =
+    createAdmittanceState(rot_base_control, mass_high, stiffness, damping, wrench);
   bool success_high = admittance_rule_->calculate_admittance_rule(state_high, DEFAULT_DT);
   EXPECT_TRUE(success_high) << "High mass case should succeed";
 
   // Verify the transformation is working correctly
   double motion_low = state_low.joint_pos.norm();
   double motion_high = state_high.joint_pos.norm();
-  
+
   // Key assertion: Mass in control z affects motion when force is in base x
   // This proves the mass matrix is correctly transformed from control to base frame
   EXPECT_GT(motion_low, motion_high)
     << "Mass in control z should affect response to force in base x, "
     << "demonstrating correct mass matrix transformation";
-  
+
   // Sanity checks: both cases should produce non-zero motion
   EXPECT_GT(motion_low, 0.0) << "Low mass should produce measurable motion";
   EXPECT_GT(motion_high, 0.0) << "High mass should still produce some motion";
