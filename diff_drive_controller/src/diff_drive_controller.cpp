@@ -35,6 +35,7 @@ constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace diff_drive_controller
@@ -212,6 +213,14 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
       odometry_updated =
         odometry_.update_from_vel(left_feedback_mean, right_feedback_mean, period.seconds());
     }
+  }
+
+  // check if odom reset was requested by non-RT thread
+  if (reset_odom_.load())
+  {
+    odometry_.resetOdometry();
+    reset_odom_.store(false);
+    odometry_updated = true;  // ensure to signal that the state has changed
   }
 
   if (odometry_updated)
@@ -492,6 +501,12 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
 
+  // Create odom reset service
+  reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
+    DEFAULT_RESET_ODOM_SERVICE, std::bind(
+                                  &DiffDriveController::reset_odometry, this, std::placeholders::_1,
+                                  std::placeholders::_2, std::placeholders::_3));
+
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -554,6 +569,16 @@ controller_interface::CallbackReturn DiffDriveController::on_error(const rclcpp_
     return controller_interface::CallbackReturn::ERROR;
   }
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void DiffDriveController::reset_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
+{
+  // set the reset flag for thread-safe odometry reset
+  reset_odom_.store(true);
+  RCLCPP_INFO(get_node()->get_logger(), "Odometry reset requested");
 }
 
 bool DiffDriveController::reset()

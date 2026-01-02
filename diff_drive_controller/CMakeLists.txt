@@ -17,6 +17,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   rcpputils
   realtime_tools
+  std_srvs
   tf2
   tf2_msgs
 )
@@ -60,7 +61,8 @@ target_link_libraries(diff_drive_controller
     tf2::tf2
     ${tf2_msgs_TARGETS}
     ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS})
+    ${nav_msgs_TARGETS}
+    ${std_srvs_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)
