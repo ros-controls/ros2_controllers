@@ -172,6 +172,7 @@ void Odometry::resetOdometry()
   x_ = 0.0;
   y_ = 0.0;
   heading_ = 0.0;
+  resetAccumulators();
 }
 
 void Odometry::setWheelParams(

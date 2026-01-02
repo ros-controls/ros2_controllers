@@ -45,6 +45,7 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
+  using DiffDriveController::odometry_;
 
   /**
    * @brief wait_for_twist block until a new twist is received.
@@ -1158,6 +1159,77 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   EXPECT_EQ(linear, right_wheel_vel_cmd_->get_optional().value());
 
   // Deactivate and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, odometry_reset_service)
+{
+  // 0. Initialize and activate the controller
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  assignResourcesPosFeedback();
+
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
+
+  // 1. Move the robot first
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+  controller_->update(test_time, period);
+  test_time += period;
+
+  // verify initial movement
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Stop and trigger reset
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  // call the reset service directly
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto response = std::make_shared<std_srvs::srv::Empty::Response>();
+  controller_->reset_odometry(nullptr, request, response);
+
+  // run update to process the reset and verify odometry values are zeroed
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_EQ(controller_->odometry_.getX(), 0.0);
+  EXPECT_EQ(controller_->odometry_.getY(), 0.0);
+  EXPECT_EQ(controller_->odometry_.getHeading(), 0.0);
+
+  // 3. Move again to ensure it still works after reset
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  // simulate the movement by updating the position feedback
+  position_values_[0] += 0.1;  // left wheel moved
+  position_values_[1] += 0.1;  // right wheel moved
+
+  controller_->update(test_time, period);
+  test_time += period;
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 4. Deactivate and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
