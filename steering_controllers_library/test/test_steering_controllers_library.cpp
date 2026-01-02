@@ -388,7 +388,7 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
 TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
 {
-  // 1. Setup Options
+  // Setup Options
   auto node_options = controller_->define_custom_node_options();
   node_options.append_parameter_override("open_loop", true);
   node_options.append_parameter_override(
@@ -397,22 +397,17 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
     "steering_joints_names", std::vector<std::string>{"steer_left", "steer_right"});
   SetUpController("test_steering_controllers_library", node_options);
 
-  // 2. Lifecycle
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   controller_->set_chained_mode(false);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  // 3. The Publicist Hack (Unlock Input AND Output)
   struct Publicist : public TestableSteeringControllersLibrary
   {
-    // Unlock input buffer
     using steering_controllers_library::SteeringControllersLibrary::input_ref_;
-    // Unlock the wheels (Output)
     using controller_interface::ControllerInterfaceBase::command_interfaces_;
   };
   auto * pub_controller = static_cast<Publicist *>(controller_.get());
 
-  // 4. Send Valid Command (1.5 m/s)
   auto command_msg = ControllerReferenceMsg();
   command_msg.header.stamp = controller_->get_node()->now();
   command_msg.twist.linear.x = 1.5;
@@ -420,20 +415,15 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
 
   pub_controller->input_ref_.set(command_msg);
 
-  // 5. Force Update
   controller_->update_reference_from_subscribers(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
   controller_->update_and_write_commands(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  // 6. CHECK THE WHEELS
-  // FIX: Use .get_optional().value() (This is how ROS 2 reads values back)
   double wheel_speed_1 = pub_controller->command_interfaces_[0].get_optional().value();
 
-  // It should be moving
   ASSERT_GT(wheel_speed_1, 0.1);
 
-  // 7. Send NaN Command
   auto nan_msg = ControllerReferenceMsg();
   nan_msg.header.stamp = controller_->get_node()->now();
   nan_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
@@ -441,15 +431,44 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
 
   pub_controller->input_ref_.set(nan_msg);
 
-  // 8. Force Update Again
   controller_->update_reference_from_subscribers(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
   controller_->update_and_write_commands(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  // 9. THE PROOF
   // The wheel speed should stay exactly the same
     EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
+}
+
+TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
+{
+  // 1. SETUP WITH OPTIONS
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", true);
+  node_options.append_parameter_override("reference_timeout", 1.0);
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false); // We are testing standalone mode
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 5.0; 
+  msg.twist.angular.z = 0.0;
+  controller_->input_ref_.set(msg); 
+
+
+  controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1));
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 5.0);
+
+  rclcpp::Time future_time = controller_->get_node()->now() + rclcpp::Duration::from_seconds(2.0);
+
+  controller_->update(future_time, rclcpp::Duration::from_seconds(0.1));
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
 }
 
 int main(int argc, char ** argv)
