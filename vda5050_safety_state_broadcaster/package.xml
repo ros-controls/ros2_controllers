@@ -26,7 +26,6 @@
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
 
-  <exec_depend>rosidl_default_runtime</exec_depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
