@@ -80,9 +80,7 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_configure
     RCLCPP_ERROR(get_node()->get_logger(), "Realtime publisher not initialized");
     return controller_interface::CallbackReturn::ERROR;
   }
-  realtime_vda5050_safety_state_publisher_->lock();
-  realtime_vda5050_safety_state_publisher_->msg_.e_stop.reserve(MAX_LENGTH);
-  realtime_vda5050_safety_state_publisher_->unlock();
+  safety_state_msg.e_stop.reserve(MAX_LENGTH);
 
   // Initialize the indices for different interface types.
   itfs_ids_ = {};
@@ -156,10 +154,10 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_activate(
     RCLCPP_ERROR(get_node()->get_logger(), "Realtime publisher not initialized");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  auto & safety_state_msg = realtime_vda5050_safety_state_publisher_->msg_;
 
   safety_state_msg.e_stop = control_msgs::msg::VDA5050SafetyState::NONE;
   safety_state_msg.field_violation = false;
+  realtime_vda5050_safety_state_publisher_->try_publish(safety_state_msg);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -186,14 +184,11 @@ controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
 
   estop_msg = determineEstopState();
 
-  if (
-    realtime_vda5050_safety_state_publisher_ && realtime_vda5050_safety_state_publisher_->trylock())
+  if (realtime_vda5050_safety_state_publisher_)
   {
-    auto & safety_state_msg = realtime_vda5050_safety_state_publisher_->msg_;
-
     safety_state_msg.field_violation = fieldViolation_value;
     safety_state_msg.e_stop = estop_msg;
-    realtime_vda5050_safety_state_publisher_->unlockAndPublish();
+    realtime_vda5050_safety_state_publisher_->try_publish(safety_state_msg);
   }
 
   return controller_interface::return_type::OK;
