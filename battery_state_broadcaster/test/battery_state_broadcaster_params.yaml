@@ -1,5 +1,0 @@
-test_battery_state_broadcaster:
-  ros__parameters:
-    sensor_name: "battery_state"
-    design_capacity: 100.0
-    power_supply_technology: 2
