@@ -152,8 +152,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success)
   ASSERT_EQ(
     vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(fieldViolation2_itf_.set_value(0.0));
-  ASSERT_TRUE(eStopManual1_itf_.set_value(1.0));
+  ASSERT_TRUE(fieldViolation2_itf_->set_value(0.0));
+  ASSERT_TRUE(eStopManual1_itf_->set_value(1.0));
 
   Vda5050SafetyStateMsg vda5050_safety_state_msg;
   subscribe_and_get_messages(vda5050_safety_state_msg);
@@ -171,8 +171,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, publish_nan_voltage)
   ASSERT_EQ(
     vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_TRUE(fieldViolation2_itf_.set_value(std::numeric_limits<double>::quiet_NaN()));
-  ASSERT_TRUE(eStopRemote2_itf_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_TRUE(fieldViolation2_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_TRUE(eStopRemote2_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
 
   Vda5050SafetyStateMsg vda5050_safety_state_msg;
   subscribe_and_get_messages(vda5050_safety_state_msg);

@@ -103,20 +103,27 @@ protected:
     1.0,  // 5 eStopRemote2
     1.0,  // 6 eStopAutoack
   }};
-  hardware_interface::StateInterface fieldViolation1_itf_{
-    "PLC_sensor1", "fieldViolation", &itfs_values_[0]};
-  hardware_interface::StateInterface fieldViolation2_itf_{
-    "PLC_sensor2", "fieldViolation", &itfs_values_[1]};
-  hardware_interface::StateInterface eStopManual1_itf_{
-    "PLC_sensor1", "eStopManual", &itfs_values_[2]};
-  hardware_interface::StateInterface eStopManual2_itf_{
-    "PLC_sensor2", "eStopManual", &itfs_values_[3]};
-  hardware_interface::StateInterface eStopRemote1_itf_{
-    "PLC_sensor1", "eStopRemote", &itfs_values_[4]};
-  hardware_interface::StateInterface eStopRemote2_itf_{
-    "PLC_sensor2", "eStopRemote", &itfs_values_[5]};
-  hardware_interface::StateInterface eStopAutoack_itf_{
-    "PLC_sensor1", "eStopAutoack", &itfs_values_[6]};
+  hardware_interface::StateInterface::SharedPtr fieldViolation1_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor1", "fieldViolation", &itfs_values_[0]);
+  hardware_interface::StateInterface::SharedPtr fieldViolation2_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "fieldViolation", &itfs_values_[1]);
+  hardware_interface::StateInterface::SharedPtr eStopManual1_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor1", "eStopManual", &itfs_values_[2]);
+  hardware_interface::StateInterface::SharedPtr eStopManual2_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "eStopManual", &itfs_values_[3]);
+  hardware_interface::StateInterface::SharedPtr eStopRemote1_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor1", "eStopRemote", &itfs_values_[4]);
+  hardware_interface::StateInterface::SharedPtr eStopRemote2_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "eStopRemote", &itfs_values_[5]);
+  hardware_interface::StateInterface::SharedPtr eStopAutoack_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor1", "eStopAutoack", &itfs_values_[6]);
 
   // Test related parameters
   std::unique_ptr<FriendVDA5050SafetyStateBroadcaster> vda5050_safety_state_broadcaster_;
