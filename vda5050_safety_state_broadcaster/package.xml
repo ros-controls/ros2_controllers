@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>vda5050_safety_state_broadcaster</name>
-  <version>0.1.0</version>
+  <version>6.1.0</version>
   <description>ros2 control VDA5050 safety state broadcaster</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
