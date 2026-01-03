@@ -137,15 +137,6 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_activate(
     RCLCPP_ERROR(get_node()->get_logger(), "No state interfaces found to publish.");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (static_cast<size_t>(itfs_ids_.total_interfaces) != state_interfaces_.size())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Number of configured interfaces (%d) does not match number of provided state interfaces "
-      "(%zu).",
-      itfs_ids_.total_interfaces, state_interfaces_.size());
-    return controller_interface::CallbackReturn::FAILURE;
-  }
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     if (
