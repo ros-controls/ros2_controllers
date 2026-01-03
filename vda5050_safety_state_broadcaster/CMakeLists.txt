@@ -42,8 +42,7 @@ target_link_libraries(vda5050_safety_state_broadcaster PUBLIC
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
-                      ${control_msgs_TARGETS}
-                      ${builtin_interfaces_TARGETS})
+                      ${control_msgs_TARGETS})
 
 
 pluginlib_export_plugin_description_file(controller_interface vda5050_safety_state_broadcaster.xml)
