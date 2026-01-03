@@ -75,11 +75,14 @@ public:
   void SetUpVDA5050SafetyStateBroadcaster(
     const std::string controller_name = "test_vda5050_safety_state_broadcaster")
   {
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = vda5050_safety_state_broadcaster_->define_custom_node_options();
     ASSERT_EQ(
-      vda5050_safety_state_broadcaster_->init(
-        controller_name, "", 0, "",
-        vda5050_safety_state_broadcaster_->define_custom_node_options()),
-      controller_interface::return_type::OK);
+      vda5050_safety_state_broadcaster_->init(params), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
 
