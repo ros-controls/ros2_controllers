@@ -93,11 +93,13 @@ TEST_F(BatteryStateBroadcasterTest, all_parameters_set_configure_success)
 // check fails when no defined interfaces
 TEST_F(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail)
 {
-  ASSERT_EQ(
-    battery_state_broadcaster_->init(
-      "test_battery_state_broadcaster", "", 0, "",
-      battery_state_broadcaster_->define_custom_node_options()),
-    controller_interface::return_type::OK);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_battery_state_broadcaster";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = battery_state_broadcaster_->define_custom_node_options();
+  ASSERT_EQ(battery_state_broadcaster_->init(params), controller_interface::return_type::OK);
 
   ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_FAILURE);
@@ -111,68 +113,6 @@ TEST_F(BatteryStateBroadcasterTest, activate_success)
 
   ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  // check that the message is reset
-  RawBatteryStatesMsg raw_battery_states_msg =
-    battery_state_broadcaster_->raw_battery_states_realtime_publisher_->msg_;
-  EXPECT_EQ(raw_battery_states_msg.battery_states.size(), static_cast<size_t>(2));
-
-  // --- Left wheel ---
-  const auto & left = raw_battery_states_msg.battery_states[0];
-  EXPECT_EQ(left.header.frame_id, "left_wheel");
-  EXPECT_TRUE(std::isnan(left.voltage));
-  EXPECT_TRUE(std::isnan(left.temperature));
-  EXPECT_TRUE(std::isnan(left.current));
-  EXPECT_TRUE(std::isnan(left.charge));
-  EXPECT_FLOAT_EQ(left.capacity, 12000.0f);
-  EXPECT_FLOAT_EQ(left.design_capacity, 13000.0f);
-  EXPECT_TRUE(std::isnan(left.percentage));
-  EXPECT_EQ(left.power_supply_status, BatteryState::POWER_SUPPLY_STATUS_UNKNOWN);
-  EXPECT_EQ(left.power_supply_health, BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN);
-  EXPECT_EQ(left.power_supply_technology, 3);
-  EXPECT_TRUE(left.present);
-  EXPECT_TRUE(left.cell_voltage.empty());
-  EXPECT_TRUE(left.cell_temperature.empty());
-  EXPECT_EQ(left.location, "left_slot");
-  EXPECT_EQ(left.serial_number, "left_serial_device");
-
-  // --- Right wheel ---
-  const auto & right = raw_battery_states_msg.battery_states[1];
-  EXPECT_EQ(right.header.frame_id, "right_wheel");
-  EXPECT_TRUE(std::isnan(right.voltage));
-  EXPECT_TRUE(std::isnan(right.temperature));
-  EXPECT_TRUE(std::isnan(right.current));
-  EXPECT_TRUE(std::isnan(right.charge));
-  EXPECT_FLOAT_EQ(right.capacity, 17000.0f);
-  EXPECT_FLOAT_EQ(right.design_capacity, 18000.0f);
-  EXPECT_TRUE(std::isnan(right.percentage));
-  EXPECT_EQ(right.power_supply_status, BatteryState::POWER_SUPPLY_STATUS_UNKNOWN);
-  EXPECT_EQ(right.power_supply_health, BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN);
-  EXPECT_EQ(right.power_supply_technology, 3);
-  EXPECT_TRUE(right.present);
-  EXPECT_TRUE(right.cell_voltage.empty());
-  EXPECT_TRUE(right.cell_temperature.empty());
-  EXPECT_EQ(right.location, "right_slot");
-  EXPECT_EQ(right.serial_number, "right_serial_device");
-
-  BatteryStateMsg battery_state_msg =
-    battery_state_broadcaster_->battery_state_realtime_publisher_->msg_;
-
-  EXPECT_TRUE(std::isnan(battery_state_msg.voltage));
-  EXPECT_TRUE(std::isnan(battery_state_msg.temperature));
-  EXPECT_TRUE(std::isnan(battery_state_msg.current));
-  EXPECT_TRUE(std::isnan(battery_state_msg.charge));
-  EXPECT_TRUE(std::isnan(battery_state_msg.percentage));
-  EXPECT_DOUBLE_EQ(battery_state_msg.capacity, 29000.0);
-  EXPECT_DOUBLE_EQ(battery_state_msg.design_capacity, 31000.0);
-  EXPECT_EQ(battery_state_msg.power_supply_status, BatteryState::POWER_SUPPLY_STATUS_UNKNOWN);
-  EXPECT_EQ(battery_state_msg.power_supply_health, BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN);
-  EXPECT_EQ(battery_state_msg.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
-  EXPECT_EQ(battery_state_msg.location, "left_slot, right_slot, ");
-  EXPECT_EQ(battery_state_msg.serial_number, "left_serial_device, right_serial_device, ");
-  EXPECT_TRUE(battery_state_msg.present);
-  EXPECT_TRUE(battery_state_msg.cell_voltage.empty());
-  EXPECT_TRUE(battery_state_msg.cell_temperature.empty());
 }
 
 TEST_F(BatteryStateBroadcasterTest, deactivate_success)

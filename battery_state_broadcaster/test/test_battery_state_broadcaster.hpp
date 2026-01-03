@@ -81,10 +81,13 @@ public:
   void SetUpBatteryStateBroadcaster(
     const std::string controller_name = "test_battery_state_broadcaster")
   {
-    ASSERT_EQ(
-      battery_state_broadcaster_->init(
-        controller_name, "", 0, "", battery_state_broadcaster_->define_custom_node_options()),
-      controller_interface::return_type::OK);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = battery_state_broadcaster_->define_custom_node_options();
+    ASSERT_EQ(battery_state_broadcaster_->init(params), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
 
