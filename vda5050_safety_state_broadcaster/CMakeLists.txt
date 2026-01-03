@@ -13,7 +13,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   pluginlib
   rclcpp_lifecycle
   realtime_tools
-  urdf
 )
 
 find_package(ament_cmake REQUIRED)
