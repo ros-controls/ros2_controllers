@@ -38,7 +38,7 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, all_parameters_set_configure_success)
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = vda5050_safety_state_broadcaster_->state_interface_configuration();
   ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
-  ASSERT_EQ(state_if_conf.names.size(), itfs_values_.size());
+  ASSERT_EQ(state_if_conf.names.size(), itf_size_);
 }
 
 // Test fails when no defined interfaces
@@ -95,14 +95,17 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, check_exported_interfaces)
   ASSERT_EQ(command_interfaces.names.size(), static_cast<size_t>(0));
 
   auto state_interfaces = vda5050_safety_state_broadcaster_->state_interface_configuration();
-  ASSERT_EQ(state_interfaces.names.size(), itfs_values_.size());
+  ASSERT_EQ(state_interfaces.names.size(), itf_size_);
   EXPECT_EQ(state_interfaces.names[0], "PLC_sensor1/fieldViolation");
   EXPECT_EQ(state_interfaces.names[1], "PLC_sensor2/fieldViolation");
-  EXPECT_EQ(state_interfaces.names[2], "PLC_sensor1/eStopManual");
-  EXPECT_EQ(state_interfaces.names[3], "PLC_sensor2/eStopManual");
-  EXPECT_EQ(state_interfaces.names[4], "PLC_sensor1/eStopRemote");
-  EXPECT_EQ(state_interfaces.names[5], "PLC_sensor2/eStopRemote");
-  EXPECT_EQ(state_interfaces.names[6], "PLC_sensor1/eStopAutoack");
+  EXPECT_EQ(state_interfaces.names[2], "PLC_sensor3/fieldViolation");
+  EXPECT_EQ(state_interfaces.names[3], "PLC_sensor1/eStopManual");
+  EXPECT_EQ(state_interfaces.names[4], "PLC_sensor2/eStopManual");
+  EXPECT_EQ(state_interfaces.names[5], "PLC_sensor3/eStopManual");
+  EXPECT_EQ(state_interfaces.names[6], "PLC_sensor1/eStopRemote");
+  EXPECT_EQ(state_interfaces.names[7], "PLC_sensor2/eStopRemote");
+  EXPECT_EQ(state_interfaces.names[8], "PLC_sensor1/eStopAutoack");
+  EXPECT_EQ(state_interfaces.names[9], "PLC_sensor2/eStopAutoack");
 }
 
 TEST_F(VDA5050SafetyStateBroadcasterTest, update_success)
@@ -159,6 +162,27 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success)
   subscribe_and_get_messages(vda5050_safety_state_msg);
 
   EXPECT_FALSE(vda5050_safety_state_msg.field_violation);
+  EXPECT_EQ(vda5050_safety_state_msg.e_stop, control_msgs::msg::VDA5050SafetyState::MANUAL);
+}
+
+// Test update logic for field violation and e-stop for bool interfaces
+TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success)
+{
+  SetUpVDA5050SafetyStateBroadcaster();
+
+  ASSERT_EQ(
+    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_TRUE(fieldViolation2_itf_->set_value(0.0));
+  ASSERT_TRUE(fieldViolation3_itf_->set_value(true));
+  ASSERT_TRUE(eStopManual3_itf_->set_value(true));
+
+  Vda5050SafetyStateMsg vda5050_safety_state_msg;
+  subscribe_and_get_messages(vda5050_safety_state_msg);
+
+  EXPECT_TRUE(vda5050_safety_state_msg.field_violation);
   EXPECT_EQ(vda5050_safety_state_msg.e_stop, control_msgs::msg::VDA5050SafetyState::MANUAL);
 }
 

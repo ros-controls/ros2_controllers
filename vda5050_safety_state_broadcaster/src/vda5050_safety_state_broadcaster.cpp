@@ -29,8 +29,6 @@
 
 namespace vda5050_safety_state_broadcaster
 {
-const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
-const size_t MAX_LENGTH = 64;  // maximum length of strings to reserve
 
 Vda5050SafetyStateBroadcaster::Vda5050SafetyStateBroadcaster()
 : controller_interface::ControllerInterface()
@@ -148,6 +146,22 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_activate(
       itfs_ids_.total_interfaces, state_interfaces_.size());
     return controller_interface::CallbackReturn::FAILURE;
   }
+  for (auto i = 0u; i < state_interfaces_.size(); ++i)
+  {
+    if (
+      state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE &&
+      state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::BOOL)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "State interface '%s' (%s) is neither of type double nor bool. The "
+        "Vda5050SafetyStateBroadcaster only "
+        "supports state interfaces that support double or bool datatype.",
+        state_interfaces_[i].get_name().c_str(),
+        state_interfaces_[i].get_data_type().to_string().c_str());
+      return CallbackReturn::FAILURE;
+    }
+  }
 
   if (!realtime_vda5050_safety_state_publisher_)
   {
@@ -174,8 +188,7 @@ controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
   fieldViolation_value = false;
   for (int itf_idx = 0; itf_idx < itfs_ids_.manual_start; ++itf_idx)
   {
-    if (safe_double_to_bool(
-          state_interfaces_[itf_idx].get_optional().value_or(kUninitializedValue)))
+    if (get_bool_itf_value(state_interfaces_[itf_idx]))
     {
       fieldViolation_value = true;
       break;
@@ -200,8 +213,7 @@ Vda5050SafetyStateBroadcaster::determineEstopState()
   // Scan all e-stop interfaces and return the type of the first active one
   for (int itf_idx = itfs_ids_.manual_start; itf_idx < itfs_ids_.total_interfaces; ++itf_idx)
   {
-    if (safe_double_to_bool(
-          state_interfaces_[itf_idx].get_optional().value_or(kUninitializedValue)))
+    if (get_bool_itf_value(state_interfaces_[itf_idx]))
     {
       RCLCPP_DEBUG(
         get_node()->get_logger(), "E-stop triggered by interface %s",

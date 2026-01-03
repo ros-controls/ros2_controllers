@@ -20,6 +20,7 @@
 #ifndef VDA5050_SAFETY_STATE_BROADCASTER__VDA5050_SAFETY_STATE_BROADCASTER_HPP_
 #define VDA5050_SAFETY_STATE_BROADCASTER__VDA5050_SAFETY_STATE_BROADCASTER_HPP_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -36,6 +37,8 @@
 
 namespace vda5050_safety_state_broadcaster
 {
+const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
+const size_t MAX_LENGTH = 64;  // maximum length of strings to reserve
 
 /**
  * \brief VDA5050 safety state broadcaster for all or some state in a ros2_control system.
@@ -94,6 +97,18 @@ private:
   InterfaceIds itfs_ids_;
   bool fieldViolation_value = false;
   std::string estop_msg = control_msgs::msg::VDA5050SafetyState::NONE;
+
+  bool get_bool_itf_value(const hardware_interface::LoanedStateInterface & state_itf)
+  {
+    auto data_type = state_itf.get_data_type();
+
+    if (data_type == hardware_interface::HandleDataType::BOOL)
+    {
+      return state_itf.get_optional<bool>().value_or(false);
+    }
+
+    return safe_double_to_bool(state_itf.get_optional<double>().value_or(kUninitializedValue));
+  }
 
   /**
    * @brief Safely converts a double value to bool, treating NaN as false.

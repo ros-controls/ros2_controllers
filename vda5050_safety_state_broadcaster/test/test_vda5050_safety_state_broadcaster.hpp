@@ -55,6 +55,7 @@ class FriendVDA5050SafetyStateBroadcaster
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_success);
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_status_success);
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success);
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_nan_voltage);
 };
 
@@ -84,16 +85,20 @@ public:
 
     state_ifs.emplace_back(fieldViolation1_itf_);
     state_ifs.emplace_back(fieldViolation2_itf_);
+    state_ifs.emplace_back(fieldViolation3_itf_);
     state_ifs.emplace_back(eStopManual1_itf_);
     state_ifs.emplace_back(eStopManual2_itf_);
+    state_ifs.emplace_back(eStopManual3_itf_);
     state_ifs.emplace_back(eStopRemote1_itf_);
     state_ifs.emplace_back(eStopRemote2_itf_);
     state_ifs.emplace_back(eStopAutoack_itf_);
+    state_ifs.emplace_back(eStopAutoack2_itf_);
 
     vda5050_safety_state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
   }
 
 protected:
+  const size_t itf_size_ = 10;
   std::array<double, 7> itfs_values_ = {{
     0.0,  // 0 fieldViolation1
     1.0,  // 1 fieldViolation2
@@ -109,12 +114,18 @@ protected:
   hardware_interface::StateInterface::SharedPtr fieldViolation2_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
       "PLC_sensor2", "fieldViolation", &itfs_values_[1]);
+  hardware_interface::StateInterface::SharedPtr fieldViolation3_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "fieldViolation", "bool", "false");
   hardware_interface::StateInterface::SharedPtr eStopManual1_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
       "PLC_sensor1", "eStopManual", &itfs_values_[2]);
   hardware_interface::StateInterface::SharedPtr eStopManual2_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
       "PLC_sensor2", "eStopManual", &itfs_values_[3]);
+  hardware_interface::StateInterface::SharedPtr eStopManual3_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor3", "eStopManual", "bool", "false");
   hardware_interface::StateInterface::SharedPtr eStopRemote1_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
       "PLC_sensor1", "eStopRemote", &itfs_values_[4]);
@@ -124,6 +135,9 @@ protected:
   hardware_interface::StateInterface::SharedPtr eStopAutoack_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
       "PLC_sensor1", "eStopAutoack", &itfs_values_[6]);
+  hardware_interface::StateInterface::SharedPtr eStopAutoack2_itf_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "eStopAutoack", "bool", "false");
 
   // Test related parameters
   std::unique_ptr<FriendVDA5050SafetyStateBroadcaster> vda5050_safety_state_broadcaster_;

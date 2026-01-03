@@ -3,11 +3,14 @@ test_vda5050_safety_state_broadcaster:
     fieldViolation_interfaces:
       - PLC_sensor1/fieldViolation
       - PLC_sensor2/fieldViolation
+      - PLC_sensor3/fieldViolation
     eStop_manual_interfaces:
       - PLC_sensor1/eStopManual
       - PLC_sensor2/eStopManual
+      - PLC_sensor3/eStopManual
     eStop_remote_interfaces:
       - PLC_sensor1/eStopRemote
       - PLC_sensor2/eStopRemote
     eStop_autoack_interfaces:
       - PLC_sensor1/eStopAutoack
+      - PLC_sensor2/eStopAutoack
