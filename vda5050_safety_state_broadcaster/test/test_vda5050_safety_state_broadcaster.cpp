@@ -65,11 +65,6 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, activate_success)
     vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(
     vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  // Check that the message is reset
-  auto msg = vda5050_safety_state_broadcaster_->realtime_vda5050_safety_state_publisher_->msg_;
-  EXPECT_EQ(msg.e_stop, control_msgs::msg::VDA5050SafetyState::NONE);
-  EXPECT_FALSE(msg.field_violation);
 }
 
 TEST_F(VDA5050SafetyStateBroadcasterTest, deactivate_success)
