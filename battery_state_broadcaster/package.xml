@@ -3,7 +3,7 @@
 <package format="3">
   <name>battery_state_broadcaster</name>
   <version>0.1.0</version>
-  <description>ros2 control battery state broadcaster controller</description>
+  <description>ros2_control battery state broadcaster controller</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="denis.stogl@b-robotized.com">Denis Štogl</maintainer>
