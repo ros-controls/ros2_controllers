@@ -6,7 +6,6 @@ set_compiler_options()
 export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-  builtin_interfaces
   control_msgs
   controller_interface
   generate_parameter_library
