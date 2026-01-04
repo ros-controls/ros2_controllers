@@ -215,7 +215,7 @@ protected:
     state.mass = mass;
 
     // Calculate inverse mass for admittance dynamics
-    for (size_t i = 0; i < 6; ++i)
+    for (Eigen::Index i = 0; i < 6; ++i)
     {
       state.mass_inv[i] = 1.0 / state.mass[i];
     }
