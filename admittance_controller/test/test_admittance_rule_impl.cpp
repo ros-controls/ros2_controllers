@@ -277,6 +277,8 @@ protected:
 
 // Test 1: Verify that calculate_admittance_rule succeeds with rotated control frame
 // and produces motion when force is applied
+// cppcheck-suppress syntaxError
+// To suppress the warning reported by cppcheck for complex macro expansion
 TEST_F(MassMatrixTransformationTest, mass_matrix_transformation_consistency)
 {
   // Setup: Control frame rotated so control z-axis aligns with base x-axis
