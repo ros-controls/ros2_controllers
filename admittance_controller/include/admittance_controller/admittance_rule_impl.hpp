@@ -228,25 +228,19 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   Eigen::Matrix<double, 6, 6> rot_base_control_6d = Eigen::Matrix<double, 6, 6>::Zero();
   rot_base_control_6d.topLeftCorner<3, 3>() = rot_base_control;
   rot_base_control_6d.bottomRightCorner<3, 3>() = rot_base_control;
-  // Build stiffness matrix in control frame and transform to base frame
-  Eigen::Matrix<double, 6, 6> K_control = Eigen::Matrix<double, 6, 6>::Zero();
-  K_control.block<3, 3>(0, 0).diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
-  K_control.block<3, 3>(3, 3).diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
-  Eigen::Matrix<double, 6, 6> K = rot_base_control_6d * K_control * rot_base_control_6d.transpose();
+  Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
+  K.block<3, 3>(0, 0).diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
+  K.block<3, 3>(3, 3).diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
 
-  // Build damping matrix in control frame and transform to base frame
-  Eigen::Matrix<double, 6, 6> D_control = Eigen::Matrix<double, 6, 6>::Zero();
-  D_control.block<3, 3>(0, 0).diagonal() = admittance_state.damping.block<3, 1>(0, 0);
-  D_control.block<3, 3>(3, 3).diagonal() = admittance_state.damping.block<3, 1>(3, 0);
-  Eigen::Matrix<double, 6, 6> D = rot_base_control_6d * D_control * rot_base_control_6d.transpose();
+  // The same for damping
+  Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();
+  D.block<3, 3>(0, 0).diagonal() = admittance_state.damping.block<3, 1>(0, 0);
+  D.block<3, 3>(3, 3).diagonal() = admittance_state.damping.block<3, 1>(3, 0);
 
-  // The same for mass - build in control frame and transform to base frame
-  Eigen::Matrix<double, 6, 6> M_inv_control = Eigen::Matrix<double, 6, 6>::Zero();
-  M_inv_control.block<3, 3>(0, 0).diagonal() = admittance_state.mass_inv.block<3, 1>(0, 0);
-  M_inv_control.block<3, 3>(3, 3).diagonal() = admittance_state.mass_inv.block<3, 1>(3, 0);
-  // Transform mass matrix from control frame to base frame
-  Eigen::Matrix<double, 6, 6> M_inv =
-    rot_base_control_6d * M_inv_control * rot_base_control_6d.transpose();
+  // The same for mass
+  Eigen::Matrix<double, 6, 6> M_inv = Eigen::Matrix<double, 6, 6>::Zero();
+  M_inv.block<3, 3>(0, 0).diagonal() = admittance_state.mass_inv.block<3, 1>(0, 0);
+  M_inv.block<3, 3>(3, 3).diagonal() = admittance_state.mass_inv.block<3, 1>(3, 0);
 
   // calculate admittance relative offset in base frame
   Eigen::Isometry3d desired_trans_base_ft;
@@ -272,12 +266,11 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
 
   // Compute admittance control law in the base frame:
-  // All matrices (M_inv, D, K) are transformed from control frame to base frame
-  // F_base = M_base * x_ddot + D_base * x_dot + K_base * x
-  // Solving for acceleration: x_ddot = M_inv_base * (F_base - D_base * x_dot - K_base * x)
-  // Transform force from control frame to base frame for consistency
-  Eigen::Matrix<double, 6, 1> F_base_from_control = rot_base_control_6d * F_control;
-  Eigen::Matrix<double, 6, 1> X_ddot = M_inv * (F_base_from_control - D * X_dot - K * X);
+  // F_control = M*R^T*x_ddot + D*R^T*x_dot + K*R^T*x,
+  // with R being the rotation matrix from base to control frame
+  Eigen::Matrix<double, 6, 1> X_ddot = rot_base_control_6d * M_inv *
+                                       (F_control - D * rot_base_control_6d.transpose() * X_dot -
+                                        K * rot_base_control_6d.transpose() * X);
   bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(
     admittance_state.current_joint_pos, X_ddot, admittance_state.ft_sensor_frame,
     admittance_state.joint_acc);
