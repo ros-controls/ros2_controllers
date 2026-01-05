@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.2.0 (2025-12-31)
+------------------
+* Fix BSD license (`#2054 <https://github.com/ros-controls/ros2_controllers/issues/2054>`_)
+* Use get_lifecycle_id instead of get_lifecycle_state (`#2053 <https://github.com/ros-controls/ros2_controllers/issues/2053>`_)
+* Fill point_before_trajectory with same information as trajectory (`#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
 6.1.0 (2025-12-01)
 ------------------
 * Refactor interpolation_method class (`#2019 <https://github.com/ros-controls/ros2_controllers/issues/2019>`_)

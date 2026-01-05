@@ -66,6 +66,7 @@ In the sense of ros2_control, broadcasters are still controllers using the same 
    Range Sensor Broadcaster <../range_sensor_broadcaster/doc/userdoc.rst>
    Pose Broadcaster <../pose_broadcaster/doc/userdoc.rst>
    GPS Sensor Broadcaster <../gps_sensor_broadcaster/doc/userdoc.rst>
+   State Interfaces Broadcaster <../state_interfaces_broadcaster/doc/userdoc.rst>
 
 Filters
 **********************

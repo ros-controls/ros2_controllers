@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "controller_interface/helpers.hpp"
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -131,6 +132,17 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   reset_controller_reference_msg(current_ref_, get_node());
   input_ref_.set(current_ref_);
 
+  // deprecation warning if tf_frame_prefix_enable set to non-default value
+  const bool default_tf_frame_prefix_enable = true;
+  if (params_.tf_frame_prefix_enable != default_tf_frame_prefix_enable)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter 'tf_frame_prefix_enable' is DEPRECATED and set to a non-default value (%s). "
+      "Please migrate to 'tf_frame_prefix'.",
+      params_.tf_frame_prefix_enable ? "true" : "false");
+  }
+
   try
   {
     // Odom state publisher
@@ -146,24 +158,34 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Append the tf prefix if there is one
+  // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
-    tf_prefix = params_.tf_frame_prefix != "" ? params_.tf_frame_prefix
-                                              : std::string(get_node()->get_namespace());
-
-    // Make sure prefix does not start with '/' and always ends with '/'
-    if (tf_prefix.back() != '/')
+    if (params_.tf_frame_prefix != "")
     {
-      tf_prefix = tf_prefix + "/";
+      tf_prefix = controller_interface::resolve_tf_prefix(
+        params_.tf_frame_prefix, get_node()->get_namespace());
     }
-    if (tf_prefix.front() == '/')
+    else
     {
-      tf_prefix.erase(0, 1);
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Please use tilde ('~') character in 'tf_frame_prefix' as it replaced with node namespace");
+
+      tf_prefix = std::string(get_node()->get_namespace());
+      if (tf_prefix.back() != '/')
+      {
+        tf_prefix = tf_prefix + "/";
+      }
+      if (tf_prefix.front() == '/')
+      {
+        tf_prefix.erase(0, 1);
+      }
     }
   }
 
+  // prepend resolved TF prefix to frame ids
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
   const auto base_frame_id = tf_prefix + params_.base_frame_id;
 

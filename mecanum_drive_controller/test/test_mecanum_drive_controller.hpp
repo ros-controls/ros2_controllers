@@ -84,12 +84,11 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
 
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_false_covariance_test);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
 
 public:
   controller_interface::CallbackReturn on_configure(

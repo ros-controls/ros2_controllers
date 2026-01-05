@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -275,9 +276,18 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
+  // Note: resolve_tf_prefix handles empty tf_frame_prefix by returning an empty string
+  const std::string tf_prefix =
+    controller_interface::resolve_tf_prefix(params_.tf_frame_prefix, get_node()->get_namespace());
+
+  // prepend resolved TF prefix to frame ids
+  const std::string odom_frame_id = tf_prefix + params_.odom_frame_id;
+  const std::string base_frame_id = tf_prefix + params_.base_frame_id;
+
   odom_state_msg_.header.stamp = get_node()->now();
-  odom_state_msg_.header.frame_id = params_.odom_frame_id;
-  odom_state_msg_.child_frame_id = params_.base_frame_id;
+  odom_state_msg_.header.frame_id = odom_frame_id;
+  odom_state_msg_.child_frame_id = base_frame_id;
   odom_state_msg_.pose.pose.position.z = 0;
 
   auto & covariance = odom_state_msg_.twist.covariance;
@@ -507,8 +517,12 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
 controller_interface::return_type SteeringControllersLibrary::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  update_odometry(period);
   auto logger = get_node()->get_logger();
+
+  // store current ref (for open loop odometry) and update odometry
+  last_linear_velocity_ = reference_interfaces_[0];
+  last_angular_velocity_ = reference_interfaces_[1];
+  update_odometry(period);
 
   // MOVE ROBOT
 

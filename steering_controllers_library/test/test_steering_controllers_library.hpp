@@ -70,6 +70,10 @@ class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
 {
   FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
+  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
 
@@ -151,14 +155,16 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_library")
+  void SetUpController(
+    const std::string controller_name = "test_steering_controllers_library",
+    const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
   {
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
     params.robot_description = "";
     params.update_rate = 0;
-    params.node_namespace = "";
-    params.node_options = controller_->define_custom_node_options();
+    params.node_namespace = ns;
+    params.node_options = node_options;
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
