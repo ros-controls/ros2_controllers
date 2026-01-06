@@ -132,14 +132,6 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
   auto logger = get_node()->get_logger();
   try
   {
-    for (std::size_t i = 0; i < 6; ++i)
-    {
-      params_.pose_covariance_diagonal[i] = 0.01;
-    }
-    for (std::size_t i = 0; i < 6; ++i)
-    {
-      params_.twist_covariance_diagonal[i] = 0.01;
-    }
     if (params_.front_left_wheel_joint.empty())
     {
       RCLCPP_ERROR(logger, "front_left_wheel_joint_name is not set");
