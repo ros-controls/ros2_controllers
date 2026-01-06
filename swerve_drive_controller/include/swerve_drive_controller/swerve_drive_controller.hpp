@@ -126,7 +126,8 @@ private:
   std::optional<T> get_interface_object(
     std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
     const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
-    const std::string & name, const std::string & interface_suffix, const std::string & hw_if_type)
+    const std::string & name, const std::string & /*interface_suffix*/,
+    const std::string & hw_if_type)
   {
     auto logger = rclcpp::get_logger("SwerveController");
 
@@ -136,36 +137,34 @@ private:
       return std::nullopt;
     }
 
-    const std::string expected_interface_name = name + interface_suffix;
-
+    // Use get_prefix_name() to match joint name and get_interface_name() to match interface type
+    // This matches the pattern used in diff_drive_controller
     auto command_handle = std::find_if(
       command_interfaces.begin(), command_interfaces.end(),
-      [&expected_interface_name, &hw_if_type](const auto & interface)
+      [&name, &hw_if_type](const auto & interface)
       {
-        return interface.get_name() == expected_interface_name &&
-               interface.get_interface_name() == hw_if_type;
+        return interface.get_prefix_name() == name && interface.get_interface_name() == hw_if_type;
       });
 
     if (command_handle == command_interfaces.end())
     {
       RCLCPP_ERROR(
-        logger, "Unable to find command interface for: %s (expected: %s, type: %s)", name.c_str(),
-        expected_interface_name.c_str(), hw_if_type.c_str());
+        logger, "Unable to find command interface for: %s (expected: %s/%s, type: %s)",
+        name.c_str(), name.c_str(), hw_if_type.c_str(), hw_if_type.c_str());
       return std::nullopt;
     }
     auto state_handle = std::find_if(
       state_interfaces.begin(), state_interfaces.end(),
-      [&expected_interface_name, &hw_if_type](const auto & interface)
+      [&name, &hw_if_type](const auto & interface)
       {
-        return interface.get_name() == expected_interface_name &&
-               interface.get_interface_name() == hw_if_type;
+        return interface.get_prefix_name() == name && interface.get_interface_name() == hw_if_type;
       });
 
     if (state_handle == state_interfaces.end())
     {
       RCLCPP_ERROR(
-        logger, "Unable to find state interface for: %s (expected: %s, type: %s)", name.c_str(),
-        expected_interface_name.c_str(), hw_if_type.c_str());
+        logger, "Unable to find state interface for: %s (expected: %s/%s, type: %s)", name.c_str(),
+        name.c_str(), hw_if_type.c_str(), hw_if_type.c_str());
       return std::nullopt;
     }
     return T(std::ref(*command_handle), std::ref(*state_handle), name);
@@ -221,6 +220,9 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
     realtime_odometry_publisher_ = nullptr;
+
+  nav_msgs::msg::Odometry odometry_message_;
+
   std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>> odometry_transform_publisher_ =
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>

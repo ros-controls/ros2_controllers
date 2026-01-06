@@ -247,19 +247,19 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
 
     const auto odom_frame_id = tf_prefix + params_.odom;
     const auto base_frame_id = tf_prefix + params_.base_footprint;
-    auto & odometry_message = realtime_odometry_publisher_->msg_;
-    odometry_message.header.frame_id = odom_frame_id;
-    odometry_message.child_frame_id = base_frame_id;
+    // odometry_message_ = realtime_odometry_publisher_->msg_;
+    odometry_message_.header.frame_id = odom_frame_id;
+    odometry_message_.child_frame_id = base_frame_id;
 
-    odometry_message.twist =
+    odometry_message_.twist =
       geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
 
     constexpr std::size_t NUM_DIMENSIONS = 6;
     for (std::size_t index = 0; index < 6; ++index)
     {
       const std::size_t diagonal_index = NUM_DIMENSIONS * index + index;
-      odometry_message.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-      odometry_message.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+      odometry_message_.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
+      odometry_message_.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
     }
     odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
       DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
@@ -500,18 +500,17 @@ controller_interface::return_type SwerveController::update_and_write_commands(
 
   if (realtime_odometry_publisher_)
   {
-    auto & odometry_message = realtime_odometry_publisher_->msg_;
-    odometry_message.header.stamp = time;
-    odometry_message.pose.pose.position.x = odometry_.x;
-    odometry_message.pose.pose.position.y = odometry_.y;
-    odometry_message.pose.pose.orientation.x = orientation.x();
-    odometry_message.pose.pose.orientation.y = orientation.y();
-    odometry_message.pose.pose.orientation.z = orientation.z();
-    odometry_message.pose.pose.orientation.w = orientation.w();
-    odometry_message.twist.twist.linear.x = odometry_.vx;
-    odometry_message.twist.twist.linear.y = odometry_.vy;
-    odometry_message.twist.twist.angular.z = odometry_.wz;
-    realtime_odometry_publisher_->try_publish(odometry_message);
+    odometry_message_.header.stamp = time;
+    odometry_message_.pose.pose.position.x = odometry_.x;
+    odometry_message_.pose.pose.position.y = odometry_.y;
+    odometry_message_.pose.pose.orientation.x = orientation.x();
+    odometry_message_.pose.pose.orientation.y = orientation.y();
+    odometry_message_.pose.pose.orientation.z = orientation.z();
+    odometry_message_.pose.pose.orientation.w = orientation.w();
+    odometry_message_.twist.twist.linear.x = odometry_.vx;
+    odometry_message_.twist.twist.linear.y = odometry_.vy;
+    odometry_message_.twist.twist.angular.z = odometry_.wz;
+    realtime_odometry_publisher_->try_publish(odometry_message_);
   }
 
   if (params_.enable_odom_tf && realtime_odometry_transform_publisher_)

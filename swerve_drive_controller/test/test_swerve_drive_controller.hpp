@@ -88,6 +88,8 @@ public:
       std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
   }
+
+  const nav_msgs::msg::Odometry & get_odometry_message() const { return odometry_message_; }
 };
 
 template <typename CtrlType>
@@ -106,7 +108,11 @@ public:
     odom_subscriber_node_ = std::make_shared<rclcpp::Node>("odom_subscriber");
     odom_sub_ = odom_subscriber_node_->create_subscription<nav_msgs::msg::Odometry>(
       "/test_swerve_drive_controller/odom", 10,
-      [this](const nav_msgs::msg::Odometry::SharedPtr msg) { last_odom_msg_ = msg; });
+      [this](const nav_msgs::msg::Odometry::SharedPtr msg)
+      {
+        last_odom_msg_ = msg;
+        odometry_message_ = *msg;  // Copy the message for frame ID tests
+      });
   }
 
   static void SetUpTestCase() { rclcpp::init(0, nullptr); }
@@ -170,35 +176,69 @@ protected:
   {
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_ifs.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
+    state_itfs_.clear();
     state_itfs_.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_ifs.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
+    command_itfs_.clear();
     command_itfs_.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
+
+    // Clear and reserve storage for shared_ptrs to keep interfaces alive
+    state_interface_ptrs_.clear();
+    state_interface_ptrs_.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
+    command_interface_ptrs_.clear();
+    command_interface_ptrs_.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
 
     // Wheel velocity interfaces
     for (size_t i = 0; i < wheel_vel_states_.size(); ++i)
     {
+      // Create state interface for member storage
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+
+      // Create shared pointer for loaned interface and store in member
+      auto state_ptr = std::make_shared<hardware_interface::StateInterface>(
+        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]);
+      state_interface_ptrs_.push_back(state_ptr);
+      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_ptr));
+
+      // Create command interface for member storage
       command_itfs_.emplace_back(
         hardware_interface::CommandInterface(
           wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+
+      // Create shared pointer for loaned interface and store in member
+      auto cmd_ptr = std::make_shared<hardware_interface::CommandInterface>(
+        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]);
+      command_interface_ptrs_.push_back(cmd_ptr);
+      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(cmd_ptr));
     }
 
     // Steering position interfaces
     for (size_t i = 0; i < steering_pos_states_.size(); ++i)
     {
+      // Create state interface for member storage
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+
+      // Create shared pointer for loaned interface and store in member
+      auto state_ptr = std::make_shared<hardware_interface::StateInterface>(
+        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]);
+      state_interface_ptrs_.push_back(state_ptr);
+      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_ptr));
+
+      // Create command interface for member storage
       command_itfs_.emplace_back(
         hardware_interface::CommandInterface(
           steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+
+      // Create shared pointer for loaned interface and store in member
+      auto cmd_ptr = std::make_shared<hardware_interface::CommandInterface>(
+        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]);
+      command_interface_ptrs_.push_back(cmd_ptr);
+      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(cmd_ptr));
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -273,12 +313,17 @@ protected:
   std::vector<hardware_interface::StateInterface> state_itfs_;
   std::vector<hardware_interface::CommandInterface> command_itfs_;
 
+  // Shared pointers to keep interfaces alive for loaned interfaces
+  std::vector<std::shared_ptr<hardware_interface::StateInterface>> state_interface_ptrs_;
+  std::vector<std::shared_ptr<hardware_interface::CommandInterface>> command_interface_ptrs_;
+
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr cmd_vel_publisher_node_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_publisher_;
   rclcpp::Node::SharedPtr odom_subscriber_node_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry::SharedPtr last_odom_msg_;
+  nav_msgs::msg::Odometry odometry_message_;
   const std::string urdf_ = "";
   std::string controller_name_ = "test_swerve_drive_controller";
 };

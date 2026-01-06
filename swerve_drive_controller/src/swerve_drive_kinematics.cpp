@@ -124,17 +124,46 @@ OdometryState SwerveDriveKinematics::update_odometry(
   }
   double wz_robot = wz_sum / wz_denominator;
 
-  // Transform velocities to global frame
-  double cos_theta = std::cos(odometry_.theta);
-  double sin_theta = std::sin(odometry_.theta);
+  // Compute linear displacement in robot frame
+  double dx_robot = vx_robot * dt;
+  double dy_robot = vy_robot * dt;
+  double dtheta = wz_robot * dt;
 
-  double vx_global = vx_robot * cos_theta - vy_robot * sin_theta;
-  double vy_global = vx_robot * sin_theta + vy_robot * cos_theta;
+  // Integrate using Exact integration for rotation, RK2 fallback for near-zero angular velocity
+  if (std::fabs(dtheta) < 1e-6)
+  {
+    // RK2 (Runge-Kutta 2nd order) integration for small angular changes
+    // Use midpoint heading for better accuracy
+    double mid_theta = odometry_.theta + dtheta * 0.5;
+    double cos_mid = std::cos(mid_theta);
+    double sin_mid = std::sin(mid_theta);
 
-  // Integrate to compute new position and orientation
-  odometry_.x += vx_global * dt;
-  odometry_.y += vy_global * dt;
-  odometry_.theta = angles::normalize_angle(odometry_.theta + wz_robot * dt);
+    odometry_.x += dx_robot * cos_mid - dy_robot * sin_mid;
+    odometry_.y += dx_robot * sin_mid + dy_robot * cos_mid;
+    odometry_.theta += dtheta;
+  }
+  else
+  {
+    // Exact integration for arc motion
+    // When the robot rotates, it follows an arc trajectory
+    // This computes the exact displacement along that arc
+    double theta_old = odometry_.theta;
+    double theta_new = theta_old + dtheta;
+
+    double sin_new = std::sin(theta_new);
+    double sin_old = std::sin(theta_old);
+    double cos_new = std::cos(theta_new);
+    double cos_old = std::cos(theta_old);
+
+    // Exact integration formula for simultaneous translation and rotation
+    // Derived from integrating velocity over the arc
+    odometry_.x += (dx_robot * (sin_new - sin_old) + dy_robot * (cos_new - cos_old)) / dtheta;
+    odometry_.y += (dx_robot * (cos_old - cos_new) + dy_robot * (sin_new - sin_old)) / dtheta;
+    odometry_.theta = theta_new;
+  }
+
+  // Normalize theta to [-pi, pi]
+  odometry_.theta = angles::normalize_angle(odometry_.theta);
   odometry_.vx = vx_robot;
   odometry_.vy = vy_robot;
   odometry_.wz = wz_robot;

@@ -108,9 +108,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespac
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   // Namespace is "/", so no prefix
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
@@ -133,9 +133,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_no_namespace
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
 }
@@ -157,9 +157,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_nam
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
 }
@@ -183,9 +183,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespa
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
@@ -209,9 +209,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_set_namespac
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
@@ -235,9 +235,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_realtime_odometry_publisher()->msg_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
