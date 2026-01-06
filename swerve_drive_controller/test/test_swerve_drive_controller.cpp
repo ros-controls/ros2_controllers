@@ -15,9 +15,17 @@
 
 #include <gtest/gtest.h>
 #include "controller_interface/controller_interface_base.hpp"
+#include "hardware_interface/version.h"
 #include "lifecycle_msgs/msg/state.hpp"
 
 using lifecycle_msgs::msg::State;
+
+// Helper macro for accessing command interface values across hardware_interface versions
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
+#define GET_CMD_VALUE(itf) (itf)->get_optional().value()
+#else
+#define GET_CMD_VALUE(itf) (itf).get_value()
+#endif
 
 namespace swerve_drive_controller
 {
@@ -291,12 +299,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(GET_CMD_VALUE(command_itfs_[i]), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
       expected_steering_pos_cmds[i]);
   }
 
@@ -313,7 +321,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
+    EXPECT_EQ(GET_CMD_VALUE(command_itfs_[i]), 0.0);
   }
 
   state = controller_->get_node()->activate();
@@ -323,7 +331,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
 
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
+    EXPECT_EQ(GET_CMD_VALUE(command_itfs_[i]), 0.0);
   }
 
   publish_twist(1.0, 0.0, 0.0);  // Forward motion
@@ -339,12 +347,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(GET_CMD_VALUE(command_itfs_[i]), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
       expected_steering_pos_cmds[i]);
   }
 
@@ -389,12 +397,12 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(GET_CMD_VALUE(command_itfs_[i]), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
       expected_steering_pos_cmds[i]);
   }
 

@@ -26,6 +26,7 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "hardware_interface/version.h"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/parameter_value.hpp"
@@ -178,23 +179,41 @@ protected:
     // Wheel velocity interfaces
     for (size_t i = 0; i < wheel_vel_states_.size(); ++i)
     {
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
       state_itfs_.emplace_back(std::make_shared<hardware_interface::StateInterface>(
         wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]));
       state_ifs.emplace_back(state_itfs_.back(), nullptr);
       command_itfs_.emplace_back(std::make_shared<hardware_interface::CommandInterface>(
         wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back(), nullptr);
+#else
+      state_itfs_.emplace_back(
+        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]);
+      state_ifs.emplace_back(state_itfs_.back());
+      command_itfs_.emplace_back(
+        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]);
+      command_ifs.emplace_back(command_itfs_.back());
+#endif
     }
 
     // Steering position interfaces
     for (size_t i = 0; i < steering_pos_states_.size(); ++i)
     {
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
       state_itfs_.emplace_back(std::make_shared<hardware_interface::StateInterface>(
         steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]));
       state_ifs.emplace_back(state_itfs_.back(), nullptr);
       command_itfs_.emplace_back(std::make_shared<hardware_interface::CommandInterface>(
         steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back(), nullptr);
+#else
+      state_itfs_.emplace_back(
+        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]);
+      state_ifs.emplace_back(state_itfs_.back());
+      command_itfs_.emplace_back(
+        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]);
+      command_ifs.emplace_back(command_itfs_.back());
+#endif
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -266,8 +285,13 @@ protected:
   std::vector<double> steering_pos_states_ = {0.0, 0.0, 0.0, 0.0};
   std::vector<double> steering_pos_cmds_ = {0.0, 0.0, 0.0, 0.0};
 
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
+#else
+  std::vector<hardware_interface::StateInterface> state_itfs_;
+  std::vector<hardware_interface::CommandInterface> command_itfs_;
+#endif
 
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr cmd_vel_publisher_node_;

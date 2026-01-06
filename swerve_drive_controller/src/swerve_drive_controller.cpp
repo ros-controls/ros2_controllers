@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "hardware_interface/version.h"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -55,7 +56,14 @@ Wheel::Wheel(
 
 void Wheel::set_velocity(double velocity) { (void)velocity_.get().set_value(velocity); }
 
-double Wheel::get_feedback() { return Wheel::feedback_.get().get_optional().value(); }
+double Wheel::get_feedback()
+{
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
+  return Wheel::feedback_.get().get_optional().value();
+#else
+  return Wheel::feedback_.get().get_value();
+#endif
+}
 
 Axle::Axle(
   std::reference_wrapper<hardware_interface::LoanedCommandInterface> position,
@@ -66,7 +74,14 @@ Axle::Axle(
 
 void Axle::set_position(double position) { (void)position_.get().set_value(position); }
 
-double Axle::get_feedback() { return Axle::feedback_.get().get_optional().value(); }
+double Axle::get_feedback()
+{
+#if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
+  return Axle::feedback_.get().get_optional().value();
+#else
+  return Axle::feedback_.get().get_value();
+#endif
+}
 
 SwerveController::SwerveController()
 
