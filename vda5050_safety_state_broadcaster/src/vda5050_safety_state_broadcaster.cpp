@@ -82,10 +82,10 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_configure
 
   // Initialize the indices for different interface types.
   itfs_ids_ = {};
-  itfs_ids_.manual_start = params_.fieldViolation_interfaces.size();
-  itfs_ids_.remote_start = itfs_ids_.manual_start + params_.eStop_interfaces.manual.size();
-  itfs_ids_.autoack_start = itfs_ids_.remote_start + params_.eStop_interfaces.remote.size();
-  itfs_ids_.total_interfaces = itfs_ids_.autoack_start + params_.eStop_interfaces.autoack.size();
+  itfs_ids_.manual_start = params_.interfaces.fieldViolation.size();
+  itfs_ids_.remote_start = itfs_ids_.manual_start + params_.interfaces.eStop.manual.size();
+  itfs_ids_.autoack_start = itfs_ids_.remote_start + params_.interfaces.eStop.remote.size();
+  itfs_ids_.total_interfaces = itfs_ids_.autoack_start + params_.interfaces.eStop.autoack.size();
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -106,19 +106,19 @@ Vda5050SafetyStateBroadcaster::state_interface_configuration() const
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(itfs_ids_.total_interfaces);
-  for (auto const & fieldViolation_interface : params_.fieldViolation_interfaces)
+  for (auto const & fieldViolation_interface : params_.interfaces.fieldViolation)
   {
     state_interfaces_config.names.push_back(fieldViolation_interface);
   }
-  for (auto const & eStop_manual_interface : params_.eStop_interfaces.manual)
+  for (auto const & eStop_manual_interface : params_.interfaces.eStop.manual)
   {
     state_interfaces_config.names.push_back(eStop_manual_interface);
   }
-  for (auto const & eStop_remote_interface : params_.eStop_interfaces.remote)
+  for (auto const & eStop_remote_interface : params_.interfaces.eStop.remote)
   {
     state_interfaces_config.names.push_back(eStop_remote_interface);
   }
-  for (auto const & eStop_autoack_interface : params_.eStop_interfaces.autoack)
+  for (auto const & eStop_autoack_interface : params_.interfaces.eStop.autoack)
   {
     state_interfaces_config.names.push_back(eStop_autoack_interface);
   }

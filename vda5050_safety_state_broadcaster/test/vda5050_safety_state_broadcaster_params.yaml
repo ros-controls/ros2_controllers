@@ -1,17 +1,18 @@
 test_vda5050_safety_state_broadcaster:
   ros__parameters:
-    fieldViolation_interfaces:
-      - PLC_sensor1/fieldViolation
-      - PLC_sensor2/fieldViolation
-      - PLC_sensor3/fieldViolation
-    eStop_interfaces:
-      manual:
-        - PLC_sensor1/eStopManual
-        - PLC_sensor2/eStopManual
-        - PLC_sensor3/eStopManual
-      remote:
-        - PLC_sensor1/eStopRemote
-        - PLC_sensor2/eStopRemote
-      autoack:
-        - PLC_sensor1/eStopAutoack
-        - PLC_sensor2/eStopAutoack
+    interfaces:
+      fieldViolation:
+        - PLC_sensor1/fieldViolation
+        - PLC_sensor2/fieldViolation
+        - PLC_sensor3/fieldViolation
+      eStop:
+        manual:
+          - PLC_sensor1/eStopManual
+          - PLC_sensor2/eStopManual
+          - PLC_sensor3/eStopManual
+        remote:
+          - PLC_sensor1/eStopRemote
+          - PLC_sensor2/eStopRemote
+        autoack:
+          - PLC_sensor1/eStopAutoack
+          - PLC_sensor2/eStopAutoack
