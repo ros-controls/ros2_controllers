@@ -22,7 +22,6 @@ protected:
   {
     // Initialize odometry with a default velocity rolling window size
     odometry_.setVelocityRollingWindowSize(10);
-    odometry_.init(rclcpp::Time(0));
 
     // Wheel separation = 1.0m
     // This simplifies the math: 1 rad/s wheel vel = 1 m/s linear vel
