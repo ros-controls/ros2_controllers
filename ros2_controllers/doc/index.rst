@@ -82,6 +82,10 @@ For more information of the ros2_control framework see `control.ros.org <https:/
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/tricycle_steering_controller/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/tricycle_steering_controller/>`__
     - `ROS Index <https://index.ros.org/p/tricycle_steering_controller/>`__
+  * - vda5050_safety_state_broadcaster
+    - `Documentation <https://control.ros.org/master/doc/ros2_controllers/vda5050_safety_state_broadcaster/doc/userdoc.html>`__
+    - `API <http://docs.ros.org/en/rolling/p/vda5050_safety_state_broadcaster/>`__
+    - `ROS Index <https://index.ros.org/p/vda5050_safety_state_broadcaster/>`__
   * - velocity_controllers
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/velocity_controllers/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/velocity_controllers/>`__
