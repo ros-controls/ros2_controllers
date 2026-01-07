@@ -88,10 +88,10 @@ private:
 
   struct InterfaceIds
   {
-    int manual_start = 0;
-    int remote_start = 0;
-    int autoack_start = 0;
-    int total_interfaces = 0;
+    size_t manual_start = 0;
+    size_t remote_start = 0;
+    size_t autoack_start = 0;
+    size_t total_interfaces = 0;
   };
 
   InterfaceIds itfs_ids_;
