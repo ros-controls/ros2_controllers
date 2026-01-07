@@ -78,7 +78,7 @@ private:
   std::shared_ptr<vda5050_safety_state_broadcaster::ParamListener> param_listener_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::VDA5050SafetyState>>
     vda5050_safety_state_publisher_;
-  control_msgs::msg::VDA5050SafetyState safety_state_msg;
+  control_msgs::msg::VDA5050SafetyState safety_state_msg_;
 
   /**
    * @brief Determines the current E-stop state based on the state interfaces.
