@@ -216,13 +216,43 @@ joint_trajectory_controller:
       }
     }
     __map_joints:
-      trajectory: {
-        type: double,
-        default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance during movement.",
-      }
-      goal: {
-        type: double,
-        default_value: 0.0,
-        description: "Per-joint trajectory offset tolerance at the goal position.",
-      }
+      trajectory:
+        one_of<>:
+          - type: double
+          - type: struct
+            fields:
+              position: {
+                type: double,
+                default_value: 0.0,
+                description: "Position tolerance for the trajectory execution."
+              }
+              velocity: {
+                type: double,
+                default_value: 0.0,
+                description: "Velocity tolerance for the trajectory execution."
+              }
+              acceleration: {
+                type: double,
+                default_value: 0.0,
+                description: "Acceleration tolerance for the trajectory execution."
+             }
+      goal:
+        one_of<>:
+          - type: double
+          - type: struct
+            fields:
+              position: {
+                type: double,
+                default_value: 0.0,
+                description: "Position tolerance for the final goal state."
+              }
+              velocity: {
+                type: double,
+                default_value: 0.0,
+                description: "Velocity tolerance for the final goal state."
+              }
+              acceleration: {
+                type: double,
+                default_value: 0.0,
+                description: "Acceleration tolerance for the final goal state."
+             }
