@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gmock/gmock.h"
 #include "diff_drive_controller/odometry.hpp"
+#include "gmock/gmock.h"
 
 class OdometryTest : public ::testing::Test
 {
@@ -50,9 +50,9 @@ TEST_F(OdometryTest, TestLinearMotion)
   bool result = odometry_.update_from_vel(1.0, 1.0, 1.0);
 
   EXPECT_TRUE(result);
-  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);  
-  EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);  
-  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.0); 
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
+  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.0);
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
   EXPECT_DOUBLE_EQ(odometry_.getAngular(), 0.0);
 }
@@ -67,7 +67,7 @@ TEST_F(OdometryTest, TestPureRotation)
 
   EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
   EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
-  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 2.0); 
+  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 2.0);
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
   EXPECT_DOUBLE_EQ(odometry_.getAngular(), 2.0);
 }
@@ -122,7 +122,7 @@ TEST_F(OdometryTest, TestOpenLoopUpdate)
   EXPECT_NEAR(odometry_.getX(), expected_x, 1e-5);
   EXPECT_NEAR(odometry_.getY(), expected_y, 1e-5);
   EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.5);
-  
+
   // Verify internal state matches inputs
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 2.0);
   EXPECT_DOUBLE_EQ(odometry_.getAngular(), 0.5);
