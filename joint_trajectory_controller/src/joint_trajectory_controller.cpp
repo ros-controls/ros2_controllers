@@ -25,7 +25,6 @@
 #include "angles/angles.h"
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "joint_trajectory_controller/trajectory.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
@@ -41,10 +40,19 @@
 #include "urdf/model.h"
 #endif
 
+#include "joint_trajectory_controller/trajectory.hpp"
+
 namespace joint_trajectory_controller
 {
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), dof_(0), num_cmd_joints_(0)
+: controller_interface::ControllerInterface(),
+  dof_(0),
+  num_cmd_joints_(0),
+  traj_controller_loader_(
+    std::make_shared<
+      pluginlib::ClassLoader<joint_trajectory_controller_plugins::TrajectoryControllerBase>>(
+      "joint_trajectory_controller_plugins",
+      "joint_trajectory_controller_plugins::TrajectoryControllerBase"))
 {
 }
 
@@ -125,7 +133,9 @@ JointTrajectoryController::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
   conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names.reserve(dof_ * params_.state_interfaces.size());
+
+  conf.names.reserve(
+    dof_ * params_.state_interfaces.size() + traj_ctr_state_interface_names_.size());
   for (const auto & joint_name : params_.joints)
   {
     for (const auto & interface_type : params_.state_interfaces)
@@ -137,6 +147,9 @@ JointTrajectoryController::state_interface_configuration() const
   {
     conf.names.push_back(params_.speed_scaling.state_interface);
   }
+  conf.names.insert(
+    conf.names.end(), traj_ctr_state_interface_names_.begin(),
+    traj_ctr_state_interface_names_.end());
   return conf;
 }
 
@@ -167,23 +180,29 @@ controller_interface::return_type JointTrajectoryController::update(
   if (param_listener_->try_update_params(params_))
   {
     default_tolerances_ = get_segment_tolerances(logger, params_);
-    // update the PID gains
-    // variable use_closed_loop_pid_adapter_ is updated in on_configure only
-    if (use_closed_loop_pid_adapter_)
+    // update gains of controller
+    if (traj_contr_)
     {
-      update_pids();
+      if (traj_contr_->update_gains_rt() == false)
+      {
+        RCLCPP_ERROR(get_node()->get_logger(), "Could not update gains of controller");
+        return controller_interface::return_type::ERROR;
+      }
     }
   }
 
   // don't update goal after we sampled the trajectory to avoid any race condition
   const auto active_goal = *rt_active_goal_.readFromRT();
 
-  // Check if a new trajectory message has been received from Non-RT threads
-  const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
+  // Check if a new external message has been received from nonRT threads
+  auto current_external_msg = current_trajectory_->get_trajectory_msg();
   auto new_external_msg = new_trajectory_msg_.readFromRT();
-  // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  // Discard,
+  //  if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  //  and if traj_contr_: wait until control law is computed by the traj_contr_
   if (
-    current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
+    current_external_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false &&
+    (traj_contr_ == nullptr || traj_contr_->is_ready()))
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -218,6 +237,11 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         current_trajectory_->set_point_before_trajectory_msg(
           time, state_current_, joints_angle_wraparound_);
+      }
+      if (traj_contr_)
+      {
+        // switch RT buffer of traj_contr_
+        traj_contr_->start();
       }
       traj_time_ = time;
     }
@@ -265,8 +289,7 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
-        new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        add_new_trajectory_msg_RT(set_hold_position());
       }
 
       // Check state/goal tolerance
@@ -310,21 +333,14 @@ controller_interface::return_type JointTrajectoryController::update(
       // set values for next hardware write() if tolerance is met
       if (!tolerance_violated_while_moving && within_goal_time)
       {
-        if (use_closed_loop_pid_adapter_)
+        if (traj_contr_)
         {
-          // Update PIDs
-          for (auto i = 0ul; i < num_cmd_joints_; ++i)
-          {
-            // If effort interface only, add desired effort as feed forward
-            // If velocity interface, ignore desired effort
-            size_t index_cmd_joint = map_cmd_to_joints_[i];
-            tmp_command_[index_cmd_joint] =
-              (command_next_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
-              (has_effort_command_interface_ ? command_next_.effort[index_cmd_joint] : 0.0) +
-              pids_[i]->compute_command(
-                state_error_.positions[index_cmd_joint], state_error_.velocities[index_cmd_joint],
-                period);
-          }
+          double scaling_fact = scaling_factor_.load();
+          traj_contr_->compute_commands(
+            tmp_command_, scaling_fact, state_current_, state_error_, command_next_,
+            traj_ctr_state_interfaces_values_, time - current_trajectory_->time_from_start(),
+            period);
+          scaling_factor_.store(scaling_fact);
         }
 
         // set values for next hardware write()
@@ -334,7 +350,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
+          if (use_external_control_law_)
           {
             assign_interface_from_point(joint_command_interface_[1], tmp_command_);
           }
@@ -349,7 +365,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
+          if (use_external_control_law_)
           {
             assign_interface_from_point(joint_command_interface_[3], tmp_command_);
           }
@@ -392,8 +408,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
-          new_trajectory_msg_.reset();
-          new_trajectory_msg_.initRT(set_hold_position());
+          add_new_trajectory_msg_RT(set_hold_position());
         }
         // check goal tolerance
         else if (!before_last_point)
@@ -411,8 +426,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
-            new_trajectory_msg_.reset();
-            new_trajectory_msg_.initRT(set_success_trajectory_point());
+            add_new_trajectory_msg_RT(set_success_trajectory_point());
           }
           else if (!within_goal_time)
           {
@@ -430,8 +444,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
-            new_trajectory_msg_.reset();
-            new_trajectory_msg_.initRT(set_hold_position());
+            add_new_trajectory_msg_RT(set_hold_position());
           }
         }
       }
@@ -440,15 +453,13 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
-        new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        add_new_trajectory_msg_RT(set_hold_position());
       }
       else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
-        new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        add_new_trajectory_msg_RT(set_hold_position());
       }
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
@@ -531,6 +542,22 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
   {
     assign_point_from_command_interface(state.effort, joint_command_interface_[3]);
   }
+
+  // Optional traj_ctrl_ state interfaces
+  for (size_t index = 0; index < traj_ctr_state_interfaces_.size(); ++index)
+  {
+    const auto state_interface_value_op = traj_ctr_state_interfaces_[index].get().get_optional();
+    if (!state_interface_value_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        logger, "Unable to retrieve state interface value for joint at index %zu", index);
+    }
+    else
+    {
+      traj_ctr_state_interfaces_values_[index] = state_interface_value_op.value();
+    }
+  }
+  traj_ctr_state_interfaces_box_.try_set(traj_ctr_state_interfaces_values_);
 }
 
 bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
@@ -789,6 +816,38 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     command_joint_names_ = params_.joints;
     RCLCPP_INFO(
       logger, "No specific joint names are used for command interfaces. Using 'joints' parameter.");
+
+    // set the parameter for the controller plugin
+    auto result =
+      get_node()->set_parameter(rclcpp::Parameter("command_joints", command_joint_names_));
+    if (result.successful == false)
+    {
+      RCLCPP_ERROR(logger, "Failed to set 'command_joints' parameter");
+      return CallbackReturn::FAILURE;
+    }
+#if RCLCPP_VERSION_MAJOR >= 17
+    // TODO(christophfroehlich) how to lock the parameter (set read_only to false)?
+    // Setting it to read_only but override is not supported
+    // https://github.com/ros2/rclcpp/issues/1762 get_node()->undeclare_parameter("command_joints");
+    // rcl_interfaces::msg::ParameterDescriptor parameter_descriptor;
+    // parameter_descriptor.read_only = true;
+    // get_node()->declare_parameter("command_joints",
+    //  rclcpp::ParameterValue(command_joint_names_), parameter_descriptor);
+    lock_cmd_joint_names = get_node()->add_pre_set_parameters_callback(
+      [this](std::vector<rclcpp::Parameter> & parameters)
+      {
+        for (auto & parameter : parameters)
+        {
+          if (parameter.get_name() == "command_joints")
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "The parameter 'command_joints' is read-only. You can't change it.");
+            parameter = rclcpp::Parameter("command_joints", command_joint_names_);
+          }
+        }
+      });
+#endif
   }
   num_cmd_joints_ = command_joint_names_.size();
 
@@ -849,19 +908,57 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     contains_interface_type(params_.command_interfaces, hardware_interface::HW_IF_EFFORT);
 
   // if there is only velocity or if there is effort command interface
-  // then use also PID adapter
-  use_closed_loop_pid_adapter_ =
+  // then use external control law
+  use_external_control_law_ =
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
-  tmp_command_.resize(dof_, 0.0);
-
-  if (use_closed_loop_pid_adapter_)
+  if (use_external_control_law_)
   {
-    pids_.resize(num_cmd_joints_);
-    ff_velocity_scale_.resize(num_cmd_joints_);
+    try
+    {
+      traj_contr_ =
+        traj_controller_loader_->createSharedInstance(params_.controller_plugin.c_str());
+    }
+    catch (pluginlib::PluginlibException & ex)
+    {
+      RCLCPP_FATAL(
+        logger, "The trajectory controller plugin `%s` failed to load for some reason. Error: %s\n",
+        params_.controller_plugin.c_str(), ex.what());
+      return CallbackReturn::FAILURE;
+    }
+    if (traj_contr_->initialize(get_node(), map_cmd_to_joints_) == false)
+    {
+      RCLCPP_FATAL(
+        logger,
+        "The trajectory controller plugin `%s` failed to initialize for some reason. Aborting.",
+        params_.controller_plugin.c_str());
+      return CallbackReturn::FAILURE;
+    }
+    else
+    {
+      if (traj_contr_->configure() == false)
+      {
+        RCLCPP_FATAL(
+          logger,
+          "The trajectory controller plugin `%s` failed to configure for some reason. Aborting.",
+          params_.controller_plugin.c_str());
+        return CallbackReturn::FAILURE;
+      }
+      else
+      {
+        RCLCPP_INFO(
+          logger, "The trajectory controller plugin `%s` was loaded and configured.",
+          params_.controller_plugin.c_str());
+      }
+    }
 
-    update_pids();
+    traj_ctr_state_interface_names_ =
+      traj_contr_ ? traj_contr_->state_interface_configuration() : std::vector<std::string>{};
+    traj_ctr_state_interfaces_.reserve(traj_ctr_state_interface_names_.size());
+    traj_ctr_state_interfaces_values_.resize(traj_ctr_state_interface_names_.size(), 0.0);
+    traj_ctr_state_interfaces_box_.set(traj_ctr_state_interfaces_values_);
+    tmp_command_.resize(dof_, 0.0);
   }
 
   if (params_.state_interfaces.empty())
@@ -1145,6 +1242,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
       return CallbackReturn::ERROR;
     }
   }
+  if (!controller_interface::get_ordered_interfaces(
+        state_interfaces_, traj_ctr_state_interface_names_, "", traj_ctr_state_interfaces_))
+  {
+    RCLCPP_ERROR(
+      logger, "Expected %zu state interfaces, got %zu.", traj_ctr_state_interface_names_.size(),
+      traj_ctr_state_interfaces_.size());
+    return CallbackReturn::ERROR;
+  }
 
   current_trajectory_ = std::make_shared<Trajectory>();
   new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
@@ -1173,15 +1278,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     read_state_from_state_interfaces(state_current_);
     read_state_from_state_interfaces(last_commanded_state_);
   }
-  // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
-  for (auto & pid : pids_)
-  {
-    pid->reset();
-  }
   last_commanded_time_ = rclcpp::Time();
 
+  // activate traj_contr_, e.g., update gains
+  if (traj_contr_ && traj_contr_->activate() == false)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Error during trajectory controller activation.");
+    return CallbackReturn::ERROR;
+  }
+
   // The controller should start by holding position at the beginning of active state
-  add_new_trajectory_msg(set_hold_position());
+  add_new_trajectory_msg_nonRT(set_hold_position());
   rt_is_holding_ = true;
 
   // parse timeout parameter
@@ -1268,10 +1375,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     joint_command_interface_[index].clear();
     joint_state_interface_[index].clear();
   }
+  traj_ctr_state_interfaces_.clear();
 
   subscriber_is_active_ = false;
 
   current_trajectory_.reset();
+
+  // e.g., reset integral states
+  if (traj_contr_)
+  {
+    traj_contr_->reset();
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -1290,14 +1404,6 @@ bool JointTrajectoryController::reset()
 {
   subscriber_is_active_ = false;
   joint_command_subscriber_.reset();
-
-  for (const auto & pid : pids_)
-  {
-    if (pid)
-    {
-      pid->reset();
-    }
-  }
 
   current_trajectory_.reset();
 
@@ -1349,10 +1455,10 @@ void JointTrajectoryController::topic_callback(
   // always replace old msg with new one for now
   if (subscriber_is_active_)
   {
-    add_new_trajectory_msg(msg);
+    add_new_trajectory_msg_nonRT(msg);
     rt_is_holding_ = false;
   }
-};
+}
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
@@ -1395,7 +1501,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
     // Enter hold current position mode
-    add_new_trajectory_msg(set_hold_position());
+    add_new_trajectory_msg_nonRT(set_hold_position());
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1412,7 +1518,7 @@ void JointTrajectoryController::goal_accepted_callback(
     auto traj_msg =
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
-    add_new_trajectory_msg(traj_msg);
+    add_new_trajectory_msg_nonRT(traj_msg);
     rt_is_holding_ = false;
   }
 
@@ -1760,10 +1866,42 @@ bool JointTrajectoryController::validate_trajectory_msg(
   return true;
 }
 
-void JointTrajectoryController::add_new_trajectory_msg(
+void JointTrajectoryController::add_new_trajectory_msg_nonRT(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
   new_trajectory_msg_.writeFromNonRT(traj_msg);
+
+  // compute control law
+  if (traj_contr_)
+  {
+    // this can take some time; trajectory won't start until control law is computed
+    if (
+      traj_contr_->compute_control_law_non_rt(traj_msg, traj_ctr_state_interfaces_box_.get()) ==
+      false)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
+    }
+  }
+}
+
+void JointTrajectoryController::add_new_trajectory_msg_RT(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
+{
+  // TODO(christophfroehlich): Need a lock-free write here
+  // See https://github.com/ros-controls/ros2_controllers/issues/168
+  new_trajectory_msg_.reset();
+  new_trajectory_msg_.initRT(traj_msg);
+
+  // compute control law
+  if (traj_contr_)
+  {
+    // this is used for set_hold_position() only -> this should (and must) not take a long time
+    if (
+      traj_contr_->compute_control_law_rt(traj_msg, traj_ctr_state_interfaces_box_.get()) == false)
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to compute gains for trajectory.");
+    }
+  }
 }
 
 void JointTrajectoryController::preempt_active_goal()
@@ -1771,6 +1909,7 @@ void JointTrajectoryController::preempt_active_goal()
   const auto active_goal = *rt_active_goal_.readFromNonRT();
   if (active_goal)
   {
+    add_new_trajectory_msg_nonRT(set_hold_position());
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled due to new incoming action.");
@@ -1885,33 +2024,6 @@ bool JointTrajectoryController::set_scaling_factor(double scaling_factor)
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return current_trajectory_ != nullptr && current_trajectory_->has_trajectory_msg();
-}
-
-void JointTrajectoryController::update_pids()
-{
-  for (size_t i = 0; i < num_cmd_joints_; ++i)
-  {
-    const auto & gains = params_.gains.joints_map.at(params_.joints.at(map_cmd_to_joints_[i]));
-    control_toolbox::AntiWindupStrategy antiwindup_strat;
-    antiwindup_strat.set_type(gains.antiwindup_strategy);
-    antiwindup_strat.i_max = gains.i_clamp_max;
-    antiwindup_strat.i_min = gains.i_clamp_min;
-    antiwindup_strat.error_deadband = gains.error_deadband;
-    antiwindup_strat.tracking_time_constant = gains.tracking_time_constant;
-    if (pids_[i])
-    {
-      // update PIDs with gains from ROS parameters
-      pids_[i]->set_gains(
-        gains.p, gains.i, gains.d, gains.u_clamp_max, gains.u_clamp_min, antiwindup_strat);
-    }
-    else
-    {
-      // Init PIDs with gains from ROS parameters
-      pids_[i] = std::make_shared<control_toolbox::Pid>(
-        gains.p, gains.i, gains.d, gains.u_clamp_max, gains.u_clamp_min, antiwindup_strat);
-    }
-    ff_velocity_scale_[i] = gains.ff_velocity_scale;
-  }
 }
 
 void JointTrajectoryController::init_hold_position_msg()

@@ -35,6 +35,7 @@
   <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
+  <depend>joint_trajectory_controller_plugins</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
