@@ -524,14 +524,16 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   {
     last_linear_velocity_ = reference_interfaces_[0];
   }
-  else{
+  else
+  {
     last_linear_velocity_ = 0.0;
   }
   if (std::isfinite(reference_interfaces_[1]))
   {
     last_angular_velocity_ = reference_interfaces_[1];
   }
-  else{
+  else
+  {
     last_angular_velocity_ = 0.0;
   }
   update_odometry(period);

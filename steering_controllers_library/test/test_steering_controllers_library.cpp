@@ -403,8 +403,8 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
 
   struct Publicist : public TestableSteeringControllersLibrary
   {
-    using steering_controllers_library::SteeringControllersLibrary::input_ref_;
     using controller_interface::ControllerInterfaceBase::command_interfaces_;
+    using steering_controllers_library::SteeringControllersLibrary::input_ref_;
   };
   auto * pub_controller = static_cast<Publicist *>(controller_.get());
 
@@ -437,7 +437,7 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
   // The wheel speed should stay exactly the same
-    EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
 }
 
 TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
@@ -450,15 +450,14 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
   SetUpController("test_steering_controllers_library", node_options);
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  controller_->set_chained_mode(false); // We are testing standalone mode
+  controller_->set_chained_mode(false);  // We are testing standalone mode
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   ControllerReferenceMsg msg;
   msg.header.stamp = controller_->get_node()->now();
-  msg.twist.linear.x = 5.0; 
+  msg.twist.linear.x = 5.0;
   msg.twist.angular.z = 0.0;
-  controller_->input_ref_.set(msg); 
-
+  controller_->input_ref_.set(msg);
 
   controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1));
 
