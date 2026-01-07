@@ -84,6 +84,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_odometry
     test/test_odometry.cpp
+    src/odometry.cpp
   )
   target_link_libraries(test_odometry
     diff_drive_controller
