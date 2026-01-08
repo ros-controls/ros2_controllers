@@ -300,7 +300,7 @@ controller_interface::return_type JointTrajectoryController::update(
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                state_error_, index, active_tol->goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
