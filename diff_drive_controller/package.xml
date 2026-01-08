@@ -26,6 +26,7 @@
   <build_depend>ros2_control_cmake</build_depend>
 
   <depend>backward_ros</depend>
+  <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
   <depend>geometry_msgs</depend>

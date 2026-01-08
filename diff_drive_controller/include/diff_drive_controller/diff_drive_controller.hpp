@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "control_msgs/srv/set_odometry.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
@@ -78,6 +79,10 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
   void reset_odometry(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> req,
@@ -154,8 +159,10 @@ protected:
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
-  std::atomic<bool> reset_odom_{false};
+  std::atomic<bool> set_odom_request_{false}, reset_odom_request_{false};
+  geometry_msgs::msg::Pose requested_odom_pose_;
 
   bool reset();
   void halt();
