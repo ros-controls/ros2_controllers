@@ -162,7 +162,10 @@ protected:
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
   std::atomic<bool> set_odom_request_{false}, reset_odom_request_{false};
-  geometry_msgs::msg::Pose requested_odom_pose_;
+  struct
+  {
+    double x, y, yaw;
+  } requested_odom_params_;
 
   bool reset();
   void halt();

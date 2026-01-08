@@ -1234,13 +1234,9 @@ TEST_F(TestDiffDriveController, odometry_set_reset_services)
   controller_->wait_for_twist(executor);
   auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
   auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
-  set_request->pose.position.x = 5.0;
-  set_request->pose.position.y = -2.0;
-  set_request->pose.position.z = 0.0;
-  set_request->pose.orientation.x = 0.0;
-  set_request->pose.orientation.y = 0.0;
-  set_request->pose.orientation.z = 0.70710678118;
-  set_request->pose.orientation.w = 0.70710678118;
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
   controller_->set_odometry(nullptr, set_request, set_response);
   EXPECT_TRUE(set_response->success);
 

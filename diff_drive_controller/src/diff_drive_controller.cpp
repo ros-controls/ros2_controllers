@@ -169,11 +169,8 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   // check if odometry set or reset was requested by non-RT thread
   if (set_odom_request_.load())
   {
-    const auto & pose = requested_odom_pose_;
-    tf2::Quaternion q(
-      pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-
-    odometry_.setOdometry(pose.position.x, pose.position.y, tf2::impl::getYaw(q));
+    odometry_.setOdometry(
+      requested_odom_params_.x, requested_odom_params_.y, requested_odom_params_.yaw);
     set_odom_request_.store(false);
     odometry_updated = true;
   }
@@ -598,8 +595,9 @@ void DiffDriveController::set_odometry(
 {
   // update the flag for setting odom thread-safely in the control loop
   set_odom_request_.store(true);
-
-  requested_odom_pose_ = req->pose;
+  requested_odom_params_.x = req->x;
+  requested_odom_params_.y = req->y;
+  requested_odom_params_.yaw = req->yaw;
   res->success = true;
   res->message = "Odometry set requested";
 }
