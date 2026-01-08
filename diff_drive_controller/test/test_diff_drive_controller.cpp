@@ -471,7 +471,7 @@ TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
   ASSERT_FALSE(activate_succeeds(controller_));
 }
 
-TEST_F(TestDiffDriveController, expect_activate_succeededs_with_pos_resources_assigned)
+TEST_F(TestDiffDriveController, activate_succeeds_with_pos_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
@@ -483,7 +483,7 @@ TEST_F(TestDiffDriveController, expect_activate_succeededs_with_pos_resources_as
   ASSERT_TRUE(activate_succeeds(controller_));
 }
 
-TEST_F(TestDiffDriveController, expect_activate_succeededs_with_vel_resources_assigned)
+TEST_F(TestDiffDriveController, activate_succeeds_with_vel_resources_assigned)
 {
   ASSERT_EQ(
     InitController(
