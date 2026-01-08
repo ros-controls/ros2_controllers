@@ -62,7 +62,8 @@ TEST_F(OdometryTest, TestPureRotation)
   // Expected Linear Vel = (-1.0 + 1.0) / 2 = 0.0 m/s
   // Expected Angular Vel = (1.0 - (-1.0)) / 1.0 = 2.0 rad/s
   // This triggers the exact integration path in integrate()
-  odometry_.update_from_vel(-1.0, 1.0, 1.0);
+  bool result = odometry_.update_from_vel(-1.0, 1.0, 1.0);
+  EXPECT_TRUE(result);
 
   EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
   EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
@@ -78,7 +79,8 @@ TEST_F(OdometryTest, TestCurvedMotion_ExactArc)
   // Angular = (2-1)/1 = 1.0 rad/s
   // This triggers the "else" block in integrate() for exact arc calculation
 
-  odometry_.update_from_vel(1.0, 2.0, 1.0);
+  bool result = odometry_.update_from_vel(1.0, 2.0, 1.0);
+  EXPECT_TRUE(result);
 
   // heading_new = 0 + 1.0 * 1.0 = 1.0 rad
   // x = (v/w) * (sin(heading_new) - sin(0)) = (1.5/1.0) * (sin(1.0))
@@ -97,20 +99,17 @@ TEST_F(OdometryTest, TestSmallDtRejection)
   // Provide a dt smaller than the 1e-6 threshold in the code (it checks < 1e-6)
   bool result = odometry_.update_from_vel(1.0, 1.0, 1e-7);
 
-  // Expect false return and NO state update
   EXPECT_FALSE(result);
   EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
 }
 
 TEST_F(OdometryTest, TestOpenLoopUpdate)
 {
-  // Test the new API: try_update_open_loop
   // Directly feed v=2.0, w=0.5, dt=1.0
   bool result = odometry_.try_update_open_loop(2.0, 0.5, 1.0);
 
   EXPECT_TRUE(result);
 
-  // Math:
   // heading = 0.5 rad
   // x = (2.0/0.5) * sin(0.5) = 4 * sin(0.5)
   // y = -4 * (cos(0.5) - 1)
@@ -129,7 +128,6 @@ TEST_F(OdometryTest, TestOpenLoopUpdate)
 
 TEST_F(OdometryTest, TestUpdateFromPosition)
 {
-  // Test update_from_pos
   // Left moves 0 -> 1.0, Right moves 0 -> 1.0 over 1.0s
   // Implies vel = 1.0 for both
 
@@ -143,7 +141,8 @@ TEST_F(OdometryTest, TestUpdateFromPosition)
 TEST_F(OdometryTest, TestReset)
 {
   // 1. Move the robot somewhere
-  odometry_.update_from_vel(1.0, 1.0, 1.0);
+  bool result = odometry_.update_from_vel(1.0, 1.0, 1.0);
+  EXPECT_TRUE(result);
   EXPECT_NE(odometry_.getX(), 0.0);
 
   // 2. Reset
