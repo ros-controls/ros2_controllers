@@ -116,9 +116,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespac
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   // Namespace is "/", so no prefix
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
@@ -141,9 +141,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_no_namespace
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
 }
@@ -165,9 +165,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_nam
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_frame_id);
 }
@@ -191,9 +191,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespa
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
@@ -217,9 +217,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_set_namespac
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
@@ -243,9 +243,9 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
+  const auto & odom_msg = controller_->get_odometry_message();
+  std::string test_odom_frame_id = odom_msg.header.frame_id;
+  std::string test_base_frame_id = odom_msg.child_frame_id;
   ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
   ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
 }
@@ -304,8 +304,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
-      expected_steering_pos_cmds[i]);
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]), expected_steering_pos_cmds[i]);
   }
 
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -352,8 +351,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
-      expected_steering_pos_cmds[i]);
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]), expected_steering_pos_cmds[i]);
   }
 
   // Deactivate and cleanup
@@ -402,8 +400,7 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]),
-      expected_steering_pos_cmds[i]);
+      GET_CMD_VALUE(command_itfs_[i + wheel_vel_cmds_.size()]), expected_steering_pos_cmds[i]);
   }
 
   std::this_thread::sleep_for(std::chrono::milliseconds(300));

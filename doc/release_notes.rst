@@ -34,7 +34,6 @@ omni_wheel_drive_controller
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
 
 joint_trajectory_controller
-<<<<<<< HEAD
 *******************************
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
 * Scaling support was added in `#1191
@@ -57,15 +56,3 @@ pid_controller
 swerve_drive_controller
 *********************************
 * The swerve_drive_controller was added  (`#1694 <https://github.com/ros-controls/ros2_controllers/pull/1694>`_).
-=======
-***************************
-* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
-  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
-  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
-  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
-
-
-steering_controllers_library
-*****************************
-* Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
->>>>>>> master

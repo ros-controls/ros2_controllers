@@ -180,18 +180,18 @@ protected:
     for (size_t i = 0; i < wheel_vel_states_.size(); ++i)
     {
 #if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
-      state_itfs_.emplace_back(std::make_shared<hardware_interface::StateInterface>(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]));
+      state_itfs_.emplace_back(
+        std::make_shared<hardware_interface::StateInterface>(
+          wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]));
       state_ifs.emplace_back(state_itfs_.back(), nullptr);
-      command_itfs_.emplace_back(std::make_shared<hardware_interface::CommandInterface>(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]));
+      command_itfs_.emplace_back(
+        std::make_shared<hardware_interface::CommandInterface>(
+          wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back(), nullptr);
 #else
-      state_itfs_.emplace_back(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]);
+      state_itfs_.emplace_back(wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]);
       state_ifs.emplace_back(state_itfs_.back());
-      command_itfs_.emplace_back(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]);
+      command_itfs_.emplace_back(wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]);
       command_ifs.emplace_back(command_itfs_.back());
 #endif
     }
@@ -200,18 +200,18 @@ protected:
     for (size_t i = 0; i < steering_pos_states_.size(); ++i)
     {
 #if HARDWARE_INTERFACE_VERSION_GTE(4, 0, 0)
-      state_itfs_.emplace_back(std::make_shared<hardware_interface::StateInterface>(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]));
+      state_itfs_.emplace_back(
+        std::make_shared<hardware_interface::StateInterface>(
+          steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]));
       state_ifs.emplace_back(state_itfs_.back(), nullptr);
-      command_itfs_.emplace_back(std::make_shared<hardware_interface::CommandInterface>(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]));
+      command_itfs_.emplace_back(
+        std::make_shared<hardware_interface::CommandInterface>(
+          steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]));
       command_ifs.emplace_back(command_itfs_.back(), nullptr);
 #else
-      state_itfs_.emplace_back(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]);
+      state_itfs_.emplace_back(steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]);
       state_ifs.emplace_back(state_itfs_.back());
-      command_itfs_.emplace_back(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]);
+      command_itfs_.emplace_back(steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]);
       command_ifs.emplace_back(command_itfs_.back());
 #endif
     }
