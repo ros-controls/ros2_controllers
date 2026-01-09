@@ -29,6 +29,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+# Check control_msgs version for feedback index field (added in version 6.0.0)
+if(control_msgs_VERSION VERSION_GREATER_EQUAL "6.0.0")
+  add_compile_definitions(CONTROL_MSGS_HAS_FEEDBACK_INDEX)
+endif()
+
 generate_parameter_library(joint_trajectory_controller_parameters
   src/joint_trajectory_controller_parameters.yaml
   include/joint_trajectory_controller/validate_jtc_parameters.hpp

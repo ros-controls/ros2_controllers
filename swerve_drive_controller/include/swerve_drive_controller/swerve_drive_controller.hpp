@@ -116,6 +116,8 @@ public:
 
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
+  const nav_msgs::msg::Odometry & get_odometry_message() const { return odometry_message_; }
+
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
