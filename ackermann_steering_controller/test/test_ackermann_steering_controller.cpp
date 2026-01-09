@@ -250,8 +250,10 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   subscribe_and_get_messages(msg);
 
   // never received a valid command, linear velocity should have been reset
+#ifdef CONTROL_MSGS_HAS_TRACTION_COMMAND
   EXPECT_EQ(msg.traction_command[STATE_TRACTION_RIGHT_WHEEL], 0.0);
   EXPECT_EQ(msg.traction_command[STATE_TRACTION_LEFT_WHEEL], 0.0);
+#endif
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
   EXPECT_EQ(msg.steering_angle_command[1], 4.4);
 
@@ -279,9 +281,11 @@ TEST_F(AckermannSteeringControllerTest, receive_message_and_publish_updated_stat
   subscribe_and_get_messages(msg);
 
   // we test with open_loop=false, but steering angle was not updated (is zero) -> same commands
+#ifdef CONTROL_MSGS_HAS_TRACTION_COMMAND
   EXPECT_NEAR(
     msg.traction_command[CMD_TRACTION_RIGHT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.traction_command[CMD_TRACTION_LEFT_WHEEL], 0.22222222222222224, COMMON_THRESHOLD);
+#endif
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
   EXPECT_NEAR(msg.steering_angle_command[1], 1.4179821977774734, COMMON_THRESHOLD);
 }

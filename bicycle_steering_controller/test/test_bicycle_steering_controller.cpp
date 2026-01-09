@@ -237,7 +237,9 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
   subscribe_and_get_messages(msg);
 
   // never received a valid command, linear velocity should have been reset
+#ifdef CONTROL_MSGS_HAS_TRACTION_COMMAND
   EXPECT_EQ(msg.traction_command[0], 0.0);
+#endif
   EXPECT_EQ(msg.steering_angle_command[0], 2.2);
 
   publish_commands(0.1, 0.2);
@@ -256,7 +258,9 @@ TEST_F(BicycleSteeringControllerTest, receive_message_and_publish_updated_status
 
   subscribe_and_get_messages(msg);
 
+#ifdef CONTROL_MSGS_HAS_TRACTION_COMMAND
   EXPECT_NEAR(msg.traction_command[0], 0.1 / 0.45, COMMON_THRESHOLD);
+#endif
   EXPECT_NEAR(msg.steering_angle_command[0], 1.4179821977774734, COMMON_THRESHOLD);
 }
 

@@ -231,7 +231,9 @@ controller_interface::return_type JointTrajectoryController::update(
       traj_time_, interpolation_method_, state_desired_, start_segment_itr, end_segment_itr);
     state_desired_.time_from_start = traj_time_ - current_trajectory_->time_from_start();
 
+#ifdef CONTROL_MSGS_HAS_FEEDBACK_INDEX
     const auto next_point_index = std::distance(current_trajectory_->begin(), end_segment_itr);
+#endif
 
     // Sample setpoint for next control cycle
     const bool valid_point = current_trajectory_->sample(
@@ -375,7 +377,9 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
+#ifdef CONTROL_MSGS_HAS_FEEDBACK_INDEX
         feedback->index = static_cast<int32_t>(next_point_index);
+#endif
         active_goal->setFeedback(feedback);
 
         // check abort

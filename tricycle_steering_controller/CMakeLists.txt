@@ -23,6 +23,11 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+
+# Check control_msgs version for traction_command field (added in version 6.0.0)
+if(control_msgs_VERSION VERSION_GREATER_EQUAL "6.0.0")
+  add_compile_definitions(CONTROL_MSGS_HAS_TRACTION_COMMAND)
+endif()
 add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
 add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
