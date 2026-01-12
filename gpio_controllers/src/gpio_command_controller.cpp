@@ -15,6 +15,7 @@
 #include "gpio_controllers/gpio_command_controller.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/component_parser.hpp"
@@ -52,6 +53,16 @@ std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
       hardware_info.gpios.begin(), hardware_info.gpios.end(), std::back_insert_iterator(result));
   }
   return result;
+}
+
+
+double sanitize_double(double double_value)
+{
+  if (std::isnan(double_value))
+  {
+    return 0.0;
+  }
+  return double_value;
 }
 }  // namespace
 
@@ -264,7 +275,8 @@ void GpioCommandController::initialize_gpio_state_msg()
       get_gpios_state_interfaces_names(gpio_name);
     gpio_state_msg_.interface_values[gpio_index].values = std::vector<double>(
       gpio_state_msg_.interface_values[gpio_index].interface_names.size(),
-      std::numeric_limits<double>::quiet_NaN());
+      sanitize_double(std::numeric_limits<double>::quiet_NaN()));  ////////////////////////////////////////////////
+                                                                   ///Change1
   }
 }
 
@@ -429,7 +441,8 @@ void GpioCommandController::apply_state_value(
     else
     {
       state_msg.interface_values[gpio_index].values[interface_index] =
-        state_msg_interface_value_op.value();
+
+        sanitize_double(state_msg_interface_value_op.value());  /////////////////////change2
     }
   }
   catch (const std::exception & e)
