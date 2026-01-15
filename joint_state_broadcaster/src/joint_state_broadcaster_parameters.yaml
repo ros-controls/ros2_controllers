@@ -62,7 +62,7 @@ joint_state_broadcaster:
   }
   publish_dynamic_joint_states: {
     type: bool,
-    default_value: true,
+    default_value: false,
     read_only: true,
-    description: "Whether to publish dynamic joint states."
+    description: "[Deprecated] Whether to publish dynamic joint states. This parameter is deprecated and will be removed in future releases."
   }

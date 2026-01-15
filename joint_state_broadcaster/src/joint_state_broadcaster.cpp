@@ -92,6 +92,14 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
+  if (params_.publish_dynamic_joint_states)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated] The 'publish_dynamic_joint_states' parameter is deprecated and will be removed "
+      "in future releases. Please update your configuration.");
+  }
+
   if (use_all_available_interfaces())
   {
     RCLCPP_INFO(
