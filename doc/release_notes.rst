@@ -72,11 +72,14 @@ joint_trajectory_controller
 * Feed-forward effort trajectories are supported now (`#1200 <https://github.com/ros-controls/ros2_controllers/pull/1200>`_).
 * Parameter ``open_loop_control`` is replaced by ``interpolate_from_desired_state`` and setting the feedback gains to zero (`#1525 <https://github.com/ros-controls/ros2_controllers/pull/1525>`_).
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
-<<<<<<< HEAD
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
   don't contain velocity / acceleration information, but the trajectory does. This way, the segment
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
+* Scaling support was added in `#1191
+  <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
+  "stretches the time" with which it progresses in the trajectory. Scaling can either be set
+  manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
 
 mecanum_drive_controller
 ************************
@@ -89,12 +92,6 @@ The ``parallel_gripper_action_controller/GripperActionController`` was added. `(
 omni_wheel_drive_controller
 *********************************
 * 🚀 The omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
-=======
-* Scaling support was added in `#1191
-  <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
-  "stretches the time" with which it progresses in the trajectory. Scaling can either be set
-  manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
->>>>>>> 4a42b1f (Add speed scaling support to JTC (#1191))
 
 pid_controller
 ************************
