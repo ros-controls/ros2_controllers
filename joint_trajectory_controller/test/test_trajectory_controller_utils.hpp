@@ -119,11 +119,6 @@ public:
     }
   }
 
-  void set_joint_names(const std::vector<std::string> & joint_names)
-  {
-    params_.joints = joint_names;
-  }
-
   void set_command_joint_names(const std::vector<std::string> & command_joint_names)
   {
     command_joint_names_ = command_joint_names;
@@ -166,14 +161,18 @@ public:
 
   bool has_effort_command_interface() const { return has_effort_command_interface_; }
 
-  bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
+  bool use_external_control_law() const { return use_external_control_law_; }
+
+  std::shared_ptr<joint_trajectory_controller_plugins::TrajectoryControllerBase> get_traj_contr()
+    const
+  {
+    return traj_contr_;
+  }
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
     return *(active_tolerances_.readFromRT());
   }
-
-  std::vector<PidPtr> get_pids() const { return pids_; }
 
   joint_trajectory_controller::SegmentTolerances get_tolerances() const
   {
@@ -293,12 +292,17 @@ public:
     return traj_controller_->init(params);
   }
 
+  /**
+   * @brief set PIDs for every entry in joint_names_
+   */
   void SetPidParameters(double p_value = 0.0, double ff_value = 1.0)
   {
     traj_controller_->trigger_declare_parameters();
     auto node = traj_controller_->get_node();
 
-    for (size_t i = 0; i < joint_names_.size(); ++i)
+    // if command_joints were not set manually, it was done in the on_configure() method
+    auto command_joint_names = node->get_parameter("command_joints").as_string_array();
+    for (size_t i = 0; i < command_joint_names.size(); ++i)
     {
       const std::string prefix = "gains." + joint_names_[i];
       const rclcpp::Parameter k_p(prefix + ".p", p_value);
@@ -333,9 +337,14 @@ public:
     // read-only parameters have to be set before init -> won't be read otherwise
     SetUpTrajectoryController(executor, parameters_local, urdf);
 
-    // set pid parameters before configure
-    SetPidParameters(k_p, ff);
     traj_controller_->configure();
+
+    // set pid parameters before activate. The PID plugin has to be loaded already, otherwise
+    // parameters are not declared yet
+    if (traj_controller_->use_external_control_law())
+    {
+      SetPidParameters(k_p, ff);
+    }
 
     ActivateTrajectoryController(
       separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
@@ -657,7 +666,7 @@ public:
     // i.e., active but trivial trajectory (one point only)
     EXPECT_TRUE(traj_controller_->has_trivial_traj());
 
-    if (traj_controller_->use_closed_loop_pid_adapter() == false)
+    if (traj_controller_->use_external_control_law() == false)
     {
       if (traj_controller_->has_position_command_interface())
       {
@@ -687,7 +696,7 @@ public:
         EXPECT_EQ(effort.at(2), joint_eff_[2]);
       }
     }
-    else  // traj_controller_->use_closed_loop_pid_adapter() == true
+    else  // traj_controller_->use_external_control_law() == true
     {
       // velocity or effort PID?
       // --> set kp > 0.0 in test
@@ -697,9 +706,9 @@ public:
         {
           EXPECT_TRUE(is_same_sign_or_zero(
             position.at(i) - pos_state_interfaces_[i]->get_optional().value(), joint_vel_[i]))
-            << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i]->get_optional().value() << ", velocity command is "
-            << joint_vel_[i];
+            << std::fixed << std::setprecision(2) << "test position point " << position.at(i)
+            << ", position state is " << pos_state_interfaces_[i]->get_optional().value()
+            << ", velocity command is " << joint_vel_[i];
         }
       }
       if (traj_controller_->has_effort_command_interface())
@@ -709,9 +718,9 @@ public:
           EXPECT_TRUE(is_same_sign_or_zero(
             position.at(i) - pos_state_interfaces_[i]->get_optional().value() + effort.at(i),
             joint_eff_[i]))
-            << "test position point " << position.at(i) << ", position state is "
-            << pos_state_interfaces_[i]->get_optional().value() << ", effort command is "
-            << joint_eff_[i];
+            << std::fixed << std::setprecision(2) << "test position point " << position.at(i)
+            << ", position state is " << pos_state_interfaces_[i]->get_optional().value()
+            << ", effort command is " << joint_eff_[i];
         }
       }
     }
