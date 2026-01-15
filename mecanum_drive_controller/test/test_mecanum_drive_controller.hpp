@@ -84,12 +84,11 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
 
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_false_covariance_test);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -173,10 +172,13 @@ protected:
     const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
   {
     const auto urdf = "";
-
-    ASSERT_EQ(
-      controller_->init(controller_name, urdf, 0, ns, node_options),
-      controller_interface::return_type::OK);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = urdf;
+    params.update_rate = 0;
+    params.node_namespace = ns;
+    params.node_options = node_options;
+    ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());

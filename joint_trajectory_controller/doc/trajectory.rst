@@ -115,6 +115,11 @@ Trajectory Replacement
 
 Joint trajectory messages allow to specify the time at which a new trajectory should start executing by means of the header timestamp, where zero time (the default) means "start now".
 
+.. warning::
+
+  As of now, this functionality is not ported to ROS 2, see `this issue <https://github.com/ros-controls/ros2_controllers/issues/84>`__ for more information.
+  The current implementation just forgets the old trajectory.
+
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
 Rather, the controller will take the useful parts of both and combine them appropriately, yielding a smarter trajectory replacement strategy.
 

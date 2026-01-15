@@ -26,8 +26,14 @@ class OmniWheelDriveControllerTest
 
 TEST_F(OmniWheelDriveControllerTest, init_fails_without_parameters)
 {
-  const auto ret =
-    controller_->init(controller_name_, urdf_, 0, "", controller_->define_custom_node_options());
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = controller_name_;
+  params.robot_description = urdf_;
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = controller_->define_custom_node_options();
+
+  const auto ret = controller_->init(params);
   ASSERT_EQ(ret, controller_interface::return_type::ERROR);
 }
 
@@ -81,32 +87,7 @@ TEST_F(OmniWheelDriveControllerTest, when_controller_configured_expect_properly_
   }
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
-{
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_names_, 0.0,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_link_id);
-}
-
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -127,13 +108,12 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_n
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's */
+  // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -153,41 +133,13 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the frame
-   * id's */
+
+  // frame_prefix is blank so nothing added to the frame id's
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
-{
-  std::string test_namespace = "/test_namespace";
-
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_names_, 0.0,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))},
-      test_namespace),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_link_id);
-}
-
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -211,18 +163,17 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's instead of the namespace*/
+  // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
-  std::string frame_prefix = "";
+  std::string frame_prefix = "~";
 
   ASSERT_EQ(
     InitController(
@@ -240,8 +191,8 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to the
-   * frame id's */
+
+  // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
   ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
 }

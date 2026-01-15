@@ -2,6 +2,22 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.2.0 (2025-12-31)
+------------------
+* Use TF prefix helper for diff drive controller (`#1997 <https://github.com/ros-controls/ros2_controllers/issues/1997>`_)
+* Contributors: Ege Kural
+
+6.1.0 (2025-12-01)
+------------------
+* Update odometry implementation in diff_drive (`#1854 <https://github.com/ros-controls/ros2_controllers/issues/1854>`_)
+* Contributors: Aarav Gupta
+
+6.0.0 (2025-11-10)
+------------------
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich
+
 5.8.0 (2025-10-02)
 ------------------
 * Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)

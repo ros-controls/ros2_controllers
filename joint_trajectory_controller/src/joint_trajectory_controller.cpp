@@ -749,7 +749,7 @@ void JointTrajectoryController::query_state_service(
 {
   const auto logger = get_node()->get_logger();
   // Preconditions
-  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
     response->success = false;
@@ -872,7 +872,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     for (size_t i = 0; i < command_joint_names_.size(); i++)
     {
       RCLCPP_DEBUG(
-        logger, "Command joint %lu: '%s' maps to joint %lu: '%s'.", i,
+        logger, "Command joint %zu: '%s' maps to joint %zu: '%s'.", i,
         command_joint_names_[i].c_str(), map_cmd_to_joints_[i],
         params_.joints.at(map_cmd_to_joints_[i]).c_str());
     }
@@ -1037,9 +1037,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
-  RCLCPP_INFO(
-    logger, "Using '%s' interpolation method.",
-    interpolation_methods::InterpolationMethodMap.at(interpolation_method_).c_str());
+  RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
 
   // prepare hold_position_msg
   init_hold_position_msg();
@@ -1419,9 +1417,11 @@ void JointTrajectoryController::publish_state(
   if (state_publisher_)
   {
     state_msg_.header.stamp = time;
+    state_msg_.reference.time_from_start = desired_state.time_from_start;
     state_msg_.reference.positions = desired_state.positions;
     state_msg_.reference.velocities = desired_state.velocities;
     state_msg_.reference.accelerations = desired_state.accelerations;
+    state_msg_.feedback.time_from_start = current_state.time_from_start;
     state_msg_.feedback.positions = current_state.positions;
     state_msg_.error.positions = state_error.positions;
     if (has_velocity_state_interface_)
@@ -1466,7 +1466,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");

@@ -14,6 +14,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   hardware_interface
   pluginlib
   rclcpp
+  rclcpp_action
   rclcpp_lifecycle
   realtime_tools
   rsl
@@ -54,6 +55,7 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       joint_trajectory_controller_plugins::pid_trajectory_plugin
                       pluginlib::pluginlib
                       rclcpp::rclcpp
+                      rclcpp_action::rclcpp_action
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       rsl::rsl

@@ -49,12 +49,10 @@ std::vector<std::string> wheel_names_ = {
 class TestableOmniWheelDriveController
 : public omni_wheel_drive_controller::OmniWheelDriveController
 {
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(OmniWheelDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(OmniWheelDriveControllerTest, cleanup);
   FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_unchained_mode);
   FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_chained_mode);
@@ -227,7 +225,13 @@ protected:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    return controller_->init(controller_name_, urdf_, 0, ns, node_options);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name_;
+    params.robot_description = urdf_;
+    params.update_rate = 0;
+    params.node_namespace = ns;
+    params.node_options = node_options;
+    return controller_->init(params);
   }
 
   std::vector<double> wheels_pos_states_ = {1, 1, 1, 1};

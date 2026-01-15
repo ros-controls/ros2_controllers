@@ -2,6 +2,18 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.2.0 (2025-12-31)
+------------------
+
+6.1.0 (2025-12-01)
+------------------
+
+6.0.0 (2025-11-10)
+------------------
+* Use NodeInterfaces for TransformBroadcaster construction (`#1981 <https://github.com/ros-controls/ros2_controllers/issues/1981>`_)
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich
+
 5.8.0 (2025-10-02)
 ------------------
 * Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)

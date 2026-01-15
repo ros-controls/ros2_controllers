@@ -283,8 +283,13 @@ public:
     node_options.parameter_overrides(parameter_overrides);
     traj_controller_->set_node_options(node_options);
 
-    return traj_controller_->init(
-      controller_name_, urdf, 100, "", traj_controller_->define_custom_node_options());
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name_;
+    params.robot_description = urdf;
+    params.update_rate = 100;
+    params.node_namespace = "";
+    params.node_options = traj_controller_->define_custom_node_options();
+    return traj_controller_->init(params);
   }
 
   /**
@@ -431,9 +436,7 @@ public:
   {
     if (traj_controller_)
     {
-      if (
-        traj_controller_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (traj_controller_->get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
