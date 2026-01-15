@@ -163,7 +163,7 @@ void JointStateBroadcasterTest::assign_state_interfaces(
 
 TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 {
-  // publishers not initialized yet
+  // publisher not initialized yet
   ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
 
   SetUpStateBroadcaster();
@@ -182,7 +182,7 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -196,7 +196,7 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 
 TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest)
 {
-  // publishers not initialized yet
+  // publisher not initialized yet
   ASSERT_FALSE(state_broadcaster_->joint_state_publisher_);
 
   SetUpStateBroadcaster();
@@ -215,7 +215,7 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -244,7 +244,7 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -277,7 +277,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -311,7 +311,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -349,7 +349,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDes
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -386,7 +386,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -422,7 +422,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces)
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -454,7 +454,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -487,7 +487,7 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -540,7 +540,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -607,7 +607,7 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // joint state initialized
@@ -652,7 +652,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(0));
   ASSERT_THAT(joint_state_msg.effort, SizeIs(0));
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
 }
 
@@ -696,7 +696,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
     ASSERT_TRUE(std::isnan(joint_state_msg.effort[i]));
   }
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
 }
 
@@ -730,7 +730,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
     ASSERT_TRUE(std::isnan(joint_state_msg.effort[i]));
   }
 
-  // publishers initialized
+  // publisher initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
 }
 
@@ -963,7 +963,7 @@ TEST_F(JointStateBroadcasterTest, JointStatePublishTestLocalTopic)
 
 TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
 {
-  // publishers not initialized yet
+  // publisher not initialized yet
   ASSERT_FALSE(state_broadcaster_->realtime_joint_state_publisher_);
 
   // Add extra joints as parameters
