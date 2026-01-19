@@ -1201,14 +1201,13 @@ TEST_F(TestDiffDriveController, odometry_set_reset_services)
   // verify initial movement
   ASSERT_GT(controller_->odometry_.getX(), 0.0);
 
-  // 2. Stop and trigger reset
+  // 2. Stop and call odom reset
   publish(0.0, 0.0);
   controller_->wait_for_twist(executor);
 
-  // call the reset service directly
-  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
-  auto response = std::make_shared<std_srvs::srv::Empty::Response>();
-  controller_->reset_odometry(nullptr, request, response);
+  auto reset_request = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto reset_response = std::make_shared<std_srvs::srv::Empty::Response>();
+  controller_->reset_odometry(nullptr, reset_request, reset_response);
 
   // run update to process the reset and verify odometry values are zeroed
   controller_->update(test_time, period);
@@ -1224,12 +1223,11 @@ TEST_F(TestDiffDriveController, odometry_set_reset_services)
   // simulate the movement by updating the position feedback
   position_values_[0] += 0.1;  // left wheel moved
   position_values_[1] += 0.1;  // right wheel moved
-
   controller_->update(test_time, period);
   test_time += period;
   ASSERT_GT(controller_->odometry_.getX(), 0.0);
 
-  // 4. Stop and trigger set
+  // 4. Stop and call odom set
   publish(0.0, 0.0);
   controller_->wait_for_twist(executor);
   auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
@@ -1240,21 +1238,20 @@ TEST_F(TestDiffDriveController, odometry_set_reset_services)
   controller_->set_odometry(nullptr, set_request, set_response);
   EXPECT_TRUE(set_response->success);
 
-  // run update to process the set and check odometry values
+  // run update to process the set and verify odom values
   controller_->update(test_time, period);
   test_time += period;
   EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
   EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
   EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);  // 90 deg
 
-  // 5. Move again to ensure it still works after set
+  // 5. Move again to ensure it still works
   publish(1.0, 0.0);  // we move in Y now
   controller_->wait_for_twist(executor);
 
   // simulate the movement by updating the position feedback
   position_values_[0] += 0.1;  // left wheel moved
   position_values_[1] += 0.1;  // right wheel moved
-
   controller_->update(test_time, period);
   test_time += period;
   EXPECT_GT(controller_->odometry_.getY(), -2.0);

@@ -9,8 +9,8 @@ repositories:
     version: master
   control_msgs:
     type: git
-    url: https://github.com/kuralme/control_msgs.git
-    version: set_odometry_srv
+    url: https://github.com/ros-controls/control_msgs.git
+    version: master
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git

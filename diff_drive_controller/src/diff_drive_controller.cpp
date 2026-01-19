@@ -593,7 +593,7 @@ void DiffDriveController::set_odometry(
   const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
   std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
 {
-  // update the flag for setting odom thread-safely in the control loop
+  // flip the flag for thread-safe odom set in the control loop
   set_odom_request_.store(true);
   requested_odom_params_.x = req->x;
   requested_odom_params_.y = req->y;
@@ -606,7 +606,7 @@ void DiffDriveController::reset_odometry(
   const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
   std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
 {
-  // update the flag for resetting odom thread-safely in the control loop
+  // flip the flag for thread-safe odom reset in the control loop
   reset_odom_request_.store(true);
   RCLCPP_INFO(get_node()->get_logger(), "Odometry reset requested");
 }
