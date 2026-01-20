@@ -32,6 +32,7 @@ Controllers for Wheeled Mobile Robots
    Omni Wheel Drive Controller <../omni_wheel_drive_controller/doc/userdoc.rst>
    Steering Controllers Library <../steering_controllers_library/doc/userdoc.rst>
    Tricycle Controller <../tricycle_controller/doc/userdoc.rst>
+   Swerve Drive Controller <../swerve_drive_controller/doc/userdoc.rst>
 
 Controllers for Manipulators and Other Robots
 *********************************************
