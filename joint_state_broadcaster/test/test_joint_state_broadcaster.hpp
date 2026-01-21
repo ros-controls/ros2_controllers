@@ -50,6 +50,7 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMapping);
   FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
+  FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest);
 };
 
 class JointStateBroadcasterTest : public ::testing::Test
