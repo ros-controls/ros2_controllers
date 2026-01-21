@@ -1324,3 +1324,23 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
 }
+
+TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
+{
+  const std::string JOINT_NAME = joint_names_[0];
+  const std::string IF_NAME = "is_moving";
+  SetUpStateBroadcaster({JOINT_NAME}, {IF_NAME});
+
+  init_broadcaster_and_set_parameters("", {JOINT_NAME}, {IF_NAME});
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_moving_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  // configure and activate ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // update should not throw
+  state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+}

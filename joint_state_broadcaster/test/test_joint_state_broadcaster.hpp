@@ -122,6 +122,10 @@ protected:
     std::make_shared<hardware_interface::StateInterface>(
       joint_names_[0], custom_interface_name_, &custom_joint_value_);
 
+  hardware_interface::StateInterface::SharedPtr joint_1_moving_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], "is_moving", "bool", "false");
+
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
