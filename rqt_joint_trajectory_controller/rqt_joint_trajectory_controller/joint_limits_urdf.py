@@ -27,9 +27,12 @@ import xml.dom.minidom
 from math import pi
 
 import rclpy
+import rclpy.subscription
 from std_msgs.msg import String
 
 description = ""
+robot_description_subscriber_created = False
+subscription = None
 
 
 def callback(msg):
@@ -37,15 +40,30 @@ def callback(msg):
     description = msg.data
 
 
-def subscribe_to_robot_description(node, key="robot_description"):
+def subscribe_to_robot_description(
+    node, key="robot_description"
+) -> rclpy.subscription.Subscription:
+    global robot_description_subscriber_created
+    global subscription
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    subscription = node.create_subscription(String, key, callback, qos_profile)
+    robot_description_subscriber_created = True
+    return subscription
+
+
+def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
+    if subscription is not None:
+        node.destroy_subscription(subscription)
 
 
 def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+    if not robot_description_subscriber_created:
+        print("First select robot description topic name!")
+        return
+
     use_small = use_smallest_joint_limits
     use_mimic = True
 
