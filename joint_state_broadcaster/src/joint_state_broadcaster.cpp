@@ -411,6 +411,7 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  size_t map_index = 0u;
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
@@ -419,7 +420,7 @@ controller_interface::return_type JointStateBroadcaster::update(
       const auto & opt = state_interfaces_[i].get_optional(0);
       if (opt.has_value())
       {
-        *mapped_values_[i] = opt.value();
+        *mapped_values_[map_index++] = opt.value();
       }
     }
   }
