@@ -13,20 +13,20 @@
 // limitations under the License.
 
 #include <gmock/gmock.h>
-#include <memory>
-#include <fstream>
 #include <cstdio>
-#include <vector>
 #include <filesystem>
+#include <fstream>
+#include <memory>
+#include <vector>
 
 #include "controller_manager/controller_manager.hpp"
+#include "controller_manager_msgs/srv/switch_controller.hpp"
+#include "gpio_controllers/gpio_command_controller.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/resource_manager.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
-#include "controller_manager_msgs/srv/switch_controller.hpp"
-#include "hardware_interface/loaned_command_interface.hpp"
-#include "hardware_interface/loaned_state_interface.hpp"
-#include "gpio_controllers/gpio_command_controller.hpp"
 
 const auto urdf_bool = R"(
 <?xml version="1.0" encoding="utf-8"?>
@@ -72,9 +72,10 @@ public:
   using gpio_controllers::GpioCommandController::assign_interfaces;
 };
 
-TEST(TestLoadGpioCommandController, ReproduceBadCastCrash)
+TEST(TestLoadGpioCommandController, UpdateBoolGpioInterfaces)
 {
-  if(!rclcpp::ok()){
+  if (!rclcpp::ok())
+  {
     rclcpp::init(0, nullptr);
   }
 
@@ -92,26 +93,30 @@ TEST(TestLoadGpioCommandController, ReproduceBadCastCrash)
   init_params.node_options = node_options;
 
   ASSERT_EQ(controller->init(init_params), controller_interface::return_type::OK);
-  ASSERT_EQ(controller->on_configure(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
-  
+  ASSERT_EQ(
+    controller->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
   double dummy_double_value = 0.0;
 
-  auto cmd_intf = std::make_shared<hardware_interface::CommandInterface>("gpio1", "dig_out_1", &dummy_double_value);
+  auto cmd_intf = std::make_shared<hardware_interface::CommandInterface>(
+    "gpio1", "dig_out_1", &dummy_double_value);
   std::vector<hardware_interface::LoanedCommandInterface> cmd_loaned;
   cmd_loaned.emplace_back(cmd_intf);
 
-  auto state_intf = std::make_shared<hardware_interface::StateInterface>("gpio1", "dig_in_1", &dummy_double_value);
+  auto state_intf =
+    std::make_shared<hardware_interface::StateInterface>("gpio1", "dig_in_1", &dummy_double_value);
   std::vector<hardware_interface::LoanedStateInterface> state_loaned;
   state_loaned.emplace_back(state_intf);
 
   controller->assign_interfaces(std::move(cmd_loaned), std::move(state_loaned));
 
-  ASSERT_EQ(controller->on_activate(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
-  
+  ASSERT_EQ(
+    controller->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
   // This verifies that the controller no longer crashes on update
-  EXPECT_NO_THROW(
-    controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01))
-  );
+  EXPECT_NO_THROW(controller->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
 
   rclcpp::shutdown();
 }
