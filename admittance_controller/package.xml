@@ -40,6 +40,7 @@
   <depend>tf2_kdl</depend>
   <depend>tf2_ros</depend>
   <depend>tf2</depend>
+  <depend>tinyxml2</depend>
   <depend>trajectory_msgs</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
