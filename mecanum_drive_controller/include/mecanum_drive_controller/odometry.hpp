@@ -81,6 +81,14 @@ public:
   void setWheelsParams(
     const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius);
 
+  /// \brief Sets the odometry to given 2D pose values
+  /// \param x position (x component) [m]
+  /// \param y position (y component) [m]
+  /// \param heading orientation (z component) [rad]
+  void setOdometry(double x, double y, double heading);
+  /// \brief Sets the odometry parameters to zero
+  void resetOdometry();
+
 private:
   /// Current timestamp:
   rclcpp::Time timestamp_;
