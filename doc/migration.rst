@@ -10,7 +10,7 @@ joint_state_broadcaster
   For publishing non-standard interfaces, consider using alternatives:
 
   * :ref:`state_interfaces_broadcaster <state_interfaces_broadcaster_userdoc>` for broadcasting arbitrary state interfaces
-  * :ref:`gpio_command_controller <gpio_command_controller_userdoc>` for GPIO and custom hardware interfaces
+  * :ref:`gpio_controllers <gpio_controllers_userdoc>` for GPIO and custom hardware interfaces
   * `pal_statistics <https://github.com/pal-robotics/pal_statistics>`_ for flexible runtime statistics publishing
 
 effort_controllers
