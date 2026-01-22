@@ -1342,7 +1342,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // update should not throw
-  ASSERT_NO_THROW(state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
 
   const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
   ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
@@ -1369,7 +1370,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
   ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // update should not throw
-  ASSERT_NO_THROW(state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
 
   const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
   ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
