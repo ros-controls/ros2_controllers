@@ -28,11 +28,6 @@ joint_state_broadcaster
 * Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
-  For publishing non-standard interfaces, consider using alternatives:
-
-  * ``state_interfaces_broadcaster`` for broadcasting arbitrary state interfaces
-  * ``gpio_command_controller`` for GPIO and custom hardware interfaces
-  * `pal_statistics <https://github.com/pal-robotics/pal_statistics>`_ for flexible runtime statistics publishing
 
 omni_wheel_drive_controller
 *****************************
