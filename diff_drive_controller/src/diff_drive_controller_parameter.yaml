@@ -40,7 +40,7 @@ diff_drive_controller:
     type: double,
     default_value: 1.0,
     description: "Correction factor when the actual wheel separation differs from the nominal value in the ``wheel_separation`` parameter.",
-  } 
+  }
   left_wheel_radius_multiplier: {
     type: double,
     default_value: 1.0,
