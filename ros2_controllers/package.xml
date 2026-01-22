@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>ros2_controllers</name>
-  <version>6.1.0</version>
+  <version>6.2.0</version>
   <description>Metapackage for ros2_controllers related packages</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -38,6 +38,7 @@
   <exec_depend>pose_broadcaster</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>range_sensor_broadcaster</exec_depend>
+  <exec_depend>state_interfaces_broadcaster</exec_depend>
   <exec_depend>steering_controllers_library</exec_depend>
   <exec_depend>tricycle_controller</exec_depend>
   <exec_depend>tricycle_steering_controller</exec_depend>

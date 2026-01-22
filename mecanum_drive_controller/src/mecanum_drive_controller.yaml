@@ -116,7 +116,7 @@ mecanum_drive_controller:
   tf_frame_prefix_enable: {
     type: bool,
     default_value: true,
-    description:  "Enables or disables appending ``tf_frame_prefix`` to tf frame id's. See its parameter description for more information.",
+    description:  "Deprecated: this parameter will be removed in a future release. Use 'tf_frame_prefix' instead.",
   }
   tf_frame_prefix: {
     type: string,

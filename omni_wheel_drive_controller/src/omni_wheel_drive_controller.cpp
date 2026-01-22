@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logger.hpp"
@@ -130,6 +131,17 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
       }
     });
 
+  // deprecation warning if tf_frame_prefix_enable set to non-default value
+  const bool default_tf_frame_prefix_enable = true;
+  if (params_.tf_frame_prefix_enable != default_tf_frame_prefix_enable)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter 'tf_frame_prefix_enable' is DEPRECATED and set to a non-default value (%s). "
+      "Please migrate to 'tf_frame_prefix'.",
+      params_.tf_frame_prefix_enable ? "true" : "false");
+  }
+
   // Initialize odometry publisher and message
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
     DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
@@ -137,29 +149,34 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
       odometry_publisher_);
 
-  // Append the tf prefix if there is one
+  // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
     if (params_.tf_frame_prefix != "")
     {
-      tf_prefix = params_.tf_frame_prefix;
+      tf_prefix = controller_interface::resolve_tf_prefix(
+        params_.tf_frame_prefix, get_node()->get_namespace());
     }
     else
     {
-      tf_prefix = std::string(get_node()->get_namespace());
-    }
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Please use tilde ('~') character in 'tf_frame_prefix' as it replaced with node namespace");
 
-    // Make sure prefix does not start with '/' and always ends with '/'
-    if (tf_prefix.back() != '/')
-    {
-      tf_prefix = tf_prefix + "/";
-    }
-    if (tf_prefix.front() == '/')
-    {
-      tf_prefix.erase(0, 1);
+      tf_prefix = std::string(get_node()->get_namespace());
+      if (tf_prefix.back() != '/')
+      {
+        tf_prefix = tf_prefix + "/";
+      }
+      if (tf_prefix.front() == '/')
+      {
+        tf_prefix.erase(0, 1);
+      }
     }
   }
+
+  // prepend resolved TF prefix to frame ids
   const std::string odom_frame_id = tf_prefix + params_.odom_frame_id;
   const std::string base_frame_id = tf_prefix + params_.base_frame_id;
 
