@@ -92,5 +92,3 @@ tl::expected<void, std::string> state_interface_type_combinations(
 }
 
 }  // namespace joint_trajectory_controller
-
-#endif  // JOINT_TRAJECTORY_CONTROLLER__VALIDATE_JTC_PARAMETERS_HPP_
