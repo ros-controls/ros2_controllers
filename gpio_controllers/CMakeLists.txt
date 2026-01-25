@@ -67,6 +67,7 @@ if(BUILD_TESTING)
     controller_manager::controller_manager
     hardware_interface::hardware_interface
     ros2_control_test_assets::ros2_control_test_assets
+    ${PROJECT_NAME}
   )
 
   ament_add_gmock(
