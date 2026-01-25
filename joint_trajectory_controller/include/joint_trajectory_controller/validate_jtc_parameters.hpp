@@ -29,16 +29,18 @@ namespace joint_trajectory_controller
  * \brief Validate command interface type combinations for joint trajectory controller.
  *
  * \param[in] parameter The rclcpp parameter containing the command interface types.
- * \return tl::expected<void, std::string> An empty expected on success, or an error message on failure.
+ * \return tl::expected<void, std::string> An empty expected on success, or an error message on
+ * failure.
  */
 tl::expected<void, std::string> command_interface_type_combinations(
   rclcpp::Parameter const & parameter);
 
 /**
  * \brief Validate state interface type combinations for joint trajectory controller.
- * 
+ *
  * \param[in] parameter The rclcpp parameter containing the state interface types.
- * \return tl::expected<void, std::string> An empty expected on success, or an error message on failure.
+ * \return tl::expected<void, std::string> An empty expected on success, or an error message on
+ * failure.
  */
 tl::expected<void, std::string> state_interface_type_combinations(
   rclcpp::Parameter const & parameter);
