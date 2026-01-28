@@ -48,7 +48,8 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+  std::vector<hardware_interface::StateInterface::SharedPtr> export_state_interfaces_list()
+    override;
 
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
@@ -57,7 +58,6 @@ protected:
   chained_filter::Params params_;
 
   std::vector<std::unique_ptr<filters::FilterChain<double>>> filters_;
-  std::vector<double> output_state_values_;
 };
 }  // namespace chained_filter_controller
 #endif  // CHAINED_FILTER_CONTROLLER__CHAINED_FILTER_HPP_

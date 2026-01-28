@@ -79,9 +79,14 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // set up the reference interface,
-  controller_->reference_interfaces_ = {
-    get_joint1_reference_position(), get_joint2_reference_position(),
-    get_joint1_reference_velocity(), get_joint2_reference_velocity()};
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(
+    get_joint1_reference_position());
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(
+    get_joint2_reference_position());
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(
+    get_joint1_reference_velocity());
+  controller_->ordered_exported_reference_interfaces_[3]->set_value(
+    get_joint2_reference_velocity());
 
   // run update
   ASSERT_EQ(

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -165,10 +166,11 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic)
     COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  EXPECT_EQ(
+    controller_->ordered_exported_reference_interfaces_.size(), reference_interface_names_.size());
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional<double>().value()));
   }
 }
 
@@ -183,8 +185,8 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic_chained)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  controller_->reference_interfaces_[0] = 0.1;
-  controller_->reference_interfaces_[1] = 0.2;
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(0.1));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.2));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -198,10 +200,13 @@ TEST_F(BicycleSteeringControllerTest, test_update_logic_chained)
     COMMON_THRESHOLD);
 
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  EXPECT_EQ(
+    controller_->ordered_exported_reference_interfaces_.size(), reference_interface_names_.size());
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 }
 

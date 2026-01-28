@@ -329,7 +329,7 @@ TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  controller_->reference_interfaces_[0] = 1.5;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.5);
 
   ControllerStateMsg msg;
   subscribe_to_controller_status_execute_update_and_get_messages(msg);
@@ -497,9 +497,11 @@ TEST_F(
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 
   // set command statically
@@ -526,12 +528,17 @@ TEST_F(
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  EXPECT_TRUE(
+    std::isnan(
+      controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN())));
 
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 0);
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
@@ -567,9 +574,11 @@ TEST_F(
   //  0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
   ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
@@ -595,18 +604,20 @@ TEST_F(
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 
   // set command statically
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
   // imitating preceding controllers command_interfaces setting reference_interfaces of chained
   // controller.
-  controller_->reference_interfaces_[0] = 3.0;
-  controller_->reference_interfaces_[1] = 0.0;
-  controller_->reference_interfaces_[2] = 0.0;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(3.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
 
   // reference_callback() is implicitly called when publish_commands() is called
   // reference_msg is published with provided time stamp when publish_commands( time_stamp)
@@ -627,9 +638,11 @@ TEST_F(
 
   //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
   EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 6.0);
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
   {
@@ -739,17 +752,18 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   // Setup reference interfaces for side to side motion
   auto side_to_side_motion = [this](double linear_y)
   {
-    controller_->reference_interfaces_[0] = 0;         // linear x
-    controller_->reference_interfaces_[1] = linear_y;  // linear y
-    controller_->reference_interfaces_[2] = 0;         // angular z
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);       // linear x
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(linear_y);  // linear y
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);       // angular z
   };
 
   // Setup reference interfaces for rotation
   auto rotation_motion = [this](double rotation_velocity)
   {
-    controller_->reference_interfaces_[0] = 0;                  // linear x
-    controller_->reference_interfaces_[1] = 0;                  // linear y
-    controller_->reference_interfaces_[2] = rotation_velocity;  // angular z
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);  // linear x
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);  // linear y
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(
+      rotation_velocity);  // angular z
   };
 
   const double update_rate = 50.0;  // 50 Hz
