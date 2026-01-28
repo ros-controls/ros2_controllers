@@ -334,7 +334,7 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
 }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-MecanumDriveController::export_reference_interfaces_list()
+MecanumDriveController::on_export_reference_interfaces_list()
 {
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
   reference_interfaces.reserve(NR_REF_ITFS);

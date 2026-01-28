@@ -345,7 +345,7 @@ controller_interface::InterfaceConfiguration PidController::state_interface_conf
 }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-PidController::export_reference_interfaces_list()
+PidController::on_export_reference_interfaces_list()
 {
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
   const size_t num_interfaces = dof_ * params_.reference_and_state_interfaces.size();
@@ -366,7 +366,7 @@ PidController::export_reference_interfaces_list()
 }
 
 std::vector<hardware_interface::StateInterface::SharedPtr>
-PidController::export_state_interfaces_list()
+PidController::on_export_state_interfaces_list()
 {
   std::vector<hardware_interface::StateInterface::SharedPtr> state_interfaces;
   const size_t num_interfaces =

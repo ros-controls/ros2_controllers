@@ -143,7 +143,7 @@ controller_interface::return_type IMUSensorBroadcaster::update_reference_from_su
 }
 
 std::vector<hardware_interface::StateInterface::SharedPtr>
-IMUSensorBroadcaster::export_state_interfaces_list()
+IMUSensorBroadcaster::on_export_state_interfaces_list()
 {
   std::vector<hardware_interface::StateInterface::SharedPtr> exported_state_interfaces;
 

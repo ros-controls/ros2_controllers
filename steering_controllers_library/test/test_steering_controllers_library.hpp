@@ -88,7 +88,7 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = export_reference_interfaces_list();
+    auto ref_itfs = on_export_reference_interfaces_list();
     return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
   }
 

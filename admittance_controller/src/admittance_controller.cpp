@@ -164,7 +164,7 @@ controller_interface::InterfaceConfiguration AdmittanceController::state_interfa
 }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-AdmittanceController::export_reference_interfaces_list()
+AdmittanceController::on_export_reference_interfaces_list()
 {
   // create CommandInterface interfaces that other controllers will be able to chain with
   if (!admittance_)

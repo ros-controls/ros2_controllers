@@ -588,7 +588,7 @@ void OmniWheelDriveController::reset_buffers()
 bool OmniWheelDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-OmniWheelDriveController::export_reference_interfaces_list()
+OmniWheelDriveController::on_export_reference_interfaces_list()
 {
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
   constexpr size_t NR_REF_ITFS = 3;

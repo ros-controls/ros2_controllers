@@ -208,7 +208,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_reference
 }
 
 std::vector<hardware_interface::StateInterface::SharedPtr>
-ForceTorqueSensorBroadcaster::export_state_interfaces_list()
+ForceTorqueSensorBroadcaster::on_export_state_interfaces_list()
 {
   std::vector<hardware_interface::StateInterface::SharedPtr> exported_state_interfaces;
 

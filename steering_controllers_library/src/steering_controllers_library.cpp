@@ -443,7 +443,7 @@ SteeringControllersLibrary::state_interface_configuration() const
 }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-SteeringControllersLibrary::export_reference_interfaces_list()
+SteeringControllersLibrary::on_export_reference_interfaces_list()
 {
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
   reference_interfaces.reserve(nr_ref_itfs_);

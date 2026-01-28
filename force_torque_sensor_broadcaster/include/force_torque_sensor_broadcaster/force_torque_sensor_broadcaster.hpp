@@ -62,7 +62,7 @@ public:
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  std::vector<hardware_interface::StateInterface::SharedPtr> export_state_interfaces_list()
+  std::vector<hardware_interface::StateInterface::SharedPtr> on_export_state_interfaces_list()
     override;
 
 protected:

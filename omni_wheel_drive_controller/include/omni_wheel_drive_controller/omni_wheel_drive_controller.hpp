@@ -73,7 +73,7 @@ public:
     std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
 
 protected:
-  std::vector<hardware_interface::CommandInterface::SharedPtr> export_reference_interfaces_list()
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
     override;
 
   // Parameters from ROS for omni_wheel_drive_controller

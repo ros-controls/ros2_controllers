@@ -141,7 +141,7 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
 }
 
 std::vector<hardware_interface::StateInterface::SharedPtr>
-ChainedFilter::export_state_interfaces_list()
+ChainedFilter::on_export_state_interfaces_list()
 {
   std::vector<hardware_interface::StateInterface::SharedPtr> state_interfaces;
   state_interfaces.reserve(params_.output_interfaces.size());

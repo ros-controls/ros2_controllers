@@ -86,7 +86,7 @@ public:
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
-  std::vector<hardware_interface::CommandInterface::SharedPtr> export_reference_interfaces_list()
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
     override;
 
   struct WheelHandle

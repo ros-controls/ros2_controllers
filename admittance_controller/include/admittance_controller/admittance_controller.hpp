@@ -74,7 +74,7 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::vector<hardware_interface::CommandInterface::SharedPtr> export_reference_interfaces_list()
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
     override;
 
   controller_interface::return_type update_reference_from_subscribers(

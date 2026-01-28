@@ -744,7 +744,7 @@ controller_interface::CallbackReturn DiffDriveController::configure_side(
 bool DiffDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
 std::vector<hardware_interface::CommandInterface::SharedPtr>
-DiffDriveController::export_reference_interfaces_list()
+DiffDriveController::on_export_reference_interfaces_list()
 {
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
   reference_interfaces.reserve(2);
