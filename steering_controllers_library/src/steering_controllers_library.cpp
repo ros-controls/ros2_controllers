@@ -293,11 +293,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const size_t NUM_DIMENSIONS = 6;
   auto & pose_cov = odom_state_msg_.pose.covariance;
   auto & twist_cov = odom_state_msg_.twist.covariance;
-  for (size_t i = 0; i < NUM_DIMENSIONS; ++i) 
+  for (size_t i = 0; i < NUM_DIMENSIONS; ++i)
   {
     // indices of the diagonal: 0, 7, 14, 21, 28, 35
     const size_t index = (NUM_DIMENSIONS + 1) * i;
-    pose_cov[index]  = params_.pose_covariance_diagonal[i];
+    pose_cov[index] = params_.pose_covariance_diagonal[i];
     twist_cov[index] = params_.twist_covariance_diagonal[i];
   }
 
