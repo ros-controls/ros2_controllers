@@ -438,3 +438,57 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_goal_tolerance)
     logger, default_tolerances, goal_msg, params.joints);
   expectDefaultTolerances(active_tolerances);
 }
+
+// Create Error Point Tests
+TEST_F(TestTolerancesFixture, test_create_error_trajectory_point)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint desired;
+  trajectory_msgs::msg::JointTrajectoryPoint actual;
+
+  // Setup desired state
+  desired.positions = {1.0, 2.0, 3.0};
+  desired.velocities = {0.1, 0.2, 0.3};
+  desired.accelerations = {0.01, 0.02, 0.03};
+
+  // Setup actual state
+  actual.positions = {0.9, 2.1, 3.0};
+  actual.velocities = {0.05, 0.25, 0.3};
+  actual.accelerations = {0.0, 0.03, 0.03};
+
+  // Calculate error: Error = Desired - Actual
+  auto error_point = joint_trajectory_controller::create_error_trajectory_point(desired, actual);
+
+  // Verify Position Errors
+  ASSERT_EQ(error_point.positions.size(), 3);
+  EXPECT_NEAR(error_point.positions[0], 0.1, 1e-6);
+  EXPECT_NEAR(error_point.positions[1], -0.1, 1e-6);
+  EXPECT_NEAR(error_point.positions[2], 0.0, 1e-6);
+
+  // Verify Velocity Errors
+  ASSERT_EQ(error_point.velocities.size(), 3);
+  EXPECT_NEAR(error_point.velocities[0], 0.05, 1e-6);
+  EXPECT_NEAR(error_point.velocities[1], -0.05, 1e-6);
+  EXPECT_NEAR(error_point.velocities[2], 0.0, 1e-6);
+
+  // Verify Acceleration Errors
+  ASSERT_EQ(error_point.accelerations.size(), 3);
+  EXPECT_NEAR(error_point.accelerations[0], 0.01, 1e-6);
+  EXPECT_NEAR(error_point.accelerations[1], -0.01, 1e-6);
+  EXPECT_NEAR(error_point.accelerations[2], 0.0, 1e-6);
+}
+
+TEST_F(TestTolerancesFixture, test_create_error_trajectory_point_mismatched_sizes)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint desired;
+  trajectory_msgs::msg::JointTrajectoryPoint actual;
+
+  desired.positions = {1.0, 2.0};
+  actual.positions = {1.0, 2.0, 3.0};  // Mismatched size
+
+  // The function should return an empty error state if sizes don't match
+  auto error_point = joint_trajectory_controller::create_error_trajectory_point(desired, actual);
+
+  EXPECT_TRUE(error_point.positions.empty());
+  EXPECT_TRUE(error_point.velocities.empty());
+  EXPECT_TRUE(error_point.accelerations.empty());
+}
