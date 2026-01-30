@@ -27,9 +27,6 @@ jobs:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-win-build.yml@master
     with:
       ros_distro: rolling
-      pixi_dependencies: typeguard jinja2 boost compilers
+      pixi_dependencies: typeguard jinja2 boost compilers octomap
       ninja_packages: rsl
       target_cmake_args: -DBUILD_TESTING=OFF
-      # skipping pinocchio, as there is a dependency issue with hpp-fcl/coal -> octomap
-      skip_dependencies: kinematics_interface_pinocchio
-      skip_packages: kinematics_interface_pinocchio
