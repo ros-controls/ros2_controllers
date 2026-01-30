@@ -280,14 +280,15 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   odom_state_msg_.child_frame_id = params_.base_frame_id;
   odom_state_msg_.pose.pose.position.z = 0;
 
-  auto & covariance = odom_state_msg_.twist.covariance;
-  constexpr size_t NUM_DIMENSIONS = 6;
-  for (size_t index = 0; index < 6; ++index)
+  const size_t NUM_DIMENSIONS = 6;
+  auto & pose_cov = odom_state_msg_.pose.covariance;
+  auto & twist_cov = odom_state_msg_.twist.covariance;
+  for (size_t i = 0; i < NUM_DIMENSIONS; ++i)
   {
-    // 0, 7, 14, 21, 28, 35
-    const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+    // indices of the diagonal: 0, 7, 14, 21, 28, 35
+    const size_t index = (NUM_DIMENSIONS + 1) * i;
+    pose_cov[index] = params_.pose_covariance_diagonal[i];
+    twist_cov[index] = params_.twist_covariance_diagonal[i];
   }
 
   try
