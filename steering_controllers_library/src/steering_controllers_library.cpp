@@ -14,6 +14,7 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -521,8 +522,22 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   auto logger = get_node()->get_logger();
 
   // store current ref (for open loop odometry) and update odometry
-  last_linear_velocity_ = reference_interfaces_[0];
-  last_angular_velocity_ = reference_interfaces_[1];
+  if (std::isfinite(reference_interfaces_[0]))
+  {
+    last_linear_velocity_ = reference_interfaces_[0];
+  }
+  else
+  {
+    last_linear_velocity_ = 0.0;
+  }
+  if (std::isfinite(reference_interfaces_[1]))
+  {
+    last_angular_velocity_ = reference_interfaces_[1];
+  }
+  else
+  {
+    last_angular_velocity_ = 0.0;
+  }
   update_odometry(period);
 
   // MOVE ROBOT
