@@ -4,6 +4,15 @@ Migration Guides: Kilted Kaiju to Lyrical Luth
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases, where changes to user code might be necessary.
 
+joint_state_broadcaster
+*****************************
+* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``). (`#2107 <https://github.com/ros-controls/ros2_controllers/pull/2107>`_)
+  For publishing non-standard interfaces, consider using alternatives:
+
+  * :ref:`state_interfaces_broadcaster <state_interfaces_broadcaster_userdoc>` for broadcasting arbitrary state interfaces
+  * :ref:`gpio_controllers <gpio_controllers_userdoc>` for GPIO and custom hardware interfaces
+  * `pal_statistics <https://github.com/pal-robotics/pal_statistics>`_ for flexible runtime statistics publishing
+
 effort_controllers
 *****************************
 * ``effort_controllers/JointGroupEffortController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``effort``. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_).
