@@ -1,0 +1,8 @@
+<library path="battery_state_broadcaster">
+    <class name="battery_state_broadcaster/BatteryStateBroadcaster"
+           type="battery_state_broadcaster::BatteryStateBroadcaster" base_class_type="controller_interface::ControllerInterface">
+    <description>
+        This controller publishes the readings of a battery sensor as sensor_msgs/BatteryState message.
+    </description>
+    </class>
+  </library>
