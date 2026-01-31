@@ -55,6 +55,7 @@ public:
   bool update_from_pos(double left_pos, double right_pos, double dt);
   bool update_from_vel(double left_vel, double right_vel, double dt);
   bool try_update_open_loop(double linear_vel, double angular_vel, double dt);
+  void setOdometry(double x, double y, double heading);
   void resetOdometry();
 
   double getX() const { return x_; }
