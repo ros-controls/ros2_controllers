@@ -420,25 +420,31 @@ void GpioCommandController::apply_state_value(
   try
   {
     double state_value = std::numeric_limits<double>::quiet_NaN();
-    bool read_success = false;
-    const auto& interface = state_interfaces_map_.at(interface_name).get();
-    auto opt_double = interface.get_optional<double>();
-    if(opt_double.has_value()){
-      state_value = opt_double.value();
-      read_success = true;
-    }
-    else{
-      auto opt_bool = interface.get_optional<bool>();
-      if(opt_bool.has_value()){
-        state_value = static_cast<double>( (opt_bool.value()) ? 1.0 : 0.0);
-        read_success = true;
+    const auto & interface = state_interfaces_map_.at(interface_name).get();
+    const auto & type = interface.get_data_type();
+
+    if (type == hardware_interface::HandleDataType::DOUBLE)
+    {
+      const auto val_opt = interface.get_optional<double>();
+      if (val_opt.has_value())
+      {
+        state_value = val_opt.value();
       }
     }
-
-    if(!read_success){
-      RCLCPP_DEBUG(
-        get_node()->get_logger(), "Unable to retrive the data from state(datatype neither bool nor double): %s \n", interface_name.c_str()
-      );
+    else if (type == hardware_interface::HandleDataType::BOOL)
+    {
+      const auto val_opt = interface.get_optional<bool>();
+      if (val_opt.has_value())
+      {
+        state_value = val_opt.value() ? 1.0 : 0.0;
+      }
+    }
+    else
+    {
+      RCLCPP_DEBUG_ONCE(
+        get_node()->get_logger(),
+        "Interface '%s' has unsupported type '%s'. Only 'double' and 'bool' are supported.",
+        interface_name.c_str(), type.to_string().c_str());
     }
 
     state_msg.interface_values[gpio_index].values[interface_index] = state_value;

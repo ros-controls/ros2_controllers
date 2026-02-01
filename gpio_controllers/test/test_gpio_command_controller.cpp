@@ -85,10 +85,7 @@ class FriendGpioCommandController : public gpio_controllers::GpioCommandControll
   FRIEND_TEST(
     GpioCommandControllerTestSuite,
     WhenGivenCmdContainsWrongGpioInterfacesOrWrongGpioNameThenCommandInterfacesShouldNotBeUpdated);
-  FRIEND_TEST(
-    GpioCommandControllerTestSuite, 
-    UpdateBoolGpioInterfaces
-  );
+  FRIEND_TEST(GpioCommandControllerTestSuite, UpdateBoolGpioInterfaces);
 };
 
 class GpioCommandControllerTestSuite : public ::testing::Test
@@ -717,24 +714,22 @@ TEST_F(GpioCommandControllerTestSuite, UpdateBoolGpioInterfaces)
 {
   const auto node_options = create_node_options_with_overriden_parameters(
     {{"gpios", std::vector<std::string>{"gpio1"}},
-      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_out_1"}},
-      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_in_1"}}}
-  );
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_out_1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_in_1"}}});
 
-  ASSERT_EQ(controller_->init(create_ctrl_params(node_options)), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->init(create_ctrl_params(node_options)), controller_interface::return_type::OK);
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 
   double dummy_double_value = 0.0;
 
-  auto cmd_intf = std::make_shared<CommandInterface>(
-    "gpio1", "dig_out_1", &dummy_double_value);
+  auto cmd_intf = std::make_shared<CommandInterface>("gpio1", "dig_out_1", &dummy_double_value);
   std::vector<LoanedCommandInterface> cmd_loaned;
   cmd_loaned.emplace_back(cmd_intf, nullptr);
 
-  auto state_intf =
-    std::make_shared<StateInterface>("gpio1", "dig_in_1", &dummy_double_value);
+  auto state_intf = std::make_shared<StateInterface>("gpio1", "dig_in_1", &dummy_double_value);
   std::vector<LoanedStateInterface> state_loaned;
   state_loaned.emplace_back(state_intf, nullptr);
 
