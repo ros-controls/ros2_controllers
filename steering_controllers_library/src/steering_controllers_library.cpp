@@ -520,25 +520,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 {
   auto logger = get_node()->get_logger();
 
-  // store current ref (for open loop odometry) and update odometry
-  if (std::isfinite(reference_interfaces_[0]))
-  {
-    last_linear_velocity_ = reference_interfaces_[0];
-  }
-  else
-  {
-    last_linear_velocity_ = 0.0;
-  }
-  if (std::isfinite(reference_interfaces_[1]))
-  {
-    last_angular_velocity_ = reference_interfaces_[1];
-  }
-  else
-  {
-    last_angular_velocity_ = 0.0;
-  }
-  update_odometry(period);
-
   // MOVE ROBOT
 
   // Limit velocities and accelerations:
@@ -675,8 +656,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         RCLCPP_DEBUG(
           logger, "Unable to retrieve %s for steering wheel %zu",
           !state_interface_value_op.has_value() ? "state interface value"
-                                                : "command interface value",
-          i);
+                                                : "command interface value", );
       }
       else
       {
@@ -684,9 +664,27 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
-
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
+
+  // store current ref (for open loop odometry) and update odometry
+  if (std::isfinite(reference_interfaces_[0]))
+  {
+    last_linear_velocity_ = reference_interfaces_[0];
+  }
+  else
+  {
+    last_linear_velocity_ = 0.0;
+  }
+  if (std::isfinite(reference_interfaces_[1]))
+  {
+    last_angular_velocity_ = reference_interfaces_[1];
+  }
+  else
+  {
+    last_angular_velocity_ = 0.0;
+  }
+  update_odometry(period);
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
   reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();

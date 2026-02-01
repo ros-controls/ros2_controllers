@@ -420,9 +420,7 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
   controller_->update_and_write_commands(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  double wheel_speed_1 = pub_controller->command_interfaces_[0].get_optional().value();
-
-  ASSERT_GT(wheel_speed_1, 0.1);
+  ASSERT_GT(pub_controller->command_interfaces_[0].get_optional().value(), 0.1);
 
   auto nan_msg = ControllerReferenceMsg();
   nan_msg.header.stamp = controller_->get_node()->now();
@@ -436,7 +434,7 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
   controller_->update_and_write_commands(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  // The wheel speed should stay exactly the same
+  // The wheel speed should have been reset to 0.0
   EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
 }
 
@@ -468,6 +466,8 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
   controller_->update(future_time, rclcpp::Duration::from_seconds(0.1));
 
   EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
+
+  EXPECT_DOUBLE_EQ(controller_->odom_state_msg_.twist.twist.linear.x, 0.0);
 }
 
 int main(int argc, char ** argv)
