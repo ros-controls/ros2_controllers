@@ -47,10 +47,8 @@ class PublisherForwardPosition(Node):
 
         publish_topic = "/" + controller_name + "/" + "commands"
 
-        self.get_logger().info(
-            f'Publishing {len(goal_names)} goals on topic "{publish_topic}"\
-              every {wait_sec_between_publish} s'
-        )
+        self.get_logger().info(f'Publishing {len(goal_names)} goals on topic "{publish_topic}"\
+              every {wait_sec_between_publish} s')
 
         self.publisher_ = self.create_publisher(Float64MultiArray, publish_topic, 1)
         self.timer = self.create_timer(wait_sec_between_publish, self.timer_callback)
