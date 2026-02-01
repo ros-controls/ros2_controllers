@@ -55,14 +55,6 @@ std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
   return result;
 }
 
-double sanitize_double(double double_value)
-{
-  if (std::isnan(double_value))
-  {
-    return 0.0;
-  }
-  return double_value;
-}
 }  // namespace
 
 namespace gpio_controllers
@@ -274,7 +266,7 @@ void GpioCommandController::initialize_gpio_state_msg()
       get_gpios_state_interfaces_names(gpio_name);
     gpio_state_msg_.interface_values[gpio_index].values = std::vector<double>(
       gpio_state_msg_.interface_values[gpio_index].interface_names.size(),
-      sanitize_double(std::numeric_limits<double>::quiet_NaN()));
+      std::numeric_limits<double>::quiet_NaN());
   }
 }
 
@@ -427,21 +419,29 @@ void GpioCommandController::apply_state_value(
     state_msg.interface_values[gpio_index].interface_names[interface_index];
   try
   {
-    auto state_msg_interface_value_op =
-      state_interfaces_map_.at(interface_name).get().get_optional();
+    double state_value = std::numeric_limits<double>::quiet_NaN();
+    bool read_success = false;
+    const auto& interface = state_interfaces_map_.at(interface_name).get();
+    auto opt_double = interface.get_optional<double>();
+    if(opt_double.has_value()){
+      state_value = opt_double.value();
+      read_success = true;
+    }
+    else{
+      auto opt_bool = interface.get_optional<bool>();
+      if(opt_bool.has_value()){
+        state_value = static_cast<double>( (opt_bool.value()) ? 1.0 : 0.0);
+        read_success = true;
+      }
+    }
 
-    if (!state_msg_interface_value_op.has_value())
-    {
+    if(!read_success){
       RCLCPP_DEBUG(
-        get_node()->get_logger(), "Unable to retrieve the data from state: %s \n",
-        interface_name.c_str());
+        get_node()->get_logger(), "Unable to retrive the data from state(datatype neither bool nor double): %s \n", interface_name.c_str()
+      );
     }
-    else
-    {
-      state_msg.interface_values[gpio_index].values[interface_index] =
 
-        sanitize_double(state_msg_interface_value_op.value());
-    }
+    state_msg.interface_values[gpio_index].values[interface_index] = state_value;
   }
   catch (const std::exception & e)
   {
