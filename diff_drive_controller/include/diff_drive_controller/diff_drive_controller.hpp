@@ -162,10 +162,13 @@ protected:
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
   std::atomic<bool> set_odom_request_{false}, reset_odom_request_{false};
-  struct
+  struct OdomParams
   {
-    double x, y, yaw;
-  } requested_odom_params_;
+    double x = 0.0;
+    double y = 0.0;
+    double yaw = 0.0;
+  };
+  realtime_tools::RealtimeThreadSafeBox<OdomParams> requested_odom_params_;
 
   bool reset();
   void halt();
