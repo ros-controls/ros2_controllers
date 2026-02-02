@@ -169,7 +169,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   // check if odometry set or reset was requested by non-RT thread
   if (set_odom_request_.exchange(false))
   {
-    OdomParams params;
+    control_msgs::srv::SetOdometry::Request params;
     requested_odom_params_.get(params);
 
     odometry_.setOdometry(params.x, params.y, params.yaw);
@@ -594,8 +594,7 @@ void DiffDriveController::set_odometry(
   std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
 {
   // put requested odom params into RealtimeThreadSafeBox
-  OdomParams params{req->x, req->y, req->yaw};
-  requested_odom_params_.set(params);
+  requested_odom_params_.set(*req);
 
   // flip the flag for thread-safe odom set in the control loop
   set_odom_request_.store(true);
