@@ -657,7 +657,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         RCLCPP_DEBUG(
           logger, "Unable to retrieve %s for steering wheel %zu",
           !state_interface_value_op.has_value() ? "state interface value"
-                                                : "command interface value", i);
+                                                : "command interface value",
+          i);
       }
       else
       {
