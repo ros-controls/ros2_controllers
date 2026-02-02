@@ -16,11 +16,8 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 
-<<<<<<< HEAD
-#include <chrono>
-=======
 #include <tinyxml2.h>
->>>>>>> dafc035 (Check robot description validity in AdmittanceController (#2009))
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <memory>
