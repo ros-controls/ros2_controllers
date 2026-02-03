@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* docs: diff_drive_controller - complete wheel_separation_multiplier description and fix then→than typo (backport `#2108 <https://github.com/ros-controls/ros2_controllers/issues/2108>`_) (`#2121 <https://github.com/ros-controls/ros2_controllers/issues/2121>`_)
+* Contributors: mergify[bot]
+
 5.12.0 (2025-12-31)
 -------------------
 
