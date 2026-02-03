@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.13.0 (2026-02-03)
+-------------------
 * Revert behavior change of JSB regarding skipping boolean interfaces (`#2132 <https://github.com/ros-controls/ros2_controllers/issues/2132>`_) (`#2135 <https://github.com/ros-controls/ros2_controllers/issues/2135>`_)
 * Add test to check JSB is not throwing when there is a boolean interface (backport `#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_) (`#2132 <https://github.com/ros-controls/ros2_controllers/issues/2132>`_)
 * Contributors: Christoph Fröhlich, mergify[bot]

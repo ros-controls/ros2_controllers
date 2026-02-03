@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.13.0 (2026-02-03)
+-------------------
 * Populate pose covariance correctly in steering controllers (backport `#2109 <https://github.com/ros-controls/ros2_controllers/issues/2109>`_) (`#2138 <https://github.com/ros-controls/ros2_controllers/issues/2138>`_)
 * Contributors: mergify[bot]
 
