@@ -166,12 +166,15 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   bool odometry_updated = false;
 
   // check if odometry set or reset was requested by non-RT thread
-  if (set_odom_requested_.exchange(false))
+  if (set_odom_requested_.load())
   {
-    if (auto params = requested_odom_params_.try_get())
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
     {
+      auto params = param_op.value();
       odometry_.setOdometry(params->x, params->y, params->yaw);
       odometry_updated = true;
+      set_odom_requested_.store(false);
     }
   }
   else

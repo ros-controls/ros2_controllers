@@ -56,7 +56,7 @@ public:
   bool update_from_vel(double left_vel, double right_vel, double dt);
   bool try_update_open_loop(double linear_vel, double angular_vel, double dt);
   void setOdometry(double x, double y, double heading);
-  void resetOdometry();
+  [[deprecated("Use setOdometry(0.0, 0.0, 0.0) instead")]] void resetOdometry();
 
   double getX() const { return x_; }
   double getY() const { return y_; }
