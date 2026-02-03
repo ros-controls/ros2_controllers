@@ -37,7 +37,6 @@ constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
 constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
-constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace diff_drive_controller
@@ -167,18 +166,13 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   bool odometry_updated = false;
 
   // check if odometry set or reset was requested by non-RT thread
-  if (set_odom_request_.exchange(false))
+  if (set_odom_requested_.exchange(false))
   {
-    control_msgs::srv::SetOdometry::Request params;
-    requested_odom_params_.get(params);
-
-    odometry_.setOdometry(params.x, params.y, params.yaw);
-    odometry_updated = true;
-  }
-  else if (reset_odom_request_.exchange(false))
-  {
-    odometry_.resetOdometry();
-    odometry_updated = true;
+    if (auto params = requested_odom_params_.try_get())
+    {
+      odometry_.setOdometry(params->x, params->y, params->yaw);
+      odometry_updated = true;
+    }
   }
   else
   {
@@ -514,15 +508,10 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
 
-  // Create odometry set & reset services
   set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
     DEFAULT_SET_ODOM_SERVICE, std::bind(
                                 &DiffDriveController::set_odometry, this, std::placeholders::_1,
                                 std::placeholders::_2, std::placeholders::_3));
-  reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
-    DEFAULT_RESET_ODOM_SERVICE, std::bind(
-                                  &DiffDriveController::reset_odometry, this, std::placeholders::_1,
-                                  std::placeholders::_2, std::placeholders::_3));
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
@@ -593,23 +582,21 @@ void DiffDriveController::set_odometry(
   const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
   std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
 {
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
   // put requested odom params into RealtimeThreadSafeBox
   requested_odom_params_.set(*req);
 
   // flip the flag for thread-safe odom set in the control loop
-  set_odom_request_.store(true);
+  set_odom_requested_.store(true);
 
   res->success = true;
-  res->message = "Odometry set requested";
-}
-void DiffDriveController::reset_odometry(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
-{
-  // flip the flag for thread-safe odom reset in the control loop
-  reset_odom_request_.store(true);
-  RCLCPP_INFO(get_node()->get_logger(), "Odometry reset requested");
+  res->message = "Odometry set request accepted";
 }
 
 bool DiffDriveController::reset()

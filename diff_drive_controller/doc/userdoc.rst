@@ -75,9 +75,6 @@ Services
 ~/set_odometry [control_msgs::srv::SetOdometry]
   This service can be used to set the current odometry of the robot to desired values.
 
-/reset_odometry [std_srvs::srv::Empty]
-  This service can be used to reset the odometry of the robot to zero.
-
 Parameters
 ,,,,,,,,,,,,
 

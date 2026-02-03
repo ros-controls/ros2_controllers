@@ -63,7 +63,8 @@ target_link_libraries(diff_drive_controller
     ${tf2_msgs_TARGETS}
     ${geometry_msgs_TARGETS}
     ${nav_msgs_TARGETS}
-    ${std_srvs_TARGETS})
+    ${std_srvs_TARGETS}
+    ${control_msgs_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)
