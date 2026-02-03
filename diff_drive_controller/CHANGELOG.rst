@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.3.0 (2026-02-03)
+------------------
 * Fixup whitespace (`#2122 <https://github.com/ros-controls/ros2_controllers/issues/2122>`_)
 * docs: diff_drive_controller - complete wheel_separation_multiplier description and fix then→than typo (`#2108 <https://github.com/ros-controls/ros2_controllers/issues/2108>`_)
 * Contributors: Bence Magyar, 杨晟军(Shengjun Yang)
