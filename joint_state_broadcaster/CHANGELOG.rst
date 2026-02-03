@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add test to check JSB is not throwing when there is a boolean interface (`#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_)
+* Contributors: Noel Jiménez García
+
 6.2.0 (2025-12-31)
 ------------------
 * Add parameter for deactivating dynamic_joint_states (`#2064 <https://github.com/ros-controls/ros2_controllers/issues/2064>`_)

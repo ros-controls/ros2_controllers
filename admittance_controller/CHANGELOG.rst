@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Check robot description validity in AdmittanceController (`#2009 <https://github.com/ros-controls/ros2_controllers/issues/2009>`_)
+* Contributors: Caio Freitas
+
 6.2.0 (2025-12-31)
 ------------------
 

@@ -2,6 +2,9 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.2.0 (2025-12-31)
 ------------------
 * Tf prefix helper for omniwheel drive (`#2073 <https://github.com/ros-controls/ros2_controllers/issues/2073>`_)
