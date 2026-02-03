@@ -172,7 +172,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     if (param_op.has_value())
     {
       auto params = param_op.value();
-      odometry_.setOdometry(params->x, params->y, params->yaw);
+      odometry_.setOdometry(params.x, params.y, params.yaw);
       odometry_updated = true;
       set_odom_requested_.store(false);
     }
