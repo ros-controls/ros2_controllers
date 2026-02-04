@@ -810,9 +810,16 @@ TEST_F(MecanumDriveControllerTest, odometry_set_reset_services)
   // 0. Initialize and activate
   SetUpController();
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
 
   controller_->set_chained_mode(true);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
   const double dt = 0.02;  // 50Hz
   rclcpp::Time test_time = controller_->get_node()->now();
@@ -843,23 +850,7 @@ TEST_F(MecanumDriveControllerTest, odometry_set_reset_services)
   for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
   ASSERT_GT(controller_->odometry_.getX(), 0.0);
 
-  // 2. Call Odometry Reset Service
-  auto reset_request = std::make_shared<std_srvs::srv::Empty::Request>();
-  auto reset_response = std::make_shared<std_srvs::srv::Empty::Response>();
-  controller_->reset_odometry(nullptr, reset_request, reset_response);
-
-  // One update to propagate the internal reset
-  controller_->update(test_time, period);
-
-  EXPECT_NEAR(controller_->odometry_.getX(), 0.0, 1e-6);
-  EXPECT_NEAR(controller_->odometry_.getY(), 0.0, 1e-6);
-  EXPECT_NEAR(controller_->odometry_.getRz(), 0.0, 1e-6);
-
-  // 3. Move again to ensure it still works
-  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
-  ASSERT_GT(controller_->odometry_.getX(), 0.0);
-
-  // 4. Call Set Odometry Service
+  // 2. Call Set Odometry Service
   auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
   auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
   set_request->x = 5.0;
@@ -875,7 +866,7 @@ TEST_F(MecanumDriveControllerTest, odometry_set_reset_services)
   EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
   EXPECT_NEAR(controller_->odometry_.getRz(), 1.57079632679, 1e-5);
 
-  // 5. Move forward again to verify
+  // 3. Move forward again to verify
   double start_y = controller_->odometry_.getY();
   for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
   EXPECT_GT(controller_->odometry_.getY(), start_y);

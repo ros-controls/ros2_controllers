@@ -33,8 +33,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_thread_safe_box.hpp"
-#include "std_srvs/srv/empty.hpp"
-#include "std_srvs/srv/set_bool.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
 #include "mecanum_drive_controller/mecanum_drive_controller_parameters.hpp"
@@ -80,10 +78,6 @@ public:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
     std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
-  void reset_odometry(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-    std::shared_ptr<std_srvs::srv::Empty::Response> res);
 
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
   using OdomStateMsg = nav_msgs::msg::Odometry;
@@ -153,12 +147,9 @@ protected:
 
   Odometry odometry_;
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
-  std::atomic<bool> set_odom_request_{false}, reset_odom_request_{false};
-  struct
-  {
-    double x, y, yaw;
-  } requested_odom_params_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
 private:
   // callback for topic interface

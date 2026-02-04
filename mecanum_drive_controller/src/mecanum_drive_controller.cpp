@@ -46,7 +46,6 @@ void reset_controller_reference_msg(
 }
 
 constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
-constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace mecanum_drive_controller
@@ -250,16 +249,10 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   try
   {
-    // Create odometry set & reset services
     set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
       DEFAULT_SET_ODOM_SERVICE,
       std::bind(
         &MecanumDriveController::set_odometry, this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3));
-    reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
-      DEFAULT_RESET_ODOM_SERVICE,
-      std::bind(
-        &MecanumDriveController::reset_odometry, this, std::placeholders::_1, std::placeholders::_2,
         std::placeholders::_3));
   }
   catch (const std::exception & e)
@@ -372,7 +365,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   ControllerReferenceMsg emtpy_msg;
   reset_controller_reference_msg(emtpy_msg, get_node());
   input_ref_.try_set(emtpy_msg);
-
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -476,16 +468,15 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const double wheel_rear_left_state_vel = wheel_rear_left_state_vel_op.value();
 
   // check if odometry set or reset was requested by non-RT thread
-  if (set_odom_request_.load())
+  if (set_odom_requested_.load())
   {
-    odometry_.setOdometry(
-      requested_odom_params_.x, requested_odom_params_.y, requested_odom_params_.yaw);
-    set_odom_request_.store(false);
-  }
-  else if (reset_odom_request_.load())
-  {
-    odometry_.resetOdometry();
-    reset_odom_request_.store(false);
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.setOdometry(params.x, params.y, params.yaw);
+      set_odom_requested_.store(false);
+    }
   }
   else
   {
@@ -630,23 +621,21 @@ void MecanumDriveController::set_odometry(
   const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
   std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
 {
-  // flip the flag for thread-safe odom set in the control loop
-  set_odom_request_.store(true);
-  requested_odom_params_.x = req->x;
-  requested_odom_params_.y = req->y;
-  requested_odom_params_.yaw = req->yaw;
-  res->success = true;
-  res->message = "Odometry set requested";
-}
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
 
-void MecanumDriveController::reset_odometry(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
-  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
-  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
-{
-  // flip the flag for thread-safe odom reset in the control loop
-  reset_odom_request_.store(true);
-  RCLCPP_INFO(get_node()->get_logger(), "Odometry reset requested");
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
 }
 
 }  // namespace mecanum_drive_controller
