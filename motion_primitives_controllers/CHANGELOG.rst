@@ -2,6 +2,9 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+
 6.2.0 (2025-12-31)
 ------------------
 * Use get_lifecycle_id instead of get_lifecycle_state (`#2053 <https://github.com/ros-controls/ros2_controllers/issues/2053>`_)
