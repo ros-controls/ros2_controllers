@@ -33,6 +33,7 @@ namespace
 constexpr auto DEFAULT_COMMAND_IN_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
 }  // namespace
 
 namespace omni_wheel_drive_controller
@@ -206,6 +207,12 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
   transform_.header.frame_id = odom_frame_id;
   transform_.child_frame_id = base_frame_id;
 
+  set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
+    DEFAULT_SET_ODOM_SERVICE,
+    std::bind(
+      &OmniWheelDriveController::set_odometry, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -317,43 +324,59 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
     return controller_interface::return_type::OK;
   }
 
-  // Update odometry
   bool odometry_updated = false;
-  if (params_.open_loop)
+
+  // check if odometry set or reset was requested by non-RT thread
+  if (set_odom_requested_.load())
   {
-    odometry_updated = odometry_.updateOpenLoop(
-      reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2], time);
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.setOdometry(params.x, params.y, params.yaw);
+      odometry_updated = true;
+      set_odom_requested_.store(false);
+    }
   }
   else
   {
-    std::vector<double> wheels_feedback(registered_wheel_handles_.size());  // [rads]
-    for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
+    // Update odometry
+    if (params_.open_loop)
     {
-      // Get wheel feedback
-      const std::optional<double> wheel_feedback_op =
-        registered_wheel_handles_[i].feedback.value().get().get_optional();
-      if (!wheel_feedback_op.has_value())
-      {
-        RCLCPP_DEBUG(logger, "Unable to retrieve data from [%zu] wheel feedback!", i);
-        return controller_interface::return_type::OK;
-      }
-      const double wheel_feedback = wheel_feedback_op.value();
-
-      if (std::isnan(wheel_feedback))
-      {
-        RCLCPP_ERROR(logger, "The wheel %s is invalid for index [%zu]", feedback_type(), i);
-        return controller_interface::return_type::ERROR;
-      }
-
-      wheels_feedback[i] = wheel_feedback;
-    }
-    if (params_.position_feedback)
-    {
-      odometry_updated = odometry_.updateFromPos(wheels_feedback, time);
+      odometry_updated = odometry_.updateOpenLoop(
+        reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2], time);
     }
     else
     {
-      odometry_updated = odometry_.updateFromVel(wheels_feedback, time);
+      std::vector<double> wheels_feedback(registered_wheel_handles_.size());  // [rads]
+      for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
+      {
+        // Get wheel feedback
+        const std::optional<double> wheel_feedback_op =
+          registered_wheel_handles_[i].feedback.value().get().get_optional();
+        if (!wheel_feedback_op.has_value())
+        {
+          RCLCPP_DEBUG(logger, "Unable to retrieve data from [%zu] wheel feedback!", i);
+          return controller_interface::return_type::OK;
+        }
+        const double wheel_feedback = wheel_feedback_op.value();
+
+        if (std::isnan(wheel_feedback))
+        {
+          RCLCPP_ERROR(logger, "The wheel %s is invalid for index [%zu]", feedback_type(), i);
+          return controller_interface::return_type::ERROR;
+        }
+
+        wheels_feedback[i] = wheel_feedback;
+      }
+      if (params_.position_feedback)
+      {
+        odometry_updated = odometry_.updateFromPos(wheels_feedback, time);
+      }
+      else
+      {
+        odometry_updated = odometry_.updateFromVel(wheels_feedback, time);
+      }
     }
   }
 
@@ -434,6 +457,28 @@ void OmniWheelDriveController::compute_and_set_wheel_velocities()
   rclcpp::Logger logger = get_node()->get_logger();
   RCLCPP_DEBUG_EXPRESSION(
     logger, !set_command_result, "Unable to set the command to one of the command handles!");
+}
+
+void OmniWheelDriveController::set_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+  std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
+{
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
 }
 
 bool OmniWheelDriveController::reset()

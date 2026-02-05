@@ -33,6 +33,7 @@ public:
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);
   void resetOdometry();
+  void setOdometry(const double & x, const double & y, const double & heading);
 
   double getX() const { return x_; }
   double getY() const { return y_; }
