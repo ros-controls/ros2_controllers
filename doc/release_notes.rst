@@ -34,6 +34,7 @@ omni_wheel_drive_controller
 *****************************
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
+* Set odometry service added to be used at runtime. (`#2148 <https://github.com/ros-controls/ros2_controllers/pull/2148>`_).
 
 joint_trajectory_controller
 ***************************
