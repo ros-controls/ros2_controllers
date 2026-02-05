@@ -805,7 +805,7 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
-TEST_F(MecanumDriveControllerTest, odometry_set_reset_services)
+TEST_F(MecanumDriveControllerTest, odometry_set_service)
 {
   // 0. Initialize and activate
   SetUpController();
