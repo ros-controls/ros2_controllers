@@ -126,11 +126,5 @@ void Odometry::setOdometry(double x, double y, double heading)
   position_y_in_base_frame_ = y;
   orientation_z_in_base_frame_ = heading;
 }
-void Odometry::resetOdometry()
-{
-  position_x_in_base_frame_ = 0.0;
-  position_y_in_base_frame_ = 0.0;
-  orientation_z_in_base_frame_ = 0.0;
-}
 
 }  // namespace mecanum_drive_controller

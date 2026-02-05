@@ -86,8 +86,6 @@ public:
   /// \param y position (y component) [m]
   /// \param heading orientation (z component) [rad]
   void setOdometry(double x, double y, double heading);
-  /// \brief Sets the odometry parameters to zero
-  void resetOdometry();
 
 private:
   /// Current timestamp:
