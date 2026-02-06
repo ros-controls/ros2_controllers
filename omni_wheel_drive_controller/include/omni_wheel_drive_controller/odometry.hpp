@@ -32,7 +32,7 @@ public:
   bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);
-  void resetOdometry();
+  [[deprecated("Use setOdometry(0.0, 0.0, 0.0) instead")]] void resetOdometry();
   void setOdometry(const double & x, const double & y, const double & heading);
 
   double getX() const { return x_; }
