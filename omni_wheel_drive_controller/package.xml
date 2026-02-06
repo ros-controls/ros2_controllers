@@ -19,6 +19,7 @@
 
   <build_depend>ros2_control_cmake</build_depend>
 
+  <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>eigen</depend>
   <depend>generate_parameter_library</depend>

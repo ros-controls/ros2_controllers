@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "control_msgs/srv/set_odometry.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -66,6 +67,11 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
+
 protected:
   std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
 
@@ -111,6 +117,11 @@ protected:
   void halt();
   bool reset();
   bool on_set_chained_mode(bool chained_mode) override;
+
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
 private:
   void reset_buffers();
