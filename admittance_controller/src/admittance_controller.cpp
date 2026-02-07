@@ -50,11 +50,10 @@ void reset_wrench_msg(
 namespace admittance_controller
 {
 
-geometry_msgs::msg::Wrench add_wrenches(
-  const geometry_msgs::msg::Wrench & a, const geometry_msgs::msg::Wrench & b)
+void add_wrenches(
+  const geometry_msgs::msg::Wrench & a, const geometry_msgs::msg::Wrench & b,
+  geometry_msgs::msg::Wrench & res)
 {
-  geometry_msgs::msg::Wrench res;
-
   res.force.x = a.force.x + b.force.x;
   res.force.y = a.force.y + b.force.y;
   res.force.z = a.force.z + b.force.z;
@@ -62,12 +61,12 @@ geometry_msgs::msg::Wrench add_wrenches(
   res.torque.x = a.torque.x + b.torque.x;
   res.torque.y = a.torque.y + b.torque.y;
   res.torque.z = a.torque.z + b.torque.z;
-
-  return res;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
+  logger_ = get_node()->get_logger();
+
   // initialize controller config
   try
   {
@@ -474,10 +473,11 @@ controller_interface::return_type AdmittanceController::update_and_write_command
     wrench_command_msg_ = wrench_command_op.value();
   }
 
-  auto offsetted_ft_values = add_wrenches(ft_values_, wrench_command_msg_.wrench);
+  add_wrenches(ft_values_, wrench_command_msg_.wrench, offsetted_ft_values_);
 
   // apply admittance control to reference to determine desired state
-  admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
+  admittance_->update(
+    joint_state_, offsetted_ft_values_, reference_, period, reference_admittance_);
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);
@@ -618,8 +618,6 @@ void AdmittanceController::write_state_to_hardware(
     (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
 
-  auto logger = get_node()->get_logger();
-
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     bool success = true;
@@ -640,7 +638,7 @@ void AdmittanceController::write_state_to_hardware(
     }
     if (!success)
     {
-      RCLCPP_WARN(logger, "Error while setting command for joint %zu.", joint_ind);
+      RCLCPP_WARN(logger_, "Error while setting command for joint %zu.", joint_ind);
     }
   }
   last_commanded_ = state_commanded;
