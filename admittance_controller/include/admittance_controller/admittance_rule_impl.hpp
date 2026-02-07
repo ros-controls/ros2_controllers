@@ -103,6 +103,8 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
 
+  state_message_.ft_sensor_frame.data.resize(256);  // preallocate space
+
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
 
@@ -395,8 +397,16 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.rot_base_control.y = quat.y();
   state_message_.rot_base_control.z = quat.z();
 
-  state_message_.ft_sensor_frame.data =
-    admittance_state_.ft_sensor_frame;  // TODO(anyone) remove dynamic allocation here
+  auto & dst = state_message_.ft_sensor_frame.data;
+  const auto & src = admittance_state_.ft_sensor_frame;
+  if (src.size() <= dst.capacity())
+  {
+    dst.assign(src.c_str(), src.size());
+  }
+  else
+  {
+    dst.assign(src.c_str(), dst.capacity());  // truncate to reserved size
+  }
 
   return state_message_;
 }

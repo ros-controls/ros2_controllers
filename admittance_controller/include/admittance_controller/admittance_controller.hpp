@@ -27,8 +27,10 @@
 #include "admittance_controller/admittance_rule.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "geometry_msgs/msg/wrench.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/logging.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
@@ -156,6 +158,10 @@ protected:
    * @brief Write values from state_command to claimed hardware interfaces
    */
   void write_state_to_hardware(const trajectory_msgs::msg::JointTrajectoryPoint & state_command);
+
+private:
+  geometry_msgs::msg::Wrench offsetted_ft_values_;
+  rclcpp::Logger logger_ = rclcpp::get_logger("AdmittanceController");
 };
 
 }  // namespace admittance_controller
