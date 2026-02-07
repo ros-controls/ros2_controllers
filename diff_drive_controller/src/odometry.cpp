@@ -167,11 +167,19 @@ bool Odometry::try_update_open_loop(double linear_vel, double angular_vel, doubl
   return true;
 }
 
+void Odometry::setOdometry(double x, double y, double heading)
+{
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
+  resetAccumulators();
+}
 void Odometry::resetOdometry()
 {
   x_ = 0.0;
   y_ = 0.0;
   heading_ = 0.0;
+  resetAccumulators();
 }
 
 void Odometry::setWheelParams(
