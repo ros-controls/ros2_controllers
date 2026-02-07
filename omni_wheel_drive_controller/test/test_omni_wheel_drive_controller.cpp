@@ -819,6 +819,70 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   executor.cancel();
 }
 
+TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+
+  // chained mode needed to write directly to reference interfaces
+  controller_->set_chained_mode(true);
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResourcesPosFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  const double dt = 0.01;  // 100 Hz
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  // simulate movement
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    controller_->reference_interfaces_[0] = vx;  // linear x
+    controller_->reference_interfaces_[1] = vy;  // linear y
+    controller_->reference_interfaces_[2] = wz;  // angular z
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+    for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
+    {
+      double velocity_command = command_itfs_[i]->get_optional().value();
+      wheels_pos_states_[i] += velocity_command * dt;
+    }
+    test_time += period;
+  };
+
+  // 1. Move the robot forward in X
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);
+
+  // 3. Move again to ensure it still works
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
+
+  // 4. Cleanup
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

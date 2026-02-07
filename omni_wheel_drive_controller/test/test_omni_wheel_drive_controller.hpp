@@ -62,6 +62,7 @@ class TestableOmniWheelDriveController
   FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_rot_test);
   FRIEND_TEST(OmniWheelDriveControllerTest, 4_wheel_rot_test);
   FRIEND_TEST(OmniWheelDriveControllerTest, 5_wheel_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, odometry_set_service);
 
   /**
    * @brief wait_for_twist block until a new twist is received.
