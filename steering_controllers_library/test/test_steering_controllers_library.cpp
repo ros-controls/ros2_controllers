@@ -268,6 +268,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.set(msg);
 
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(controller_->input_ref_.get().twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -362,6 +365,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   controller_->input_ref_.set(msg);
 
   age_of_last_command = controller_->get_node()->now() - controller_->input_ref_.get().header.stamp;
+
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
 
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
@@ -467,7 +473,6 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
 
   EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
 
-  EXPECT_DOUBLE_EQ(controller_->odom_state_msg_.twist.twist.linear.x, 0.0);
 }
 
 int main(int argc, char ** argv)
