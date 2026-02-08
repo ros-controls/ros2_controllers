@@ -125,7 +125,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
   }
 }
 
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_prefix_false_covariance_test)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -141,7 +141,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
@@ -160,7 +160,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_na
   ASSERT_EQ(odometry_message.twist.covariance, twist_covariance);
 }
 
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -176,18 +176,16 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_nam
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the
-  frame
-   * id's */
+  // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -203,43 +201,16 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the
-  frame
-   * id's */
+
+  // frame_prefix is blank so nothing added to the frame id's
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
-{
-  std::string test_namespace = "/test_namespace";
-
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  auto node_options = controller_->define_custom_node_options();
-  node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(false));
-  node_options.append_parameter_override("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix));
-  node_options.append_parameter_override("odom_frame_id", rclcpp::ParameterValue(odom_id));
-  node_options.append_parameter_override("base_frame_id", rclcpp::ParameterValue(base_link_id));
-
-  SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_link_id);
-}
-
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -257,23 +228,21 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_na
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the
-  frame
-   * id's instead of the namespace*/
+  // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
-  std::string frame_prefix = "";
+  std::string frame_prefix = "~";
 
   auto node_options = controller_->define_custom_node_options();
   node_options.append_parameter_override("tf_frame_prefix_enable", rclcpp::ParameterValue(true));
@@ -285,13 +254,12 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_n
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  auto odometry_message = controller_->get_rt_odom_state_publisher_msg();
+  auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to
-  the
-   * frame id's */
+
+  // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
   ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
 }
@@ -835,6 +803,73 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   EXPECT_LT(std::abs(controller_->odometry_.getX()), 1.0);
   EXPECT_LT(std::abs(controller_->odometry_.getY()), 1.0);
   EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
+}
+
+TEST_F(MecanumDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  SetUpController();
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
+
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  const double dt = 0.02;  // 50Hz
+  rclcpp::Time test_time = controller_->get_node()->now();
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    controller_->reference_interfaces_[0] = vx;  // linear x
+    controller_->reference_interfaces_[1] = vy;  // linear y
+    controller_->reference_interfaces_[2] = wz;  // angular z
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+    test_time += period;
+
+    // Update wheel positions based on commands to simulate feedback
+    size_t fl = controller_->get_front_left_wheel_index();
+    size_t fr = controller_->get_front_right_wheel_index();
+    size_t rl = controller_->get_rear_left_wheel_index();
+    size_t rr = controller_->get_rear_right_wheel_index();
+
+    joint_state_values_[fl] = controller_->command_interfaces_[fl].get_optional().value();
+    joint_state_values_[fr] = controller_->command_interfaces_[fr].get_optional().value();
+    joint_state_values_[rl] = controller_->command_interfaces_[rl].get_optional().value();
+    joint_state_values_[rr] = controller_->command_interfaces_[rr].get_optional().value();
+  };
+
+  // 1. Move the robot forward
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;
+
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getRz(), 1.57079632679, 1e-5);
+
+  // 3. Move forward again to verify
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
 }
 
 int main(int argc, char ** argv)

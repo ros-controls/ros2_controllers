@@ -65,14 +65,19 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameter_overrides);
 
-  const auto result =
-    controller_->init("multi_interface_forward_command_controller", "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "multi_interface_forward_command_controller";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
-  command_ifs.emplace_back(joint_1_vel_cmd_);
-  command_ifs.emplace_back(joint_1_eff_cmd_);
+  command_ifs.emplace_back(joint_1_pos_cmd_, nullptr);
+  command_ifs.emplace_back(joint_1_vel_cmd_, nullptr);
+  command_ifs.emplace_back(joint_1_eff_cmd_, nullptr);
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -110,9 +115,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateSuccess)
   SetUpController(true);
 
   // check joint commands are the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
@@ -130,9 +135,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
@@ -145,9 +150,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
@@ -165,9 +170,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
     controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
@@ -197,9 +202,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
@@ -225,9 +230,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 
   auto node_state = controller_->get_node()->deactivate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -273,9 +278,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // values should not change
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 
   // set commands again
   controller_->rt_command_.set(command);
@@ -286,7 +291,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_optional().value(), 5.5);
-  ASSERT_EQ(joint_1_vel_cmd_.get_optional().value(), 6.6);
-  ASSERT_EQ(joint_1_eff_cmd_.get_optional().value(), 7.7);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 5.5);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 6.6);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 7.7);
 }

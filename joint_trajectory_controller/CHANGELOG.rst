@@ -2,6 +2,52 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+* dynamically link JTC parameter validation instead of header only (`#2127 <https://github.com/ros-controls/ros2_controllers/issues/2127>`_)
+* Cleanup deprecated InterpolationMethodMap (`#2041 <https://github.com/ros-controls/ros2_controllers/issues/2041>`_)
+* Contributors: Surya, Suryansh Singh
+
+6.2.0 (2025-12-31)
+------------------
+* Fix BSD license (`#2054 <https://github.com/ros-controls/ros2_controllers/issues/2054>`_)
+* Use get_lifecycle_id instead of get_lifecycle_state (`#2053 <https://github.com/ros-controls/ros2_controllers/issues/2053>`_)
+* Fill point_before_trajectory with same information as trajectory (`#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_)
+* Contributors: Christoph Fröhlich, Felix Exner (fexner), Sai Kishor Kothakota
+
+6.1.0 (2025-12-01)
+------------------
+* Refactor interpolation_method class (`#2019 <https://github.com/ros-controls/ros2_controllers/issues/2019>`_)
+* Contributors: Surya!
+
+6.0.0 (2025-11-10)
+------------------
+* Add missing dependency rclcpp_action (`#1992 <https://github.com/ros-controls/ros2_controllers/issues/1992>`_)
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Add time_from_start to action feedback and state message (cherry-pick `#1755 <https://github.com/ros-controls/ros2_controllers/issues/1755>`_) (`#1820 <https://github.com/ros-controls/ros2_controllers/issues/1820>`_)
+* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
+* :memo: Add disclaimer on missing trajectory replacement implementation (`#1978 <https://github.com/ros-controls/ros2_controllers/issues/1978>`_)
+* Fix JTC crashing when shutdown while executing (`#1960 <https://github.com/ros-controls/ros2_controllers/issues/1960>`_)
+* Remove unused `get_state_msg` method (`#1949 <https://github.com/ros-controls/ros2_controllers/issues/1949>`_)
+* Don't use `msg\_` field of realtime publisher (`#1947 <https://github.com/ros-controls/ros2_controllers/issues/1947>`_)
+* Contributors: Anand Vardhan, Bence Magyar, Christoph Fröhlich, Marq Rasmussen, Noel Jiménez García
+
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Remove wrong and unnecessary docstrings (`#1912 <https://github.com/ros-controls/ros2_controllers/issues/1912>`_)
+* Use auto dependency management for windows workflow (`#1917 <https://github.com/ros-controls/ros2_controllers/issues/1917>`_)
+* Remove unused variables and correctly override test class method (`#1918 <https://github.com/ros-controls/ros2_controllers/issues/1918>`_)
+* Don't call `release_interfaces` from controllers (`#1910 <https://github.com/ros-controls/ros2_controllers/issues/1910>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+* [JTC] Preallocate `std::vector` variables for interfaces (`#1893 <https://github.com/ros-controls/ros2_controllers/issues/1893>`_)
+* Remove legacy and deprecated PID parameters (`#1845 <https://github.com/ros-controls/ros2_controllers/issues/1845>`_)
+* Contributors: Christoph Fröhlich, Victor Coutinho Vieira Santos
+
 5.6.1 (2025-08-30)
 ------------------
 

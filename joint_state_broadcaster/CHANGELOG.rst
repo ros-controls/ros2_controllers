@@ -2,6 +2,34 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+* Add test to check JSB is not throwing when there is a boolean interface (`#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_)
+* Contributors: Noel Jiménez García
+
+6.2.0 (2025-12-31)
+------------------
+* Add parameter for deactivating dynamic_joint_states (`#2064 <https://github.com/ros-controls/ros2_controllers/issues/2064>`_)
+* Contributors: Christoph Fröhlich
+
+6.1.0 (2025-12-01)
+------------------
+
+6.0.0 (2025-11-10)
+------------------
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich
+
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+
 5.6.1 (2025-08-30)
 ------------------
 

@@ -48,7 +48,13 @@ void ChainedFilterTest::SetUpController(
   auto node_options = controller_->define_custom_node_options();
   node_options.parameter_overrides(parameters);
 
-  const auto result = controller_->init(node_name, "", 0, "", node_options);
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = node_name;
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -61,8 +67,13 @@ TEST_F(ChainedFilterTest, InitReturnsSuccess) { SetUpController(); }
 
 TEST_F(ChainedFilterTest, InitFailureWithNoParams)
 {
-  const auto result = controller_->init(
-    "test_chained_filter_no_params", "", 0, "", controller_->define_custom_node_options());
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_chained_filter_no_params";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = controller_->define_custom_node_options();
+  const auto result = controller_->init(params);
   EXPECT_EQ(result, controller_interface::return_type::ERROR);
 }
 
@@ -123,18 +134,18 @@ TEST_F(ChainedFilterTest, UpdateFilter)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input state interface should not change
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   // output should be the same
   auto state_if_exported_conf = controller_->export_state_interfaces();
   ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 
-  ASSERT_TRUE(joint_1_pos_.set_value(2.0));
+  ASSERT_TRUE(joint_1_pos_->set_value(2.0));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_.get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),

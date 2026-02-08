@@ -5,16 +5,16 @@
 forward_command_controller
 ==========================
 
-This is a base class implementing a feedforward controller. Specific implementations of this base class can be found in:
+A selection of controllers that forward commands of different types.
 
-* :ref:`position_controllers_userdoc`
-* :ref:`velocity_controllers_userdoc`
-* :ref:`effort_controllers_userdoc`
+forward_command_controller and multi_interface_forward_command_controller
+#########################################################################
+Both controllers forward ``std_msgs::msg::Float64MultiArray`` to a set of interfaces, which can be parameterized as follows: While ``forward_command_controller/ForwardCommandController`` only claims a single interface type per joint (``joint[i] + "/" + interface_name``), the ``forward_command_controller/MultiInterfaceForwardCommandController`` claims the combination of all interfaces specified in the ``interface_names`` parameter (``joint[i] + "/" + interface_names[j]``).
 
 Hardware interface type
 -----------------------
 
-This controller can be used for every type of command interface.
+This controller can be used for every type of command interface, not only limited to joints.
 
 
 ROS 2 interface of the controller

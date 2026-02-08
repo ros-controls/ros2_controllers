@@ -16,6 +16,7 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 
+#include <tinyxml2.h>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -92,6 +93,33 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   reference_admittance_ = last_reference_;
   joint_state_ = last_reference_;
 
+  std::string robot_description = this->get_robot_description();
+
+  if (robot_description.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'robot_description' parameter is empty.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  tinyxml2::XMLDocument doc;
+  if (!doc.Parse(robot_description.c_str()) && doc.Error())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Failed to parse robot description XML from parameter "
+      "'robot_description': %s",
+      doc.ErrorStr());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  if (doc.Error())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Error parsing robot description XML from parameter "
+      "'robot_description': %s",
+      doc.ErrorStr());
+    return controller_interface::CallbackReturn::ERROR;
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -332,13 +360,11 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     std::make_unique<realtime_tools::RealtimePublisher<ControllerStateMsg>>(s_publisher_);
 
   // Initialize state message
-  state_publisher_->lock();
-  state_publisher_->msg_ = admittance_->get_controller_state();
-  state_publisher_->unlock();
+  state_msg_ = admittance_->get_controller_state();
 
   // Initialize FTS semantic semantic_component
   force_torque_sensor_ = std::make_unique<semantic_components::ForceTorqueSensor>(
-    semantic_components::ForceTorqueSensor(admittance_->parameters_.ft_sensor.name));
+    admittance_->parameters_.ft_sensor.name);
 
   // configure admittance rule
   if (
@@ -457,9 +483,11 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   write_state_to_hardware(reference_admittance_);
 
   // Publish controller state
-  state_publisher_->lock();
-  state_publisher_->msg_ = admittance_->get_controller_state();
-  state_publisher_->unlockAndPublish();
+  if (state_publisher_)
+  {
+    state_msg_ = admittance_->get_controller_state();
+    state_publisher_->try_publish(state_msg_);
+  }
 
   return controller_interface::return_type::OK;
 }

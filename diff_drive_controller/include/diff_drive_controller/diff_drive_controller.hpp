@@ -19,12 +19,14 @@
 #ifndef DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 #define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <queue>
 #include <string>
 #include <vector>
 
+#include "control_msgs/srv/set_odometry.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
@@ -76,6 +78,11 @@ public:
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
+
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
@@ -113,11 +120,13 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
     realtime_odometry_publisher_ = nullptr;
+  nav_msgs::msg::Odometry odometry_message_;
 
   std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>> odometry_transform_publisher_ =
     nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
+  tf2_msgs::msg::TFMessage odometry_transform_message_;
 
   bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
@@ -136,6 +145,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<TwistStamped>>
     realtime_limited_velocity_publisher_ = nullptr;
+  TwistStamped limited_velocity_message_;
 
   rclcpp::Time previous_update_timestamp_{0};
 
@@ -143,6 +153,11 @@ protected:
   double publish_rate_ = 50.0;
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
+
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
   bool reset();
   void halt();
