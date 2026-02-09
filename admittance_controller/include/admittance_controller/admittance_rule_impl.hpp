@@ -81,6 +81,9 @@ controller_interface::return_type AdmittanceRule::configure(
     return controller_interface::return_type::ERROR;
   }
 
+  // configure force torque sensor frame in state message
+  state_message_.ft_sensor_frame.data = parameters_.ft_sensor.frame.id;
+
   return controller_interface::return_type::OK;
 }
 
