@@ -374,6 +374,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // configure force torque sensor semantic component
+  state_msg_.ft_sensor_frame.data = admittance_->parameters_.ft_sensor.frame.id;
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

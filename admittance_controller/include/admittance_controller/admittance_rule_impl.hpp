@@ -103,9 +103,6 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
 
-  // reserve dynamic memory for ft sensor frame string (to avoid realtime allocation later)
-  state_message_.ft_sensor_frame.data.reserve(128);
-
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
 
@@ -397,11 +394,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.rot_base_control.x = quat.x();
   state_message_.rot_base_control.y = quat.y();
   state_message_.rot_base_control.z = quat.z();
-
-  if (state_message_.ft_sensor_frame.data != admittance_state_.ft_sensor_frame)
-  {
-    state_message_.ft_sensor_frame.data = admittance_state_.ft_sensor_frame;
-  }
 
   return state_message_;
 }
