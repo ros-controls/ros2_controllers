@@ -346,7 +346,7 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
-  EXPECT_EQ(1.0, traction_joint_vel_cmd_->get_optional().value());
+  EXPECT_NEAR(0.876729, traction_joint_vel_cmd_->get_optional().value(), 1e-3);
 
   // deactivated
   // wait so controller process the second point when deactivated
@@ -370,5 +370,67 @@ TEST_F(TestTricycleController, correct_initialization_using_parameters)
 
   state = controller_->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  executor.cancel();
+}
+
+TEST_F(TestTricycleController, convex_speed_scaling)
+{
+  ASSERT_EQ(
+    InitController(
+      traction_joint_name, steering_joint_name,
+      {rclcpp::Parameter("wheelbase", 1.0), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  controller_->on_configure(rclcpp_lifecycle::State());
+
+  // Test Cases: 0°, 30°, 40°, 50°, 60°, 70°, 80° and 90°
+  const std::vector<double> test_degrees = {0.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0};
+
+  const double exponent = 2.0;
+  const double min_scale = 0.01;
+
+  position_ = 0.0;
+  assignResources();
+  controller_->on_activate(rclcpp_lifecycle::State());
+
+  for (const double degrees : test_degrees)
+  {
+    // Reset steering position to 0 for each test iteration
+    position_ = 0.0;
+
+    // For Vx = 0, alpha = sign(theta_dot) * PI/2.
+    // To get specific angles, we use Vx = 1.0 and calculate required theta_dot
+    double rad = degrees * M_PI / 180.0;
+    double vx = 1.0;
+    // alpha = atan(theta_dot * wheelbase / vx) -> theta_dot = tan(alpha) * vx / wheelbase
+    double theta_dot = std::tan(rad) * vx / 1.0;
+
+    publish(vx, theta_dot);
+    controller_->wait_for_twist(executor);
+
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
+
+    // Calculate Expected Scaling
+    double alpha_read = 0.0;  // initial position_
+    double alpha_write = rad;
+    double alpha_delta = std::abs(alpha_write - alpha_read);
+
+    double expected_scale = 1.0;
+    double normalized_error = std::min(alpha_delta / M_PI_2, 1.0);
+    expected_scale = std::pow(1.0 - normalized_error, exponent);
+    expected_scale = std::max(expected_scale, min_scale);
+
+    // Unscaled Ws = Vx / (radius * cos(alpha))
+    double unscaled_ws = vx / (1.0 * std::cos(rad));
+    double expected_ws = unscaled_ws * expected_scale;
+
+    // Verification
+    EXPECT_NEAR(traction_joint_vel_cmd_->get_optional().value(), expected_ws, 1e-3)
+      << "Failed reduction test at " << degrees << " degrees.";
+  }
+
+  controller_->on_deactivate(rclcpp_lifecycle::State());
   executor.cancel();
 }

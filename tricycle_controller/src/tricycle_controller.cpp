@@ -176,24 +176,18 @@ controller_interface::return_type TricycleController::update(
 
   // Reduce wheel speed until the target angle has been reached
   double alpha_delta = std::abs(alpha_write - alpha_read);
+  double scale = 1.0;
 
-  if (alpha_delta < M_PI / 6)
-  {
-    Ws_write *= 1.0;  // no reduction
-  }
-  else
-  {
-    double normalized_error = std::min(alpha_delta / M_PI_2, 1.0);
-    double scale_exponent = params_.steering_track_error_exponent;
-    double min_scale = params_.steering_min_speed_scale;
+  double normalized_error = std::min(alpha_delta / M_PI_2, 1.0);
+  double scale_exponent = params_.steering_track_error_exponent;
+  double min_scale = params_.steering_min_speed_scale;
 
-    // scale = (1 - error)^n
-    double scale = std::pow(1.0 - normalized_error, scale_exponent);
-    // limit the minimum value of the scale to avoid complete stop when the error is large
-    scale = std::max(scale, min_scale);
+  // scale = (1 - error)^n
+  scale = std::pow(1.0 - normalized_error, scale_exponent);
+  // limit the minimum value of the scale to avoid complete stop when the error is large
+  scale = std::max(scale, min_scale);
 
-    Ws_write *= scale;
-  }
+  Ws_write *= scale;
 
   auto & last_command = previous_commands_.back();
   auto & second_to_last_command = previous_commands_.front();
