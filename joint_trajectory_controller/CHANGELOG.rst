@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+* dynamically link JTC parameter validation instead of header only (`#2127 <https://github.com/ros-controls/ros2_controllers/issues/2127>`_)
+* Cleanup deprecated InterpolationMethodMap (`#2041 <https://github.com/ros-controls/ros2_controllers/issues/2041>`_)
+* Contributors: Surya, Suryansh Singh
+
 6.2.0 (2025-12-31)
 ------------------
 * Fix BSD license (`#2054 <https://github.com/ros-controls/ros2_controllers/issues/2054>`_)
