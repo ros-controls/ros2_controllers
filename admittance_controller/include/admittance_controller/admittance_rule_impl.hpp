@@ -104,7 +104,7 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
 
   // reserve dynamic memory for ft sensor frame string (to avoid realtime allocation later)
-  state_message_.ft_sensor_frame.data.reserve(64);
+  state_message_.ft_sensor_frame.data.reserve(128);
 
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
