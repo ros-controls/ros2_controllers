@@ -28,6 +28,8 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
@@ -83,6 +85,7 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     MecanumDriveControllerTest,
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
+  FRIEND_TEST(MecanumDriveControllerTest, odometry_set_service);
 
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_false_covariance_test);
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);

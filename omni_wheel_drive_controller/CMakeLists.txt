@@ -8,6 +8,7 @@ export_windows_symbols()
 # Find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   ament_cmake
+  control_msgs
   controller_interface
   generate_parameter_library
   geometry_msgs
@@ -52,6 +53,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${geometry_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   ${tf2_msgs_TARGETS}
+  ${control_msgs_TARGETS}
 )
 pluginlib_export_plugin_description_file(controller_interface omni_wheel_drive_plugin.xml)
 
