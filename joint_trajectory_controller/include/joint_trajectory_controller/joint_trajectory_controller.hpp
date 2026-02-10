@@ -189,6 +189,9 @@ protected:
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
+  // Pre-allocated action feedback message to avoid heap allocation in RT loop
+  std::shared_ptr<FollowJTrajAction::Feedback> preallocated_feedback_;
+
   // callback for topic interface
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
