@@ -2670,3 +2670,203 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 }
+<<<<<<< HEAD
+=======
+
+TEST_F(TrajectoryControllerTest, setting_scaling_factor_works_correctly)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {};
+  SetUpAndActivateTrajectoryController(executor, params);
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.765);
+
+  // 0.0 should work as an edge case
+  msg.factor = 0.0;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.0);
+
+  // Sending a negative value will be ignored
+  msg.factor = 0.45;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  msg.factor = -0.12;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.45);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_factor_from_param)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, initial_factor);
+}
+
+TEST_F(
+  TrajectoryControllerTest, wrong_scaling_state_interface_parameter_controller_fails_activation)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "idontexist"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+}
+
+TEST_F(
+  TrajectoryControllerTest, wrong_scaling_command_interface_parameter_controller_fails_activation)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.command_interface", "idontexist"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, speed_scaling_factor_);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  state = getState();
+  // Since we have a speed scaling state interface active, the value set via topic will be
+  // overwritten from the state interface.
+  EXPECT_EQ(state->speed_scaling_factor, speed_scaling_factor_);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_command_interface_sets_value)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling.command_interface", "speed_scaling/target_speed_fraction_cmd"),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  // The initial value should be written to the hardware
+  EXPECT_EQ(state->speed_scaling_factor, initial_factor);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Value will be set during the first update and read in the second update
+  updateController();
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.765);
+}
+
+TEST_F(TrajectoryControllerTest, activate_with_scaling_interfaces)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling.command_interface", "speed_scaling/target_speed_fraction_cmd"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  auto cmd_if_conf = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), joint_names_.size() * command_interface_types_.size() + 1);
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  auto state_if_conf = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size() + 1);
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
+
+  executor.cancel();
+}
+>>>>>>> 2058720 (Fix JTC test speed scaling publisher (#2153))
