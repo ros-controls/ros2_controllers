@@ -311,6 +311,11 @@ void JointStateBroadcaster::init_auxiliary_data()
 {
   // save the mapping of state interfaces to joint states
   mapped_values_.clear();
+  joint_state_interface_indices_.clear();
+
+  const std::vector<std::string> joint_state_interfaces = {
+    HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
+
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
@@ -324,6 +329,14 @@ void JointStateBroadcaster::init_auxiliary_data()
     }
     mapped_values_.push_back(
       &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name]);
+
+    // Track indices for joint state interfaces (position/velocity/effort) only
+    if (
+      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
+      joint_state_interfaces.end())
+    {
+      joint_state_interface_indices_.push_back(i);
+    }
   }
 }
 
@@ -411,16 +424,38 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  size_t map_index = 0u;
-  for (auto i = 0u; i < state_interfaces_.size(); ++i)
+  if (realtime_dynamic_joint_state_publisher_)
   {
-    if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
+    // Update all interfaces for dynamic joint state publishing
+    size_t map_index = 0u;
+    for (auto i = 0u; i < state_interfaces_.size(); ++i)
     {
-      // no retries, just try to get the latest value once
-      const auto & opt = state_interfaces_[i].get_optional(0);
+      if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
+      {
+        // no retries, just try to get the latest value once
+        const auto & opt = state_interfaces_[i].get_optional(0);
+        if (opt.has_value())
+        {
+          *mapped_values_[map_index++] = opt.value();
+        }
+      }
+    }
+  }
+  else
+  {
+    // Optimized path: only update position/velocity/effort interfaces
+    for (const auto & idx : joint_state_interface_indices_)
+    {
+      const auto & opt = state_interfaces_[idx].get_optional(0);
       if (opt.has_value())
       {
-        *mapped_values_[map_index++] = opt.value();
+        const std::string & prefix_name = state_interfaces_[idx].get_prefix_name();
+        std::string interface_name = state_interfaces_[idx].get_interface_name();
+        if (map_interface_to_joint_state_.count(interface_name) > 0)
+        {
+          interface_name = map_interface_to_joint_state_[interface_name];
+        }
+        name_if_value_mapping_[prefix_name][interface_name] = opt.value();
       }
     }
   }

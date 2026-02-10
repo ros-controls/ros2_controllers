@@ -121,6 +121,10 @@ protected:
 
   std::vector<double *> mapped_values_;
 
+  // Indices into state_interfaces_ for joint state (position/velocity/effort) interfaces only
+  // Used for optimization when publish_dynamic_joint_states is false
+  std::vector<size_t> joint_state_interface_indices_;
+
   struct JointStateData
   {
     JointStateData(const double & position, const double & velocity, const double & effort)
