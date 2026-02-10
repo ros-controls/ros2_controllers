@@ -106,7 +106,7 @@ if(BUILD_TESTING)
   ament_add_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
-  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
+  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 330)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets)

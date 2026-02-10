@@ -266,7 +266,16 @@ controller_interface::return_type JointTrajectoryController::update(
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
         new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        if (params_.constraints.decelerate_on_cancel)
+        {
+          // calculate stopping position based on max deceleration
+          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+        }
+        else
+        {
+          // hold current position
+          new_trajectory_msg_.initRT(set_hold_position());
+        }
       }
 
       // Check state/goal tolerance
@@ -393,7 +402,16 @@ controller_interface::return_type JointTrajectoryController::update(
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
           new_trajectory_msg_.reset();
-          new_trajectory_msg_.initRT(set_hold_position());
+          if (params_.constraints.decelerate_on_cancel)
+          {
+            // calculate stopping position based on max deceleration
+            new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          }
+          else
+          {
+            // hold current position
+            new_trajectory_msg_.initRT(set_hold_position());
+          }
         }
         // check goal tolerance
         else if (!before_last_point)
@@ -431,7 +449,16 @@ controller_interface::return_type JointTrajectoryController::update(
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
             new_trajectory_msg_.reset();
-            new_trajectory_msg_.initRT(set_hold_position());
+            if (params_.constraints.decelerate_on_cancel)
+            {
+              // calculate stopping position based on max deceleration
+              new_trajectory_msg_.initRT(decelerate_to_hold_position());
+            }
+            else
+            {
+              // hold current position
+              new_trajectory_msg_.initRT(set_hold_position());
+            }
           }
         }
       }
@@ -441,14 +468,32 @@ controller_interface::return_type JointTrajectoryController::update(
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
         new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        if (params_.constraints.decelerate_on_cancel)
+        {
+          // calculate stopping position based on max deceleration
+          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+        }
+        else
+        {
+          // hold current position
+          new_trajectory_msg_.initRT(set_hold_position());
+        }
       }
       else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
         new_trajectory_msg_.reset();
-        new_trajectory_msg_.initRT(set_hold_position());
+        if (params_.constraints.decelerate_on_cancel)
+        {
+          // calculate stopping position based on max deceleration
+          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+        }
+        else
+        {
+          // hold current position
+          new_trajectory_msg_.initRT(set_hold_position());
+        }
       }
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
@@ -1394,8 +1439,16 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
-    // Enter hold current position mode
-    add_new_trajectory_msg(set_hold_position());
+    if (params_.constraints.decelerate_on_cancel)
+    {
+      // calculate stopping position based on max deceleration
+      add_new_trajectory_msg(decelerate_to_hold_position());
+    }
+    else
+    {
+      // hold current position
+      add_new_trajectory_msg(set_hold_position());
+    }
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1789,6 +1842,111 @@ JointTrajectoryController::set_hold_position()
   rt_is_holding_ = true;
 
   return hold_position_msg_ptr_;
+}
+
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
+JointTrajectoryController::decelerate_to_hold_position()
+{
+  // if we don't know the velocity of the joints we can't calculate a ramped stop trajectory
+  if (!has_velocity_state_interface_)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Hardware does not support velocity state interface, falling back to hold position.");
+    return set_hold_position();
+  }
+  const double dt = update_period_.seconds();
+
+  // Precompute per-joint decel, stop time, and hold position
+  std::vector<double> p0(num_cmd_joints_), v0(num_cmd_joints_), a(num_cmd_joints_),
+    t_stop(num_cmd_joints_), p_hold(num_cmd_joints_), sgn(num_cmd_joints_);
+  double max_t_stop = 0.0;
+  for (size_t i = 0; i < num_cmd_joints_; ++i)
+  {
+    p0[i] = state_current_.positions[i];
+    v0[i] = state_current_.velocities[i];
+    a[i] = params_.constraints.joints_map.at(params_.joints[i]).max_deceleration_on_cancel;
+
+    if (a[i] <= 0.0)
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Joint [%s] invalid max_deceleration_on_cancel [%.1f]. Falling back to hold position.",
+        params_.joints[i].c_str(), a[i]);
+      return set_hold_position();
+    }
+    sgn[i] = (v0[i] >= 0.0) ? 1.0 : -1.0;
+
+    // Time to stop (constant decel)
+    t_stop[i] = std::abs(v0[i]) / a[i];
+    max_t_stop = std::max(max_t_stop, t_stop[i]);
+
+    // Analytical stop distance and hold position
+    const double stop_distance = (v0[i] * v0[i]) / (2.0 * a[i]);
+    p_hold[i] = p0[i] + sgn[i] * stop_distance;
+
+    RCLCPP_DEBUG(
+      get_node()->get_logger(),
+      "Joint [%s] decel [%.3f], stop dist [%.4f], initial vel [%.4f], initial pos [%.4f], hold pos "
+      "[%.4f], time to stop [%.4f]",
+      params_.joints[i].c_str(), a[i], stop_distance, v0[i], p0[i], p_hold[i], t_stop[i]);
+  }
+
+  // Prepare output trajectory to stop each joint at max deceleration configured
+  auto traj = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  traj->joint_names = params_.joints;
+  traj->points.clear();
+  // Number of points at multiples of dt (include initial point at t=0)
+  const size_t num_points = static_cast<size_t>(std::ceil(max_t_stop / dt)) + 1;
+  traj->points.reserve(num_points);
+
+  // Build traj points that ramp to zero velocity
+  for (size_t k = 0; k < num_points; ++k)
+  {
+    const double t = static_cast<double>(k) * dt;
+    trajectory_msgs::msg::JointTrajectoryPoint pt;
+    pt.positions.resize(num_cmd_joints_);
+    pt.velocities.resize(num_cmd_joints_);
+    pt.accelerations.resize(num_cmd_joints_);
+
+    for (size_t i = 0; i < num_cmd_joints_; ++i)
+    {
+      // if the joint still needs more time to stop and had an initial non-zero velocity
+      if (t < t_stop[i] && std::abs(v0[i]) > std::numeric_limits<float>::epsilon())
+      {
+        // Constant deceleration
+        // v(t) = v0 - sgn * a * t
+        double v = v0[i] - sgn[i] * a[i] * t;
+        // Guard against numerical crossing
+        if ((v * sgn[i]) < 0.0) v = 0.0;
+        // p(t) = p0 + v0 * t - 0.5 * sgn * a * t^2
+        const double p = p0[i] + v0[i] * t - 0.5 * sgn[i] * a[i] * t * t;
+        pt.positions[i] = p;
+        pt.velocities[i] = v;
+        pt.accelerations[i] = -sgn[i] * a[i];
+      }
+      else
+      {
+        // Joint is stopped, hold position and zero velocity/accel
+        pt.positions[i] = p_hold[i];
+        pt.velocities[i] = 0.0;
+        pt.accelerations[i] = 0.0;
+      }
+    }
+
+    pt.time_from_start = rclcpp::Duration::from_seconds(t);
+    traj->points.emplace_back(std::move(pt));
+  }
+
+  RCLCPP_INFO(
+    get_node()->get_logger(),
+    "Created ramped stop trajectory with [%zu] points and max time to stop [%.3f] sec",
+    traj->points.size(), max_t_stop);
+
+  // set flag, otherwise tolerances will be checked with holding position too
+  rt_is_holding_ = true;
+
+  return traj;
 }
 
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>

@@ -238,6 +238,11 @@ protected:
    */
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
 
+  /** @brief decelerate at constant rate to a holding position with
+   * zero velocity and acceleration as new command
+   */
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position();
+
   /** @brief set last trajectory point to be repeated at success
    *
    * no matter if it has nonzero velocity or acceleration
