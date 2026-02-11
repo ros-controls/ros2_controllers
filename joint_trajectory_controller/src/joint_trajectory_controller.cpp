@@ -367,16 +367,13 @@ controller_interface::return_type JointTrajectoryController::update(
 
       if (active_goal)
       {
-        // send feedback
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
-        feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
-
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
-        feedback->index = static_cast<int32_t>(next_point_index);
-        active_goal->setFeedback(feedback);
+        // send feedback using preallocated message to avoid heap allocation in RT loop
+        preallocated_feedback_->header.stamp = time;
+        preallocated_feedback_->actual = state_current_;
+        preallocated_feedback_->desired = state_desired_;
+        preallocated_feedback_->error = state_error_;
+        preallocated_feedback_->index = static_cast<int32_t>(next_point_index);
+        active_goal->setFeedback(preallocated_feedback_);
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -1938,6 +1935,10 @@ void JointTrajectoryController::init_hold_position_msg()
   {
     hold_position_msg_ptr_->points[0].effort.resize(dof_, 0.0);
   }
+
+  // Pre-allocate feedback message to avoid heap allocation in RT loop
+  preallocated_feedback_ = std::make_shared<FollowJTrajAction::Feedback>();
+  preallocated_feedback_->joint_names = params_.joints;
 }
 
 }  // namespace joint_trajectory_controller
