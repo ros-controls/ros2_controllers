@@ -175,21 +175,18 @@ controller_interface::return_type TricycleController::update(
   auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
 
   // Reduce wheel speed until the target angle has been reached
-  double alpha_delta = abs(alpha_write - alpha_read);
-  double scale;
-  if (alpha_delta < M_PI / 6)
-  {
-    scale = 1;
-  }
-  else if (alpha_delta > M_PI_2)
-  {
-    scale = 0.01;
-  }
-  else
-  {
-    // TODO(anyone): find the best function, e.g convex power functions
-    scale = cos(alpha_delta);
-  }
+  double alpha_delta = std::abs(alpha_write - alpha_read);
+  double scale = 1.0;
+
+  double normalized_error = std::min(alpha_delta / M_PI_2, 1.0);
+  double scale_exponent = params_.steering_track_error_exponent;
+  double min_scale = params_.steering_min_speed_scale;
+
+  // scale = (1 - error)^n
+  scale = std::pow(1.0 - normalized_error, scale_exponent);
+  // limit the minimum value of the scale to avoid complete stop when the error is large
+  scale = std::max(scale, min_scale);
+
   Ws_write *= scale;
 
   auto & last_command = previous_commands_.back();

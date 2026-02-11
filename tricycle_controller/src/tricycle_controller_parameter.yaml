@@ -84,6 +84,22 @@ tricycle_controller:
       gt<>: [0]
     }
   }
+  steering_track_error_exponent: {
+    type: double,
+    default_value: 2.0,
+    description: "Exponent for the convex power function used to scale down traction speed based on steering error.",
+    validation: {
+      gt_eq<>: [1.0]
+    }
+  }
+  steering_min_speed_scale: {
+    type: double,
+    default_value: 0.01,
+    description: "Minimum allowed value of the speed scale.",
+    validation: {
+      gt_eq<>: [0.0]
+    }
+  }
   traction:
     # "The positive limit will be applied to both directions. Setting different limits for positive "
     # "and negative directions is not supported. Actuators are "
