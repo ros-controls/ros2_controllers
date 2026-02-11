@@ -21,6 +21,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tl_expected
   trajectory_msgs
   urdf
+  joint_trajectory_controller_plugins
 )
 
 find_package(ament_cmake REQUIRED)
@@ -52,6 +53,7 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
+                      joint_trajectory_controller_plugins::pid_trajectory_plugin
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_action::rclcpp_action
@@ -128,4 +130,5 @@ install(TARGETS
 
 ament_export_targets(export_joint_trajectory_controller HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+
 ament_package()
