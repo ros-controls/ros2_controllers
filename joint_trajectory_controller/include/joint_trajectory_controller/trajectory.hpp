@@ -209,6 +209,20 @@ void wraparound_joint(
   std::vector<double> & current_position, const std::vector<double> next_position,
   const std::vector<bool> & joints_angle_wraparound);
 
+/** @brief Creates a trajectory to decelerate at constant rate to a stop
+ * \param state_current The current state (requires velocity state for each joint) to use for the
+ *      starting point of the stop trajectory
+ * \param joint_accelerations The acceleration values used to calculate how fast each joint can stop
+ * \param joints_angle_wraparound Vector of boolean where true value corresponds to a joint that
+ *      wraps around (ie. is continuous).
+ * \param sample_period The time period to sample the stop trajectory at
+ */
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_stop(
+  const std::vector<std::string> & joint_names,
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_current,
+  const std::vector<double> & joint_accelerations,
+  const std::vector<bool> & joints_angle_wraparound, const double sample_period);
+
 }  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_

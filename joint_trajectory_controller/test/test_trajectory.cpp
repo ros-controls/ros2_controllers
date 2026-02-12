@@ -987,6 +987,33 @@ TEST(TestTrajectory, update_trajectory)
   }
 }
 
+TEST(TestTrajectoryStop, valid_stop_with_wraparound)
+{
+  const std::vector<std::string> joint_names{"joint_1", "joint_2", "joint_3"};
+  trajectory_msgs::msg::JointTrajectoryPoint current_state;
+  current_state.positions = {0.0, 1.0, 0.0};
+  current_state.velocities = {5.0, 5.0, 5.0};
+  // slow deceleration so that the joints take more than one revolution to stop
+  // Stopping distance should be ~4.2 rad with these settings.
+  const std::vector<double> max_decel{3.0, 3.0, 3.0};
+  const std::vector<bool> joints_angle_wraparound{true, true, false};
+  const double sample_period = 0.01;  // seconds (100 Hz)
+
+  auto traj = joint_trajectory_controller::decelerate_to_stop(
+    joint_names, current_state, max_decel, joints_angle_wraparound, sample_period);
+
+  // All fo the joints should stop by the end of the trajectory
+  EXPECT_NEAR(traj->points.back().velocities[0], 0.0, EPS);
+  EXPECT_NEAR(traj->points.back().velocities[1], 0.0, EPS);
+  EXPECT_NEAR(traj->points.back().velocities[2], 0.0, EPS);
+
+  // Joint 1 and 2 are expected to wrap around
+  EXPECT_LT(traj->points.back().positions[0], current_state.positions[0]);
+  EXPECT_LT(traj->points.back().positions[1], current_state.positions[1]);
+  // Joint 3 should not wrap and be larger than the current_state
+  EXPECT_GT(traj->points.back().positions[2], current_state.positions[2]);
+}
+
 TEST(TestWrapAroundJoint, no_wraparound)
 {
   const std::vector<double> initial_position(3, 0.);
