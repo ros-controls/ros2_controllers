@@ -40,6 +40,8 @@
 #include <string>
 #include <vector>
 
+#include <angles/angles.h>
+
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "joint_trajectory_controller/joint_trajectory_controller_parameters.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
@@ -177,12 +179,14 @@ SegmentTolerances get_segment_tolerances(
  *
  * \param[in] desired_state The commanded state point.
  * \param[in] current_state The actual state point from the hardware.
+ * \param[in] is_wraparounds A vector indicating which joints are wraparound (e.g., continuous).
  * \param[in] show_errors If true, logging messages about size mismatches will be shown.
  * \return A JointTrajectoryPoint where positions, velocities, etc., are the difference.
  */
 trajectory_msgs::msg::JointTrajectoryPoint create_error_trajectory_point(
   const trajectory_msgs::msg::JointTrajectoryPoint & desired_state,
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_state, bool show_errors = false);
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_state,
+  const std::vector<bool> & is_wraparounds, bool show_errors = false);
 
 /**
  * \brief Checks if the error for a single joint state component is within the defined tolerance.
@@ -226,13 +230,11 @@ bool check_trajectory_point_tolerance(
 
 inline trajectory_msgs::msg::JointTrajectoryPoint create_error_trajectory_point(
   const trajectory_msgs::msg::JointTrajectoryPoint & desired_state,
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_state, bool show_errors)
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_state,
+  const std::vector<bool> & is_wraparounds, bool show_errors)
 {
   trajectory_msgs::msg::JointTrajectoryPoint error_state;
   const size_t n_joints = desired_state.positions.size();
-
-  // Helper lambda for element-wise subtraction (desired - actual)
-  auto subtract = [](double desired, double actual) { return desired - actual; };
 
   // Check if vectors are same size before proceeding to prevent undefined behavior
   if (current_state.positions.size() != n_joints)
@@ -248,11 +250,39 @@ inline trajectory_msgs::msg::JointTrajectoryPoint create_error_trajectory_point(
     return error_state;  // Return empty error state
   }
 
+  // Check if wraparounds size matches before proceeding
+  if (is_wraparounds.size() != n_joints)
+  {
+    if (show_errors)
+    {
+      const auto logger = rclcpp::get_logger("tolerances");
+      RCLCPP_ERROR(
+        logger, "Wraparounds size (%zu) does not match desired state positions size (%zu).",
+        is_wraparounds.size(), n_joints);
+    }
+    return error_state;  // Return empty error state
+  }
+
   // Position Error
   error_state.positions.resize(n_joints);
-  std::transform(
-    desired_state.positions.begin(), desired_state.positions.end(), current_state.positions.begin(),
-    error_state.positions.begin(), subtract);
+  for (size_t i = 0; i < n_joints; ++i)
+  {
+    if (is_wraparounds[i])
+    {
+      // Use shortest distance for wraparound joints (e.g., continuous joints)
+      // Normalized between: [-pi, pi]
+      error_state.positions[i] =
+        angles::shortest_angular_distance(current_state.positions[i], desired_state.positions[i]);
+    }
+    else
+    {
+      // Standard Euclidean distance
+      error_state.positions[i] = desired_state.positions[i] - current_state.positions[i];
+    }
+  }
+
+  // Helper lambda for element-wise subtraction (desired - actual)
+  auto subtract = [](double desired, double actual) { return desired - actual; };
 
   // Velocity Error (Only if both are same size)
   if (desired_state.velocities.size() == n_joints && current_state.velocities.size() == n_joints)
