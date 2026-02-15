@@ -76,6 +76,7 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_timeout);
 
 public:
   controller_interface::CallbackReturn on_configure(

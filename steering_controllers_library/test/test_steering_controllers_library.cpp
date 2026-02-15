@@ -268,6 +268,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.set(msg);
 
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(controller_->input_ref_.get().twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -363,6 +366,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   age_of_last_command = controller_->get_node()->now() - controller_->input_ref_.get().header.stamp;
 
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(controller_->input_ref_.get().twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -384,6 +390,89 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
+}
+
+TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
+{
+  // Setup Options
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", true);
+  node_options.append_parameter_override(
+    "traction_joints_names", std::vector<std::string>{"wheel_left", "wheel_right"});
+  node_options.append_parameter_override(
+    "steering_joints_names", std::vector<std::string>{"steer_left", "steer_right"});
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  struct Publicist : public TestableSteeringControllersLibrary
+  {
+    using controller_interface::ControllerInterfaceBase::command_interfaces_;
+    using steering_controllers_library::SteeringControllersLibrary::input_ref_;
+  };
+  auto * pub_controller = static_cast<Publicist *>(controller_.get());
+
+  auto command_msg = ControllerReferenceMsg();
+  command_msg.header.stamp = controller_->get_node()->now();
+  command_msg.twist.linear.x = 1.5;
+  command_msg.twist.angular.z = 0.0;
+
+  pub_controller->input_ref_.set(command_msg);
+
+  controller_->update_reference_from_subscribers(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+  controller_->update_and_write_commands(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+
+  ASSERT_GT(pub_controller->command_interfaces_[0].get_optional().value(), 0.1);
+
+  auto nan_msg = ControllerReferenceMsg();
+  nan_msg.header.stamp = controller_->get_node()->now();
+  nan_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  nan_msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+  pub_controller->input_ref_.set(nan_msg);
+
+  controller_->update_reference_from_subscribers(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+  controller_->update_and_write_commands(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+
+  // The wheel speed should have been reset to 0.0
+  EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
+}
+
+TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
+{
+  // 1. SETUP WITH OPTIONS
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", true);
+  node_options.append_parameter_override("reference_timeout", 1.0);
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);  // We are testing standalone mode
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 5.0;
+  msg.twist.angular.z = 0.0;
+  controller_->input_ref_.set(msg);
+
+  controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1));
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 5.0);
+
+  rclcpp::Time future_time = controller_->get_node()->now() + rclcpp::Duration::from_seconds(2.0);
+
+  controller_->update(future_time, rclcpp::Duration::from_seconds(0.1));
+
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
+
 }
 
 int main(int argc, char ** argv)
