@@ -28,6 +28,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/impl/utils.hpp"
 
 namespace
 {
@@ -35,6 +36,7 @@ constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
 constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
 }  // namespace
 
 namespace diff_drive_controller
@@ -161,56 +163,73 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
-  // Update odometry
   bool odometry_updated = false;
-  if (params_.open_loop)
+
+  // check if odometry set or reset was requested by non-RT thread
+  if (set_odom_requested_.load())
   {
-    odometry_updated =
-      odometry_.try_update_open_loop(linear_command, angular_command, period.seconds());
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.setOdometry(params.x, params.y, params.yaw);
+      odometry_updated = true;
+      set_odom_requested_.store(false);
+    }
   }
   else
   {
-    double left_feedback_mean = 0.0;
-    double right_feedback_mean = 0.0;
-    for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
-    {
-      const auto left_feedback_op =
-        registered_left_wheel_handles_[index].feedback.value().get().get_optional();
-      const auto right_feedback_op =
-        registered_right_wheel_handles_[index].feedback.value().get().get_optional();
-
-      if (!left_feedback_op.has_value() || !right_feedback_op.has_value())
-      {
-        RCLCPP_DEBUG(logger, "Unable to retrieve the data from the left or right wheels feedback!");
-        return controller_interface::return_type::OK;
-      }
-
-      const double left_feedback = left_feedback_op.value();
-      const double right_feedback = right_feedback_op.value();
-
-      if (std::isnan(left_feedback) || std::isnan(right_feedback))
-      {
-        RCLCPP_ERROR(
-          logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
-          index);
-        return controller_interface::return_type::ERROR;
-      }
-
-      left_feedback_mean += left_feedback;
-      right_feedback_mean += right_feedback;
-    }
-    left_feedback_mean /= static_cast<double>(wheels_per_side_);
-    right_feedback_mean /= static_cast<double>(wheels_per_side_);
-
-    if (params_.position_feedback)
+    // Update odometry
+    if (params_.open_loop)
     {
       odometry_updated =
-        odometry_.update_from_pos(left_feedback_mean, right_feedback_mean, period.seconds());
+        odometry_.try_update_open_loop(linear_command, angular_command, period.seconds());
     }
     else
     {
-      odometry_updated =
-        odometry_.update_from_vel(left_feedback_mean, right_feedback_mean, period.seconds());
+      double left_feedback_mean = 0.0;
+      double right_feedback_mean = 0.0;
+      for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
+      {
+        const auto left_feedback_op =
+          registered_left_wheel_handles_[index].feedback.value().get().get_optional();
+        const auto right_feedback_op =
+          registered_right_wheel_handles_[index].feedback.value().get().get_optional();
+
+        if (!left_feedback_op.has_value() || !right_feedback_op.has_value())
+        {
+          RCLCPP_DEBUG(
+            logger, "Unable to retrieve the data from the left or right wheels feedback!");
+          return controller_interface::return_type::OK;
+        }
+
+        const double left_feedback = left_feedback_op.value();
+        const double right_feedback = right_feedback_op.value();
+
+        if (std::isnan(left_feedback) || std::isnan(right_feedback))
+        {
+          RCLCPP_ERROR(
+            logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
+            index);
+          return controller_interface::return_type::ERROR;
+        }
+
+        left_feedback_mean += left_feedback;
+        right_feedback_mean += right_feedback;
+      }
+      left_feedback_mean /= static_cast<double>(wheels_per_side_);
+      right_feedback_mean /= static_cast<double>(wheels_per_side_);
+
+      if (params_.position_feedback)
+      {
+        odometry_updated =
+          odometry_.update_from_pos(left_feedback_mean, right_feedback_mean, period.seconds());
+      }
+      else
+      {
+        odometry_updated =
+          odometry_.update_from_vel(left_feedback_mean, right_feedback_mean, period.seconds());
+      }
     }
   }
 
@@ -492,6 +511,11 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_transform_message_.transforms.front().header.frame_id = odom_frame_id;
   odometry_transform_message_.transforms.front().child_frame_id = base_frame_id;
 
+  set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
+    DEFAULT_SET_ODOM_SERVICE, std::bind(
+                                &DiffDriveController::set_odometry, this, std::placeholders::_1,
+                                std::placeholders::_2, std::placeholders::_3));
+
   previous_update_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -554,6 +578,28 @@ controller_interface::CallbackReturn DiffDriveController::on_error(const rclcpp_
     return controller_interface::CallbackReturn::ERROR;
   }
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void DiffDriveController::set_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+  std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
+{
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
 }
 
 bool DiffDriveController::reset()

@@ -805,6 +805,73 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
+TEST_F(MecanumDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  SetUpController();
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
+
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  const double dt = 0.02;  // 50Hz
+  rclcpp::Time test_time = controller_->get_node()->now();
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    controller_->reference_interfaces_[0] = vx;  // linear x
+    controller_->reference_interfaces_[1] = vy;  // linear y
+    controller_->reference_interfaces_[2] = wz;  // angular z
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+    test_time += period;
+
+    // Update wheel positions based on commands to simulate feedback
+    size_t fl = controller_->get_front_left_wheel_index();
+    size_t fr = controller_->get_front_right_wheel_index();
+    size_t rl = controller_->get_rear_left_wheel_index();
+    size_t rr = controller_->get_rear_right_wheel_index();
+
+    joint_state_values_[fl] = controller_->command_interfaces_[fl].get_optional().value();
+    joint_state_values_[fr] = controller_->command_interfaces_[fr].get_optional().value();
+    joint_state_values_[rl] = controller_->command_interfaces_[rl].get_optional().value();
+    joint_state_values_[rr] = controller_->command_interfaces_[rr].get_optional().value();
+  };
+
+  // 1. Move the robot forward
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;
+
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getRz(), 1.57079632679, 1e-5);
+
+  // 3. Move forward again to verify
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
