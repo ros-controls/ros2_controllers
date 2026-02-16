@@ -41,7 +41,7 @@
 #endif
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
-#include "test_asset_6d_robot_description.hpp"
+#include "ros2_control_test_assets/test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
 // TODO(anyone): replace the state and command message types
