@@ -18,7 +18,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_interface_group_values.hpp"
@@ -85,7 +84,6 @@ private:
   InterfacesNames get_gpios_state_interfaces_names(const std::string & gpio_name) const;
   bool update_dynamic_map_parameters();
   std::vector<hardware_interface::ComponentInfo> get_gpios_from_urdf() const;
-  mutable std::unordered_set<std::string> nan_interfaces_warned_;
 
 protected:
   InterfacesNames command_interface_types_;

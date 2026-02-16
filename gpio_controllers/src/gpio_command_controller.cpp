@@ -441,15 +441,10 @@ void GpioCommandController::apply_state_value(
     }
     else
     {
-      if (nan_interfaces_warned_.find(interface_name) == nan_interfaces_warned_.end())
-      {
-        RCLCPP_INFO(
-          get_node()->get_logger(),
-          "Interface '%s' has unsupported type. Only 'double' and 'bool' are supported.",
-          interface_name.c_str());
-
-        nan_interfaces_warned_.insert(interface_name);
-      }
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 10000,
+        "Interface '%s' has unsupported type. Only 'double' and 'bool' are supported.",
+        interface_name.c_str());
     }
 
     state_msg.interface_values[gpio_index].values[interface_index] = state_value;
