@@ -19,6 +19,7 @@
 #ifndef TRICYCLE_CONTROLLER__TRICYCLE_CONTROLLER_HPP_
 #define TRICYCLE_CONTROLLER__TRICYCLE_CONTROLLER_HPP_
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -76,6 +77,11 @@ public:
 
   CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
+  void reset_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+    std::shared_ptr<std_srvs::srv::Empty::Response> res);
+
 protected:
   struct TractionHandle
   {
@@ -132,6 +138,7 @@ protected:
   std::shared_ptr<TwistStamped> last_command_msg_;
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_odom_service_;
+  std::atomic<bool> reset_odom_{false};
 
   std::queue<AckermannDrive> previous_commands_;  // last two commands
 
@@ -139,10 +146,6 @@ protected:
   TractionLimiter limiter_traction_;
   SteeringLimiter limiter_steering_;
 
-  void reset_odometry(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-    std::shared_ptr<std_srvs::srv::Empty::Response> res);
   bool reset();
   void halt();
 };
