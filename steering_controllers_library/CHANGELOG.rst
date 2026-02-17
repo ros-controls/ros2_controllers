@@ -2,6 +2,17 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+* Populate pose covariance correctly in steering controllers (`#2109 <https://github.com/ros-controls/ros2_controllers/issues/2109>`_)
+* Contributors: Vedh
+
+6.2.0 (2025-12-31)
+------------------
+* Fix open_loop odometry of steering controllers (`#2087 <https://github.com/ros-controls/ros2_controllers/issues/2087>`_)
+* tf prefix helper used in steering controllers library (`#2080 <https://github.com/ros-controls/ros2_controllers/issues/2080>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
 6.1.0 (2025-12-01)
 ------------------
 * Rename Odometry Class to SteeringKinematics (`#1996 <https://github.com/ros-controls/ros2_controllers/issues/1996>`_)

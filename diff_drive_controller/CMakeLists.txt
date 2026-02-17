@@ -6,6 +6,7 @@ set_compiler_options()
 export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_msgs
   control_toolbox
   controller_interface
   generate_parameter_library
@@ -60,7 +61,8 @@ target_link_libraries(diff_drive_controller
     tf2::tf2
     ${tf2_msgs_TARGETS}
     ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS})
+    ${nav_msgs_TARGETS}
+    ${control_msgs_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface diff_drive_plugin.xml)
 
 if(BUILD_TESTING)
@@ -80,6 +82,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_load_diff_drive_controller
     controller_manager::controller_manager
     ros2_control_test_assets::ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_odometry
+    test/test_odometry.cpp
+    src/odometry.cpp
+  )
+  target_link_libraries(test_odometry
+    diff_drive_controller
   )
 endif()
 
