@@ -228,30 +228,22 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   // Create stiffness matrix in base frame. The user-provided values of admittance_state.stiffness
   // correspond to the six diagonal elements of the stiffness matrix expressed in the control frame
   auto rot_base_control = admittance_state.rot_base_control;
+  Eigen::Matrix<double, 6, 6> rot_base_control_6d = Eigen::Matrix<double, 6, 6>::Zero();
+  rot_base_control_6d.topLeftCorner<3, 3>() = rot_base_control;
+  rot_base_control_6d.bottomRightCorner<3, 3>() = rot_base_control;
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
-  Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 3> K_rot = Eigen::Matrix<double, 3, 3>::Zero();
-  K_pos.diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
-  K_rot.diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
-  // Transform to the control frame
-  // A reference is here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
-  // Force Control by Luigi Villani and Joris De Schutter
-  // Page 200
-  K_pos = rot_base_control * K_pos * rot_base_control.transpose();
-  K_rot = rot_base_control * K_rot * rot_base_control.transpose();
-  K.block<3, 3>(0, 0) = K_pos;
-  K.block<3, 3>(3, 3) = K_rot;
+  K.block<3, 3>(0, 0).diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
+  K.block<3, 3>(3, 3).diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
 
   // The same for damping
   Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();
-  Eigen::Matrix<double, 3, 3> D_pos = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 3> D_rot = Eigen::Matrix<double, 3, 3>::Zero();
-  D_pos.diagonal() = admittance_state.damping.block<3, 1>(0, 0);
-  D_rot.diagonal() = admittance_state.damping.block<3, 1>(3, 0);
-  D_pos = rot_base_control * D_pos * rot_base_control.transpose();
-  D_rot = rot_base_control * D_rot * rot_base_control.transpose();
-  D.block<3, 3>(0, 0) = D_pos;
-  D.block<3, 3>(3, 3) = D_rot;
+  D.block<3, 3>(0, 0).diagonal() = admittance_state.damping.block<3, 1>(0, 0);
+  D.block<3, 3>(3, 3).diagonal() = admittance_state.damping.block<3, 1>(3, 0);
+
+  // The same for mass
+  Eigen::Matrix<double, 6, 6> M_inv = Eigen::Matrix<double, 6, 6>::Zero();
+  M_inv.block<3, 3>(0, 0).diagonal() = admittance_state.mass_inv.block<3, 1>(0, 0);
+  M_inv.block<3, 3>(3, 3).diagonal() = admittance_state.mass_inv.block<3, 1>(3, 0);
 
   // calculate admittance relative offset in base frame
   Eigen::Isometry3d desired_trans_base_ft;
@@ -273,16 +265,15 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   auto F_base = admittance_state.wrench_base;
 
   // zero out any forces in the control frame
-  Eigen::Matrix<double, 6, 1> F_control;
-  F_control.block<3, 1>(0, 0) = rot_base_control.transpose() * F_base.block<3, 1>(0, 0);
-  F_control.block<3, 1>(3, 0) = rot_base_control.transpose() * F_base.block<3, 1>(3, 0);
+  Eigen::Matrix<double, 6, 1> F_control = rot_base_control_6d.transpose() * F_base;
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
-  F_base.block<3, 1>(0, 0) = rot_base_control * F_control.block<3, 1>(0, 0);
-  F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
-  // Compute admittance control law in the base frame: F = M*x_ddot + D*x_dot + K*x
-  Eigen::Matrix<double, 6, 1> X_ddot =
-    admittance_state.mass_inv.cwiseProduct(F_base - D * X_dot - K * X);
+  // Compute admittance control law in the base frame:
+  // F_control = M*R^T*x_ddot + D*R^T*x_dot + K*R^T*x,
+  // with R being the rotation matrix from base to control frame
+  Eigen::Matrix<double, 6, 1> X_ddot = rot_base_control_6d * M_inv *
+                                       (F_control - D * rot_base_control_6d.transpose() * X_dot -
+                                        K * rot_base_control_6d.transpose() * X);
   bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(
     admittance_state.current_joint_pos, X_ddot, admittance_state.ft_sensor_frame,
     admittance_state.joint_acc);
