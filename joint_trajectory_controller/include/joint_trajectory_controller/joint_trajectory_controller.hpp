@@ -150,6 +150,19 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
+  // If true, enable calculations to stop all joints using constant deceleration
+  bool decelerate_on_cancel_ = false;
+  // reserved storage for the max deceleration values
+  std::vector<double> max_decel_;
+  // reserved storage for each joints max stopping time
+  std::vector<double> stop_time_;
+  // reserved storage for each joints hold position at stop
+  std::vector<double> hold_position_;
+  // reserved storage for each joints stop direction
+  std::vector<double> stop_direction_;
+  // reserved storage for the stop trajectory
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> stop_trajectory_;
+
   // Things around speed scaling
   std::atomic<double> scaling_factor_{1.0};
   std::atomic<double> scaling_factor_cmd_{1.0};
@@ -237,6 +250,11 @@ protected:
   /** @brief set the current position with zero velocity and acceleration as new command
    */
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+
+  /** @brief decelerate at constant rate to a holding position with
+   * zero velocity and acceleration as new command
+   */
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position();
 
   /** @brief set last trajectory point to be repeated at success
    *
