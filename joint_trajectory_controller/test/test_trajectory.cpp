@@ -987,6 +987,20 @@ TEST(TestTrajectory, update_trajectory)
   }
 }
 
+TEST(TestWrapAroundJoint, no_wraparound)
+{
+  const std::vector<double> initial_position(3, 0.);
+  std::vector<double> next_position(3, M_PI * 3. / 2.);
+
+  std::vector<double> current_position(initial_position);
+  std::vector<bool> joints_angle_wraparound(3, false);
+  joint_trajectory_controller::wraparound_joint(
+    current_position, next_position, joints_angle_wraparound);
+  EXPECT_EQ(current_position[0], initial_position[0]);
+  EXPECT_EQ(current_position[1], initial_position[1]);
+  EXPECT_EQ(current_position[2], initial_position[2]);
+}
+
 TEST(TestWrapAroundJoint, wraparound_single_joint)
 {
   const std::vector<double> initial_position(3, 0.);
