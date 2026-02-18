@@ -938,11 +938,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_to_hold_po
   updateControllerAsync(rclcpp::Duration::from_seconds(0.5));
   std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
 
-  // this test controller only reports `state_current_.velocities` inside the JTC when the velocity
-  // command and state interfaces are active otherwise the `state_current_.velocities` are zero
-  if (
-    traj_controller_->has_velocity_command_interface() &&
-    traj_controller_->has_velocity_state_interface())
+  if (traj_controller_->has_velocity_state_interface())
   {
     // we expect a non-trivial hold trajectory that ramps the velocity to zero
     expectCommandPoint(cancelled_position, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, false);
