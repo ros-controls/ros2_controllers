@@ -21,11 +21,6 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
 
-namespace
-{
-static const auto kLogger = rclcpp::get_logger("trajectory");
-}  // anonymous namespace
-
 namespace joint_trajectory_controller
 {
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
