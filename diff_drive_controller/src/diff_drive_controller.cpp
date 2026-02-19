@@ -604,7 +604,7 @@ void DiffDriveController::set_odometry(
 
 bool DiffDriveController::reset()
 {
-  odometry_.resetOdometry();
+  odometry_.setOdometry(0.0, 0.0, 0.0);
 
   reset_buffers();
 
