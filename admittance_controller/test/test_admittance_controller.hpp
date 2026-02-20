@@ -164,7 +164,6 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    // Humble API: init(controller_name, namespace, node_options)
     auto result = controller_->init(controller_name, "", options);
 
     controller_->export_reference_interfaces();
