@@ -23,7 +23,8 @@
 # upper is an optional attribute, so I don't understand what's going on
 # See comments in https://github.com/ros/urdfdom/issues/36
 
-import xml.dom.minidom
+import xml.etree.ElementTree as ET
+from urdf_parser_py import urdf
 from math import pi
 
 import rclpy
@@ -45,7 +46,7 @@ def subscribe_to_robot_description(node, key="robot_description"):
     node.create_subscription(String, key, callback, qos_profile)
 
 
-def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+def get_joint_limits(node, use_smallest_joint_limits=True):
     use_small = use_smallest_joint_limits
     use_mimic = True
 
@@ -59,67 +60,63 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     dependent_joints = {}
 
     if description != "":
-        robot = xml.dom.minidom.parseString(description).getElementsByTagName("robot")[0]
+
+        root = ET.fromstring(description)
+        for rc in root.findall("ros2_control"):
+            root.remove(rc)
+
+        cleaned_description = ET.tostring(root, encoding="unicode")
+
+        robot = urdf.Robot.from_xml_string(cleaned_description)
 
         # Find all non-fixed joints
-        for child in robot.childNodes:
-            if child.nodeType is child.TEXT_NODE:
+        for joint in robot.joints:
+
+            if joint.type == "fixed":
                 continue
-            if child.localName == "joint":
-                jtype = child.getAttribute("type")
-                if jtype == "fixed":
-                    continue
-                name = child.getAttribute("name")
 
-                try:
-                    limit = child.getElementsByTagName("limit")[0]
-                    try:
-                        minval = float(limit.getAttribute("lower"))
-                        maxval = float(limit.getAttribute("upper"))
-                    except ValueError:
-                        if jtype == "continuous":
-                            minval = -pi
-                            maxval = pi
-                        else:
-                            raise Exception(
-                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
-                            )
-                    try:
-                        maxvel = float(limit.getAttribute("velocity"))
-                    except ValueError:
-                        raise Exception(
-                            f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
-                        )
-                except IndexError:
-                    if name in joints_names:
-                        raise Exception(
-                            f"Missing limits tag for the joint : {name} in the robot_description!"
-                        )
-                safety_tags = child.getElementsByTagName("safety_controller")
-                if use_small and len(safety_tags) == 1:
-                    tag = safety_tags[0]
-                    if tag.hasAttribute("soft_lower_limit"):
-                        minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
-                    if tag.hasAttribute("soft_upper_limit"):
-                        maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
+            if joint.type == "continuous":
+                minval = -pi
+                maxval = pi
+            else:
+                if joint.limit:
+                    minval = joint.limit.lower
+                    maxval = joint.limit.upper
+    
+                else:
+                    raise Exception(
+                        f"Missing lower/upper position limits for the joint : {joint.name} of type : {joint.type} in the robot_description!"
+                    )
+            try:
+                maxvel = float(joint.limit.velocity)
+            except ValueError:
+                raise Exception(
+                    f"Missing velocity limits for the joint : {joint.name} of type : {joint.type} in the robot_description!"
+                )
 
-                mimic_tags = child.getElementsByTagName("mimic")
-                if use_mimic and len(mimic_tags) == 1:
-                    tag = mimic_tags[0]
-                    entry = {"parent": tag.getAttribute("joint")}
-                    if tag.hasAttribute("multiplier"):
-                        entry["factor"] = float(tag.getAttribute("multiplier"))
-                    if tag.hasAttribute("offset"):
-                        entry["offset"] = float(tag.getAttribute("offset"))
+            if use_small and joint.safety_controller:
+                if joint.safety_controller.soft_lower_limit:
+                    minval = max(
+                        minval, float(joint.safety_controller.soft_lower_limit)
+                    )
+                if joint.safety_controller.soft_upper_limit:
+                    maxval = min(
+                        maxval, float(joint.safety_controller.soft_upper_limit)
+                    )
 
-                    dependent_joints[name] = entry
-                    continue
+            if use_mimic and joint.mimic:
 
-                if name in dependent_joints:
-                    continue
-
-                joint = {"min_position": minval, "max_position": maxval}
-                joint["has_position_limits"] = jtype != "continuous"
-                joint["max_velocity"] = maxvel
-                free_joints[name] = joint
+                entry = {"parent": joint.mimic.joint}
+                if joint.mimic.multiplier:
+                    entry["factor"] = float(joint.mimic.multiplier)
+                if joint.mimic.offset:
+                    entry["offset"] = float(joint.mimic.offset)
+                dependent_joints[joint.name] = entry
+                continue
+            if joint.name in dependent_joints:
+                continue
+            joint_dic = {"min_position": minval, "max_position": maxval}
+            joint_dic["has_position_limits"] = joint.type != "continuous"
+            joint_dic["max_velocity"] = maxvel
+            free_joints[joint.name] = joint_dic
     return free_joints
