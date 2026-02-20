@@ -47,38 +47,16 @@ target_include_directories(admittance_controller PUBLIC
   $<INSTALL_INTERFACE:include/admittance_controller>
 )
 target_link_libraries(admittance_controller PUBLIC
-<<<<<<< HEAD
   admittance_controller_parameters
   Eigen3::Eigen
+  ${tf2_geometry_msgs_TARGETS}
+  ${TinyXML2_LIBRARIES}
 )
 ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 target_compile_definitions(admittance_controller PRIVATE "ADMITTANCE_CONTROLLER_BUILDING_DLL")
-=======
-                      admittance_controller_parameters
-                      Eigen3::Eigen
-                      control_toolbox::control_toolbox
-                      controller_interface::controller_interface
-                      hardware_interface::hardware_interface
-                      kinematics_interface::kinematics_interface
-                      pluginlib::pluginlib
-                      rclcpp::rclcpp
-                      angles::angles
-                      rclcpp_lifecycle::rclcpp_lifecycle
-                      realtime_tools::realtime_tools
-                      tf2::tf2
-                      tf2_eigen::tf2_eigen
-                      tf2_geometry_msgs::tf2_geometry_msgs
-                      tf2_kdl::tf2_kdl
-                      tf2_ros::tf2_ros
-                      ${geometry_msgs_TARGETS}
-                      ${trajectory_msgs_TARGETS}
-                      ${control_msgs_TARGETS}
-                      ${tf2_geometry_msgs_TARGETS}
-                      ${TinyXML2_LIBRARIES})
->>>>>>> dafc035 (Check robot description validity in AdmittanceController (#2009))
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
 
