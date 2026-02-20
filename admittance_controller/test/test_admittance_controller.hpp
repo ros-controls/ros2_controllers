@@ -73,8 +73,11 @@ class TestableAdmittanceController : public admittance_controller::AdmittanceCon
 public:
   CallbackReturn on_init() override
   {
-    get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
-    get_node()->set_parameter({"robot_description", robot_description_});
+    if (!get_node()->has_parameter("robot_description"))
+    {
+      get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
+      get_node()->set_parameter({"robot_description", robot_description_});
+    }
 
     return admittance_controller::AdmittanceController::on_init();
   }
@@ -161,22 +164,8 @@ protected:
   controller_interface::return_type SetUpControllerCommon(
     const std::string & controller_name, const rclcpp::NodeOptions & options)
   {
-    controller_interface::ControllerInterfaceParams params;
-    params.controller_name = controller_name;
-    // Extract robot_description from parameter overrides
-    auto it = std::find_if(
-      options.parameter_overrides().begin(), options.parameter_overrides().end(),
-      [](const rclcpp::Parameter & p) { return p.get_name() == "robot_description"; });
-
-    if (it != options.parameter_overrides().end())
-    {
-      controller_->robot_description_ = it->as_string();
-    }
-    params.robot_description = controller_->robot_description_;
-    params.update_rate = 0;
-    params.node_namespace = "";
-    params.node_options = options;
-    auto result = controller_->init(params);
+    // Humble API: init(controller_name, namespace, node_options)
+    auto result = controller_->init(controller_name, "", options);
 
     controller_->export_reference_interfaces();
     assign_interfaces();
