@@ -14,6 +14,10 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   std_srvs
+  moveit_msgs
+  geometry_msgs
+  tf2
+  tf2_geometry_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -25,11 +29,18 @@ endforeach()
 generate_parameter_library(motion_primitives_forward_controller_parameters
   src/motion_primitives_forward_controller_parameter.yaml
 )
+generate_parameter_library(motion_primitives_from_trajectory_controller_parameters
+  src/motion_primitives_from_trajectory_controller_parameter.yaml
+)
 add_library(
   ${PROJECT_NAME}
   SHARED
   src/motion_primitives_base_controller.cpp
   src/motion_primitives_forward_controller.cpp
+  src/motion_primitives_from_trajectory_controller.cpp
+  src/fk_client.cpp
+  src/rdp.cpp
+  src/approx_primitives_with_rdp.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -37,13 +48,18 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
   motion_primitives_forward_controller_parameters
+  motion_primitives_from_trajectory_controller_parameters
   controller_interface::controller_interface
   hardware_interface::hardware_interface
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   realtime_tools::realtime_tools
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
   ${control_msgs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${moveit_msgs_TARGETS}
   ${std_srvs_TARGETS}
 )
 
@@ -52,6 +68,14 @@ pluginlib_export_plugin_description_file(
 
 install(
   TARGETS motion_primitives_forward_controller_parameters
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(
+  TARGETS motion_primitives_from_trajectory_controller_parameters
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
