@@ -226,3 +226,13 @@ joint_trajectory_controller:
         default_value: 0.0,
         description: "Per-joint trajectory offset tolerance at the goal position.",
       }
+    velocity_tolerance: {
+      type: double,
+      default_value: 0.0,
+      description: "Velocity tolerance for trajectory segments.",
+    }
+    acceleration_tolerance: {
+      type: double,
+      default_value: 0.0,
+      description: "Acceleration tolerance for trajectory segments.",
+    }

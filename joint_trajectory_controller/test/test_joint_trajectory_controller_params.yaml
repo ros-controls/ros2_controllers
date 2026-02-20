@@ -10,3 +10,7 @@ test_joint_trajectory_controller:
 
     state_interfaces:
       - position
+
+    constraints:
+      velocity_tolerance: 0.05
+      acceleration_tolerance: 0.1
