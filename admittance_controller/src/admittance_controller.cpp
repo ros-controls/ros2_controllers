@@ -59,7 +59,13 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   reference_admittance_ = last_reference_;
   joint_state_ = last_reference_;
 
-  std::string robot_description = this->get_robot_description();
+  // robot_description passed as a parameter by the controller manager
+  std::string robot_description;
+  if (!get_node()->get_parameter("robot_description", robot_description))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'robot_description' parameter not set.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   if (robot_description.empty())
   {
