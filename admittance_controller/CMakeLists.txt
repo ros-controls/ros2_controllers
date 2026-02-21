@@ -23,6 +23,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_geometry_msgs
   tf2_kdl
   tf2_ros
+  TinyXML2
   trajectory_msgs
 )
 
@@ -48,6 +49,8 @@ target_include_directories(admittance_controller PUBLIC
 target_link_libraries(admittance_controller PUBLIC
   admittance_controller_parameters
   Eigen3::Eigen
+  ${tf2_geometry_msgs_TARGETS}
+  ${TinyXML2_LIBRARIES}
 )
 ament_target_dependencies(admittance_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
