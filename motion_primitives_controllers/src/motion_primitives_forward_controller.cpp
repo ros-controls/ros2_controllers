@@ -14,21 +14,11 @@
 //
 // Authors: Mathias Fuhrer
 
-#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
-#include <limits>
-#include <memory>
-#include <string>
-#include <vector>
-#include "controller_interface/helpers.hpp"
+#include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
-namespace motion_primitives_forward_controller
+namespace motion_primitives_controllers
 {
-MotionPrimitivesForwardController::MotionPrimitivesForwardController()
-: controller_interface::ControllerInterface()
-{
-}
-
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init()
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "Initializing Motion Primitives Forward Controller");
@@ -47,9 +37,8 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_init(
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
-
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+  const rclcpp_lifecycle::State & previous_state)
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "Configuring Motion Primitives Forward Controller");
 
@@ -65,69 +54,19 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
     std::bind(&MotionPrimitivesForwardController::goal_cancelled_callback, this, _1),
     std::bind(&MotionPrimitivesForwardController::goal_accepted_callback, this, _1));
 
-  RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
-  return controller_interface::CallbackReturn::SUCCESS;
-}
-
-controller_interface::InterfaceConfiguration
-MotionPrimitivesForwardController::command_interface_configuration() const
-{
-  controller_interface::InterfaceConfiguration command_interfaces_config;
-  command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  command_interfaces_config.names.reserve(25);
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/motion_type");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q1");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q2");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q3");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q4");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q5");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/q6");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_x");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_y");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_z");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qx");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qy");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qz");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_qw");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_x");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_y");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_z");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qx");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qy");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qz");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/pos_via_qw");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/blend_radius");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/velocity");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/acceleration");
-  command_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/move_time");
-  return command_interfaces_config;
-}
-
-controller_interface::InterfaceConfiguration
-MotionPrimitivesForwardController::state_interface_configuration() const
-{
-  controller_interface::InterfaceConfiguration state_interfaces_config;
-  state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  state_interfaces_config.names.reserve(2);
-  state_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/execution_status");
-  state_interfaces_config.names.push_back(tf_prefix_ + "motion_primitive/ready_for_new_primitive");
-  return state_interfaces_config;
+  return MotionPrimitivesBaseController::on_configure(previous_state);
 }
 
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+  const rclcpp_lifecycle::State & previous_state)
 {
-  reset_command_interfaces();
-  RCLCPP_DEBUG(get_node()->get_logger(), "Controller activated");
-  return controller_interface::CallbackReturn::SUCCESS;
+  return MotionPrimitivesBaseController::on_activate(previous_state);
 }
 
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deactivate(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+  const rclcpp_lifecycle::State & previous_state)
 {
-  reset_command_interfaces();
-  RCLCPP_DEBUG(get_node()->get_logger(), "Controller deactivated");
-  return controller_interface::CallbackReturn::SUCCESS;
+  return MotionPrimitivesBaseController::on_deactivate(previous_state);
 }
 
 controller_interface::return_type MotionPrimitivesForwardController::update(
@@ -159,7 +98,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   {
     case ExecutionState::IDLE:
       print_error_once_ = true;
-      was_executing_ = false;
       break;
     case ExecutionState::EXECUTING:
       if (!was_executing_)
@@ -278,91 +216,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     }
   }
   return controller_interface::return_type::OK;
-}
-
-// Reset Command-Interfaces to nan
-void MotionPrimitivesForwardController::reset_command_interfaces()
-{
-  for (size_t i = 0; i < command_interfaces_.size(); ++i)
-  {
-    if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
-    {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to reset command interface %ld", i);
-    }
-  }
-}
-
-// Set command interfaces from the message, gets called in the update function
-bool MotionPrimitivesForwardController::set_command_interfaces()
-{
-  // Get the oldest message from the queue
-  if (!moprim_queue_.pop(current_moprim_))
-  {
-    RCLCPP_WARN(get_node()->get_logger(), "Failed to pop motion primitive from queue.");
-    return false;
-  }
-
-  // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_.type));
-
-  // Process joint positions if available
-  if (!current_moprim_.joint_positions.empty())
-  {
-    for (size_t i = 0; i < current_moprim_.joint_positions.size(); ++i)
-    {
-      (void)command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);  // q1 to q6
-    }
-  }
-
-  // Process Cartesian poses if available
-  if (!current_moprim_.poses.empty())
-  {
-    const auto & goal_pose = current_moprim_.poses[0].pose;            // goal pose
-    (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
-    (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
-    (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
-    (void)command_interfaces_[10].set_value(goal_pose.orientation.x);  // pos_qx
-    (void)command_interfaces_[11].set_value(goal_pose.orientation.y);  // pos_qy
-    (void)command_interfaces_[12].set_value(goal_pose.orientation.z);  // pos_qz
-    (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
-
-    // Process via poses if available (only for circular motion)
-    if (current_moprim_.type == MotionType::CIRCULAR_CARTESIAN && current_moprim_.poses.size() == 2)
-    {
-      const auto & via_pose = current_moprim_.poses[1].pose;            // via pose
-      (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
-      (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
-      (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
-      (void)command_interfaces_[17].set_value(via_pose.orientation.x);  // pos_via_qx
-      (void)command_interfaces_[18].set_value(via_pose.orientation.y);  // pos_via_qy
-      (void)command_interfaces_[19].set_value(via_pose.orientation.z);  // pos_via_qz
-      (void)command_interfaces_[20].set_value(via_pose.orientation.w);  // pos_via_qw
-    }
-  }
-
-  (void)command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
-
-  // Read additional arguments
-  for (const auto & arg : current_moprim_.additional_arguments)
-  {
-    if (arg.name == "velocity")
-    {
-      (void)command_interfaces_[22].set_value(arg.value);
-    }
-    else if (arg.name == "acceleration")
-    {
-      (void)command_interfaces_[23].set_value(arg.value);
-    }
-    else if (arg.name == "move_time")
-    {
-      (void)command_interfaces_[24].set_value(arg.value);
-    }
-    else
-    {
-      RCLCPP_WARN(get_node()->get_logger(), "Unknown additional argument: %s", arg.name.c_str());
-    }
-  }
-  return true;
 }
 
 rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_callback(
@@ -536,10 +389,10 @@ void MotionPrimitivesForwardController::goal_accepted_callback(
     get_node()->get_logger(), "Accepted goal with %zu motion primitives.", primitives.size());
 }
 
-}  // namespace motion_primitives_forward_controller
+}  // namespace motion_primitives_controllers
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  motion_primitives_forward_controller::MotionPrimitivesForwardController,
+  motion_primitives_controllers::MotionPrimitivesForwardController,
   controller_interface::ControllerInterface)
