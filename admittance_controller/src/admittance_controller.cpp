@@ -16,6 +16,7 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 
+#include <tinyxml2.h>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -58,6 +59,39 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   reference_admittance_ = last_reference_;
   joint_state_ = last_reference_;
 
+  // robot_description passed as a parameter by the controller manager
+  std::string robot_description;
+  if (!get_node()->get_parameter("robot_description", robot_description))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'robot_description' parameter not set.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (robot_description.empty())
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'robot_description' parameter is empty.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  tinyxml2::XMLDocument doc;
+  if (!doc.Parse(robot_description.c_str()) && doc.Error())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Failed to parse robot description XML from parameter "
+      "'robot_description': %s",
+      doc.ErrorStr());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  if (doc.Error())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Error parsing robot description XML from parameter "
+      "'robot_description': %s",
+      doc.ErrorStr());
+    return controller_interface::CallbackReturn::ERROR;
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
