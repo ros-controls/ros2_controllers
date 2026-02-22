@@ -99,7 +99,6 @@ pid_controller
   * A new ``error_deadband`` parameter stops integration when the error is within a specified range.
 * PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
 
-<<<<<<< HEAD
 steering_controllers_library
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
@@ -122,8 +121,7 @@ force_torque_sensor_broadcaster
 * Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
 * Added support for filter chains, allowing users to configure a sequence of filter plugins with their parameters. The force/torque sensor readings are filtered sequentially and published on a separate topic.
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
-=======
+
 motion_primitives_forward_controller
 *******************************************
 * 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
->>>>>>> 5ed4fa5 (Add `motion_primitives_forward_controller` for interfacing motion primitive messages with hardware interfaces (#1636))
