@@ -12,8 +12,8 @@ Parameters
 
 These controllers use the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle their parameters.
 
-motion_primitives_forward_controller
-------------------------------------
+Parameter of motion_primitives_forward_controller
+--------------------------------------------------
 
 .. _definition_file_forward:
 
@@ -29,8 +29,8 @@ An example parameter file for this controller can be found in `the test director
    :language: yaml
 
 
-motion_primitives_from_trajectory_controller
-------------------------------------
+Parameter of motion_primitives_from_trajectory_controller
+----------------------------------------------------------
 
 .. _definition_file_trajectory:
 
