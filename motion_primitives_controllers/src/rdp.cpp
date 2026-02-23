@@ -101,10 +101,10 @@ std::pair<PointList, std::vector<std::size_t>> rdpRecursive(
   // If the max distance is greater than epsilon, recursively simplify
   if (dmax > epsilon)
   {
-    auto rec1 =
-      rdpRecursive(PointList(points.begin(), points.begin() + index + 1), epsilon, offset);
-    auto rec2 =
-      rdpRecursive(PointList(points.begin() + index, points.end()), epsilon, offset + index);
+    auto rec1 = rdpRecursive(
+      PointList(points.begin(), std::next(points.begin(), index + 1)), epsilon, offset);
+    auto rec2 = rdpRecursive(
+      PointList(std::next(points.begin(), index), points.end()), epsilon, offset + index);
 
     // Remove duplicate in res1
     rec1.first.pop_back();
@@ -188,12 +188,12 @@ std::pair<std::vector<geometry_msgs::msg::Quaternion>, std::vector<size_t>> rdpR
   {
     auto left = rdpRecursiveQuaternion(
       std::vector<geometry_msgs::msg::Quaternion>(
-        quaternions.begin(), quaternions.begin() + max_index + 1),
+        quaternions.begin(), std::next(quaternions.begin(), max_index + 1)),
       epsilon_angle_rad, offset);
 
     auto right = rdpRecursiveQuaternion(
       std::vector<geometry_msgs::msg::Quaternion>(
-        quaternions.begin() + max_index, quaternions.end()),
+        std::next(quaternions.begin(), max_index), quaternions.end()),
       epsilon_angle_rad, offset + max_index);
 
     // Avoid duplicate point
