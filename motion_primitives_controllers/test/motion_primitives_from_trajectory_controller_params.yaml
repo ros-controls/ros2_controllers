@@ -1,0 +1,20 @@
+motion_primitive_from_trajectory_controller:
+  ros__parameters:
+    tf_prefix: "$(var tf_prefix)"
+    local_joint_order:
+      - shoulder_pan_joint
+      - shoulder_lift_joint
+      - elbow_joint
+      - wrist_1_joint
+      - wrist_2_joint
+      - wrist_3_joint
+    approximate_mode: "RDP_PTP"  # "RDP_LIN" or "RDP_PTP"
+    use_time_not_vel_and_acc: true
+    epsilon_joint_angle: 0.05
+    epsilon_cart_position: 0.01
+    epsilon_cart_angle: 0.05
+    # blend_radius_overwrite: 0.01
+    # joint_vel_overwrite: 0.5
+    # joint_acc_overwrite: 0.5
+    # cart_vel_overwrite: 0.5
+    # cart_acc_overwrite: 0.5

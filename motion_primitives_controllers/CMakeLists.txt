@@ -118,6 +118,16 @@ if(BUILD_TESTING)
     ros2_control_test_assets::ros2_control_test_assets
   )
 
+  ament_add_gmock(
+    test_load_motion_primitives_from_trajectory_controller
+    test/test_load_motion_primitives_from_trajectory_controller.cpp
+  )
+  target_link_libraries(test_load_motion_primitives_from_trajectory_controller
+    ${PROJECT_NAME}
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+
   add_rostest_with_parameters_gmock(
     test_motion_primitives_forward_controller
     test/test_motion_primitives_forward_controller.cpp
