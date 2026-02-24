@@ -12,12 +12,11 @@ Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ)
   There is no guarantee that the motion defined by the motion primitive will actually be executed exactly as planned. In particular, for motions in Cartesian space such as LIN primitives, it is not necessarily ensured that the robot will execute the motion exactly in that way, since the inverse kinematics is not always unique.
 
 
-.. _moprim_forward_controller:
 
-**This package contains two controllers:**
+This package contains two controllers:
 
-1. `motion_primitives_forward_controller <#moprim_forward_controller>`_
-2. `motion_primitives_from_trajectory_controller <#moprim_from_traj_controller>`_
+1. :ref:`moprim_forward_controller`
+2. :ref:`moprim_from_traj_controller`
 
 Command and State Interfaces
 ----------------------------
@@ -59,6 +58,8 @@ These interfaces are used to communicate the internal status of the hardware int
   - ``STOPPED``: The robot was stopped using the ``STOP_MOTION`` command and must be reset with the ``RESET_STOP`` command before executing new commands.
 
 - ``ready_for_new_primitive``: Boolean flag indicating whether the interface is ready to receive a new motion primitive
+
+.. _moprim_forward_controller:
 
 motion_primitives_forward_controller
 --------------------------------------------------------
