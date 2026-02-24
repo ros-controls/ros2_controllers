@@ -1,6 +1,6 @@
-motion_primitive_from_trajectory_controller:
+test_motion_primitives_from_trajectory_controller:
   ros__parameters:
-    tf_prefix: "$(var tf_prefix)"
+    tf_prefix: ""
     local_joint_order:
       - shoulder_pan_joint
       - shoulder_lift_joint
