@@ -121,3 +121,7 @@ force_torque_sensor_broadcaster
 * Multiplier support was added. Users can now specify per–axis scaling factors for both force and torque readings, applied after the existing offset logic. (`#1647 <https://github.com/ros-controls/ros2_controllers/pull/1647/files>`__).
 * Added support for filter chains, allowing users to configure a sequence of filter plugins with their parameters. The force/torque sensor readings are filtered sequentially and published on a separate topic.
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
+
+motion_primitives_forward_controller
+*******************************************
+* 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
