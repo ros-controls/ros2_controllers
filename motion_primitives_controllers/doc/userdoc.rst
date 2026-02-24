@@ -115,13 +115,9 @@ Architecture for a KUKA robot with
 Demo-Videos with motion_primitives_forward_controller
 .....................................................
 
-.. image:: moprim_forward_controller_ur_demo_thumbnail.png
-  :target: https://youtu.be/SKz6LFvJmhQ
-  :alt: UR demo video
+..  youtube:: SKz6LFvJmhQ
 
-.. image:: moprim_forward_controller_kuka_demo_thumbnail.png
-  :target: https://youtu.be/_BWCO36j9bg
-  :alt: KUKA demo video
+..  youtube:: _BWCO36j9bg
 
 Parameters forward controller
 .............................
@@ -202,13 +198,9 @@ Architecture for a KUKA robot with
 Demo-Videos with motion_primitives_from_trajectory_controller
 .............................................................
 
-.. image:: moprim_from_traj_controller_ur_demo_thumbnail.png
-  :target: https://youtu.be/Z_NCaSyE-KA
-  :alt: UR demo video
+..  youtube:: Z_NCaSyE-KA
 
-.. image:: moprim_from_traj_controller_kuka_demo_thumbnail.png
-  :target: https://youtu.be/SvUU6PM1qRk
-  :alt: KUKA demo video
+..  youtube:: SvUU6PM1qRk
 
 
 Parameters trajectory controller
