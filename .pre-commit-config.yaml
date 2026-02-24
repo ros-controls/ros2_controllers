@@ -116,9 +116,6 @@ repos:
         args: [
           '--max-line-length=100',
           '--ignore=D001',
-          # doc8 is not compatible with sphinx:
-          # D000 fails for myst_parser, because it expects a sphinx environment
-          '--ignore-path=motion_primitives_controllers/doc/userdoc.rst'
           ]
         exclude: CHANGELOG\.rst$
 
