@@ -7,6 +7,7 @@ export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_msgs
   controller_interface
   hardware_interface
   generate_parameter_library
@@ -53,7 +54,7 @@ target_link_libraries(mecanum_drive_controller PUBLIC
                       ${tf2_geometry_msgs_TARGETS}
                       ${tf2_msgs_TARGETS}
                       ${nav_msgs_TARGETS}
-                      ${std_srvs_TARGETS})
+                      ${control_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface mecanum_drive_controller.xml)
