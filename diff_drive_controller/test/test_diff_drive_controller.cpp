@@ -96,6 +96,15 @@ protected:
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
   }
 
+  void TearDown() override
+  {
+    // Reset the controller before the fixture is destroyed to ensure the controller's
+    // shutdown transition (which clears loaned interfaces) runs while the underlying
+    // StateInterface/CommandInterface objects are still alive. LoanedStateInterface stores
+    // a const reference (not a shared_ptr), so destruction order matters.
+    controller_.reset();
+  }
+
   static void TearDownTestCase() { rclcpp::shutdown(); }
 
   /// Publish velocity msgs
