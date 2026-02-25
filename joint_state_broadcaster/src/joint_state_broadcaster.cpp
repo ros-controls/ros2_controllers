@@ -68,9 +68,22 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
 
-  if (use_all_available_interfaces())
+  if (use_urdf_joint_interfaces())
   {
-    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+    state_interfaces_config.type =
+      controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT;
+    for (const auto & joint : model_.joints_)
+    {
+      if (
+        joint.second->type == urdf::Joint::CONTINUOUS ||
+        joint.second->type == urdf::Joint::REVOLUTE || joint.second->type == urdf::Joint::PRISMATIC)
+      {
+        for (const auto & interface : map_interface_to_joint_state_)
+        {
+          state_interfaces_config.names.push_back(joint.first + "/" + interface.first);
+        }
+      }
+    }
   }
   else
   {
@@ -92,12 +105,12 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (use_all_available_interfaces())
+  if (use_urdf_joint_interfaces())
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "'joints' or 'interfaces' parameter is empty. "
-      "All available state interfaces will be published");
+      "'joints' or 'interfaces' parameter is empty. Will try to publish all available state "
+      "interfaces of the URDF joints.");
     params_.joints.clear();
     params_.interfaces.clear();
   }
@@ -156,10 +169,33 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   is_model_loaded_ = !urdf.empty() && model_.initString(urdf);
   if (!is_model_loaded_)
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Failed to parse robot description. Will publish all the interfaces with '%s', '%s' and '%s'",
-      HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT);
+    if (use_urdf_joint_interfaces())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Robot description could not be loaded. Cannot determine URDF joints to publish. "
+        "Either provide a valid robot description, or explicitly set both 'joints' and "
+        "'interfaces' parameters.");
+      return CallbackReturn::ERROR;
+    }
+    else
+    {
+      if (params_.use_urdf_to_filter)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "'use_urdf_to_filter' parameter is set to true, but robot description could not be "
+          "parsed. Will publish the joints defined in 'joints' parameter without filtering with "
+          "URDF. Fix the robot description to filter joints with URDF.");
+      }
+      else
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Failed to parse robot description. Will publish the joints defined in 'joints' "
+          "parameter along with the defined interfaces in 'interface' parameter.");
+      }
+    }
   }
 
   // joint_names reserve space for all joints
@@ -263,18 +299,16 @@ bool JointStateBroadcaster::init_joint_data()
   std::reverse(joint_names_.begin(), joint_names_.end());
   if (is_model_loaded_ && params_.use_urdf_to_filter && params_.joints.empty())
   {
-    std::vector<std::string> joint_names_filtered;
-    for (const auto & [joint_name, urdf_joint] : model_.joints_)
-    {
-      if (urdf_joint && urdf_joint->type != urdf::Joint::FIXED)
-      {
-        if (std::find(joint_names_.begin(), joint_names_.end(), joint_name) != joint_names_.end())
+    // Preserve the order from the first pass; only remove fixed joints
+    joint_names_.erase(
+      std::remove_if(
+        joint_names_.begin(), joint_names_.end(),
+        [this](const std::string & name)
         {
-          joint_names_filtered.push_back(joint_name);
-        }
-      }
-    }
-    joint_names_ = joint_names_filtered;
+          const auto urdf_joint = model_.getJoint(name);
+          return !urdf_joint || urdf_joint->type == urdf::Joint::FIXED;
+        }),
+      joint_names_.end());
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
@@ -352,6 +386,11 @@ void JointStateBroadcaster::init_joint_state_msg()
 }
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
+{
+  return this->use_urdf_joint_interfaces();
+}
+
+bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 {
   return params_.joints.empty() || params_.interfaces.empty();
 }

@@ -85,7 +85,12 @@ protected:
   bool init_joint_data();
   void init_auxiliary_data();
   void init_joint_state_msg();
+
+  [[deprecated(
+    "use_all_available_interfaces is deprecated. Use use_urdf_joint_interfaces method instead")]]
   bool use_all_available_interfaces() const;
+
+  bool use_urdf_joint_interfaces() const;
 
 protected:
   // Optional parameters
