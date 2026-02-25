@@ -98,7 +98,16 @@ public:
         "/test_omni_wheel_drive_controller/cmd_vel", rclcpp::SystemDefaultsQoS());
   }
 
-  static void TearDownTestCase() { rclcpp::shutdown(); }
+  void TearDown() override
+  {
+    // Reset the controller before the fixture is destroyed to ensure the controller's
+    // shutdown transition (which clears loaned interfaces) runs while the underlying
+    // StateInterface/CommandInterface objects are still alive. LoanedStateInterface stores
+    // a const reference (not a shared_ptr), so destruction order matters.
+    controller_.reset();
+  }
+
+  static void TearDownTestCase() {}
 
 protected:
   void publish_twist(double linear_x = 1.0, double linear_y = 1.0, double angular = 1.0)
