@@ -278,7 +278,7 @@ bool JointStateBroadcaster::init_joint_data()
         //then it should also print that it is not present and NaN's will be obtained in the respective field.
         RCLCPP_WARN(
           get_node()->get_logger(),
-          "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be obtained in the respective field.",
+          "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be filled in the respective field.",
           interface_name.c_str(), prefix_name.c_str());
     }
   }
