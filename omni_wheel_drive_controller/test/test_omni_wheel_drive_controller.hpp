@@ -107,7 +107,7 @@ public:
     controller_.reset();
   }
 
-  static void TearDownTestCase() {}
+  static void TearDownTestCase() { rclcpp::shutdown(); }
 
 protected:
   void publish_twist(double linear_x = 1.0, double linear_y = 1.0, double angular = 1.0)
