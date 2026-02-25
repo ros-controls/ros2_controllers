@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "control_msgs/msg/dynamic_interface_group_values.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "gpio_controllers/gpio_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
@@ -51,6 +52,8 @@ using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
 using CmdType = control_msgs::msg::DynamicInterfaceGroupValues;
 using StateType = control_msgs::msg::DynamicInterfaceGroupValues;
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
 using lifecycle_msgs::msg::State;
@@ -199,38 +202,6 @@ public:
       }
     }
     return max_sub_check_loop_count;
-  }
-
-  bool configure_succeeds(const std::unique_ptr<FriendGpioCommandController> & controller)
-  {
-    auto state = controller->configure();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_INACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in configure_succeeds: " + std::to_string(state.id()));
-    }
-  }
-
-  bool activate_succeeds(const std::unique_ptr<FriendGpioCommandController> & controller)
-  {
-    auto state = controller->get_node()->activate();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_ACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in activate_succeeds: " + std::to_string(state.id()));
-    }
   }
 
   std::unique_ptr<FriendGpioCommandController> controller_;

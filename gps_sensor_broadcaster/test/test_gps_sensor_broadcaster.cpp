@@ -21,6 +21,7 @@
 #include <rclcpp/node.hpp>
 #include <rclcpp/wait_result_kind.hpp>
 #include <rclcpp/wait_set.hpp>
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "gps_sensor_broadcaster/gps_sensor_broadcaster.hpp"
 #include "gps_sensor_broadcaster/gps_sensor_broadcaster_parameters.hpp"
@@ -32,6 +33,8 @@
 #include "ros2_control_test_assets/descriptions.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 using hardware_interface::LoanedStateInterface;
 using lifecycle_msgs::msg::State;
 using callback_return_type =
@@ -122,40 +125,6 @@ public:
     params.node_namespace = "";
     params.node_options = node_options;
     return params;
-  }
-
-  bool configure_succeeds(
-    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
-  {
-    auto state = broadcaster->configure();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_INACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in configure_succeeds: " + std::to_string(state.id()));
-    }
-  }
-
-  bool activate_succeeds(
-    const std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> & broadcaster)
-  {
-    auto state = broadcaster->get_node()->activate();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_ACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in activate_succeeds: " + std::to_string(state.id()));
-    }
   }
 
 protected:

@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "diff_drive_controller/diff_drive_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -28,6 +29,10 @@
 #include "rclcpp/executors.hpp"
 
 using CallbackReturn = controller_interface::CallbackReturn;
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 using hardware_interface::LoanedCommandInterface;
@@ -212,66 +217,6 @@ protected:
     params.node_namespace = ns;
     params.node_options = node_options;
     return controller_->init(params);
-  }
-
-  bool configure_succeeds(const std::unique_ptr<TestableDiffDriveController> & controller)
-  {
-    auto state = controller->configure();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_INACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in configure_succeeds: " + std::to_string(state.id()));
-    }
-  }
-
-  bool activate_succeeds(const std::unique_ptr<TestableDiffDriveController> & controller)
-  {
-    auto state = controller->get_node()->activate();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_ACTIVE:
-        return true;
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return false;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in activate_succeeds: " + std::to_string(state.id()));
-    }
-  }
-
-  bool deactivate_succeeds(const std::unique_ptr<TestableDiffDriveController> & controller)
-  {
-    auto state = controller->get_node()->deactivate();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_INACTIVE:
-        return true;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in deactivate_succeeds: " + std::to_string(state.id()));
-    }
-  }
-
-  bool cleanup_succeeds(const std::unique_ptr<TestableDiffDriveController> & controller)
-  {
-    auto state = controller->get_node()->cleanup();
-
-    switch (state.id())
-    {
-      case State::PRIMARY_STATE_UNCONFIGURED:
-        return true;
-      default:
-        throw std::runtime_error(
-          "Unexpected controller state in cleanup_succeeds: " + std::to_string(state.id()));
-    }
   }
 
   std::string controller_name;
