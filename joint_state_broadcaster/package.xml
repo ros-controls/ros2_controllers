@@ -24,7 +24,6 @@
 
   <depend>backward_ros</depend>
   <depend>builtin_interfaces</depend>
-  <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>generate_parameter_library</depend>
   <depend>pluginlib</depend>

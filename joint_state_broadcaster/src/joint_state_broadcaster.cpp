@@ -143,16 +143,6 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
     realtime_joint_state_publisher_ =
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
         joint_state_publisher_);
-
-    if (params_.publish_dynamic_joint_states)
-    {
-      dynamic_joint_state_publisher_ =
-        get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-          topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-      realtime_dynamic_joint_state_publisher_ =
-        std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-          dynamic_joint_state_publisher_);
-    }
   }
   catch (const std::exception & e)
   {
@@ -204,11 +194,6 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
-
-  if (params_.publish_dynamic_joint_states)
-  {
-    init_dynamic_joint_state_msg();
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -366,43 +351,6 @@ void JointStateBroadcaster::init_joint_state_msg()
   }
 }
 
-void JointStateBroadcaster::init_dynamic_joint_state_msg()
-{
-  dynamic_joint_state_msg_.header.frame_id = frame_id_;
-  dynamic_joint_state_msg_.joint_names.clear();
-  dynamic_joint_state_msg_.interface_values.clear();
-  for (const auto & name_ifv : name_if_value_mapping_)
-  {
-    const auto & name = name_ifv.first;
-    const auto & interfaces_and_values = name_ifv.second;
-    dynamic_joint_state_msg_.joint_names.push_back(name);
-    control_msgs::msg::InterfaceValue if_value;
-    for (const auto & interface_and_value : interfaces_and_values)
-    {
-      if_value.interface_names.emplace_back(interface_and_value.first);
-      if_value.values.emplace_back(kUninitializedValue);
-    }
-    dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
-  }
-
-  // save dynamic joint state data
-  dynamic_joint_states_data_.clear();
-  for (auto ji = 0u; ji < dynamic_joint_state_msg_.joint_names.size(); ++ji)
-  {
-    dynamic_joint_states_data_.push_back(std::vector<const double *>());
-
-    const auto & name = dynamic_joint_state_msg_.joint_names[ji];
-
-    for (auto ii = 0u; ii < dynamic_joint_state_msg_.interface_values[ji].interface_names.size();
-         ++ii)
-    {
-      const auto & interface_name =
-        dynamic_joint_state_msg_.interface_values[ji].interface_names[ii];
-      dynamic_joint_states_data_[ji].push_back(&name_if_value_mapping_[name][interface_name]);
-    }
-  }
-}
-
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
   return params_.joints.empty() || params_.interfaces.empty();
@@ -429,7 +377,6 @@ controller_interface::return_type JointStateBroadcaster::update(
   {
     joint_state_msg_.header.stamp = time;
 
-    // update joint state message and dynamic joint state message
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       joint_state_msg_.position[i] = joint_states_data_[i].position_;
@@ -437,21 +384,6 @@ controller_interface::return_type JointStateBroadcaster::update(
       joint_state_msg_.effort[i] = joint_states_data_[i].effort_;
     }
     realtime_joint_state_publisher_->try_publish(joint_state_msg_);
-  }
-
-  if (realtime_dynamic_joint_state_publisher_)
-  {
-    dynamic_joint_state_msg_.header.stamp = time;
-    for (auto ji = 0u; ji < dynamic_joint_state_msg_.joint_names.size(); ++ji)
-    {
-      for (auto ii = 0u; ii < dynamic_joint_state_msg_.interface_values[ji].interface_names.size();
-           ++ii)
-      {
-        dynamic_joint_state_msg_.interface_values[ji].values[ii] =
-          *dynamic_joint_states_data_[ji][ii];
-      }
-    }
-    realtime_dynamic_joint_state_publisher_->try_publish(dynamic_joint_state_msg_);
   }
 
   return controller_interface::return_type::OK;

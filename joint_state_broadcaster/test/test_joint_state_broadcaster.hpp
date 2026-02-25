@@ -34,7 +34,6 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyWithoutDynamicJointStatesPublisherTest);
   FRIEND_TEST(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
@@ -78,8 +77,6 @@ public:
     const std::vector<std::string> & interfaces = {});
 
   void test_published_joint_state_message(const std::string & topic);
-
-  void test_published_dynamic_joint_state_message(const std::string & topic);
 
   void activate_and_get_joint_state_message(
     const std::string & topic, sensor_msgs::msg::JointState & msg);

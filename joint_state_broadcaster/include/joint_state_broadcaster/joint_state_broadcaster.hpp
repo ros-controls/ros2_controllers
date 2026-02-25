@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "control_msgs/msg/dynamic_joint_state.hpp"
 #include "controller_interface/controller_interface.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -58,8 +57,6 @@ namespace joint_state_broadcaster
  * Publishes to:
  * - \b joint_states (sensor_msgs::msg::JointState): Joint states related to movement
  * (position, velocity, effort).
- * - \b dynamic_joint_states (control_msgs::msg::DynamicJointState): Joint states regardless of
- * its interface type.
  */
 class JointStateBroadcaster : public controller_interface::ControllerInterface
 {
@@ -88,7 +85,6 @@ protected:
   bool init_joint_data();
   void init_auxiliary_data();
   void init_joint_state_msg();
-  void init_dynamic_joint_state_msg();
   bool use_all_available_interfaces() const;
 
 protected:
@@ -107,14 +103,7 @@ protected:
     realtime_joint_state_publisher_;
   sensor_msgs::msg::JointState joint_state_msg_;
 
-  //  For the DynamicJointState format, we use a map to buffer values in for easier lookup
-  //  This allows to preserve whatever order or names/interfaces were initialized.
   std::unordered_map<std::string, std::unordered_map<std::string, double>> name_if_value_mapping_;
-  std::shared_ptr<rclcpp::Publisher<control_msgs::msg::DynamicJointState>>
-    dynamic_joint_state_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>
-    realtime_dynamic_joint_state_publisher_;
-  control_msgs::msg::DynamicJointState dynamic_joint_state_msg_;
 
   urdf::Model model_;
   bool is_model_loaded_ = false;
@@ -134,8 +123,6 @@ protected:
   };
 
   std::vector<JointStateData> joint_states_data_;
-
-  std::vector<std::vector<const double *>> dynamic_joint_states_data_;
 };
 
 }  // namespace joint_state_broadcaster
