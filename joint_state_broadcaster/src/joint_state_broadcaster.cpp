@@ -249,12 +249,13 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    else 
+    else
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
-        "Interface '%s' of joint '%s' is not mapped to any joint state field. The default value %s will be used.",
-        interface_name.c_str(), prefix_name.c_str(), interface_name.c_str());
+        "Interface '%s' of joint '%s' is not mapped to any joint state field. The default value %f "
+        "will be used.",
+        interface_name.c_str(), prefix_name.c_str(), kUninitializedValue);
     }
     name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
 
@@ -273,13 +274,17 @@ bool JointStateBroadcaster::init_joint_data()
           joint_names_.push_back(prefix_name);
         }
       }
-    } else {
-        // Moreover, when there is not even the default interface (position, velocity, effort), 
-        //then it should also print that it is not present and NaN's will be obtained in the respective field.
-        RCLCPP_WARN(
-          get_node()->get_logger(),
-          "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be filled in the respective field.",
-          interface_name.c_str(), prefix_name.c_str());
+    }
+    else
+    {
+      // Moreover, when there is not even the default interface (position, velocity, effort),
+      // then it should also print that it is not present and NaN's will be obtained in the
+      // respective field.
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be "
+        "filled in the respective field.",
+        interface_name.c_str(), prefix_name.c_str());
     }
   }
 
