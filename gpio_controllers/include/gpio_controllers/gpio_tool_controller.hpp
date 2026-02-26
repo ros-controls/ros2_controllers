@@ -188,13 +188,16 @@ protected:
   using ToolJointStatePublisher = realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr t_js_publisher_;
   std::unique_ptr<ToolJointStatePublisher> tool_joint_state_publisher_;
+  sensor_msgs::msg::JointState joint_state_msg_;
   std::vector<double> joint_states_values_;
   using InterfacePublisher = realtime_tools::RealtimePublisher<DynInterfaceMsg>;
   rclcpp::Publisher<DynInterfaceMsg>::SharedPtr if_publisher_;
   std::unique_ptr<InterfacePublisher> interface_publisher_;
+  DynInterfaceMsg interface_msg_;
   using ControllerStatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   rclcpp::Publisher<ControllerStateMsg>::SharedPtr t_s_publisher_;
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
+  ControllerStateMsg controller_state_msg_;
 
   EngagingSrvType::Response process_engaging_request(
     const ToolAction & requested_action, const std::string & requested_action_name);

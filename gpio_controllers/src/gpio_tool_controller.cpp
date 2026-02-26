@@ -1203,74 +1203,71 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
 
   if (joint_states_need_publishing_)
   {
-    tool_joint_state_publisher_->msg_.name.reserve(joint_states_values_.size());
-    tool_joint_state_publisher_->msg_.position = joint_states_values_;
+    joint_state_msg_.name.reserve(joint_states_values_.size());
+    joint_state_msg_.position = joint_states_values_;
 
     for (const auto & joint_name : params_.engaged_joints)
     {
-      tool_joint_state_publisher_->msg_.name.push_back(joint_name);
+      joint_state_msg_.name.push_back(joint_name);
     }
     for (const auto & joint_name : params_.configuration_joints)
     {
-      tool_joint_state_publisher_->msg_.name.push_back(joint_name);
+      joint_state_msg_.name.push_back(joint_name);
     }
   }
 
-  interface_publisher_->msg_.states.interface_names.reserve(state_if_ios_.size());
-  interface_publisher_->msg_.states.values.resize(state_if_ios_.size());
-  interface_publisher_->msg_.commands.interface_names.reserve(command_if_ios_.size());
-  interface_publisher_->msg_.commands.values.resize(command_if_ios_.size());
+  interface_msg_.states.interface_names.reserve(state_if_ios_.size());
+  interface_msg_.states.values.resize(state_if_ios_.size());
+  interface_msg_.commands.interface_names.reserve(command_if_ios_.size());
+  interface_msg_.commands.values.resize(command_if_ios_.size());
   for (const auto & state_io : state_if_ios_)
   {
-    interface_publisher_->msg_.states.interface_names.push_back(state_io);
+    interface_msg_.states.interface_names.push_back(state_io);
   }
   for (const auto & command_io : command_if_ios_)
   {
-    interface_publisher_->msg_.commands.interface_names.push_back(command_io);
+    interface_msg_.commands.interface_names.push_back(command_io);
   }
 
-  controller_state_publisher_->msg_.state = current_state_.get();
-  controller_state_publisher_->msg_.configuration = current_configuration_.get();
-  controller_state_publisher_->msg_.current_transition.state = current_tool_transition_.load();
+  controller_state_msg_.state = current_state_.get();
+  controller_state_msg_.configuration = current_configuration_.get();
+  controller_state_msg_.current_transition.state = current_tool_transition_.load();
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
 void GpioToolController::publish_topics(const rclcpp::Time & time)
 {
-  if (joint_states_need_publishing_)
+  if (joint_states_need_publishing_ && tool_joint_state_publisher_)
   {
-    if (tool_joint_state_publisher_ && tool_joint_state_publisher_->trylock())
-    {
-      tool_joint_state_publisher_->msg_.header.stamp = time;
-      tool_joint_state_publisher_->msg_.position = joint_states_values_;
-    }
-    tool_joint_state_publisher_->unlockAndPublish();
+    joint_state_msg_.header.stamp = time;
+    joint_state_msg_.position = joint_states_values_;
+    tool_joint_state_publisher_->try_publish(joint_state_msg_);
   }
 
-  if (interface_publisher_ && interface_publisher_->trylock())
+  if (interface_publisher_)
   {
-    interface_publisher_->msg_.header.stamp = time;
+    interface_msg_.header.stamp = time;
     for (size_t i = 0; i < state_interfaces_.size(); ++i)
     {
-      interface_publisher_->msg_.states.values.at(i) =
+      interface_msg_.states.values.at(i) =
         static_cast<float>(state_interfaces_.at(i).get_optional<double>().value_or(
           std::numeric_limits<double>::quiet_NaN()));
     }
     for (size_t i = 0; i < command_interfaces_.size(); ++i)
     {
-      interface_publisher_->msg_.commands.values.at(i) =
+      interface_msg_.commands.values.at(i) =
         static_cast<float>(command_interfaces_.at(i).get_optional<double>().value_or(
           std::numeric_limits<double>::quiet_NaN()));
     }
-    interface_publisher_->unlockAndPublish();
+    interface_publisher_->try_publish(interface_msg_);
   }
-  if (controller_state_publisher_ && controller_state_publisher_->trylock())
+  if (controller_state_publisher_)
   {
-    controller_state_publisher_->msg_.state = current_state_.get();
-    controller_state_publisher_->msg_.configuration = current_configuration_.get();
-    controller_state_publisher_->msg_.current_transition.state = current_tool_transition_.load();
-    controller_state_publisher_->unlockAndPublish();
+    controller_state_msg_.state = current_state_.get();
+    controller_state_msg_.configuration = current_configuration_.get();
+    controller_state_msg_.current_transition.state = current_tool_transition_.load();
+    controller_state_publisher_->try_publish(controller_state_msg_);
   }
 }
 
