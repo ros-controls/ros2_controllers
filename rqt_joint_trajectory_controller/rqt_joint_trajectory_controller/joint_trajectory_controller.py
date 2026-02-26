@@ -241,6 +241,16 @@ class JointTrajectoryController(Plugin):
     def _update_cm_list(self):
         update_combo(self._widget.cm_combo, self._list_cm())
 
+        # Auto-select a controller manager if none is selected yet
+        combo = self._widget.cm_combo
+        if not combo.currentText():
+            cm_list = [combo.itemText(i) for i in range(combo.count())]
+            if len(cm_list) == 1:
+                combo.setCurrentIndex(0)
+            elif len(cm_list) > 1:
+                default_idx = combo.findText("/controller_manager")
+                combo.setCurrentIndex(default_idx if default_idx >= 0 else 0)
+
     def _update_jtc_list(self):
         # Clear controller list if no controller information is available
         if not self._list_controllers:
