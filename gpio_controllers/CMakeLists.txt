@@ -108,12 +108,12 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_gpio_tool_controller
     test/gpio_tool_controller/test_gpio_tool_controller.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_open.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_close.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_open.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_close.cpp
     test/gpio_tool_controller/test_gpio_tool_controller_all_param_set.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_open_close_action.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_reconfigure.cpp
-  #   test/gpio_tool_controller/test_gpio_tool_controller_reconfigure_action.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_open_close_action.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_reconfigure.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_reconfigure_action.cpp
   )
   target_include_directories(test_gpio_tool_controller PRIVATE include)
   target_link_libraries(test_gpio_tool_controller

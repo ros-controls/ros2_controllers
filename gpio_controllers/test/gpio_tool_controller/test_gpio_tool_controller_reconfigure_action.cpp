@@ -12,99 +12,136 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits>
+// Tests for process_reconfigure_request() validation logic.
+//
+// Uses call_process_reconfigure_request() to directly exercise the acceptance
+// and rejection conditions without going through the service/action layer.
+// Relevant logic (from gpio_tool_controller.cpp):
+//   - Empty config name → reject
+//   - Unknown config name (not in configurations list) → reject
+//   - Tool not IDLE (busy with another action) → reject
+//   - Tool not in disengaged state ("open") → reject
+//   - IDLE + disengaged + valid name → accept, start RECONFIGURING
+
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
-#include "test_io_gripper_controller.hpp"
+#include "test_gpio_tool_controller.hpp"
 
-// Test open gripper service sets command its as expected and publishes msg
-TEST_F(IOGripperControllerTest, ReconfigureGripperAction)
+namespace
 {
-  SetUpController();
-
-  setup_parameters();
-
-  controller_->get_node()->set_parameter({"use_action", true});
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(subscription_caller_node_->get_node_base_interface());
-  executor.add_node(action_caller_node_->get_node_base_interface());
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  auto goal = std::make_shared<GripperConfigAction::Goal>();
-
-  bool wait_for_action_ret =
-    gripper_config_action_client_->wait_for_action_server(std::chrono::milliseconds(500));
-  EXPECT_TRUE(wait_for_action_ret);
-  if (!wait_for_action_ret)
-  {
-    throw std::runtime_error("Action server is not available!");
-  }
-
-  goal->config_name = "stichmass_125";
-
-  gripper_config_action_client_->async_send_goal(*goal);
-
-  executor.spin_some(std::chrono::milliseconds(5000));
-
+// Configure and activate with configuration-enabled setup. The controller
+// will be in IDLE state and the tool in the given hardware state.
+void prepare_for_reconfigure_request(
+  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  const std::vector<std::string> & possible_states,
+  const std::string & initial_hw_state = "open")
+{
+  fx.SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_states),
+     rclcpp::Parameter("configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
+  fx.setup_parameters_with_config();
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
+    fx.controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  fx.SetupInterfaces();
+  fx.SetInitialHardwareState(initial_hw_state);
+  // Also set a known configuration so check_tool_state() can determine current_configuration_.
+  // Default to narrow_objects (Narrow_Configuraiton_Signal=1.0, Wide_Configuration_Signal=0.0).
+  fx.SetStateValue("Narrow_Configuraiton_Signal", 1.0);
   ASSERT_EQ(
-    *(controller_->reconfigure_state_buffer_.readFromRT()),
-    io_gripper_controller::reconfigure_state_type::CHECK_STATE);
+    fx.controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+}  // namespace
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+// ---------------------------------------------------------------------------
+// IDLE + disengaged ("open") + valid config name → reconfiguration starts
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, AcceptsReconfigureWhenIdleAndDisengaged)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "open");
+  ASSERT_EQ(controller_->get_current_state(), "open");
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  auto resp = controller_->call_process_reconfigure_request("narrow_objects");
 
-  ASSERT_EQ(
-    *(controller_->reconfigure_state_buffer_.readFromRT()),
-    io_gripper_controller::reconfigure_state_type::IDLE);
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+  EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::SET_BEFORE_COMMAND);
+}
 
-  executor.spin_some(
-    std::chrono::milliseconds(
-      1000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+// ---------------------------------------------------------------------------
+// Empty config name → rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWithEmptyConfigName)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "open");
 
-  // since update doesn't guarantee a published message, republish until received
-  int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  while (max_sub_check_loop_count--)
-  {
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{5};
-    const auto until = subscription_caller_node_->get_clock()->now() + timeout;
-    while (!joint_state_sub_msg_ && subscription_caller_node_->get_clock()->now() < until)
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-    }
-    // check if message has been received
-    if (max_sub_check_loop_count == 0)
-    {
-      break;
-    }
-  }
-  executor.spin_some(
-    std::chrono::milliseconds(
-      1000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  // ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
-  // "controller/broadcaster update loop";
-  ASSERT_TRUE(joint_state_sub_msg_);
+  auto resp = controller_->call_process_reconfigure_request("");
 
-  ASSERT_EQ(joint_state_sub_msg_->position.size(), 2);
-  ASSERT_EQ(joint_state_sub_msg_->position[1], 0.125);
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
+
+// ---------------------------------------------------------------------------
+// Unknown config name (not in configurations list) → rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWithUnknownConfigName)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "open");
+
+  auto resp = controller_->call_process_reconfigure_request("nonexistent_config");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
+
+// ---------------------------------------------------------------------------
+// Busy (ENGAGING) → reconfiguration rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenEngaging)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "open");
+  controller_->start_engaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+
+  auto resp = controller_->call_process_reconfigure_request("narrow_objects");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+}
+
+// ---------------------------------------------------------------------------
+// Busy (DISENGAGING) → reconfiguration rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenDisengaging)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "close_empty");
+  controller_->start_disengaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
+
+  auto resp = controller_->call_process_reconfigure_request("narrow_objects");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
+}
+
+// ---------------------------------------------------------------------------
+// IDLE but tool is in engaged state (close_empty) → reconfiguration rejected
+// (tool must be disengaged/"open" to reconfigure)
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenNotDisengaged)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "close_empty");
+  ASSERT_EQ(controller_->get_current_state(), "close_empty");
+
+  auto resp = controller_->call_process_reconfigure_request("narrow_objects");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
 }

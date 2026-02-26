@@ -12,213 +12,192 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits>
+// Tests for process_engaging_request() validation logic.
+//
+// Uses call_process_engaging_request() to directly exercise the acceptance and
+// rejection conditions without going through the service/action layer.
+// Relevant logic (from gpio_tool_controller.cpp):
+//   - RECONFIGURING → reject with success=false
+//   - already executing same action → reject with success=false
+//   - executing opposite action → accept and switch (success=true)
+//   - IDLE + already in target state → accept with success=true, no action started
+//   - IDLE + not in target state → accept and start action (success=true)
+
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
-#include "test_io_gripper_controller.hpp"
+#include "test_gpio_tool_controller.hpp"
 
-// Test open gripper service sets command its as expected and publishes msg
-TEST_F(IOGripperControllerTest, OpenCloseGripperAction)
+namespace
 {
-  SetUpController();
-
-  setup_parameters();
-
-  controller_->get_node()->set_parameter({"use_action", true});
-
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  executor.add_node(subscription_caller_node_->get_node_base_interface());
-  executor.add_node(action_caller_node_->get_node_base_interface());
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  auto goal = std::make_shared<GripperAction::Goal>();
-
-  bool wait_for_action_ret =
-    gripper_action_client_->wait_for_action_server(std::chrono::milliseconds(500));
-  EXPECT_TRUE(wait_for_action_ret);
-  if (!wait_for_action_ret)
-  {
-    throw std::runtime_error("Action server is not available!");
-  }
-
-  goal->open = true;
-
-  gripper_action_client_->async_send_goal(*goal);
-
-  executor.spin_some(std::chrono::milliseconds(5000));
-
+// Configure and activate, returning with the controller in IDLE state
+// and the tool in the given hardware state.
+void prepare_for_request(
+  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  const std::vector<std::string> & possible_states, const std::string & initial_hw_state)
+{
+  fx.SetUpController(
+    "test_gpio_tool_controller", {rclcpp::Parameter("possible_engaged_states", possible_states)});
+  fx.setup_parameters();
   ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-
+    fx.controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  fx.SetupInterfaces();
+  fx.SetInitialHardwareState(initial_hw_state);
   ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::OPEN);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::OPEN_GRIPPER);
+    fx.controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+}  // namespace
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+// ---------------------------------------------------------------------------
+// Already in disengaged ("open") state → DISENGAGING request returns success
+// without starting any action (tool is already where it should be).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RequestDisengageWhenAlreadyDisengaged)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  ASSERT_EQ(controller_->get_current_state(), "open");
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::OPEN);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
+  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  EXPECT_TRUE(resp.success);
+  // No action started – still IDLE
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::OPEN);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
+// ---------------------------------------------------------------------------
+// Already in engaged (close_empty) state → ENGAGING request returns success
+// without starting any action.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RequestEngageWhenAlreadyEngaged)
+{
+  prepare_for_request(*this, possible_engaged_states, "close_empty");
+  ASSERT_EQ(controller_->get_current_state(), "close_empty");
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::IDLE);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::IDLE);
+  EXPECT_TRUE(resp.success);
+  // No action started – still IDLE
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
 
-  // update to make sure the publisher value is updated
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
-  executor.spin_some(
-    std::chrono::milliseconds(
-      1000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+// ---------------------------------------------------------------------------
+// IDLE + in "open" state → ENGAGING request starts the action
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RequestEngageStartsActionWhenDisengaged)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
 
-  // since update doesn't guarantee a published message, republish until received
-  int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  while (max_sub_check_loop_count--)
-  {
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
-    const auto timeout = std::chrono::milliseconds{5};
-    const auto until = subscription_caller_node_->get_clock()->now() + timeout;
-    while (!joint_state_sub_msg_ && subscription_caller_node_->get_clock()->now() < until)
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-    }
-    // check if message has been received
-    if (max_sub_check_loop_count == 0)
-    {
-      break;
-    }
-  }
-  executor.spin_some(
-    std::chrono::milliseconds(
-      1000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
 
-  ASSERT_TRUE(joint_state_sub_msg_);
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+  EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::SET_BEFORE_COMMAND);
+}
 
-  ASSERT_EQ(joint_state_sub_msg_->position.size(), 2);
-  EXPECT_EQ(joint_state_sub_msg_->position[0], 0.0);
+// ---------------------------------------------------------------------------
+// IDLE + in "close_empty" state → DISENGAGING request starts the action
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RequestDisengageStartsActionWhenEngaged)
+{
+  prepare_for_request(*this, possible_engaged_states, "close_empty");
 
-  // now sending action goal to close the gripper
-  goal->open = false;
+  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
 
-  gripper_action_client_->async_send_goal(*goal);
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
+  EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::SET_BEFORE_COMMAND);
+}
 
-  executor.spin_some(std::chrono::milliseconds(5000));
+// ---------------------------------------------------------------------------
+// Already ENGAGING → second ENGAGING request is rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RejectsEngageWhenAlreadyEngaging)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  controller_->start_engaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::CLOSE_GRIPPER);
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+}
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+// ---------------------------------------------------------------------------
+// Already DISENGAGING → second DISENGAGING request is rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RejectsDisengageWhenAlreadyDisengaging)
+{
+  prepare_for_request(*this, possible_engaged_states, "close_empty");
+  controller_->start_disengaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::CHECK_GRIPPER_STATE);
+  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
+}
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::CLOSE);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::SET_AFTER_COMMAND);
+// ---------------------------------------------------------------------------
+// Currently ENGAGING → DISENGAGING request is accepted (action switches)
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, AcceptsDisengageWhileEngaging)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  controller_->start_engaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
 
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
 
-  ASSERT_EQ(
-    *(controller_->gripper_service_buffer_.readFromRT()),
-    io_gripper_controller::service_mode_type::IDLE);
-  ASSERT_EQ(
-    *(controller_->gripper_state_buffer_.readFromRT()),
-    io_gripper_controller::gripper_state_type::IDLE);
-  // update to make sure the publisher value is updated
-  ASSERT_EQ(
-    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-    controller_interface::return_type::OK);
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
+}
 
-  executor.spin_some(
-    std::chrono::milliseconds(
-      1000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+// ---------------------------------------------------------------------------
+// Currently DISENGAGING → ENGAGING request is accepted (action switches)
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, AcceptsEngageWhileDisengaging)
+{
+  prepare_for_request(*this, possible_engaged_states, "close_empty");
+  controller_->start_disengaging();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
 
-  // since update doesn't guarantee a published message, republish until received
-  max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
-  while (max_sub_check_loop_count--)
-  {
-    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.1));
-    const auto timeout = std::chrono::milliseconds{500};
-    const auto until = subscription_caller_node_->get_clock()->now() + timeout;
-    while (!joint_state_sub_msg_ && subscription_caller_node_->get_clock()->now() < until)
-    {
-      executor.spin_some();
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-    }
-    // check if message has been received
-    if (max_sub_check_loop_count == 0)
-    {
-      break;
-    }
-  }
-  executor.spin_some(
-    std::chrono::milliseconds(
-      2000));  // this solve the issue related to subscriber not able to get the message
-  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-  ASSERT_TRUE(joint_state_sub_msg_);
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
 
-  ASSERT_EQ(joint_state_sub_msg_->position.size(), 2);
-  EXPECT_EQ(joint_state_sub_msg_->position[0], 0.08);
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+}
+
+// ---------------------------------------------------------------------------
+// RECONFIGURING → ENGAGING request is rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RejectsEngageWhenReconfiguring)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  controller_->start_reconfiguring("narrow_objects");
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+}
+
+// ---------------------------------------------------------------------------
+// RECONFIGURING → DISENGAGING request is rejected
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, RejectsDisengageWhenReconfiguring)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  controller_->start_reconfiguring("narrow_objects");
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+
+  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+
+  EXPECT_FALSE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
 }
