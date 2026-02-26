@@ -62,7 +62,7 @@ def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
 def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     if not robot_description_subscriber_created:
         print("First select robot description topic name!")
-        return
+        return {}
 
     use_small = use_smallest_joint_limits
     use_mimic = True
@@ -110,9 +110,17 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                         )
                 except IndexError:
                     if name in joints_names:
-                        raise Exception(
-                            f"Missing limits tag for the joint : {name} in the robot_description!"
+                        print(
+                            f"Warning: joint '{name}' has no <limit> tag in the "
+                            f"robot_description. Slider will be displayed but disabled."
                         )
+                        free_joints[name] = {
+                            "min_position": -2 * pi,
+                            "max_position":  2 * pi,
+                            "has_position_limits": False,
+                            "max_velocity": 1.0,
+                        }
+                    continue
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]

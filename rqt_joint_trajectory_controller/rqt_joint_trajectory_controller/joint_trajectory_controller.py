@@ -281,6 +281,13 @@ class JointTrajectoryController(Plugin):
 
         update_combo(self._widget.robot_description_combo, sorted(self._list_robot_descriptions))
 
+        # Auto-select /robot_description the first time the topic becomes available.
+        combo = self._widget.robot_description_combo
+        if not combo.currentText():
+            default_idx = combo.findText("/robot_description")
+            if default_idx >= 0:
+                combo.setCurrentIndex(default_idx)
+
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
@@ -320,9 +327,10 @@ class JointTrajectoryController(Plugin):
             self._widget.enable_button.setChecked(False)
             return
 
-        # Enable/disable joint displays
-        for joint_widget in self._joint_widgets():
-            joint_widget.setEnabled(val)
+        # Enable/disable joint displays (joints without URDF limits stay grayed-out)
+        for name, joint_widget in zip(self._joint_names, self._joint_widgets()):
+            has_limits = self._robot_joint_limits[name].get("has_position_limits", True)
+            joint_widget.setEnabled(val and has_limits)
 
         # Enable/disable speed scaling
         self._speed_scaling_widget.setEnabled(val)
