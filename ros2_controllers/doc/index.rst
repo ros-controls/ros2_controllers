@@ -50,6 +50,10 @@ For more information of the ros2_control framework see `control.ros.org <https:/
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/joint_trajectory_controller/>`__
     - `ROS Index <https://index.ros.org/p/joint_trajectory_controller/>`__
+  * - omni_wheel_drive_controller
+    - `Documentation <https://control.ros.org/master/doc/ros2_controllers/omni_wheel_drive_controller/doc/userdoc.html>`__
+    - `API <http://docs.ros.org/en/rolling/p/omni_wheel_drive_controller/>`__
+    - `ROS Index <https://index.ros.org/p/omni_wheel_drive_controller/>`__
   * - pid_controller
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/pid_controller/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/pid_controller/>`__
@@ -62,6 +66,10 @@ For more information of the ros2_control framework see `control.ros.org <https:/
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/range_sensor_broadcaster/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/range_sensor_broadcaster/>`__
     - `ROS Index <https://index.ros.org/p/range_sensor_broadcaster/>`__
+  * - state_interfaces_broadcaster
+    - `Documentation <https://control.ros.org/master/doc/ros2_controllers/state_interfaces_broadcaster/doc/userdoc.html>`__
+    - `API <http://docs.ros.org/en/rolling/p/state_interfaces_broadcaster/>`__
+    - `ROS Index <https://index.ros.org/p/state_interfaces_broadcaster/>`__
   * - steering_controllers_library
     - `Documentation <https://control.ros.org/master/doc/ros2_controllers/steering_controllers_library/doc/userdoc.html>`__
     - `API <http://docs.ros.org/en/rolling/p/steering_controllers_library/>`__

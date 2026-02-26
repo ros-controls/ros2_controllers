@@ -47,7 +47,8 @@ protected:
   const double variance_ = 1.0;
 
   double sensor_range_ = 3.1;
-  hardware_interface::StateInterface range_{sensor_name_, "range", &sensor_range_};
+  hardware_interface::StateInterface::SharedPtr range_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "range", &sensor_range_);
 
   std::unique_ptr<range_sensor_broadcaster::RangeSensorBroadcaster> range_broadcaster_;
 

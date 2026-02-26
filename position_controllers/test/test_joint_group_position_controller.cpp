@@ -36,68 +36,41 @@ void JointGroupPositionControllerTest::SetUp()
 
 void JointGroupPositionControllerTest::TearDown() { controller_.reset(nullptr); }
 
-void JointGroupPositionControllerTest::SetUpController()
+void JointGroupPositionControllerTest::SetUpController(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
-  const auto result = controller_->init(
-    "test_joint_group_position_controller", "", 0, "", controller_->define_custom_node_options());
+  auto node_options = controller_->define_custom_node_options();
+  node_options.parameter_overrides(parameters);
+
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_joint_group_position_controller";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
-  command_ifs.emplace_back(joint_2_pos_cmd_);
-  command_ifs.emplace_back(joint_3_pos_cmd_);
+  command_ifs.emplace_back(joint_1_pos_cmd_, nullptr);
+  command_ifs.emplace_back(joint_2_pos_cmd_, nullptr);
+  command_ifs.emplace_back(joint_3_pos_cmd_, nullptr);
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 }
 
-TEST_F(JointGroupPositionControllerTest, JointsParameterNotSet)
-{
-  SetUpController();
-
-  // configure failed, 'joints' parameter not set
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
-TEST_F(JointGroupPositionControllerTest, JointsParameterIsEmpty)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
-
-  // configure failed, 'joints' is empty
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
 TEST_F(JointGroupPositionControllerTest, ConfigureAndActivateParamsSuccess)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // configure successful
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 }
 
-TEST_F(JointGroupPositionControllerTest, ActivateWithWrongJointsNamesFails)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint4"}});
-
-  // activate failed, 'joint4' is not a valid joint name for the hardware
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
-
-  // activate should succeed now
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-}
-
 TEST_F(JointGroupPositionControllerTest, CommandSuccessTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful though no command has been send yet
@@ -106,14 +79,14 @@ TEST_F(JointGroupPositionControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 3.1);
 
   // send command
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0, 30.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0, 30.0};
+  controller_->rt_command_.set(command);
 
   // update successful, command received
   ASSERT_EQ(
@@ -121,21 +94,20 @@ TEST_F(JointGroupPositionControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check joint commands have been modified
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(JointGroupPositionControllerTest, WrongCommandCheckTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // send command with wrong number of joints
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0};
+  controller_->rt_command_.set(command);
 
   // update failed, command size does not match number of joints
   ASSERT_EQ(
@@ -143,15 +115,14 @@ TEST_F(JointGroupPositionControllerTest, WrongCommandCheckTest)
     controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(JointGroupPositionControllerTest, NoCommandCheckTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
   // update successful, no command received yet
@@ -160,22 +131,21 @@ TEST_F(JointGroupPositionControllerTest, NoCommandCheckTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(JointGroupPositionControllerTest, CommandCallbackTest)
 {
-  SetUpController();
-  controller_->get_node()->set_parameter({"joints", joint_names_});
+  SetUpController({rclcpp::Parameter("joints", joint_names_)});
 
   // default values
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 3.1);
 
-  auto node_state = controller_->get_node()->configure();
+  auto node_state = controller_->configure();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
 
   node_state = controller_->get_node()->activate();
@@ -204,7 +174,7 @@ TEST_F(JointGroupPositionControllerTest, CommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_2_pos_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_3_pos_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_2_pos_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_3_pos_cmd_->get_optional().value(), 30.0);
 }

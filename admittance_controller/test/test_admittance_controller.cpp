@@ -62,12 +62,10 @@ INSTANTIATE_TEST_SUITE_P(
     // wrong length selected axes
     std::make_tuple(
       std::string("admittance.selected_axes"),
-      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3}))
+      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3})),
     // invalid robot description.
-    // TODO(anyone): deactivated, because SetUpController returns SUCCESS here?
-    // ,std::make_tuple(
-    //   std::string("robot_description"), rclcpp::ParameterValue(std::string() = "bad_robot")))
-    ));
+    std::make_tuple(
+      std::string("robot_description"), rclcpp::ParameterValue(std::string() = "bad_robot"))));
 
 // Test on_init returns ERROR when a parameter is invalid
 TEST_P(AdmittanceControllerTestParameterizedInvalidParameters, invalid_parameters)
@@ -356,6 +354,31 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
+}
+
+TEST_F(AdmittanceControllerTest, check_frame_ids_in_controller_state)
+{
+  SetUpController();
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  broadcast_tfs();  // force torque sensor
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & msg = controller_->admittance_->get_controller_state();
+
+  // Ensure correct frame IDs
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(
+    msg.ref_trans_base_ft.child_frame_id, controller_->admittance_->parameters_.ft_sensor.frame.id);
+  ASSERT_EQ(
+    msg.admittance_position.header.frame_id, controller_->admittance_->parameters_.kinematics.base);
+  ASSERT_EQ(msg.admittance_position.child_frame_id, "admittance_offset");
 }
 
 int main(int argc, char ** argv)

@@ -79,3 +79,43 @@ force_torque_sensor_broadcaster:
         default_value: 0.0,
         description: "The offset of torque values around 'z' axis.",
       }
+  multiplier:
+    force:
+      x: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of force value on 'x' axis.",
+      }
+      y: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of force value on 'y' axis.",
+      }
+      z: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of force value on 'z' axis.",
+      }
+    torque:
+      x: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of torque value around 'x' axis.",
+      }
+      y: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of torque value around 'y' axis.",
+      }
+      z: {
+        type: double,
+        default_value: 1.0,
+        description: "The multiplier of torque value around 'z' axis.",
+      }
+  sensor_filter_chain: {
+    type: none,
+    description: "Map of parameters that defines a filter chain, containing filterN as key. The fields for each filter are:
+    type: The filter plugin to be loaded
+    name: Actual name semantically describing the filter, e.g., low_pass_filter
+    params: And underlying map of parameters needed for a specific filter, refer to the specific filter documentation."
+  }

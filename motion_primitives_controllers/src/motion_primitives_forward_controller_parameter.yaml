@@ -1,0 +1,7 @@
+motion_primitives_forward_controller:
+  tf_prefix: {
+    type: string,
+    default_value: "",
+    description: "All interfaces use the naming scheme `tf_prefix_ + motion_primitive/<interface name>`",
+    read_only: true,
+  }

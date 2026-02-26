@@ -15,6 +15,7 @@
 /// \authors: Jack Center, Denis Stogl
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -50,92 +51,51 @@ void MultiInterfaceForwardCommandControllerTest::SetUp()
 
 void MultiInterfaceForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
 
-void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params_and_activate)
+void MultiInterfaceForwardCommandControllerTest::SetUpController(
+  bool set_default_params_and_activate, const std::vector<rclcpp::Parameter> & parameters)
 {
-  const auto result = controller_->init(
-    "multi_interface_forward_command_controller", "", 0, "",
-    controller_->define_custom_node_options());
+  std::vector<rclcpp::Parameter> parameter_overrides;
+  if (set_default_params_and_activate)
+  {
+    parameter_overrides.push_back({"joint", "joint1"});
+    parameter_overrides.push_back(
+      {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
+  }
+  parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
+  auto node_options = controller_->define_custom_node_options();
+  node_options.parameter_overrides(parameter_overrides);
+
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "multi_interface_forward_command_controller";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = node_options;
+  const auto result = controller_->init(params);
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(joint_1_pos_cmd_);
-  command_ifs.emplace_back(joint_1_vel_cmd_);
-  command_ifs.emplace_back(joint_1_eff_cmd_);
+  command_ifs.emplace_back(joint_1_pos_cmd_, nullptr);
+  command_ifs.emplace_back(joint_1_vel_cmd_, nullptr);
+  command_ifs.emplace_back(joint_1_eff_cmd_, nullptr);
   controller_->assign_interfaces(std::move(command_ifs), {});
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  if (set_params_and_activate)
+  if (set_default_params_and_activate)
   {
-    SetParametersAndActivateController();
+    auto node_state = controller_->configure();
+    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    node_state = controller_->get_node()->activate();
+    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
   }
-}
-
-void MultiInterfaceForwardCommandControllerTest::SetParametersAndActivateController()
-{
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  auto node_state = controller_->get_node()->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
-
-  // configure failed, 'joint' parameter not set
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterNotSet)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joint", ""});
-
-  // configure failed, 'interface_names' parameter not set
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterIsEmpty)
-{
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", ""});
-  controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
-
-  // configure failed, 'joint' is empty
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, InterfaceParameterEmpty)
-{
-  SetUpController();
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter({"interface_names", std::vector<std::string>()});
-
-  // configure failed, 'interface_name' is empty
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
 {
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
+  SetUpController(
+    false, {rclcpp::Parameter("joint", "joint1"),
+            rclcpp::Parameter(
+              "interface_names", std::vector<std::string>{"position", "velocity", "effort"})});
 
   // configure successful
   ASSERT_EQ(
@@ -150,48 +110,14 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
 }
 
-TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongJointsNamesFails)
-{
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint2"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
-
-  // activate failed, 'joint2' is not a valid joint name for the hardware
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
-TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateWithWrongInterfaceNameFails)
-{
-  SetUpController();
-
-  controller_->get_node()->set_parameter({"joint", "joint1"});
-  controller_->get_node()->set_parameter(
-    {"interface_names", std::vector<std::string>{"position", "velocity", "acceleration"}});
-
-  // activate failed, 'acceleration' is not a registered interface for `joint1`
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::ERROR);
-}
-
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateSuccess)
 {
   SetUpController(true);
 
   // check joint commands are the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
@@ -199,9 +125,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
   SetUpController(true);
 
   // send command
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0, 30.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0, 30.0};
+  controller_->rt_command_.set(command);
 
   // update successful, command received
   ASSERT_EQ(
@@ -209,9 +135,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandSuccessTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
@@ -224,9 +150,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, NoCommandCheckTest)
     controller_interface::return_type::OK);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
@@ -234,9 +160,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
   SetUpController(true);
 
   // send command with wrong number of joints
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0};
+  controller_->rt_command_.set(command);
 
   // update failed, command size does not match number of joints
   ASSERT_EQ(
@@ -244,9 +170,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, WrongCommandCheckTest)
     controller_interface::return_type::ERROR);
 
   // check joint commands are still the default ones
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 1.1);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 2.1);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 3.1);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 1.1);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 2.1);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 3.1);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
@@ -276,9 +202,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, CommandCallbackTest)
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
@@ -294,9 +220,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
   // send command
-  auto command_ptr = std::make_shared<forward_command_controller::CmdType>();
-  command_ptr->data = {10.0, 20.0, 30.0};
-  controller_->rt_command_ptr_.writeFromNonRT(command_ptr);
+  forward_command_controller::CmdType command;
+  command.data = {10.0, 20.0, 30.0};
+  controller_->rt_command_.set(command);
 
   // update successful, command received
   ASSERT_EQ(
@@ -304,9 +230,9 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 
   auto node_state = controller_->get_node()->deactivate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
@@ -319,35 +245,32 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
-  // command ptr should be reset (nullptr) after deactivation - same check as in `update`
-  ASSERT_FALSE(
-    controller_->rt_command_ptr_.readFromNonRT() &&
-    *(controller_->rt_command_ptr_.readFromNonRT()));
-  ASSERT_FALSE(
-    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+  // command ptr should be reset after deactivation - same check as in `update`
+  auto cmd = controller_->rt_command_.get();
+  ASSERT_THAT(
+    cmd.data,
+    ::testing::Each(::testing::NanSensitiveDoubleEq(std::numeric_limits<double>::quiet_NaN())));
 
   // Controller is inactive but let's put some data into buffer (simulate callback when inactive)
-  auto command_msg = std::make_shared<std_msgs::msg::Float64MultiArray>();
-  command_msg->data = {5.5, 6.6, 7.7};
-  controller_->rt_command_ptr_.writeFromNonRT(command_msg);
+  command.data = {5.5, 6.6, 7.7};
+  controller_->rt_command_.set(command);
 
   // command ptr should be available and message should be there - same check as in `update`
-  ASSERT_TRUE(
-    controller_->rt_command_ptr_.readFromNonRT() &&
-    *(controller_->rt_command_ptr_.readFromNonRT()));
-  ASSERT_TRUE(
-    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+  cmd = controller_->rt_command_.get();
+  ASSERT_THAT(
+    cmd.data,
+    ::testing::Each(
+      ::testing::Not(::testing::NanSensitiveDoubleEq(std::numeric_limits<double>::quiet_NaN()))));
 
   // Now activate again
   node_state = controller_->get_node()->activate();
   ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
 
-  // command ptr should be reset (nullptr) after activation - same check as in `update`
-  ASSERT_FALSE(
-    controller_->rt_command_ptr_.readFromNonRT() &&
-    *(controller_->rt_command_ptr_.readFromNonRT()));
-  ASSERT_FALSE(
-    controller_->rt_command_ptr_.readFromRT() && *(controller_->rt_command_ptr_.readFromRT()));
+  // command ptr should be reset after activation - same check as in `update`
+  cmd = controller_->rt_command_.get();
+  ASSERT_THAT(
+    cmd.data,
+    ::testing::Each(::testing::NanSensitiveDoubleEq(std::numeric_limits<double>::quiet_NaN())));
 
   // update successful
   ASSERT_EQ(
@@ -355,12 +278,12 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // values should not change
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 10.0);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 20.0);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 30.0);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 10.0);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 
   // set commands again
-  controller_->rt_command_ptr_.writeFromNonRT(command_msg);
+  controller_->rt_command_.set(command);
 
   // update successful
   ASSERT_EQ(
@@ -368,7 +291,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
     controller_interface::return_type::OK);
 
   // check command in handle was set
-  ASSERT_EQ(joint_1_pos_cmd_.get_value(), 5.5);
-  ASSERT_EQ(joint_1_vel_cmd_.get_value(), 6.6);
-  ASSERT_EQ(joint_1_eff_cmd_.get_value(), 7.7);
+  ASSERT_EQ(joint_1_pos_cmd_->get_optional().value(), 5.5);
+  ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 6.6);
+  ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 7.7);
 }

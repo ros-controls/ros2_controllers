@@ -25,7 +25,10 @@ target_include_directories(position_controllers PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/position_controllers>
 )
-ament_target_dependencies(position_controllers PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(position_controllers PUBLIC
+                      forward_command_controller::forward_command_controller
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp)
 
 pluginlib_export_plugin_description_file(controller_interface position_controllers_plugins.xml)
 
@@ -34,15 +37,15 @@ if(BUILD_TESTING)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+
   ament_add_gmock(test_load_joint_group_position_controller
     test/test_load_joint_group_position_controller.cpp
   )
   target_link_libraries(test_load_joint_group_position_controller
     position_controllers
-  )
-  ament_target_dependencies(test_load_joint_group_position_controller
-    controller_manager
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_joint_group_position_controller

@@ -21,8 +21,6 @@
 #include <string>
 #include <vector>
 
-using pid_controller::feedforward_mode_type;
-
 class PidControllerTest : public PidControllerFixture<TestablePidController>
 {
 };

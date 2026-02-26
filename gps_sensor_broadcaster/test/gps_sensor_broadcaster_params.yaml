@@ -1,0 +1,5 @@
+test_gps_sensor_broadcaster:
+  ros__parameters:
+    sensor_name: gps_sensor
+    frame_id: gps_sensor_frame
+    service: service_gps

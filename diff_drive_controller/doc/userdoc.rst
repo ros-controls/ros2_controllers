@@ -41,6 +41,7 @@ Feedback
 ,,,,,,,,,,,,,,
 
 As feedback interface type the joints' position (``hardware_interface::HW_IF_POSITION``) or velocity (``hardware_interface::HW_IF_VELOCITY``,if parameter ``position_feedback=false``) are used.
+Unless the parameter ``open_loop=true`` is set, then no external state interfaces are used (the commanded velocity is used for odometry instead).
 
 Output
 ,,,,,,,,,
@@ -69,6 +70,10 @@ Publishers
 ~/cmd_vel_out [geometry_msgs/msg/TwistStamped]
   Velocity command for the controller, where limits were applied. Published only if ``publish_limited_velocity=true``
 
+Services
+,,,,,,,,,,,
+~/set_odometry [control_msgs::srv::SetOdometry]
+  This service can be used to set the current odometry of the robot to desired values.
 
 Parameters
 ,,,,,,,,,,,,

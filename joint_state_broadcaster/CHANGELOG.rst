@@ -2,6 +2,85 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.3.0 (2026-02-03)
+------------------
+* Add test to check JSB is not throwing when there is a boolean interface (`#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_)
+* Contributors: Noel Jiménez García
+
+6.2.0 (2025-12-31)
+------------------
+* Add parameter for deactivating dynamic_joint_states (`#2064 <https://github.com/ros-controls/ros2_controllers/issues/2064>`_)
+* Contributors: Christoph Fröhlich
+
+6.1.0 (2025-12-01)
+------------------
+
+6.0.0 (2025-11-10)
+------------------
+* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
+* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
+* Contributors: Anand Vardhan, Christoph Fröhlich
+
+5.8.0 (2025-10-02)
+------------------
+* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
+* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
+* Contributors: Christoph Fröhlich
+
+5.7.0 (2025-09-12)
+------------------
+
+5.6.1 (2025-08-30)
+------------------
+
+5.6.0 (2025-08-29)
+------------------
+* docs(joint_state_broadcaster): clarify /dynamic_joint_states contents (`#1865 <https://github.com/ros-controls/ros2_controllers/issues/1865>`_)
+* Contributors: rishitej04
+
+5.5.0 (2025-07-31)
+------------------
+
+5.4.0 (2025-07-23)
+------------------
+
+5.3.0 (2025-07-14)
+------------------
+
+5.2.0 (2025-06-23)
+------------------
+
+5.1.0 (2025-06-11)
+------------------
+* Added frame_id to Joint State Broadcaster (`#1746 <https://github.com/ros-controls/ros2_controllers/issues/1746>`_)
+* Fix RST syntax (`#1715 <https://github.com/ros-controls/ros2_controllers/issues/1715>`_)
+* Contributors: Christoph Fröhlich, Jakub "Deli" Delicat
+
+5.0.2 (2025-05-26)
+------------------
+* Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)
+* Contributors: Christoph Fröhlich
+
+5.0.1 (2025-05-24)
+------------------
+* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
+* Contributors: Sai Kishor Kothakota
+
+5.0.0 (2025-05-17)
+------------------
+
+4.24.0 (2025-04-27)
+-------------------
+* Call `configure()` of base class instead of node (`#1659 <https://github.com/ros-controls/ros2_controllers/issues/1659>`_)
+* Fix joint_state_broadcaster performance issues (`#1640 <https://github.com/ros-controls/ros2_controllers/issues/1640>`_)
+* Contributors: Christoph Fröhlich, Jordan Palacios
+
+4.23.0 (2025-04-10)
+-------------------
+* [JSB] added fixes to mantain the joint names order (`#1572 <https://github.com/ros-controls/ros2_controllers/issues/1572>`_)
+* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
+
 4.22.0 (2025-03-17)
 -------------------
 * [JSB] cleanup the activation error message (`#1584 <https://github.com/ros-controls/ros2_controllers/issues/1584>`_)

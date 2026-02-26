@@ -31,8 +31,8 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
 
 namespace admittance_controller
@@ -82,15 +82,6 @@ protected:
   size_t num_joints_ = 0;
   std::vector<std::string> command_joint_names_;
 
-  // The interfaces are defined as the types in 'allowed_interface_types_' member.
-  // For convenience, for each type the interfaces are ordered so that i-th position
-  // matches i-th index in joint_names_
-  template <typename T>
-  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
-
-  InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
-  InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
-
   bool has_position_state_interface_ = false;
   bool has_velocity_state_interface_ = false;
   bool has_acceleration_state_interface_ = false;
@@ -125,14 +116,16 @@ protected:
   // admittance parameters
   std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
 
-  // ROS messages
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> joint_command_msg_;
-
-  // real-time buffer
-  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint>>
+  // real-time boxes
+  realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
     input_joint_command_;
-  realtime_tools::RealtimeBuffer<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
+  realtime_tools::RealtimeThreadSafeBox<geometry_msgs::msg::WrenchStamped> input_wrench_command_;
   std::unique_ptr<realtime_tools::RealtimePublisher<ControllerStateMsg>> state_publisher_;
+  ControllerStateMsg state_msg_;
+
+  // save the last commands in case of unable to get value from box
+  trajectory_msgs::msg::JointTrajectoryPoint joint_command_msg_;
+  geometry_msgs::msg::WrenchStamped wrench_command_msg_;
 
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_;
   trajectory_msgs::msg::JointTrajectoryPoint last_reference_;

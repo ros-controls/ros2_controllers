@@ -14,7 +14,7 @@
 
 #include "mecanum_drive_controller/odometry.hpp"
 
-#include "tf2/transform_datatypes.h"
+#include "tf2/transform_datatypes.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace mecanum_drive_controller
@@ -119,6 +119,12 @@ void Odometry::setWheelsParams(
 {
   sum_of_robot_center_projection_on_X_Y_axis_ = sum_of_robot_center_projection_on_X_Y_axis;
   wheels_radius_ = wheels_radius;
+}
+void Odometry::setOdometry(double x, double y, double heading)
+{
+  position_x_in_base_frame_ = x;
+  position_y_in_base_frame_ = y;
+  orientation_z_in_base_frame_ = heading;
 }
 
 }  // namespace mecanum_drive_controller

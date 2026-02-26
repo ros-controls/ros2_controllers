@@ -81,6 +81,9 @@ controller_interface::return_type AdmittanceRule::configure(
     return controller_interface::return_type::ERROR;
   }
 
+  // configure force torque sensor frame in state message
+  state_message_.ft_sensor_frame.data = parameters_.ft_sensor.frame.id;
+
   return controller_interface::return_type::OK;
 }
 
@@ -102,14 +105,9 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.wrench_base.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
-  state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;
-  state_message_.admittance_position.child_frame_id = "admittance_offset";
 
   // reset admittance state
   admittance_state_ = AdmittanceState(num_joints);
-
-  // reset transforms and rotations
-  admittance_transforms_ = AdmittanceTransforms();
 
   // reset forces
   wrench_world_.setZero();
@@ -123,10 +121,8 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
 
 void AdmittanceRule::apply_parameters_update()
 {
-  if (parameter_handler_->is_old(parameters_))
-  {
-    parameters_ = parameter_handler_->get_params();
-  }
+  parameter_handler_->try_get_params(parameters_);
+
   // update param values
   end_effector_weight_[2] = -parameters_.gravity_compensation.CoG.force;
   vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_pos_);
@@ -144,33 +140,6 @@ void AdmittanceRule::apply_parameters_update()
   }
 }
 
-bool AdmittanceRule::get_all_transforms(
-  const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
-  const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state)
-{
-  // get reference transforms
-  bool success = kinematics_->calculate_link_transform(
-    reference_joint_state.positions, parameters_.ft_sensor.frame.id,
-    admittance_transforms_.ref_base_ft_);
-
-  // get transforms at current configuration
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.ft_sensor.frame.id, admittance_transforms_.base_ft_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.kinematics.tip, admittance_transforms_.base_tip_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.fixed_world_frame.frame.id,
-    admittance_transforms_.world_base_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.gravity_compensation.frame.id,
-    admittance_transforms_.base_cog_);
-  success &= kinematics_->calculate_link_transform(
-    current_joint_state.positions, parameters_.control.frame.id,
-    admittance_transforms_.base_control_);
-
-  return success;
-}
-
 // Update from reference joint states
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
@@ -178,6 +147,7 @@ controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
+  // duration & live-parameter refresh
   const double dt = period.seconds();
 
   if (parameters_.enable_parameter_update_without_reactivation)
@@ -185,37 +155,60 @@ controller_interface::return_type AdmittanceRule::update(
     apply_parameters_update();
   }
 
-  bool success = get_all_transforms(current_joint_state, reference_joint_state);
+  bool success = true;
 
-  // apply filter and update wrench_world_ vector
-  Eigen::Matrix<double, 3, 3> rot_world_sensor =
-    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_ft_.rotation();
-  Eigen::Matrix<double, 3, 3> rot_world_cog =
-    admittance_transforms_.world_base_.rotation() * admittance_transforms_.base_cog_.rotation();
-  process_wrench_measurements(measured_wrench, rot_world_sensor, rot_world_cog);
+  // Reusable transform variable
+  Eigen::Isometry3d tf;
 
-  // transform wrench_world_ into base frame
+  // --- FT sensor frame to base frame (translation + rotation) ---
+  success &= kinematics_->calculate_link_transform(
+    reference_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
+  admittance_state_.ref_trans_base_ft = tf;
+
+  // --- world frame to base frame (we only need the rotation) ---
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.fixed_world_frame.frame.id, tf);
+  const Eigen::Matrix3d rot_world_base = tf.rotation();
+
+  // --- control/base frame to base frame (rotation only) ---
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.control.frame.id, tf);
+  admittance_state_.rot_base_control = tf.rotation();
+
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf);
+  const Eigen::Matrix3d rot_tf_cog = tf.rotation();
+
+  success &= kinematics_->calculate_link_transform(
+    current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
+  const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
+
+  // wrench processing (gravity + filter) in world
+  process_wrench_measurements(
+    measured_wrench,
+    // pass rotations into sensor and CoG:
+    rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
+
+  // transform filtered wrench into the robot base frame
   admittance_state_.wrench_base.block<3, 1>(0, 0) =
-    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(0, 0);
+    rot_world_base.transpose() * wrench_world_.block<3, 1>(0, 0);
   admittance_state_.wrench_base.block<3, 1>(3, 0) =
-    admittance_transforms_.world_base_.rotation().transpose() * wrench_world_.block<3, 1>(3, 0);
+    rot_world_base.transpose() * wrench_world_.block<3, 1>(3, 0);
 
-  // Compute admittance control law
+  // populate current joint positions in the state
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
-  admittance_state_.rot_base_control = admittance_transforms_.base_control_.rotation();
-  admittance_state_.ref_trans_base_ft = admittance_transforms_.ref_base_ft_;
-  admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
-  success &= calculate_admittance_rule(admittance_state_, dt);
 
-  // if a failure occurred during any kinematics interface calls, return an error and don't
-  // modify the desired reference
+  admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
+
+  // compute admittance dynamics
+  success &= calculate_admittance_rule(admittance_state_, dt);
   if (!success)
   {
     desired_joint_state = reference_joint_state;
     return controller_interface::return_type::ERROR;
   }
 
-  // update joint desired joint state
+  // Update final desired_joint_state using the computed transforms
   for (size_t i = 0; i < num_joints_; ++i)
   {
     auto idx = static_cast<Eigen::Index>(i);
@@ -235,30 +228,22 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   // Create stiffness matrix in base frame. The user-provided values of admittance_state.stiffness
   // correspond to the six diagonal elements of the stiffness matrix expressed in the control frame
   auto rot_base_control = admittance_state.rot_base_control;
+  Eigen::Matrix<double, 6, 6> rot_base_control_6d = Eigen::Matrix<double, 6, 6>::Zero();
+  rot_base_control_6d.topLeftCorner<3, 3>() = rot_base_control;
+  rot_base_control_6d.bottomRightCorner<3, 3>() = rot_base_control;
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
-  Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 3> K_rot = Eigen::Matrix<double, 3, 3>::Zero();
-  K_pos.diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
-  K_rot.diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
-  // Transform to the control frame
-  // A reference is here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
-  // Force Control by Luigi Villani and Joris De Schutter
-  // Page 200
-  K_pos = rot_base_control * K_pos * rot_base_control.transpose();
-  K_rot = rot_base_control * K_rot * rot_base_control.transpose();
-  K.block<3, 3>(0, 0) = K_pos;
-  K.block<3, 3>(3, 3) = K_rot;
+  K.block<3, 3>(0, 0).diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
+  K.block<3, 3>(3, 3).diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
 
   // The same for damping
   Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();
-  Eigen::Matrix<double, 3, 3> D_pos = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 3> D_rot = Eigen::Matrix<double, 3, 3>::Zero();
-  D_pos.diagonal() = admittance_state.damping.block<3, 1>(0, 0);
-  D_rot.diagonal() = admittance_state.damping.block<3, 1>(3, 0);
-  D_pos = rot_base_control * D_pos * rot_base_control.transpose();
-  D_rot = rot_base_control * D_rot * rot_base_control.transpose();
-  D.block<3, 3>(0, 0) = D_pos;
-  D.block<3, 3>(3, 3) = D_rot;
+  D.block<3, 3>(0, 0).diagonal() = admittance_state.damping.block<3, 1>(0, 0);
+  D.block<3, 3>(3, 3).diagonal() = admittance_state.damping.block<3, 1>(3, 0);
+
+  // The same for mass
+  Eigen::Matrix<double, 6, 6> M_inv = Eigen::Matrix<double, 6, 6>::Zero();
+  M_inv.block<3, 3>(0, 0).diagonal() = admittance_state.mass_inv.block<3, 1>(0, 0);
+  M_inv.block<3, 3>(3, 3).diagonal() = admittance_state.mass_inv.block<3, 1>(3, 0);
 
   // calculate admittance relative offset in base frame
   Eigen::Isometry3d desired_trans_base_ft;
@@ -280,16 +265,15 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   auto F_base = admittance_state.wrench_base;
 
   // zero out any forces in the control frame
-  Eigen::Matrix<double, 6, 1> F_control;
-  F_control.block<3, 1>(0, 0) = rot_base_control.transpose() * F_base.block<3, 1>(0, 0);
-  F_control.block<3, 1>(3, 0) = rot_base_control.transpose() * F_base.block<3, 1>(3, 0);
+  Eigen::Matrix<double, 6, 1> F_control = rot_base_control_6d.transpose() * F_base;
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
-  F_base.block<3, 1>(0, 0) = rot_base_control * F_control.block<3, 1>(0, 0);
-  F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
-  // Compute admittance control law in the base frame: F = M*x_ddot + D*x_dot + K*x
-  Eigen::Matrix<double, 6, 1> X_ddot =
-    admittance_state.mass_inv.cwiseProduct(F_base - D * X_dot - K * X);
+  // Compute admittance control law in the base frame:
+  // F_control = M*R^T*x_ddot + D*R^T*x_dot + K*R^T*x,
+  // with R being the rotation matrix from base to control frame
+  Eigen::Matrix<double, 6, 1> X_ddot = rot_base_control_6d * M_inv *
+                                       (F_control - D * rot_base_control_6d.transpose() * X_dot -
+                                        K * rot_base_control_6d.transpose() * X);
   bool success = kinematics_->convert_cartesian_deltas_to_joint_deltas(
     admittance_state.current_joint_pos, X_ddot, admittance_state.ft_sensor_frame,
     admittance_state.joint_acc);
@@ -392,19 +376,18 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
     admittance_state_.admittance_acceleration[5];
 
   state_message_.admittance_position = tf2::eigenToTransform(admittance_state_.admittance_position);
+  state_message_.admittance_position.header.frame_id = parameters_.kinematics.base;
+  state_message_.admittance_position.child_frame_id = "admittance_offset";
 
-  state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
-  state_message_.ref_trans_base_ft.header.frame_id = "ft_reference";
   state_message_.ref_trans_base_ft = tf2::eigenToTransform(admittance_state_.ref_trans_base_ft);
+  state_message_.ref_trans_base_ft.header.frame_id = parameters_.kinematics.base;
+  state_message_.ref_trans_base_ft.child_frame_id = parameters_.ft_sensor.frame.id;
 
   Eigen::Quaterniond quat(admittance_state_.rot_base_control);
   state_message_.rot_base_control.w = quat.w();
   state_message_.rot_base_control.x = quat.x();
   state_message_.rot_base_control.y = quat.y();
   state_message_.rot_base_control.z = quat.z();
-
-  state_message_.ft_sensor_frame.data =
-    admittance_state_.ft_sensor_frame;  // TODO(anyone) remove dynamic allocation here
 
   return state_message_;
 }

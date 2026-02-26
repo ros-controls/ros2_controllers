@@ -1,0 +1,9 @@
+<library path="omni_wheel_drive_controller">
+  <class name="omni_wheel_drive_controller/OmniWheelDriveController"
+    type="omni_wheel_drive_controller::OmniWheelDriveController"
+    base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      A chainable controller for mobile robots with omnidirectional drive with three or more omni wheels.
+    </description>
+  </class>
+</library>

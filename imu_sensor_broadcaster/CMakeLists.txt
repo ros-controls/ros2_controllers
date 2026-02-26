@@ -7,6 +7,7 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
+  Eigen3
   generate_parameter_library
   hardware_interface
   pluginlib
@@ -35,9 +36,15 @@ target_include_directories(imu_sensor_broadcaster PUBLIC
   $<INSTALL_INTERFACE:include/imu_sensor_broadcaster>
 )
 target_link_libraries(imu_sensor_broadcaster PUBLIC
-  imu_sensor_broadcaster_parameters
-)
-ament_target_dependencies(imu_sensor_broadcaster PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
+                      imu_sensor_broadcaster_parameters
+                      controller_interface::controller_interface
+                      Eigen3::Eigen
+                      hardware_interface::hardware_interface
+                      pluginlib::pluginlib
+                      rclcpp::rclcpp
+                      rclcpp_lifecycle::rclcpp_lifecycle
+                      realtime_tools::realtime_tools
+                      ${sensor_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface imu_sensor_broadcaster.xml)
@@ -53,11 +60,8 @@ if(BUILD_TESTING)
   target_include_directories(test_load_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_load_imu_sensor_broadcaster
     imu_sensor_broadcaster
-  )
-  ament_target_dependencies(test_load_imu_sensor_broadcaster
-    controller_manager
-    hardware_interface
-    ros2_control_test_assets
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
   )
 
   add_rostest_with_parameters_gmock(test_imu_sensor_broadcaster
@@ -66,9 +70,17 @@ if(BUILD_TESTING)
   target_include_directories(test_imu_sensor_broadcaster PRIVATE include)
   target_link_libraries(test_imu_sensor_broadcaster
     imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
   )
-  ament_target_dependencies(test_imu_sensor_broadcaster
-    hardware_interface
+
+  find_package(tf2 REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
+  ament_add_gmock(test_imu_transform test/test_imu_transform.cpp)
+  target_link_libraries(test_imu_transform
+    imu_sensor_broadcaster
+    tf2::tf2
+    tf2_geometry_msgs::tf2_geometry_msgs
   )
 endif()
 

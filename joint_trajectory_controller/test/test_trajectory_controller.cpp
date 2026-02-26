@@ -86,7 +86,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 
   compare_joints(joint_names_, command_joint_names);
@@ -102,7 +102,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
 }
 
@@ -116,7 +116,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->get_node()->configure();
+  const auto state = traj_controller_->configure();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
 }
 
@@ -163,10 +163,9 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
   traj_controller_->update(
     rclcpp::Time(static_cast<uint64_t>(0.5 * 1e9)), rclcpp::Duration::from_seconds(0.5));
 
-  auto state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  DeactivateTrajectoryController();
 
-  state = traj_controller_->get_node()->cleanup();
+  auto state = traj_controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   executor.cancel();
@@ -237,8 +236,7 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   // deactivate
   std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
-  state = traj_controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  DeactivateTrajectoryController();
 
   // it should be holding the current point
   expectHoldingPointDeactivated(deactivated_positions);
@@ -462,6 +460,33 @@ TEST_P(TrajectoryControllerTestParameterized, state_topic_consistency_command_jo
   }
 }
 
+TEST_F(TrajectoryControllerTest, time_from_start_populated)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {});
+  subscribeToState(executor);
+
+  // schedule a single waypoint at 100ms:
+  builtin_interfaces::msg::Duration tfs;
+  tfs.sec = 0;
+  tfs.nanosec = 100000000u;
+  publish(tfs, {INITIAL_POS_JOINTS}, rclcpp::Time(0));
+  traj_controller_->wait_for_trajectory(executor);
+
+  // update for 0.2s
+  updateController(rclcpp::Duration::from_seconds(0.2));
+  // give the publish timer one more spin
+  executor.spin_some();
+
+  auto state = getState();
+  ASSERT_TRUE(state);
+  // should be around 0.2s
+  EXPECT_EQ(state->feedback.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->feedback.time_from_start.nanosec, 200000000u, 10000000u);
+  EXPECT_EQ(state->reference.time_from_start.sec, 0u);
+  EXPECT_NEAR(state->reference.time_from_start.nanosec, 200000000u, 10000000u);
+}
+
 /**
  * @brief check if dynamic parameters are updated
  */
@@ -585,8 +610,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_tru
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
@@ -677,8 +700,6 @@ TEST_P(TrajectoryControllerTestParameterized, compute_error_angle_wraparound_fal
   size_t n_joints = joint_names_.size();
 
   // send msg
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
   // *INDENT-OFF*
   std::vector<std::vector<double>> points{
     {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
@@ -2643,8 +2664,205 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort", "position"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->get_node()->configure();
+  state = traj_controller_->configure();
   EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
+}
+
+TEST_F(TrajectoryControllerTest, setting_scaling_factor_works_correctly)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {};
+  SetUpAndActivateTrajectoryController(executor, params);
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.765);
+
+  // 0.0 should work as an edge case
+  msg.factor = 0.0;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.0);
+
+  // Sending a negative value will be ignored
+  msg.factor = 0.45;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  msg.factor = -0.12;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+  updateController();
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.45);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_factor_from_param)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, initial_factor);
+}
+
+TEST_F(
+  TrajectoryControllerTest, wrong_scaling_state_interface_parameter_controller_fails_activation)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "idontexist"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+}
+
+TEST_F(
+  TrajectoryControllerTest, wrong_scaling_command_interface_parameter_controller_fails_activation)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.command_interface", "idontexist"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, speed_scaling_factor_);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  state = getState();
+  // Since we have a speed scaling state interface active, the value set via topic will be
+  // overwritten from the state interface.
+  EXPECT_EQ(state->speed_scaling_factor, speed_scaling_factor_);
+}
+
+TEST_F(TrajectoryControllerTest, scaling_command_interface_sets_value)
+{
+  double initial_factor = 0.123;
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", initial_factor),
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling.command_interface", "speed_scaling/target_speed_fraction_cmd"),
+  };
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  // Create a QoS profile that matches the controller's speed_scaling subscriber
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+  auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
+    controller_name_ + "/speed_scaling_input", qos);
+  subscribeToState(executor);
+  updateController();
+  // Spin to receive latest state
+  executor.spin_some();
+  auto state = getState();
+  // The initial value should be written to the hardware
+  EXPECT_EQ(state->speed_scaling_factor, initial_factor);
+
+  control_msgs::msg::SpeedScalingFactor msg;
+  msg.factor = 0.765;
+  speed_scaling_pub->publish(msg);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Value will be set during the first update and read in the second update
+  updateController();
+  updateController();
+
+  // Spin to receive latest state
+  executor.spin_some();
+  state = getState();
+  EXPECT_EQ(state->speed_scaling_factor, 0.765);
+}
+
+TEST_F(TrajectoryControllerTest, activate_with_scaling_interfaces)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("speed_scaling.state_interface", "speed_scaling/speed_scaling_factor"),
+    rclcpp::Parameter("speed_scaling.command_interface", "speed_scaling/target_speed_fraction_cmd"),
+  };
+  SetUpTrajectoryController(executor, params);
+
+  auto state = traj_controller_->configure();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+
+  auto cmd_if_conf = traj_controller_->command_interface_configuration();
+  ASSERT_EQ(cmd_if_conf.names.size(), joint_names_.size() * command_interface_types_.size() + 1);
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  auto state_if_conf = traj_controller_->state_interface_configuration();
+  ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size() + 1);
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  state = ActivateTrajectoryController();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
+
+  executor.cancel();
 }

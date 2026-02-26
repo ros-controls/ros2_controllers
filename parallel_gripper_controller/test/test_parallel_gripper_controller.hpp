@@ -54,12 +54,15 @@ protected:
   std::vector<double> joint_states_ = {1.1, 2.1};
   std::vector<double> joint_commands_ = {3.1};
 
-  hardware_interface::StateInterface joint_1_pos_state_{
-    joint_name_, hardware_interface::HW_IF_POSITION, &joint_states_[0]};
-  hardware_interface::StateInterface joint_1_vel_state_{
-    joint_name_, hardware_interface::HW_IF_VELOCITY, &joint_states_[1]};
-  hardware_interface::CommandInterface joint_1_cmd_{
-    joint_name_, hardware_interface::HW_IF_POSITION, &joint_commands_[0]};
+  hardware_interface::StateInterface::SharedPtr joint_1_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_name_, hardware_interface::HW_IF_POSITION, &joint_states_[0]);
+  hardware_interface::StateInterface::SharedPtr joint_1_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_name_, hardware_interface::HW_IF_VELOCITY, &joint_states_[1]);
+  hardware_interface::CommandInterface::SharedPtr joint_1_cmd_ =
+    std::make_shared<hardware_interface::CommandInterface>(
+      joint_name_, hardware_interface::HW_IF_POSITION, &joint_commands_[0]);
 };
 
 }  // anonymous namespace

@@ -1,20 +1,18 @@
 ackermann_steering_controller:
-  front_wheel_track:
+
+  steering_track_width:
     {
       type: double,
       default_value: 0.0,
-      description: "Front wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      description: "(Optional) Steering wheel track length. If not set, 'traction_track_width' will be used.",
       read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
     }
 
-  rear_wheel_track:
+  traction_track_width:
     {
       type: double,
       default_value: 0.0,
-      description: "Rear wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
+      description: "Traction wheel track length. For details see: https://en.wikipedia.org/wiki/Wheelbase",
       read_only: false,
       validation: {
         gt<>: [0.0]
@@ -32,22 +30,11 @@ ackermann_steering_controller:
       }
     }
 
-  front_wheels_radius:
+  traction_wheels_radius:
     {
       type: double,
       default_value: 0.0,
-      description: "Front wheels radius.",
-      read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
-    }
-
-  rear_wheels_radius:
-    {
-      type: double,
-      default_value: 0.0,
-      description: "Rear wheels radius.",
+      description: "Traction wheels radius.",
       read_only: false,
       validation: {
         gt<>: [0.0]

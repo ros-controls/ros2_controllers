@@ -111,7 +111,7 @@ class PublisherJointTrajectory(Node):
                 self.get_logger().info(f'Goal "{name}" has definition {point}')
 
             else:
-                self.get_logger().warn(
+                self.get_logger().warning(
                     f'Goal "{name}" definition is wrong. This goal will not be used. '
                     "Use the following structure: \n<goal_name>:\n  "
                     "positions: [joint1, joint2, joint3, ...]\n  "
@@ -150,11 +150,11 @@ class PublisherJointTrajectory(Node):
             self.i %= len(self.goals)
 
         elif self.check_starting_point and not self.joint_state_msg_received:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 'Start configuration could not be checked! Check "joint_state" topic!'
             )
         else:
-            self.get_logger().warn("Start configuration is not within configured limits!")
+            self.get_logger().warning("Start configuration is not within configured limits!")
 
     def joint_state_callback(self, msg):
 
@@ -166,7 +166,7 @@ class PublisherJointTrajectory(Node):
                 if (msg.position[idx] < self.starting_point[enum][0]) or (
                     msg.position[idx] > self.starting_point[enum][1]
                 ):
-                    self.get_logger().warn(f"Starting point limits exceeded for joint {enum} !")
+                    self.get_logger().warning(f"Starting point limits exceeded for joint {enum} !")
                     limit_exceeded[idx] = True
 
             if any(limit_exceeded):

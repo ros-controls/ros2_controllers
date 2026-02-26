@@ -15,9 +15,10 @@
 #ifndef MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 #define MECANUM_DRIVE_CONTROLLER__ODOMETRY_HPP_
 
-#include "geometry_msgs/msg/twist.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
-#include "realtime_tools/realtime_publisher.hpp"
+#include <array>
+#include <functional>
+
+#include "rclcpp/time.hpp"
 
 #define PLANAR_POINT_DIM 3
 
@@ -79,6 +80,12 @@ public:
   /// \param wheels_radius  Wheels radius [m]
   void setWheelsParams(
     const double sum_of_robot_center_projection_on_X_Y_axis, const double wheels_radius);
+
+  /// \brief Sets the odometry to given 2D pose values
+  /// \param x position (x component) [m]
+  /// \param y position (y component) [m]
+  /// \param heading orientation (z component) [rad]
+  void setOdometry(double x, double y, double heading);
 
 private:
   /// Current timestamp:
