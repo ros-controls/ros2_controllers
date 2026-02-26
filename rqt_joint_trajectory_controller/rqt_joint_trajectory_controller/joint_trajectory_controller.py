@@ -279,6 +279,16 @@ class JointTrajectoryController(Plugin):
         # Update widget
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
+        # Auto-select a JTC if none is selected yet
+        combo = self._widget.jtc_combo
+        if not combo.currentText():
+            jtc_list = [combo.itemText(i) for i in range(combo.count())]
+            if len(jtc_list) == 1:
+                combo.setCurrentIndex(0)
+            elif len(jtc_list) > 1:
+                default_idx = combo.findText("joint_trajectory_controller")
+                combo.setCurrentIndex(default_idx if default_idx >= 0 else 0)
+
     def _update_robot_description_list(self):
         if not self._list_robot_descriptions:
             self._widget.robot_description_combo.clear()
