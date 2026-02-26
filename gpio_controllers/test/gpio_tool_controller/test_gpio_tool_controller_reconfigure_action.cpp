@@ -36,13 +36,13 @@ namespace
 // will be in IDLE state and the tool in the given hardware state.
 void prepare_for_reconfigure_request(
   IOGripperControllerFixture<TestableGpioToolController> & fx,
-  const std::vector<std::string> & possible_states,
-  const std::string & initial_hw_state = "open")
+  const std::vector<std::string> & possible_states, const std::string & initial_hw_state = "open")
 {
   fx.SetUpController(
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_states),
-     rclcpp::Parameter("configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
      rclcpp::Parameter(
        "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
   fx.setup_parameters_with_config();

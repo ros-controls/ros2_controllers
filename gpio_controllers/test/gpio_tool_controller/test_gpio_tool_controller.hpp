@@ -107,6 +107,24 @@ public:
   {
     return process_reconfigure_request(config_name);
   }
+
+  // --- State forcing helpers for CANCELING / HALTED tests ---
+
+  void force_canceling() { current_tool_action_.store(ToolAction::CANCELING); }
+
+  void force_halted() { current_tool_transition_.store(GPIOToolTransition::HALTED); }
+
+  void trigger_reset_halted() { reset_halted_.store(true); }
+
+  // --- Inspection helpers ---
+
+  const std::vector<double> & get_joint_states_values() const { return joint_states_values_; }
+
+  bool has_action_server() const { return engaging_action_server_ != nullptr; }
+  bool has_disengaged_service() const { return disengaged_service_ != nullptr; }
+  bool has_engaged_service() const { return engaged_service_ != nullptr; }
+  bool has_reconfigure_service() const { return reconfigure_tool_service_ != nullptr; }
+  bool has_reset_service() const { return reset_service_ != nullptr; }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -311,7 +329,8 @@ public:
       // Using empty prefix so that the CommandInterface stores a pointer to cmd_values_[i].
       // The handle_name will be "/name" which is only used in log messages – not for data access.
       cmd_iface_ptrs_.push_back(
-        std::make_shared<hardware_interface::CommandInterface>("", cmd_cfg.names[i], &cmd_values_[i]));
+        std::make_shared<hardware_interface::CommandInterface>(
+          "", cmd_cfg.names[i], &cmd_values_[i]));
       cmd_loaned.emplace_back(cmd_iface_ptrs_.back(), nullptr);
     }
     for (size_t i = 0; i < state_cfg.names.size(); ++i)
@@ -416,6 +435,21 @@ class GpioToolControllerRequestTest : public IOGripperControllerFixture<Testable
 };
 
 class GpioToolControllerReconfigureTest
+: public IOGripperControllerFixture<TestableGpioToolController>
+{
+};
+
+class GpioToolControllerLifecycleTest
+: public IOGripperControllerFixture<TestableGpioToolController>
+{
+};
+
+class GpioToolControllerCancelingTest
+: public IOGripperControllerFixture<TestableGpioToolController>
+{
+};
+
+class GpioToolControllerServiceModeTest
 : public IOGripperControllerFixture<TestableGpioToolController>
 {
 };

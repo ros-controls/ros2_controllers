@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef gpio_tool_controller__gpio_tool_controller_HPP_
-#define gpio_tool_controller__gpio_tool_controller_HPP_
+#ifndef GPIO_CONTROLLERS__GPIO_TOOL_CONTROLLER_HPP_
+#define GPIO_CONTROLLERS__GPIO_TOOL_CONTROLLER_HPP_
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <set>
 #include <string>
-#include <vector>
-
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
+
 #include "control_msgs/action/gpio_tool_command.hpp"
 #include "control_msgs/action/set_gpio_tool_config.hpp"
 #include "control_msgs/msg/dynamic_interface_values.hpp"
@@ -340,4 +342,4 @@ private:
 
 }  // namespace gpio_tool_controller
 
-#endif  // gpio_tool_controller__gpio_tool_controller_HPP_
+#endif  // GPIO_CONTROLLERS__GPIO_TOOL_CONTROLLER_HPP_

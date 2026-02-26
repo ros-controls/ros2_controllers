@@ -48,7 +48,8 @@ void prepare_for_reconfiguring(
   fx.SetUpController(
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_states),
-     rclcpp::Parameter("configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
      rclcpp::Parameter(
        "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
   fx.setup_parameters_with_config();
