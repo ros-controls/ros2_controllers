@@ -1324,3 +1324,68 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(NUM_JOINTS));
 }
+
+TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
+{
+  const std::string JOINT_NAME = joint_names_[0];
+  const std::string IF_NAME = "is_moving";
+  SetUpStateBroadcaster({JOINT_NAME}, {IF_NAME});
+
+  init_broadcaster_and_set_parameters("", {JOINT_NAME}, {IF_NAME});
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_moving_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  // configure and activate ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // update should not throw
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
+
+  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
+  ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, IsEmpty());
+}
+
+TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
+{
+  const std::string JOINT_NAME = joint_names_[0];
+  const std::string IF_NAME = "is_moving";
+  SetUpStateBroadcaster({JOINT_NAME}, {IF_NAME});
+
+  init_broadcaster_and_set_parameters("", {JOINT_NAME}, {IF_NAME});
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_moving_state_);
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(joint_1_eff_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  // configure and activate ok
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // update should not throw
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
+
+  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
+  ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(1))
+    << "Boolean interface should be skipped";
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));
+
+  ASSERT_THAT(
+    dynamic_joint_state_msg.interface_values[0].interface_names,
+    ElementsAreArray({HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}));
+
+  // joint states
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray({joint_names_[0]}));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.position, SizeIs(1));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(1));
+  ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(1));
+}
