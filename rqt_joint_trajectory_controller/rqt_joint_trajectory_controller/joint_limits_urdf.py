@@ -33,6 +33,8 @@ from std_msgs.msg import String
 description = ""
 robot_description_subscriber_created = False
 subscription = None
+_robot_description_topic = ""
+_spin_count = 0
 
 
 def callback(msg):
@@ -43,12 +45,13 @@ def callback(msg):
 def subscribe_to_robot_description(
     node, key="robot_description"
 ) -> rclpy.subscription.Subscription:
-    global robot_description_subscriber_created
-    global subscription
+    global robot_description_subscriber_created, subscription, _robot_description_topic, _spin_count
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
+    _robot_description_topic = key
+    _spin_count = 0
     subscription = node.create_subscription(String, key, callback, qos_profile)
     robot_description_subscriber_created = True
     return subscription
@@ -67,11 +70,17 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     use_small = use_smallest_joint_limits
     use_mimic = True
 
+    global _spin_count
+
     count = 0
     while description == "" and count < 10:
-        print("Waiting for the robot_description!")
         count += 1
+        _spin_count += 1
         rclpy.spin_once(node, timeout_sec=1.0)
+        if _spin_count % 5 == 0:
+            node.get_logger().info(
+                f'Waiting for robot description on topic "{_robot_description_topic}" ...'
+            )
 
     free_joints = {}
     dependent_joints = {}
