@@ -64,7 +64,6 @@ def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
 
 def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     if not robot_description_subscriber_created:
-        print("First select robot description topic name!")
         return {}
 
     use_small = use_smallest_joint_limits

@@ -32,6 +32,7 @@ from .double_editor import DoubleEditor
 from .joint_limits_urdf import (
     get_joint_limits,
     subscribe_to_robot_description,
+    unsubscribe_to_robot_description,
 )
 from .update_combo import update_combo
 
@@ -182,19 +183,30 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.timeout.connect(self._update_jtc_list)
         self._update_jtc_list_timer.start()
 
-        # Always subscribe to the fixed /robot_description topic
-        subscribe_to_robot_description(self._node, "/robot_description")
+        # Timer for robot description topic updates
+        self._update_robot_description_list_timer = QTimer(self)
+        self._update_robot_description_list_timer.setInterval(int(1000.0 / self._ctrlrs_update_freq))
+        self._update_robot_description_list_timer.timeout.connect(
+            self._update_robot_description_list
+        )
+        self._update_robot_description_list_timer.start()
 
         # Signal connections
         w = self._widget
         w.enable_button.toggled.connect(self._on_jtc_enabled)
         w.jtc_combo.currentIndexChanged[str].connect(self._on_jtc_change)
         w.cm_combo.currentIndexChanged[str].connect(self._on_cm_change)
+        w.robot_description_combo.currentIndexChanged[str].connect(
+            self._on_robot_description_change
+        )
 
         self._cmd_pub = None  # Controller command publisher
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
+        self._list_robot_descriptions = None
+        self._cm_wait_count = 0
+        self._jtc_wait_count = 0
 
     def _update_combo_layout(self, width):
         vertical = width < 500
@@ -207,6 +219,7 @@ class JointTrajectoryController(Plugin):
         pairs = [
             (self._widget.cm_list_label, self._widget.cm_combo),
             (self._widget.controller_list_label, self._widget.jtc_combo),
+            (self._widget.robot_description_list_label, self._widget.robot_description_combo),
         ]
         # Remove all items from the existing layout without deleting widgets
         old = container.layout()
@@ -284,6 +297,13 @@ class JointTrajectoryController(Plugin):
                 default_idx = combo.findText("/controller_manager")
                 combo.setCurrentIndex(default_idx if default_idx >= 0 else 0)
 
+        if not combo.currentText():
+            self._cm_wait_count += 1
+            if self._cm_wait_count % 5 == 0:
+                self._node.get_logger().info("Waiting for controller manager...")
+        else:
+            self._cm_wait_count = 0
+
     def _update_jtc_list(self):
         # Clear controller list if no controller information is available
         if not self._list_controllers:
@@ -321,6 +341,40 @@ class JointTrajectoryController(Plugin):
             elif len(jtc_list) > 1:
                 default_idx = combo.findText("joint_trajectory_controller")
                 combo.setCurrentIndex(default_idx if default_idx >= 0 else 0)
+
+        if not combo.currentText():
+            self._jtc_wait_count += 1
+            if self._jtc_wait_count % 5 == 0:
+                self._node.get_logger().info(
+                    "Waiting for a joint trajectory controller with 'JointTrajectoryController' in the type..."
+                )
+        else:
+            self._jtc_wait_count = 0
+
+    def _update_robot_description_list(self):
+        if not self._list_robot_descriptions:
+            self._widget.robot_description_combo.clear()
+        self._list_robot_descriptions = []
+
+        topics_with_types = self._node.get_topic_names_and_types()
+        for topic_with_type in topics_with_types:
+            if "std_msgs/msg/String" in topic_with_type[1]:
+                self._list_robot_descriptions.append(topic_with_type[0])
+
+        update_combo(self._widget.robot_description_combo, sorted(self._list_robot_descriptions))
+
+        # Auto-select /robot_description the first time the topic becomes available.
+        combo = self._widget.robot_description_combo
+        if not combo.currentText():
+            default_idx = combo.findText("/robot_description")
+            if default_idx >= 0:
+                combo.setCurrentIndex(default_idx)
+
+    def _on_robot_description_change(self, robot_description):
+        unsubscribe_to_robot_description(self._node)
+        subscribe_to_robot_description(self._node, robot_description)
+        self._widget.jtc_combo.clear()
+        self._update_jtc_list()
 
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
