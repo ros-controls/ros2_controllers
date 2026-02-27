@@ -33,12 +33,12 @@ battery_state_broadcaster:
       battery_power_supply_status: {
         type: bool,
         default_value: false,
-        description: "Whether to read power supply status (e.g., Charging, Full) from this joint's state interface. If unmeasured, status is set to unknown."
+        description: "Whether to read power supply status (e.g., Charging, Full, see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg) from this joint's state interface. If unmeasured, status is set to unknown."
       }
       battery_power_supply_health: {
         type: bool,
         default_value: false,
-        description: "Whether to read power supply health (e.g., Good, Overheat) from this joint's state interface. If unmeasured, health is set to unknown."
+        description: "Whether to read power supply health (e.g., Good, Overheat, see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg) from this joint's state interface. If unmeasured, health is set to unknown."
       }
       battery_present: {
         type: bool,
@@ -73,7 +73,7 @@ battery_state_broadcaster:
     power_supply_technology: {
       type: int,
       default_value: 0,
-      description: "Battery chemistry type as an enum. If unmeasured, the technology is set to unknown.",
+      description: "Battery chemistry type as an enum (see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg). If unmeasured, the technology is set to unknown.",
       read_only: true,
       validation: {
         bounds<>: [0, 8]
@@ -106,7 +106,7 @@ battery_state_broadcaster:
   power_supply_technology: {
     type: int,
     default_value: 0,
-    description: "Battery chemistry type as an enum for the sensor_name mode. If unmeasured, the technology is set to unknown.",
+    description: "Battery chemistry type as an enum for the sensor_name mode (see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg). If unmeasured, the technology is set to unknown.",
     read_only: true,
     validation: {
       bounds<>: [0, 8]
