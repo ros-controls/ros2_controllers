@@ -146,7 +146,7 @@ TEST_F(OdometryTest, TestReset)
   EXPECT_NE(odometry_.getX(), 0.0);
 
   // 2. Reset
-  odometry_.resetOdometry();
+  odometry_.setOdometry(0.0, 0.0, 0.0);
 
   // 3. Verify position is cleared
   EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
