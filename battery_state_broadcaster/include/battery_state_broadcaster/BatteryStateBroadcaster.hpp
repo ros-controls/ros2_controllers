@@ -1,35 +1,23 @@
-#pragma once
+// Copyright (c) 2025, b-robotized Group
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include <controller_interface/controller_interface.hpp>
-#include <rclcpp/publisher.hpp>
-#include <realtime_tools/realtime_publisher.hpp>
-#include <sensor_msgs/msg/battery_state.hpp>
+#ifndef BATTERY_STATE_BROADCASTER__BATTERYSTATEBROADCASTER_HPP_
+#define BATTERY_STATE_BROADCASTER__BATTERYSTATEBROADCASTER_HPP_
 
-#include "BatterySensor.hpp"
+#pragma message( \
+  "BatteryStateBroadcaster.hpp is deprecated, please use battery_state_broadcaster.hpp instead.")
 
-namespace battery_state_broadcaster
-{
-class BatteryStateBroadcaster : public controller_interface::ControllerInterface
-{
-public:
-  [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+#include "battery_state_broadcaster/battery_state_broadcaster.hpp"
 
-  [[nodiscard]] controller_interface::InterfaceConfiguration state_interface_configuration() const override;
-
-  controller_interface::CallbackReturn on_init() override;
-
-  controller_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-
-  controller_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-
-  controller_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
-
-  controller_interface::return_type update(const rclcpp::Time& time, const rclcpp::Duration& period) override;
-
-private:
-  rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_state_pub_;
-  std::unique_ptr<BatterySensor> battery_sensor_;
-  std::unique_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>> realtime_publisher_;
-  sensor_msgs::msg::BatteryState msg_;
-};
-}  // namespace battery_state_broadcaster
+#endif  // BATTERY_STATE_BROADCASTER__BATTERYSTATEBROADCASTER_HPP_
