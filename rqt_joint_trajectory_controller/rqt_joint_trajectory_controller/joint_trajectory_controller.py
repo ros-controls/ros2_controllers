@@ -22,7 +22,7 @@ from ament_index_python.packages import get_package_share_directory
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import QTimer, Signal
-from python_qt_binding.QtWidgets import QWidget, QFormLayout, QGridLayout
+from python_qt_binding.QtWidgets import QWidget, QFormLayout, QGridLayout, QSizePolicy
 
 from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -209,7 +209,7 @@ class JointTrajectoryController(Plugin):
         self._jtc_wait_count = 0
 
     def _update_combo_layout(self, width):
-        vertical = width < 500
+        vertical = width < 600
         if vertical != self._combo_vertical:
             self._combo_vertical = vertical
             self._setup_combo_layout(vertical)
@@ -231,7 +231,9 @@ class JointTrajectoryController(Plugin):
         if vertical:
             layout = QFormLayout()
             layout.setContentsMargins(0, 0, 0, 0)
+            layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
             for label, combo in pairs:
+                combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
                 layout.addRow(label, combo)
         else:
             layout = QGridLayout()

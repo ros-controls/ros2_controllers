@@ -37,7 +37,14 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QComboBox" name="cm_combo"/>
+          <widget class="QComboBox" name="cm_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
          </item>
          <item row="0" column="1">
           <widget class="QLabel" name="controller_list_label">
@@ -50,7 +57,14 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QComboBox" name="jtc_combo"/>
+          <widget class="QComboBox" name="jtc_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
          </item>
          <item row="0" column="2">
           <widget class="QLabel" name="robot_description_list_label">
@@ -63,7 +77,14 @@
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QComboBox" name="robot_description_combo"/>
+          <widget class="QComboBox" name="robot_description_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
