@@ -115,7 +115,7 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                                 )
                             free_joints[name] = {
                                 "min_position": -2 * pi,
-                                "max_position":  2 * pi,
+                                "max_position": 2 * pi,
                                 "has_position_limits": False,
                                 "max_velocity": 1.0,
                             }
@@ -134,7 +134,7 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                         )
                         free_joints[name] = {
                             "min_position": -2 * pi,
-                            "max_position":  2 * pi,
+                            "max_position": 2 * pi,
                             "has_position_limits": False,
                             "max_velocity": 1.0,
                         }

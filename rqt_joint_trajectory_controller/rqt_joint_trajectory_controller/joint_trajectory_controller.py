@@ -125,9 +125,11 @@ class JointTrajectoryController(Plugin):
         self._combo_vertical = None  # None = not yet set
         self._update_combo_layout(self._widget.width())
         _orig_resize = self._widget.resizeEvent
+
         def _resize_event(event, _orig=_orig_resize):
             _orig(event)
             self._update_combo_layout(event.size().width())
+
         self._widget.resizeEvent = _resize_event
 
         # Setup speed scaler
@@ -185,7 +187,9 @@ class JointTrajectoryController(Plugin):
 
         # Timer for robot description topic updates
         self._update_robot_description_list_timer = QTimer(self)
-        self._update_robot_description_list_timer.setInterval(int(1000.0 / self._ctrlrs_update_freq))
+        self._update_robot_description_list_timer.setInterval(
+            int(1000.0 / self._ctrlrs_update_freq)
+        )
         self._update_robot_description_list_timer.timeout.connect(
             self._update_robot_description_list
         )
