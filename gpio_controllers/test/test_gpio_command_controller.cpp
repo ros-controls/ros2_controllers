@@ -372,7 +372,7 @@ TEST_F(
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  ASSERT_FALSE(activate_succeeds(controller_));
+  ASSERT_THROW(activate_succeeds(controller_), std::runtime_error);
 }
 
 TEST_F(
@@ -402,7 +402,7 @@ TEST_F(
 
   controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
 
-  ASSERT_FALSE(activate_succeeds(controller_));
+  ASSERT_THROW(activate_succeeds(controller_), std::runtime_error);
 }
 
 TEST_F(
