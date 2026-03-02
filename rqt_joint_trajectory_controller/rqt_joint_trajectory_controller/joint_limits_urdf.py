@@ -107,9 +107,19 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                             minval = -pi
                             maxval = pi
                         else:
-                            raise Exception(
-                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
-                            )
+                            if name in joints_names:
+                                node.get_logger().warn(
+                                    f"Joint '{name}' of type '{jtype}' has missing/empty "
+                                    f"lower/upper position limits in the robot_description. "
+                                    f"Slider will be displayed but disabled."
+                                )
+                            free_joints[name] = {
+                                "min_position": -2 * pi,
+                                "max_position":  2 * pi,
+                                "has_position_limits": False,
+                                "max_velocity": 1.0,
+                            }
+                            continue
                     try:
                         maxvel = float(limit.getAttribute("velocity"))
                     except ValueError:
