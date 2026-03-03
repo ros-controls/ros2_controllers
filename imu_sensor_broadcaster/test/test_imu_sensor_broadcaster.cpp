@@ -16,8 +16,11 @@
  * Authors: Subhas Das, Denis Stogl, Victor Lopez
  */
 
+#define _USE_MATH_DEFINES
+
 #include "test_imu_sensor_broadcaster.hpp"
 
+#include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
