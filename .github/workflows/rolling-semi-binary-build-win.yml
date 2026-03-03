@@ -29,4 +29,3 @@ jobs:
       ros_distro: rolling
       pixi_dependencies: typeguard jinja2 boost compilers octomap
       ninja_packages: rsl
-      target_cmake_args: -DBUILD_TESTING=OFF
