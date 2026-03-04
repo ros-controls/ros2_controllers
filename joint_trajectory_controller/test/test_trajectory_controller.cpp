@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
 
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <future>
 #include <limits>
 #include <memory>

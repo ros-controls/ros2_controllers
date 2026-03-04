@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <cmath>
 #include <memory>
 
 #include "angles/angles.h"
