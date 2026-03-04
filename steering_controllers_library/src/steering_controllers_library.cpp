@@ -14,6 +14,7 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -34,7 +35,8 @@ using ControllerTwistReferenceMsg =
 void reset_controller_reference_msg(
   ControllerTwistReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  (void)node;
+  msg.header.stamp = rclcpp::Time(0);
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
@@ -727,9 +729,27 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
-
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
+
+  // store current ref (for open loop odometry) and update odometry
+  if (std::isfinite(reference_interfaces_[0]))
+  {
+    last_linear_velocity_ = reference_interfaces_[0];
+  }
+  else
+  {
+    last_linear_velocity_ = 0.0;
+  }
+  if (std::isfinite(reference_interfaces_[1]))
+  {
+    last_angular_velocity_ = reference_interfaces_[1];
+  }
+  else
+  {
+    last_angular_velocity_ = 0.0;
+  }
+  update_odometry(period);
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
   reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();

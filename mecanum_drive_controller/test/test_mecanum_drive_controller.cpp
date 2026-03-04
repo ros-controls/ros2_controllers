@@ -440,7 +440,7 @@ TEST_F(
   controller_->wait_for_commands(executor);
   reference = controller_->input_ref_.get();
 
-  ASSERT_EQ(old_timestamp.sec, reference.header.stamp.sec);
+  EXPECT_GT(reference.header.stamp.sec, old_timestamp.sec);
   EXPECT_FALSE(std::isnan(reference.twist.linear.x));
   EXPECT_FALSE(std::isnan(reference.twist.angular.z));
   EXPECT_EQ(reference.twist.linear.x, 1.5);

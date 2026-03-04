@@ -36,7 +36,8 @@ using ControllerReferenceMsg =
 void reset_controller_reference_msg(
   ControllerReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  (void)node;
+  msg.header.stamp = rclcpp::Time(0);
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
