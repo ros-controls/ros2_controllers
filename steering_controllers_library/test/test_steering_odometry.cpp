@@ -15,6 +15,7 @@
 #define _USE_MATH_DEFINES
 
 #include <gmock/gmock.h>
+#include <cmath>
 
 #include "steering_controllers_library/steering_kinematics.hpp"
 
