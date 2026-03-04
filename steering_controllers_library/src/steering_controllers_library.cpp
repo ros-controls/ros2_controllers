@@ -14,6 +14,7 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -34,7 +35,7 @@ using ControllerTwistReferenceMsg =
 void reset_controller_reference_msg(
   ControllerTwistReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0, 0, node->get_clock()->get_clock_type());
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
@@ -733,7 +734,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
-
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
 

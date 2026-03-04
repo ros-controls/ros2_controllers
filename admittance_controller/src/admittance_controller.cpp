@@ -41,7 +41,7 @@ void reset_wrench_msg(
   geometry_msgs::msg::WrenchStamped & msg,
   const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0, 0, node->get_clock()->get_clock_type());
   msg.wrench = geometry_msgs::msg::Wrench();
 }
 
