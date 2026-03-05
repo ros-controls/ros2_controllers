@@ -15,7 +15,10 @@
 // adapted from
 // https://github.com/ros-perception/imu_pipeline/blob/jazzy/imu_transformer/test/test_imu_transforms.cpp
 
+#define _USE_MATH_DEFINES
+
 #include <array>
+#include <cmath>
 
 #include "Eigen/Dense"
 #include "gmock/gmock.h"
