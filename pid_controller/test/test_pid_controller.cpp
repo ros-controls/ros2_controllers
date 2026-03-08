@@ -145,7 +145,7 @@ TEST_F(PidControllerTest, activate_success)
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isfinite(interface));
   }
 }
 
@@ -176,15 +176,15 @@ TEST_F(PidControllerTest, reactivate_success)
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isnan(controller_->reference_interfaces_[0]));
+  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
 
@@ -211,7 +211,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isfinite(interface));
   }
 
   controller_->set_reference(dof_command_values_);
@@ -220,7 +220,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   {
     EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
     EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
 
   ASSERT_EQ(
@@ -389,7 +389,7 @@ TEST_F(PidControllerTest, subscribe_and_get_messages_success)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
-    EXPECT_TRUE(std::isnan(msg.dof_states[i].reference));
+    EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
     ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
   }
 }
@@ -414,13 +414,13 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   for (size_t i = 0; i < dof_names_.size(); ++i)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
-    EXPECT_TRUE(std::isnan(msg.dof_states[i].reference));
+    EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
     ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
   }
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
 
   publish_commands();
@@ -428,7 +428,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
 
   for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
 
   ASSERT_EQ(
