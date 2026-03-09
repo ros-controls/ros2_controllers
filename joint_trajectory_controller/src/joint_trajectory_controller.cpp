@@ -148,7 +148,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       // find the joint with the largest max time to stop
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
-        stop_time_[i] = std::abs(max_joint_vel[i]) / max_decel_[i];
+        stop_time_[i] = max_joint_vel[i] / max_decel_[i];
         max_t_stop = std::max(max_t_stop, stop_time_[i]);
       }
       // Number of points at multiples of sample_period (include initial point at t=0)
@@ -1027,6 +1027,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "'effort' command interface can only be used alone or with 'position' command interface "
       "if 'velocity' and 'position' state interfaces are present");
     return CallbackReturn::FAILURE;
+  }
+
+  // velocity state interface is required to calculate ramped stop trajectories
+  if (decelerate_on_cancel_ && !has_velocity_state_interface_)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Decelerate on cancel is enabled but hardware does not support velocity state interface. "
+      "Falling back to hold position on cancel.");
+    decelerate_on_cancel_ = false;
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
@@ -1917,15 +1927,6 @@ JointTrajectoryController::set_hold_position()
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::decelerate_to_hold_position()
 {
-  // if we don't know the velocity of the joints we can't calculate a ramped stop trajectory
-  if (!has_velocity_state_interface_)
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Hardware does not support velocity state interface. Falling back to hold position on "
-      "cancel.");
-    return set_hold_position();
-  }
   double max_t_stop = 0.0;
   const auto & p0 = state_current_.positions;
   const auto & v0 = state_current_.velocities;
