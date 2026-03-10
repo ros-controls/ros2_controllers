@@ -418,35 +418,38 @@ controller_interface::CallbackReturn PidController::on_activate(
   reference_interfaces_.assign(
     reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
 
-  if (params_.use_external_measured_states)
+  if (params_.set_current_state_as_first_setpoint)
   {
-    auto measured_state_opt = measured_state_.try_get();
-    if (measured_state_opt.has_value())
+    if (params_.use_external_measured_states)
     {
-      const auto & state = measured_state_opt.value();
-      for (size_t i = 0; i < dof_; ++i)
+      auto measured_state_opt = measured_state_.try_get();
+      if (measured_state_opt.has_value())
       {
-        if (i < state.values.size() && !std::isnan(state.values[i]))
+        const auto & state = measured_state_opt.value();
+        for (size_t i = 0; i < dof_; ++i)
         {
-          reference_interfaces_[i] = state.values[i];
-        }
-        if (
-          reference_interfaces_.size() == 2 * dof_ && i < state.values_dot.size() &&
-          !std::isnan(state.values_dot[i]))
-        {
-          reference_interfaces_[dof_ + i] = state.values_dot[i];
+          if (i < state.values.size() && !std::isnan(state.values[i]))
+          {
+            reference_interfaces_[i] = state.values[i];
+          }
+          if (
+            reference_interfaces_.size() == 2 * dof_ && i < state.values_dot.size() &&
+            !std::isnan(state.values_dot[i]))
+          {
+            reference_interfaces_[dof_ + i] = state.values_dot[i];
+          }
         }
       }
     }
-  }
-  else
-  {
-    for (size_t i = 0; i < measured_state_values_.size(); ++i)
+    else
     {
-      const auto state_interface_value_op = state_interfaces_[i].get_optional();
-      if (state_interface_value_op.has_value())
+      for (size_t i = 0; i < measured_state_values_.size(); ++i)
       {
-        reference_interfaces_[i] = state_interface_value_op.value();
+        const auto state_interface_value_op = state_interfaces_[i].get_optional();
+        if (state_interface_value_op.has_value())
+        {
+          reference_interfaces_[i] = state_interface_value_op.value();
+        }
       }
     }
   }

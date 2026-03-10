@@ -142,10 +142,12 @@ TEST_F(PidControllerTest, activate_success)
     EXPECT_TRUE(std::isnan(cmd));
   }
 
+  // With set_current_state_as_first_setpoint=true (default), reference interfaces are initialized
+  // to the current state values on activation
   EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   {
-    EXPECT_TRUE(std::isfinite(interface));
+    EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
   }
 }
 
@@ -175,16 +177,18 @@ TEST_F(PidControllerTest, reactivate_success)
   SetUpController();
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  // With set_current_state_as_first_setpoint=true (default), reference interfaces are set to
+  // current state values (dof_state_values_[0] = 1.1) on each activation
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
+  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
+  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_TRUE(std::isfinite(controller_->reference_interfaces_[0]));
+  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
 
@@ -688,6 +692,49 @@ TEST_F(PidControllerTest, test_save_i_term_on)
     controller_interface::return_type::OK);
   actual_value = std::round(controller_->command_interfaces_[0].get_optional().value() * 1e5) / 1e5;
   EXPECT_NEAR(actual_value, 2.00002, 1e-5);  // i_term from above
+}
+
+/**
+ * @brief Test that reference interfaces are initialized to current state on activation when
+ * set_current_state_as_first_setpoint is true (default).
+ */
+TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_true)
+{
+  SetUpController();  // uses test_pid_controller: set_current_state_as_first_setpoint defaults to
+                      // true
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->params_.set_current_state_as_first_setpoint);
+
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // reference interfaces must be initialized to the current state values (dof_state_values_)
+  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  {
+    EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
+  }
+}
+
+/**
+ * @brief Test that reference interfaces remain NaN on activation when
+ * set_current_state_as_first_setpoint is false.
+ */
+TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_false)
+{
+  SetUpController("test_pid_controller_no_first_setpoint");
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->params_.set_current_state_as_first_setpoint);
+
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // reference interfaces must remain NaN since set_current_state_as_first_setpoint is false
+  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
 }
 
 int main(int argc, char ** argv)
