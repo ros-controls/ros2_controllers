@@ -32,7 +32,6 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>realtime_tools</depend>
   <depend>rsl</depend>
-  <depend>tl_expected</depend>
   <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
 
