@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Consistently add <cmath> include with define for windows (backport `#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_) (`#2194 <https://github.com/ros-controls/ros2_controllers/issues/2194>`_)
+* Contributors: mergify[bot]
+
 2.52.0 (2025-12-31)
 -------------------
 * Fill point_before_trajectory with same information as trajectory (backport `#2043 <https://github.com/ros-controls/ros2_controllers/issues/2043>`_) (`#2049 <https://github.com/ros-controls/ros2_controllers/issues/2049>`_)

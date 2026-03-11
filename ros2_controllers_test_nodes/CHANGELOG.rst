@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump version of pre-commit hooks (backport `#2140 <https://github.com/ros-controls/ros2_controllers/issues/2140>`_) (`#2141 <https://github.com/ros-controls/ros2_controllers/issues/2141>`_)
+* Contributors: mergify[bot]
+
 2.52.0 (2025-12-31)
 -------------------
 
