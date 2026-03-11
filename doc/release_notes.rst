@@ -44,6 +44,9 @@ joint_trajectory_controller
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 
+pid_controller
+**************
+* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
 
 steering_controllers_library
 *****************************
