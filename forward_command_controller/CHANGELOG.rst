@@ -2,6 +2,11 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump version of pre-commit hooks (backport `#2188 <https://github.com/ros-controls/ros2_controllers/issues/2188>`_) (`#2191 <https://github.com/ros-controls/ros2_controllers/issues/2191>`_)
+* Contributors: mergify[bot]
+
 5.13.0 (2026-02-03)
 -------------------
 

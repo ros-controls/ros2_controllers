@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(gpio_controllers): resolve build failure (backport `#2128 <https://github.com/ros-controls/ros2_controllers/issues/2128>`_) (`#2171 <https://github.com/ros-controls/ros2_controllers/issues/2171>`_)
+* Contributors: mergify[bot]
+
 5.13.0 (2026-02-03)
 -------------------
 

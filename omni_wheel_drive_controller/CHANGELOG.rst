@@ -2,6 +2,11 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix the teardown of the controller tests (backport `#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_) (`#2186 <https://github.com/ros-controls/ros2_controllers/issues/2186>`_)
+* Contributors: mergify[bot]
+
 5.13.0 (2026-02-03)
 -------------------
 
