@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.13.1 (2026-03-12)
+-------------------
 * Consistently add <cmath> include with define for windows (backport `#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_) (`#2196 <https://github.com/ros-controls/ros2_controllers/issues/2196>`_)
 * Contributors: mergify[bot]
 
