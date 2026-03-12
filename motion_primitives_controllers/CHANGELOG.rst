@@ -2,6 +2,9 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.3.0 (2026-02-03)
 ------------------
 

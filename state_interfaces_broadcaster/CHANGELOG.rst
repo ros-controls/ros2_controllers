@@ -2,6 +2,9 @@
 Changelog for package state_interfaces_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.3.0 (2026-02-03)
 ------------------
 

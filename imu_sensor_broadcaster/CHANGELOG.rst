@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
+* Contributors: Christoph Fröhlich
+
 6.3.0 (2026-02-03)
 ------------------
 

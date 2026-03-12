@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(gpio_controllers): resolve build failure (`#2128 <https://github.com/ros-controls/ros2_controllers/issues/2128>`_)
+* Contributors: Ishan Pathak
+
 6.3.0 (2026-02-03)
 ------------------
 

@@ -2,6 +2,12 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix the teardown of the controller tests (`#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_)
+* Add set_odometry service - omni wheel drive controller (`#2148 <https://github.com/ros-controls/ros2_controllers/issues/2148>`_)
+* Contributors: Ege Kural, Sai Kishor Kothakota
+
 6.3.0 (2026-02-03)
 ------------------
 
