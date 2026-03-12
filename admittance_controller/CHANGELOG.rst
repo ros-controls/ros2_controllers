@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.38.0 (2026-03-12)
+-------------------
 * Fix dynamic allocation in admittance_rule (backport `#2150 <https://github.com/ros-controls/ros2_controllers/issues/2150>`_) (`#2154 <https://github.com/ros-controls/ros2_controllers/issues/2154>`_)
 * Contributors: mergify[bot]
 
