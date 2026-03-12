@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add test to check JSB is not throwing when there is a boolean interface (backport `#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_) (`#2158 <https://github.com/ros-controls/ros2_controllers/issues/2158>`_)
+* Contributors: Noel Jiménez García
+
 4.37.0 (2026-02-03)
 -------------------
 

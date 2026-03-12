@@ -1,17 +1,17 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package gps_sensor_broadcaster
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package motion_primitives_controllers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
+* Add `motion_primitives_forward_controller` for interfacing motion primitive messages with hardware interfaces (backport `#1636 <https://github.com/ros-controls/ros2_controllers/issues/1636>`_) (`#2175 <https://github.com/ros-controls/ros2_controllers/issues/2175>`_)
+* Contributors: mergify[bot]
 
 4.37.0 (2026-02-03)
 -------------------
 
 4.36.0 (2025-12-31)
 -------------------
-* Controller interface api update to ros2_controller packages (backport `#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_) (`#2068 <https://github.com/ros-controls/ros2_controllers/issues/2068>`_)
-* Contributors: mergify[bot]
 
 4.35.0 (2025-12-01)
 -------------------
@@ -24,13 +24,9 @@ Forthcoming
 
 4.33.0 (2025-10-03)
 -------------------
-* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
-* Contributors: mergify[bot]
 
 4.32.0 (2025-09-12)
 -------------------
-* Fix temporary copies of other semantic components (backport `#1905 <https://github.com/ros-controls/ros2_controllers/issues/1905>`_) (`#1908 <https://github.com/ros-controls/ros2_controllers/issues/1908>`_)
-* Contributors: mergify[bot]
 
 4.31.0 (2025-08-27)
 -------------------
@@ -55,25 +51,15 @@ Forthcoming
 
 4.26.0 (2025-06-06)
 -------------------
-* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
-* Contributors: mergify[bot]
 
 4.25.0 (2025-05-17)
 -------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
-* Fix wrong link in GPSBroadcaster doc (`#1637 <https://github.com/ros-controls/ros2_controllers/issues/1637>`_)
-* Contributors: Christoph Fröhlich, Junius Santoso
 
 4.23.0 (2025-04-10)
 -------------------
-* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
-* Contributors: Wiktor Bajor
-
-* Add GPSBroadcaster (`#1554 <https://github.com/ros-controls/ros2_controllers/issues/1554>`_)
-* Contributors: Wiktor Bajor
 
 4.22.0 (2025-03-17)
 -------------------

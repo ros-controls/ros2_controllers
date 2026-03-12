@@ -2,6 +2,9 @@
 Changelog for package chained_filter_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.37.0 (2026-02-03)
 -------------------
 
