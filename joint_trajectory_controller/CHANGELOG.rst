@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.4.0 (2026-03-12)
+------------------
 * Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
 * Fix JTC test speed scaling publisher (`#2153 <https://github.com/ros-controls/ros2_controllers/issues/2153>`_)
 * Contributors: Christoph Fröhlich, Marq Rasmussen

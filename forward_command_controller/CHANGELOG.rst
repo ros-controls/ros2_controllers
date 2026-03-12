@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.4.0 (2026-03-12)
+------------------
 * Bump version of pre-commit hooks (`#2188 <https://github.com/ros-controls/ros2_controllers/issues/2188>`_)
 * Contributors: github-actions[bot]
 
