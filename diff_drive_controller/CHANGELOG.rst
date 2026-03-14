@@ -2,6 +2,15 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.4.0 (2026-03-12)
+------------------
+* Fix deprecation warning in diff_drive_controller (`#2174 <https://github.com/ros-controls/ros2_controllers/issues/2174>`_)
+* Fix the teardown of the controller tests (`#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_)
+* Unit tests for the new odometry implementation in diff_drive_controller (`#2099 <https://github.com/ros-controls/ros2_controllers/issues/2099>`_)
+* Silence -Wdeprecated-declarations in diff_drive_controller (`#2139 <https://github.com/ros-controls/ros2_controllers/issues/2139>`_)
+* Add set_odometry service to diff drive controller (`#2096 <https://github.com/ros-controls/ros2_controllers/issues/2096>`_)
+* Contributors: Christoph Fröhlich, Ege Kural, Jiayi Cai, Sai Kishor Kothakota, Vedh
+
 6.3.0 (2026-02-03)
 ------------------
 * Fixup whitespace (`#2122 <https://github.com/ros-controls/ros2_controllers/issues/2122>`_)
