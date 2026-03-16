@@ -2,6 +2,12 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.4.0 (2026-03-12)
+------------------
+
+6.3.0 (2026-02-03)
+------------------
+
 6.2.0 (2025-12-31)
 ------------------
 * Remove export of wrench_transformer_node (`#2069 <https://github.com/ros-controls/ros2_controllers/issues/2069>`_)

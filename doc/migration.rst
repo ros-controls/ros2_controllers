@@ -6,6 +6,8 @@ This list summarizes important changes between Kilted Kaiju (previous) and Lyric
 
 joint_state_broadcaster
 *****************************
+* Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_).
+  Use a custom controller for publishing non-double interfaces.
 * Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``). (`#2107 <https://github.com/ros-controls/ros2_controllers/pull/2107>`_)
   For publishing non-standard interfaces, consider using alternatives:
 
