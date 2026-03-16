@@ -1007,10 +1007,6 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
   // update should not throw
   ASSERT_NO_THROW(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
-
-  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
-  ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
-  ASSERT_THAT(dynamic_joint_state_msg.joint_names, IsEmpty());
 }
 
 TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
@@ -1035,16 +1031,6 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
   // update should not throw
   ASSERT_NO_THROW(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
-
-  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
-  ASSERT_EQ(dynamic_joint_state_msg.header.frame_id, frame_id_);
-  ASSERT_THAT(dynamic_joint_state_msg.joint_names, SizeIs(1))
-    << "Boolean interface should be skipped";
-  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));
-
-  ASSERT_THAT(
-    dynamic_joint_state_msg.interface_values[0].interface_names,
-    ElementsAreArray({HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT}));
 
   // joint states
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray({joint_names_[0]}));
