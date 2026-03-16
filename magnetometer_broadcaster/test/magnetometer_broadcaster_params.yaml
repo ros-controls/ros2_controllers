@@ -1,0 +1,4 @@
+test_magnetometer_broadcaster:
+  ros__parameters:
+    sensor_name: magnetometer
+    frame_id: magnetometer_frame

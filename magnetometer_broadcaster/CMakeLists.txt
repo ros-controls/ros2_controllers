@@ -43,6 +43,29 @@ target_link_libraries(magnetometer_broadcaster PUBLIC
 pluginlib_export_plugin_description_file(
   controller_interface magnetometer_broadcaster.xml)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(hardware_interface REQUIRED)
+  find_package(ros2_control_test_assets REQUIRED)
+
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+  ament_add_gmock(test_load_magnetometer_broadcaster test/test_load_magnetometer_broadcaster.cpp)
+  target_link_libraries(test_load_magnetometer_broadcaster
+    magnetometer_broadcaster
+    controller_manager::controller_manager
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_magnetometer_broadcaster
+    test/test_magnetometer_broadcaster.cpp
+  )
+  target_link_libraries(test_magnetometer_broadcaster
+    magnetometer_broadcaster
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+endif()
+
 install(
   TARGETS
     magnetometer_broadcaster
