@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>forward_state_controller</name>
+  <version>0.1.0</version>
+  <description>Controller that forwards state interface values to command interfaces.</description>
+  <maintainer email="nibanovic@gmail.com">Nikola Banovic</maintainer>
+  <license>Apache License 2.0</license>
+  <url type="website">https://control.ros.org</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>ros2_control_cmake</build_depend>
+
+  <depend>backward_ros</depend>
+  <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+
+  <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>controller_manager</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
+  <test_depend>ros2_control_test_assets</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
