@@ -405,7 +405,21 @@ controller_interface::return_type JointStateBroadcaster::update(
     const auto & opt = state_interfaces_[i].get_optional(0);
     if (opt.has_value())
     {
+<<<<<<< HEAD
       *mapped_values_[i] = opt.value();
+=======
+      // no retries, just try to get the latest value once
+      const auto & opt = state_interfaces_[i].get_optional(0);
+      if (opt.has_value())
+      {
+        *mapped_values_[map_index] = opt.value();
+      }
+      // Always advance map_index for every DOUBLE interface, regardless of whether the read
+      // succeeded. If we only advance on success, a temporary read failure (e.g. lock contention
+      // on a chained interface) causes all subsequent interfaces to be written into the wrong
+      // mapped_values_ slots, corrupting the published joint states.
+      ++map_index;
+>>>>>>> 2942d73 ([JSB] Fix joint_state message corruption issue (#2217))
     }
   }
 
