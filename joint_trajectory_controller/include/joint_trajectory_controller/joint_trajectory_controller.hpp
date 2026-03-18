@@ -120,8 +120,12 @@ protected:
   // The interfaces are defined as the types in 'allowed_interface_types_' member.
   // For convenience, for each type the interfaces are ordered so that i-th position
   // matches i-th index in joint_names_
+
   template <typename T>
-  using InterfaceReferences = std::vector<std::vector<std::reference_wrapper<T>>>;
+  using InterfaceReference = std::vector<std::reference_wrapper<T>>;
+
+  template <typename T>
+  using InterfaceReferences = std::vector<InterfaceReference<T>>;
 
   InterfaceReferences<hardware_interface::LoanedCommandInterface> joint_command_interface_;
   InterfaceReferences<hardware_interface::LoanedStateInterface> joint_state_interface_;
@@ -273,12 +277,11 @@ protected:
   void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
-   * This is only possible if command AND state interfaces exist for the same type,
-   *  therefore needs check for both.
+   * state values (e.g. velocity, acceleration, or effort) which do not have command interfaces will
+   * NOT be updated.
    * @param[out] state to be filled with values from command interfaces.
-   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
-  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  void update_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
   void query_state_service(
@@ -296,6 +299,9 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
+  void assign_point_from_command_interface(
+    std::vector<double> & trajectory_point_interface,
+    const InterfaceReference<hardware_interface::LoanedCommandInterface> & joint_interface);
 
   /**
    * @brief Set scaling factor used for speed scaling trajectory execution
