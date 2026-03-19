@@ -151,7 +151,7 @@ protected:
   std::vector<double> tmp_command_;
 
   // If true, enable calculations to stop all joints using constant deceleration
-  bool decelerate_on_cancel_requested_ = false;
+  bool should_decelerate_on_cancel_ = false;
   // reserved storage for the max deceleration values
   std::vector<double> max_decel_;
   // reserved storage for each joints max stopping time

@@ -115,9 +115,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     hold_position_.resize(params_.joints.size(), 0.0);
     stop_direction_.resize(params_.joints.size(), 0.0);
 
-    decelerate_on_cancel_requested_ = true;
+    should_decelerate_on_cancel_ = true;
     // check for valid max_deceleration values for each joint
-    for (size_t i = 0; i < params_.joints.size() && decelerate_on_cancel_requested_; ++i)
+    for (size_t i = 0; i < params_.joints.size() && should_decelerate_on_cancel_; ++i)
     {
       max_decel_[i] =
         params_.constraints.joints_map.at(params_.joints[i]).max_deceleration_on_cancel;
@@ -129,7 +129,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
           "Joint [%s] invalid max_deceleration_on_cancel [%.1f]. "
           "Falling back to hold position on cancel.",
           params_.joints[i].c_str(), max_decel_[i]);
-        decelerate_on_cancel_requested_ = false;
+        should_decelerate_on_cancel_ = false;
       }
       if (max_joint_vel[i] <= 0.0)
       {
@@ -138,11 +138,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
           "Joint [%s] has invalid joint velocity defined in URDF [%.1f]. "
           "Falling back to hold position on cancel.",
           params_.joints[i].c_str(), max_joint_vel[i]);
-        decelerate_on_cancel_requested_ = false;
+        should_decelerate_on_cancel_ = false;
       }
     }
     // if everything is valid reserve space for the stop trajectory on cancel
-    if (decelerate_on_cancel_requested_)
+    if (should_decelerate_on_cancel_)
     {
       double max_t_stop = 0.0;
       // find the joint with the largest max time to stop
@@ -336,7 +336,7 @@ controller_interface::return_type JointTrajectoryController::update(
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
         new_trajectory_msg_.reset();
-        if (decelerate_on_cancel_requested_)
+        if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
           new_trajectory_msg_.initRT(decelerate_to_hold_position());
@@ -472,7 +472,7 @@ controller_interface::return_type JointTrajectoryController::update(
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
           new_trajectory_msg_.reset();
-          if (decelerate_on_cancel_requested_)
+          if (should_decelerate_on_cancel_)
           {
             // calculate stopping position based on max deceleration
             new_trajectory_msg_.initRT(decelerate_to_hold_position());
@@ -519,7 +519,7 @@ controller_interface::return_type JointTrajectoryController::update(
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
             new_trajectory_msg_.reset();
-            if (decelerate_on_cancel_requested_)
+            if (should_decelerate_on_cancel_)
             {
               // calculate stopping position based on max deceleration
               new_trajectory_msg_.initRT(decelerate_to_hold_position());
@@ -538,7 +538,7 @@ controller_interface::return_type JointTrajectoryController::update(
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
         new_trajectory_msg_.reset();
-        if (decelerate_on_cancel_requested_)
+        if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
           new_trajectory_msg_.initRT(decelerate_to_hold_position());
@@ -554,7 +554,7 @@ controller_interface::return_type JointTrajectoryController::update(
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
         new_trajectory_msg_.reset();
-        if (decelerate_on_cancel_requested_)
+        if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
           new_trajectory_msg_.initRT(decelerate_to_hold_position());
@@ -1030,13 +1030,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   }
 
   // velocity state interface is required to calculate ramped stop trajectories
-  if (decelerate_on_cancel_requested_ && !has_velocity_state_interface_)
+  if (should_decelerate_on_cancel_ && !has_velocity_state_interface_)
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
       "Decelerate on cancel is enabled but hardware does not support velocity state interface. "
       "Falling back to hold position on cancel.");
-    decelerate_on_cancel_requested_ = false;
+    should_decelerate_on_cancel_ = false;
   }
 
   auto get_interface_list = [](const std::vector<std::string> & interface_types)
@@ -1519,7 +1519,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
-    if (decelerate_on_cancel_requested_)
+    if (should_decelerate_on_cancel_)
     {
       // calculate stopping position based on max deceleration
       add_new_trajectory_msg(decelerate_to_hold_position());
