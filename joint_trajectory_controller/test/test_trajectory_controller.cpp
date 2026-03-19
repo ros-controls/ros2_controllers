@@ -2921,7 +2921,7 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_no_velocit
 
 /**
  * @brief When max_deceleration_on_cancel is 0.0 (the default) for any joint, the
- * controller disables decelerate_on_cancel_ internally during configure and falls back
+ * controller disables decelerate_on_cancel_requested_ internally during configure and falls back
  * to set_hold_position on timeout.
  */
 TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_zero_max_decel)
@@ -2929,7 +2929,7 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_zero_max_d
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double cmd_timeout = 0.1;
   // decelerate_on_cancel = true but no max_deceleration_on_cancel set (defaults to 0.0)
-  // -> controller disables decelerate_on_cancel_ and falls back to set_hold_position
+  // -> controller disables decelerate_on_cancel_requested_ and falls back to set_hold_position
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
     rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
