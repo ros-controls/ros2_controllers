@@ -80,6 +80,7 @@ joint_trajectory_controller
   <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
   "stretches the time" with which it progresses in the trajectory. Scaling can either be set
   manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
+* Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
 
 mecanum_drive_controller
 ************************
