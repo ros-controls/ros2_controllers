@@ -27,5 +27,9 @@ jobs:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-win-build.yml@master
     with:
       ros_distro: rolling
+<<<<<<< HEAD
       pixi_dependencies: typeguard jinja2 boost compilers
+=======
+      pixi_dependencies: typeguard jinja2 boost compilers octomap cpp-expected
+>>>>>>> 80bfe93 (Install cpp-expected for windows job (#2225))
       ninja_packages: rsl
