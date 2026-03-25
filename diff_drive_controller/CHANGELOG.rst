@@ -2,6 +2,16 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.38.0 (2026-03-12)
+-------------------
+* Fix the teardown of the controller tests (backport `#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_) (`#2185 <https://github.com/ros-controls/ros2_controllers/issues/2185>`_)
+* Contributors: mergify[bot]
+
+4.37.0 (2026-02-03)
+-------------------
+* docs: diff_drive_controller - complete wheel_separation_multiplier description and fix then→than typo (backport `#2108 <https://github.com/ros-controls/ros2_controllers/issues/2108>`_) (`#2120 <https://github.com/ros-controls/ros2_controllers/issues/2120>`_)
+* Contributors: mergify[bot]
+
 4.36.0 (2025-12-31)
 -------------------
 * Controller interface api update to ros2_controller packages (backport `#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_) (`#2068 <https://github.com/ros-controls/ros2_controllers/issues/2068>`_)

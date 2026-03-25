@@ -81,6 +81,9 @@ controller_interface::return_type AdmittanceRule::configure(
     return controller_interface::return_type::ERROR;
   }
 
+  // configure force torque sensor frame in state message
+  state_message_.ft_sensor_frame.data = parameters_.ft_sensor.frame.id;
+
   return controller_interface::return_type::OK;
 }
 
@@ -402,9 +405,6 @@ const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_control
   state_message_.rot_base_control.x = quat.x();
   state_message_.rot_base_control.y = quat.y();
   state_message_.rot_base_control.z = quat.z();
-
-  state_message_.ft_sensor_frame.data =
-    admittance_state_.ft_sensor_frame;  // TODO(anyone) remove dynamic allocation here
 
   return state_message_;
 }

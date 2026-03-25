@@ -2,6 +2,16 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.38.0 (2026-03-12)
+-------------------
+* Consistently add <cmath> include with define for windows (backport `#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_) (`#2195 <https://github.com/ros-controls/ros2_controllers/issues/2195>`_)
+* Contributors: mergify[bot]
+
+4.37.0 (2026-02-03)
+-------------------
+* Populate pose covariance correctly in steering controllers (backport `#2109 <https://github.com/ros-controls/ros2_controllers/issues/2109>`_) (`#2137 <https://github.com/ros-controls/ros2_controllers/issues/2137>`_)
+* Contributors: mergify[bot]
+
 4.36.0 (2025-12-31)
 -------------------
 * Fix open_loop odometry of steering controllers (backport `#2087 <https://github.com/ros-controls/ros2_controllers/issues/2087>`_) (`#2088 <https://github.com/ros-controls/ros2_controllers/issues/2088>`_)
