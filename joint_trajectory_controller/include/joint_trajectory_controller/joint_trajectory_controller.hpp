@@ -233,10 +233,15 @@ protected:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
+  /// Validate a trajectory message. Returns an empty string if valid, or a
+  /// human-readable error description if the trajectory should be rejected.
+  std::string validate_trajectory_msg(
+    const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
-  bool validate_trajectory_point_field(
+  /// Validate a single field (positions/velocities/accelerations) of a trajectory point.
+  /// Returns an empty string if valid, or a human-readable error description on mismatch.
+  std::string validate_trajectory_point_field(
     size_t joint_names_size, const std::vector<double> & vector_field,
     const std::string & string_for_vector_field, size_t i, bool allow_empty) const;
 

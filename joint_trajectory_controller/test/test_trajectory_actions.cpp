@@ -1216,6 +1216,60 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
   }
 }
 
+/**
+ * @brief Test that a trajectory with no points is rejected via the action interface with a
+ * structured INVALID_GOAL error code, rather than an opaque silent rejection.
+ */
+TEST_P(TestTrajectoryActionsTestParameterized, test_goal_aborted_invalid_trajectory_empty_points)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  // Build a goal with valid joint names but no trajectory points
+  control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+  goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+  goal_msg.trajectory.joint_names = joint_names_;
+  // points intentionally left empty
+
+  auto gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+  controller_hw_thread_.join();
+
+  ASSERT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL,
+    common_action_result_code_);
+}
+
+/**
+ * @brief Test that a trajectory with wrong joint names is rejected via the action interface with a
+ * structured INVALID_GOAL error code, rather than an opaque silent rejection.
+ */
+TEST_P(
+  TestTrajectoryActionsTestParameterized, test_goal_aborted_invalid_trajectory_wrong_joint_names)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  // Build a goal whose joint names do not match any configured joints
+  control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+  goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+  goal_msg.trajectory.joint_names = {"wrong_joint_1", "wrong_joint_2", "wrong_joint_3"};
+  JointTrajectoryPoint point;
+  point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+  point.positions = {1.0, 2.0, 3.0};
+  goal_msg.trajectory.points.push_back(point);
+
+  auto gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+  controller_hw_thread_.join();
+
+  ASSERT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL,
+    common_action_result_code_);
+}
+
 // position controllers
 INSTANTIATE_TEST_SUITE_P(
   PositionTrajectoryControllersActions, TestTrajectoryActionsTestParameterized,

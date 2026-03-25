@@ -1466,7 +1466,7 @@ void JointTrajectoryController::publish_state(
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
-  if (!validate_trajectory_msg(*msg))
+  if (!validate_trajectory_msg(*msg).empty())
   {
     return;
   }
@@ -1480,24 +1480,11 @@ void JointTrajectoryController::topic_callback(
 };
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
-  const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
+  const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> /*goal*/)
 {
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
-
-  // Precondition: Running controller
-  if (get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
-  if (!validate_trajectory_msg(goal->trajectory))
-  {
-    return rclcpp_action::GoalResponse::REJECT;
-  }
-
-  RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
+  // Always accept so that the client receives a structured result with error_code and
+  // error_string on failure, instead of an opaque REJECT with no feedback (ros2/rclc#271).
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -1536,6 +1523,31 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
 void JointTrajectoryController::goal_accepted_callback(
   std::shared_ptr<rclcpp_action::ServerGoalHandle<FollowJTrajAction>> goal_handle)
 {
+  // Validate preconditions now that we can report a structured result to the client.
+
+  // Precondition: controller must be running
+  if (get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    const std::string error_string = "Can't accept new action goals. Controller is not running.";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+    auto result = std::make_shared<FollowJTrajAction::Result>();
+    result->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    result->set__error_string(error_string);
+    goal_handle->abort(result);
+    return;
+  }
+
+  // Validate the trajectory message itself
+  const std::string trajectory_error = validate_trajectory_msg(goal_handle->get_goal()->trajectory);
+  if (!trajectory_error.empty())
+  {
+    auto result = std::make_shared<FollowJTrajAction::Result>();
+    result->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    result->set__error_string(trajectory_error);
+    goal_handle->abort(result);
+    return;
+  }
+
   // mark a pending goal
   rt_has_pending_goal_ = true;
 
@@ -1727,26 +1739,27 @@ void JointTrajectoryController::sort_to_local_joint_order(
   }
 }
 
-bool JointTrajectoryController::validate_trajectory_point_field(
+std::string JointTrajectoryController::validate_trajectory_point_field(
   size_t joint_names_size, const std::vector<double> & vector_field,
   const std::string & string_for_vector_field, size_t i, bool allow_empty) const
 {
   if (allow_empty && vector_field.empty())
   {
-    return true;
+    return std::string{};
   }
   if (joint_names_size != vector_field.size())
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Mismatch between joint_names size (%zu) and %s (%zu) at point #%zu.", joint_names_size,
-      string_for_vector_field.c_str(), vector_field.size(), i);
-    return false;
+    const std::string error_string =
+      "Mismatch between joint_names size (" + std::to_string(joint_names_size) + ") and " +
+      string_for_vector_field + " (" + std::to_string(vector_field.size()) + ") at point #" +
+      std::to_string(i) + ".";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+    return error_string;
   }
-  return true;
+  return std::string{};
 }
 
-bool JointTrajectoryController::validate_trajectory_msg(
+std::string JointTrajectoryController::validate_trajectory_msg(
   const trajectory_msgs::msg::JointTrajectory & trajectory) const
 {
   // CHECK: Partial joint goals
@@ -1755,25 +1768,27 @@ bool JointTrajectoryController::validate_trajectory_msg(
   {
     if (trajectory.joint_names.size() != dof_)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Joints on incoming trajectory don't match the controller joints.");
-      return false;
+      const std::string error_string =
+        "Joints on incoming trajectory don't match the controller joints.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+      return error_string;
     }
   }
 
   // CHECK: if joint names are provided
   if (trajectory.joint_names.empty())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty joint names on incoming trajectory.");
-    return false;
+    const std::string error_string = "Empty joint names on incoming trajectory.";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+    return error_string;
   }
 
   // CHECK: if provided trajectory has points
   if (trajectory.points.empty())
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Empty trajectory received.");
-    return false;
+    const std::string error_string = "Empty trajectory received.";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+    return error_string;
   }
 
   // CHECK: If joint names are matching the joints defined for the controller
@@ -1784,10 +1799,10 @@ bool JointTrajectoryController::validate_trajectory_msg(
     auto it = std::find(params_.joints.begin(), params_.joints.end(), incoming_joint_name);
     if (it == params_.joints.end())
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Incoming joint %s doesn't match the controller's joints.",
-        incoming_joint_name.c_str());
-      return false;
+      const std::string error_string =
+        "Incoming joint " + incoming_joint_name + " doesn't match the controller's joints.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+      return error_string;
     }
   }
 
@@ -1798,11 +1813,11 @@ bool JointTrajectoryController::validate_trajectory_msg(
     {
       if (fabs(trajectory.points.back().velocities.at(i)) > std::numeric_limits<float>::epsilon())
       {
-        RCLCPP_ERROR(
-          get_node()->get_logger(),
-          "Velocity of last trajectory point of joint %s is not zero: %.15f",
-          trajectory.joint_names.at(i).c_str(), trajectory.points.back().velocities.at(i));
-        return false;
+        const std::string error_string =
+          "Velocity of last trajectory point of joint " + trajectory.joint_names.at(i) +
+          " is not zero: " + std::to_string(trajectory.points.back().velocities.at(i));
+        RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+        return error_string;
       }
     }
   }
@@ -1818,11 +1833,12 @@ bool JointTrajectoryController::validate_trajectory_msg(
       trajectory_start_time + trajectory.points.back().time_from_start;
     if (trajectory_end_time < get_node()->now())
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Received trajectory with non-zero start time (%f) that ends in the past (%f)",
-        trajectory_start_time.seconds(), trajectory_end_time.seconds());
-      return false;
+      const std::string error_string =
+        "Received trajectory with non-zero start time (" +
+        std::to_string(trajectory_start_time.seconds()) + ") that ends in the past (" +
+        std::to_string(trajectory_end_time.seconds()) + ").";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+      return error_string;
     }
   }
 
@@ -1832,12 +1848,14 @@ bool JointTrajectoryController::validate_trajectory_msg(
     // CHECK: if time of points in the trajectory is monotonous
     if ((i > 0) && (rclcpp::Duration(trajectory.points[i].time_from_start) <= previous_traj_time))
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
-        "Time between points %zu and %zu is not strictly increasing, it is %f and %f respectively",
-        i - 1, i, previous_traj_time.seconds(),
-        rclcpp::Duration(trajectory.points[i].time_from_start).seconds());
-      return false;
+      const std::string error_string =
+        "Time between points " + std::to_string(i - 1) + " and " + std::to_string(i) +
+        " is not strictly increasing, it is " + std::to_string(previous_traj_time.seconds()) +
+        " and " +
+        std::to_string(rclcpp::Duration(trajectory.points[i].time_from_start).seconds()) +
+        " respectively.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+      return error_string;
     }
     previous_traj_time = trajectory.points[i].time_from_start;
 
@@ -1852,45 +1870,62 @@ bool JointTrajectoryController::validate_trajectory_msg(
         points[i].positions.empty() && points[i].velocities.empty() &&
         points[i].accelerations.empty())
       {
-        RCLCPP_ERROR(
-          get_node()->get_logger(),
-          "The given trajectory has no position, velocity, or acceleration points.");
-        return false;
+        const std::string error_string =
+          "The given trajectory has no position, velocity, or acceleration points.";
+        RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+        return error_string;
       }
-      const bool position_error =
-        !points[i].positions.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
-      const bool velocity_error =
-        !points[i].velocities.empty() &&
-        !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, false);
-      const bool acceleration_error =
-        !points[i].accelerations.empty() &&
-        !validate_trajectory_point_field(
-          joint_count, points[i].accelerations, "accelerations", i, false);
-      if (position_error || velocity_error || acceleration_error)
+      std::string field_error;
+      if (!points[i].positions.empty())
       {
-        return false;
+        field_error =
+          validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
+      }
+      if (field_error.empty() && !points[i].velocities.empty())
+      {
+        field_error = validate_trajectory_point_field(
+          joint_count, points[i].velocities, "velocities", i, false);
+      }
+      if (field_error.empty() && !points[i].accelerations.empty())
+      {
+        field_error = validate_trajectory_point_field(
+          joint_count, points[i].accelerations, "accelerations", i, false);
+      }
+      if (!field_error.empty())
+      {
+        return field_error;
       }
     }
-    else if (
-      !validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false) ||
-      !validate_trajectory_point_field(joint_count, points[i].velocities, "velocities", i, true) ||
-      !validate_trajectory_point_field(
-        joint_count, points[i].accelerations, "accelerations", i, true))
+    else
     {
-      return false;
+      std::string field_error =
+        validate_trajectory_point_field(joint_count, points[i].positions, "positions", i, false);
+      if (field_error.empty())
+      {
+        field_error = validate_trajectory_point_field(
+          joint_count, points[i].velocities, "velocities", i, true);
+      }
+      if (field_error.empty())
+      {
+        field_error = validate_trajectory_point_field(
+          joint_count, points[i].accelerations, "accelerations", i, true);
+      }
+      if (!field_error.empty())
+      {
+        return field_error;
+      }
     }
     // reject effort entries
     if (!has_effort_command_interface_ && !points[i].effort.empty())
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(),
+      const std::string error_string =
         "Trajectories with effort fields are only supported for "
-        "controllers using the 'effort' command interface.");
-      return false;
+        "controllers using the 'effort' command interface.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", error_string.c_str());
+      return error_string;
     }
   }
-  return true;
+  return std::string{};
 }
 
 void JointTrajectoryController::add_new_trajectory_msg(
