@@ -18,7 +18,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   rsl
-  tl_expected
   trajectory_msgs
   urdf
 )
@@ -37,7 +36,6 @@ generate_parameter_library(joint_trajectory_controller_parameters
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
-  src/validate_jtc_parameters.cpp
 )
 target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
 if(WIN32)
@@ -58,7 +56,6 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       rsl::rsl
-                      tl_expected::tl_expected
                       urdf::urdf
                       angles::angles
                       ${trajectory_msgs_TARGETS}
