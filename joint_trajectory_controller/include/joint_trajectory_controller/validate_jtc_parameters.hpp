@@ -21,7 +21,7 @@
 #include "parameter_traits/parameter_traits.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rsl/algorithm.hpp"
-#include "tl_expected/expected.hpp"
+#include "tl/expected.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -33,7 +33,12 @@ tl::expected<void, std::string> command_interface_type_combinations(
   // Check if command interfaces combination is valid. Valid combinations are:
   // 1. effort
   // 2. velocity
+<<<<<<< HEAD
   // 2. position [velocity, [acceleration]]
+=======
+  // 3. position [velocity, [acceleration]]
+  // 4. position, effort
+>>>>>>> 813ed25 (GPL custom validator: Use tl_expected from libexpected-dev (#2212))
 
   if (
     rsl::contains<std::vector<std::string>>(interface_types, "velocity") &&
@@ -57,9 +62,18 @@ tl::expected<void, std::string> command_interface_type_combinations(
 
   if (
     rsl::contains<std::vector<std::string>>(interface_types, "effort") &&
+<<<<<<< HEAD
     interface_types.size() > 1)
   {
     return tl::make_unexpected("'effort' command interface has to be used alone");
+=======
+    !(interface_types.size() == 1 ||
+      (interface_types.size() == 2 &&
+       rsl::contains<std::vector<std::string>>(interface_types, "position"))))
+  {
+    return tl::make_unexpected(
+      "'effort' command interface has to be used alone or with a 'position' interface");
+>>>>>>> 813ed25 (GPL custom validator: Use tl_expected from libexpected-dev (#2212))
   }
 
   return {};
