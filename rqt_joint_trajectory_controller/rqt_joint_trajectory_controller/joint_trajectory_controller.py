@@ -467,7 +467,7 @@ def _jtc_joint_names(jtc_info):
         name = "/".join(interface.split("/")[:-1])
         interface_type = interface.split("/")[-1]
         if name not in joint_names:
-            if interface_type == "position" or interface_type == "velocity":
+            if interface_type == "position":
                 joint_names.append(name)
 
     return joint_names
