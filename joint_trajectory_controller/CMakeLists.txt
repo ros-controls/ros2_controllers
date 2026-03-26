@@ -6,7 +6,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
 endif()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-<<<<<<< HEAD
     angles
     control_msgs
     control_toolbox
@@ -19,24 +18,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     rclcpp_lifecycle
     realtime_tools
     rsl
-    tl_expected
     trajectory_msgs
-=======
-  angles
-  control_msgs
-  control_toolbox
-  controller_interface
-  generate_parameter_library
-  hardware_interface
-  pluginlib
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  realtime_tools
-  rsl
-  trajectory_msgs
-  urdf
->>>>>>> 813ed25 (GPL custom validator: Use tl_expected from libexpected-dev (#2212))
 )
 
 find_package(ament_cmake REQUIRED)
@@ -63,26 +45,9 @@ target_include_directories(joint_trajectory_controller PUBLIC
   $<INSTALL_INTERFACE:include/joint_trajectory_controller>
 )
 target_link_libraries(joint_trajectory_controller PUBLIC
-<<<<<<< HEAD
   joint_trajectory_controller_parameters
 )
 ament_target_dependencies(joint_trajectory_controller PUBLIC ${THIS_PACKAGE_INCLUDE_DEPENDS})
-=======
-                      joint_trajectory_controller_parameters
-                      control_toolbox::control_toolbox
-                      controller_interface::controller_interface
-                      hardware_interface::hardware_interface
-                      pluginlib::pluginlib
-                      rclcpp::rclcpp
-                      rclcpp_action::rclcpp_action
-                      rclcpp_lifecycle::rclcpp_lifecycle
-                      realtime_tools::realtime_tools
-                      rsl::rsl
-                      urdf::urdf
-                      angles::angles
-                      ${trajectory_msgs_TARGETS}
-                      ${control_msgs_TARGETS})
->>>>>>> 813ed25 (GPL custom validator: Use tl_expected from libexpected-dev (#2212))
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
