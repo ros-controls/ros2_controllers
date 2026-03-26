@@ -18,7 +18,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     rclcpp_lifecycle
     realtime_tools
     rsl
-    tl_expected
     trajectory_msgs
 )
 

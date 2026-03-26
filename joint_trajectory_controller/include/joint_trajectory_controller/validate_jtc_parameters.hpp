@@ -21,7 +21,7 @@
 #include "parameter_traits/parameter_traits.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rsl/algorithm.hpp"
-#include "tl_expected/expected.hpp"
+#include "tl/expected.hpp"
 
 namespace joint_trajectory_controller
 {
@@ -33,7 +33,7 @@ tl::expected<void, std::string> command_interface_type_combinations(
   // Check if command interfaces combination is valid. Valid combinations are:
   // 1. effort
   // 2. velocity
-  // 2. position [velocity, [acceleration]]
+  // 3. position [velocity, [acceleration]]
 
   if (
     rsl::contains<std::vector<std::string>>(interface_types, "velocity") &&
