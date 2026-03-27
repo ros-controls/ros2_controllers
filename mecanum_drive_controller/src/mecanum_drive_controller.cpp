@@ -33,10 +33,8 @@ using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 
 // called from RT control loop
-void reset_controller_reference_msg(
-  ControllerReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+void reset_controller_reference_msg(ControllerReferenceMsg & msg)
 {
-  (void)node;
   msg.header.stamp = rclcpp::Time(0);
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -131,7 +129,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&MecanumDriveController::reference_callback, this, std::placeholders::_1));
 
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.set(current_ref_);
 
   // deprecation warning if tf_frame_prefix_enable set to non-default value
@@ -298,7 +296,7 @@ void MecanumDriveController::reference_callback(const std::shared_ptr<Controller
       ref_timeout_.seconds());
 
     ControllerReferenceMsg emtpy_msg;
-    reset_controller_reference_msg(emtpy_msg, get_node());
+    reset_controller_reference_msg(emtpy_msg);
     input_ref_.set(emtpy_msg);
   }
 }
@@ -364,7 +362,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
   ControllerReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
+  reset_controller_reference_msg(emtpy_msg);
   input_ref_.try_set(emtpy_msg);
   return controller_interface::CallbackReturn::SUCCESS;
 }
