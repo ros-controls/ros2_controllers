@@ -37,8 +37,7 @@ void reset_controller_reference_msg(trajectory_msgs::msg::JointTrajectoryPoint &
 }
 
 // called from RT control loop
-void reset_wrench_msg(
-  geometry_msgs::msg::WrenchStamped & msg)
+void reset_wrench_msg(geometry_msgs::msg::WrenchStamped & msg)
 {
   msg.header.stamp = rclcpp::Time(0);
   msg.wrench = geometry_msgs::msg::Wrench();

@@ -32,8 +32,7 @@ using ControllerTwistReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // called from RT control loop
-void reset_controller_reference_msg(
-  ControllerTwistReferenceMsg & msg)
+void reset_controller_reference_msg(ControllerTwistReferenceMsg & msg)
 {
   msg.header.stamp = rclcpp::Time(0);
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
