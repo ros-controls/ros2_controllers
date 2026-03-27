@@ -2681,7 +2681,7 @@ TEST_F(TrajectoryControllerTest, setting_scaling_factor_works_correctly)
   std::vector<rclcpp::Parameter> params = {};
   SetUpAndActivateTrajectoryController(executor, params);
   auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
-    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS());
+    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS().transient_local());
   subscribeToState(executor);
 
   control_msgs::msg::SpeedScalingFactor msg;
@@ -2781,7 +2781,7 @@ TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)
   SetUpAndActivateTrajectoryController(executor, params);
 
   auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
-    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS());
+    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS().transient_local());
   subscribeToState(executor);
   updateController();
   // Spin to receive latest state
@@ -2816,7 +2816,7 @@ TEST_F(TrajectoryControllerTest, scaling_command_interface_sets_value)
   SetUpAndActivateTrajectoryController(executor, params);
 
   auto speed_scaling_pub = node_->create_publisher<control_msgs::msg::SpeedScalingFactor>(
-    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS());
+    controller_name_ + "/speed_scaling_input", rclcpp::SystemDefaultsQoS().transient_local());
   subscribeToState(executor);
   updateController();
   // Spin to receive latest state
