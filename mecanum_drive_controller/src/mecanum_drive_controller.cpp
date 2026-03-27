@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "controller_interface/helpers.hpp"
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -44,6 +45,7 @@ void reset_controller_reference_msg(
   msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 
+constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
 }  // namespace
 
 namespace mecanum_drive_controller
@@ -131,6 +133,17 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   reset_controller_reference_msg(current_ref_, get_node());
   input_ref_.set(current_ref_);
 
+  // deprecation warning if tf_frame_prefix_enable set to non-default value
+  const bool default_tf_frame_prefix_enable = true;
+  if (params_.tf_frame_prefix_enable != default_tf_frame_prefix_enable)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter 'tf_frame_prefix_enable' is DEPRECATED and set to a non-default value (%s). "
+      "Please migrate to 'tf_frame_prefix'.",
+      params_.tf_frame_prefix_enable ? "true" : "false");
+  }
+
   try
   {
     // Odom state publisher
@@ -146,24 +159,34 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Append the tf prefix if there is one
+  // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
-    tf_prefix = params_.tf_frame_prefix != "" ? params_.tf_frame_prefix
-                                              : std::string(get_node()->get_namespace());
-
-    // Make sure prefix does not start with '/' and always ends with '/'
-    if (tf_prefix.back() != '/')
+    if (params_.tf_frame_prefix != "")
     {
-      tf_prefix = tf_prefix + "/";
+      tf_prefix = controller_interface::resolve_tf_prefix(
+        params_.tf_frame_prefix, get_node()->get_namespace());
     }
-    if (tf_prefix.front() == '/')
+    else
     {
-      tf_prefix.erase(0, 1);
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Please use tilde ('~') character in 'tf_frame_prefix' as it replaced with node namespace");
+
+      tf_prefix = std::string(get_node()->get_namespace());
+      if (tf_prefix.back() != '/')
+      {
+        tf_prefix = tf_prefix + "/";
+      }
+      if (tf_prefix.front() == '/')
+      {
+        tf_prefix.erase(0, 1);
+      }
     }
   }
 
+  // prepend resolved TF prefix to frame ids
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
   const auto base_frame_id = tf_prefix + params_.base_frame_id;
 
@@ -223,6 +246,24 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   controller_state_msg_.header.stamp = get_node()->now();
   controller_state_msg_.header.frame_id = odom_frame_id;
+
+  try
+  {
+    set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
+      DEFAULT_SET_ODOM_SERVICE,
+      std::bind(
+        &MecanumDriveController::set_odometry, this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3));
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr,
+      "Exception thrown during service creation at configure stage "
+      "with message : %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
@@ -324,7 +365,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   ControllerReferenceMsg emtpy_msg;
   reset_controller_reference_msg(emtpy_msg, get_node());
   input_ref_.try_set(emtpy_msg);
-
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -427,14 +467,28 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const double wheel_rear_right_state_vel = wheel_rear_right_state_vel_op.value();
   const double wheel_rear_left_state_vel = wheel_rear_left_state_vel_op.value();
 
-  if (
-    !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
-    !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
+  // check if odometry set or reset was requested by non-RT thread
+  if (set_odom_requested_.load())
   {
-    // Estimate twist (using joint information) and integrate
-    odometry_.update(
-      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
-      wheel_front_right_state_vel, period.seconds());
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.setOdometry(params.x, params.y, params.yaw);
+      set_odom_requested_.store(false);
+    }
+  }
+  else
+  {
+    if (
+      !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
+      !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
+    {
+      // Estimate twist (using joint information) and integrate
+      odometry_.update(
+        wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
+        wheel_front_right_state_vel, period.seconds());
+    }
   }
 
   // INVERSE KINEMATICS (move robot).
@@ -560,6 +614,28 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
 
   return controller_interface::return_type::OK;
+}
+
+void MecanumDriveController::set_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+  std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
+{
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
 }
 
 }  // namespace mecanum_drive_controller

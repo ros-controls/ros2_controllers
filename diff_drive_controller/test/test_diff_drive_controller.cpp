@@ -45,6 +45,7 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
+  using DiffDriveController::odometry_;
 
   /**
    * @brief wait_for_twist block until a new twist is received.
@@ -74,12 +75,10 @@ public:
     return realtime_odometry_publisher_;
   }
   // Declare these tests as friends so we can access odometry_message_
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_tilde_prefix_set_namespace);
   // Declare these tests as friends so we can access controller_->reference_interfaces_
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
@@ -99,6 +98,15 @@ protected:
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
+  }
+
+  void TearDown() override
+  {
+    // Reset the controller before the fixture is destroyed to ensure the controller's
+    // shutdown transition (which clears loaned interfaces) runs while the underlying
+    // StateInterface/CommandInterface objects are still alive. LoanedStateInterface stores
+    // a const reference (not a shared_ptr), so destruction order matters.
+    controller_.reset();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
@@ -310,29 +318,7 @@ TEST_F(
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 }
 
-TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_namespace)
-{
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      left_wheel_names, right_wheel_names,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
-  ASSERT_EQ(controller_->odometry_message_.child_frame_id, base_link_id);
-}
-
-TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namespace)
+TEST_F(TestDiffDriveController, configure_succeeds_tf_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -349,13 +335,12 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namesp
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's */
+  // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(controller_->odometry_message_.child_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -372,38 +357,12 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_names
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the frame
-   * id's */
+  // frame_prefix is blank so nothing added to the frame id's
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
   ASSERT_EQ(controller_->odometry_message_.child_frame_id, base_link_id);
 }
 
-TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_namespace)
-{
-  std::string test_namespace = "/test_namespace";
-
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      left_wheel_names, right_wheel_names,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))},
-      test_namespace),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
-  ASSERT_EQ(controller_->odometry_message_.child_frame_id, base_link_id);
-}
-
-TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_namespace)
+TEST_F(TestDiffDriveController, configure_succeeds_tf_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -423,18 +382,17 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_names
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's instead of the namespace*/
+  // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(controller_->odometry_message_.child_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(TestDiffDriveController, configure_succeeds_tf_tilde_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
-  std::string frame_prefix = "";
+  std::string frame_prefix = "~";
 
   ASSERT_EQ(
     InitController(
@@ -448,9 +406,8 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_name
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
 
+  // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to the
-   * frame id's */
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, ns_prefix + odom_id);
   ASSERT_EQ(controller_->odometry_message_.child_frame_id, ns_prefix + base_link_id);
 }
@@ -1211,6 +1168,78 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   EXPECT_EQ(linear, right_wheel_vel_cmd_->get_optional().value());
 
   // Deactivate and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, odometry_set_service)
+{
+  // 0. Initialize and activate the controller
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  assignResourcesPosFeedback();
+
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
+
+  // 1. Move the robot first
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+  controller_->update(test_time, period);
+  test_time += period;
+
+  // verify initial movement
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Stop and call odom set service
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  // run update to process and verify odom values
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);  // 90 deg
+
+  // 3. Move again to ensure it still works
+  publish(1.0, 0.0);  // we move in Y now
+  controller_->wait_for_twist(executor);
+
+  // simulate the movement by updating the position feedback
+  position_values_[0] += 0.1;  // left wheel moved
+  position_values_[1] += 0.1;  // right wheel moved
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_GT(controller_->odometry_.getY(), -2.0);
+
+  // 4. Deactivate and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   state = controller_->get_node()->deactivate();
   ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);

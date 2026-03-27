@@ -2,6 +2,23 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.4.0 (2026-03-12)
+------------------
+* Fix the teardown of the controller tests (`#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_)
+* Add set_odometry service - omni wheel drive controller (`#2148 <https://github.com/ros-controls/ros2_controllers/issues/2148>`_)
+* Contributors: Ege Kural, Sai Kishor Kothakota
+
+6.3.0 (2026-02-03)
+------------------
+
+6.2.0 (2025-12-31)
+------------------
+* Tf prefix helper for omniwheel drive (`#2073 <https://github.com/ros-controls/ros2_controllers/issues/2073>`_)
+* Contributors: Ege Kural
+
+6.1.0 (2025-12-01)
+------------------
+
 6.0.0 (2025-11-10)
 ------------------
 * Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)

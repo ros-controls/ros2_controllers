@@ -37,11 +37,26 @@ class Odometry
 public:
   explicit Odometry(size_t velocity_rolling_window_size = 10);
 
+  [[deprecated]]
   void init(const rclcpp::Time & time);
+  [[deprecated(
+    "Replaced by bool update_from_pos(double left_pos, double right_pos, double "
+    "dt).")]]
   bool update(double left_pos, double right_pos, const rclcpp::Time & time);
+  [[deprecated(
+    "Replaced by bool update_from_vel(double left_vel, double right_vel, double "
+    "dt).")]]
   bool updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time);
+  [[deprecated(
+    "Replaced by bool try_update_open_loop(double linear_vel, double angular_vel, double "
+    "dt).")]]
   void updateOpenLoop(double linear, double angular, const rclcpp::Time & time);
-  void resetOdometry();
+
+  bool update_from_pos(double left_pos, double right_pos, double dt);
+  bool update_from_vel(double left_vel, double right_vel, double dt);
+  bool try_update_open_loop(double linear_vel, double angular_vel, double dt);
+  void setOdometry(double x, double y, double heading);
+  [[deprecated("Use setOdometry(0.0, 0.0, 0.0) instead")]] void resetOdometry();
 
   double getX() const { return x_; }
   double getY() const { return y_; }
@@ -60,8 +75,12 @@ private:
   using RollingMeanAccumulator = rcppmath::RollingMeanAccumulator<double>;
 #endif
 
+  [[deprecated("Replaced by void integrate(double linear_vel, double angular_vel, double dt).")]]
   void integrateRungeKutta2(double linear, double angular);
+  [[deprecated("Replaced by void integrate(double linear_vel, double angular_vel, double dt).")]]
   void integrateExact(double linear, double angular);
+
+  void integrate(double linear_vel, double angular_vel, double dt);
   void resetAccumulators();
 
   // Current timestamp:

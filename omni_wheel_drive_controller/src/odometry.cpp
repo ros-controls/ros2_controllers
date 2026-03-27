@@ -128,6 +128,12 @@ void Odometry::resetOdometry()
   y_ = 0.0;
   heading_ = 0.0;
 }
+void Odometry::setOdometry(const double & x, const double & y, const double & heading)
+{
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
+}
 
 void Odometry::setParams(
   const double & robot_radius, const double & wheel_radius, const double & wheel_offset,

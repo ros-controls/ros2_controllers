@@ -4,3 +4,52 @@ Release Notes: Kilted Kaiju to Lyrical Luth
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
+
+state_interfaces_broadcaster
+*********************************
+* 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
+
+force_torque_sensor_broadcaster
+*******************************
+* Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
+
+diff_drive_controller
+*****************************
+* Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
+* Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
+* Set odometry service added to be used at runtime. (`#2096 <https://github.com/ros-controls/ros2_controllers/pull/2096>`_).
+
+mecanum_drive_controller
+*****************************
+* Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#2063 <https://github.com/ros-controls/ros2_controllers/pull/2063>`_).
+* Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#2063 <https://github.com/ros-controls/ros2_controllers/pull/2063>`_).
+* Set odometry service added to be used at runtime. (`#2110 <https://github.com/ros-controls/ros2_controllers/pull/2110>`_).
+
+joint_state_broadcaster
+************************
+* Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
+* Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
+* Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_)
+* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
+
+omni_wheel_drive_controller
+*****************************
+* Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
+* Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
+* Set odometry service added to be used at runtime. (`#2148 <https://github.com/ros-controls/ros2_controllers/pull/2148>`_).
+
+joint_trajectory_controller
+***************************
+* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
+  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
+  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
+  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
+* Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+
+pid_controller
+**************
+* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
+
+steering_controllers_library
+*****************************
+* Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).

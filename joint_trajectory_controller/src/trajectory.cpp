@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <cmath>
 #include <memory>
 
 #include "angles/angles.h"
@@ -49,6 +54,20 @@ void Trajectory::set_point_before_trajectory_msg(
 {
   time_before_traj_msg_ = current_time;
   state_before_traj_msg_ = current_point;
+
+  // If the current state doesn't contain velocities / accelerations, but the first trajectory
+  // point does, initialize them to zero. Otherwise the segment going from the current state to the
+  // first trajectory point will use another degree of spline interpolation than the rest of the
+  // trajectory.
+  if (current_point.velocities.empty() && !trajectory_msg_->points[0].velocities.empty())
+  {
+    state_before_traj_msg_.velocities.resize(trajectory_msg_->points[0].velocities.size(), 0.0);
+  }
+  if (current_point.accelerations.empty() && !trajectory_msg_->points[0].accelerations.empty())
+  {
+    state_before_traj_msg_.accelerations.resize(
+      trajectory_msg_->points[0].accelerations.size(), 0.0);
+  }
 
   // Compute offsets due to wrapping joints
   wraparound_joint(

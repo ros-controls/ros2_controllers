@@ -26,7 +26,7 @@ diff_drive_controller:
   wheel_radius: {
     type: double,
     default_value: 0.0,
-    description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower then expected.",
+    description: "Radius of a wheel, i.e., wheels size, used for transformation of linear velocity into wheel rotations. If this parameter is wrong the robot will move faster or slower than expected.",
     validation: {
       gt<>: [0.0]
     }
@@ -34,7 +34,7 @@ diff_drive_controller:
   wheel_separation_multiplier: {
     type: double,
     default_value: 1.0,
-    description: "Correction factor for wheel separation (TODO(destogl): Please help me describe this correctly)",
+    description: "Correction factor when the actual wheel separation differs from the nominal value in the ``wheel_separation`` parameter.",
   }
   left_wheel_radius_multiplier: {
     type: double,
@@ -49,7 +49,7 @@ diff_drive_controller:
   tf_frame_prefix_enable: {
     type: bool,
     default_value: true,
-    description:  "Enables or disables appending tf_prefix to tf frame id's.",
+    description:  "Deprecated: this parameter will be removed in a future release. Use 'tf_frame_prefix' instead.",
   }
   tf_frame_prefix: {
     type: string,

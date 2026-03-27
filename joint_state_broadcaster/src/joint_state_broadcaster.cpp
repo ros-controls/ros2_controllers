@@ -92,6 +92,14 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
+  if (params_.publish_dynamic_joint_states)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[Deprecated] The 'publish_dynamic_joint_states' parameter is deprecated and will be removed "
+      "in future releases. Please update your configuration.");
+  }
+
   if (use_all_available_interfaces())
   {
     RCLCPP_INFO(
@@ -144,13 +152,15 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
         joint_state_publisher_);
 
-    dynamic_joint_state_publisher_ =
-      get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-        topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-
-    realtime_dynamic_joint_state_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-        dynamic_joint_state_publisher_);
+    if (params_.publish_dynamic_joint_states)
+    {
+      dynamic_joint_state_publisher_ =
+        get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
+          topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
+      realtime_dynamic_joint_state_publisher_ =
+        std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
+          dynamic_joint_state_publisher_);
+    }
   }
   catch (const std::exception & e)
   {
@@ -202,7 +212,11 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
-  init_dynamic_joint_state_msg();
+
+  if (params_.publish_dynamic_joint_states)
+  {
+    init_dynamic_joint_state_msg();
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -230,6 +244,14 @@ bool JointStateBroadcaster::init_joint_data()
     HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
+    if (si->get_data_type() != hardware_interface::HandleDataType::DOUBLE)
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "State interface '%s' of joint '%s' has non-double data type and will be ignored.",
+        si->get_interface_name().c_str(), si->get_prefix_name().c_str());
+      continue;
+    }
     const std::string prefix_name = si->get_prefix_name();
     // initialize map if name is new
     if (name_if_value_mapping_.count(prefix_name) == 0)
@@ -299,6 +321,10 @@ void JointStateBroadcaster::init_auxiliary_data()
   mapped_values_.clear();
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
+    if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
+    {
+      continue;
+    }
     std::string interface_name = state_interfaces_[i].get_interface_name();
     if (map_interface_to_joint_state_.count(interface_name) > 0)
     {
@@ -390,32 +416,25 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
   return params_.joints.empty() || params_.interfaces.empty();
 }
 
-double get_value(
-  const std::unordered_map<std::string, std::unordered_map<std::string, double>> & map,
-  const std::string & name, const std::string & interface_name)
-{
-  const auto & interfaces_and_values = map.at(name);
-  const auto interface_and_value = interfaces_and_values.find(interface_name);
-  if (interface_and_value != interfaces_and_values.cend())
-  {
-    return interface_and_value->second;
-  }
-  else
-  {
-    return kUninitializedValue;
-  }
-}
-
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
+  size_t map_index = 0u;
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
-    // no retries, just try to get the latest value once
-    const auto & opt = state_interfaces_[i].get_optional(0);
-    if (opt.has_value())
+    if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
     {
-      *mapped_values_[i] = opt.value();
+      // no retries, just try to get the latest value once
+      const auto & opt = state_interfaces_[i].get_optional(0);
+      if (opt.has_value())
+      {
+        *mapped_values_[map_index] = opt.value();
+      }
+      // Always advance map_index for every DOUBLE interface, regardless of whether the read
+      // succeeded. If we only advance on success, a temporary read failure (e.g. lock contention
+      // on a chained interface) causes all subsequent interfaces to be written into the wrong
+      // mapped_values_ slots, corrupting the published joint states.
+      ++map_index;
     }
   }
 

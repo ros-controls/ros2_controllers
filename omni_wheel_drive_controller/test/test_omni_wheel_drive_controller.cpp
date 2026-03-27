@@ -87,32 +87,7 @@ TEST_F(OmniWheelDriveControllerTest, when_controller_configured_expect_properly_
   }
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace)
-{
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_names_, 0.0,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_link_id);
-}
-
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -133,13 +108,12 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_n
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's */
+  // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
@@ -159,41 +133,13 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so should not be appended to the frame
-   * id's */
+
+  // frame_prefix is blank so nothing added to the frame id's
   ASSERT_EQ(test_odom_frame_id, odom_id);
   ASSERT_EQ(test_base_frame_id, base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace)
-{
-  std::string test_namespace = "/test_namespace";
-
-  std::string odom_id = "odom";
-  std::string base_link_id = "base_link";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_names_, 0.0,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom_frame_id", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))},
-      test_namespace),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
-  std::string test_odom_frame_id = odometry_message.header.frame_id;
-  std::string test_base_frame_id = odometry_message.child_frame_id;
-  /* tf_frame_prefix_enable is false so no modifications to the frame id's */
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_link_id);
-}
-
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
 
@@ -217,18 +163,17 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
 
-  /* tf_frame_prefix_enable is true and frame_prefix is not blank so should be appended to the frame
-   * id's instead of the namespace*/
+  // frame_prefix is not blank so should be prepended to the frame id's instead of the namespace
   ASSERT_EQ(test_odom_frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(test_base_frame_id, frame_prefix + "/" + base_link_id);
 }
 
-TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
   std::string base_link_id = "base_link";
-  std::string frame_prefix = "";
+  std::string frame_prefix = "~";
 
   ASSERT_EQ(
     InitController(
@@ -246,8 +191,8 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set
   std::string test_odom_frame_id = odometry_message.header.frame_id;
   std::string test_base_frame_id = odometry_message.child_frame_id;
   std::string ns_prefix = test_namespace.erase(0, 1) + "/";
-  /* tf_frame_prefix_enable is true but frame_prefix is blank so namespace should be appended to the
-   * frame id's */
+
+  // frame_prefix has tilde (~) character so node namespace should be prepended to the frame id's
   ASSERT_EQ(test_odom_frame_id, ns_prefix + odom_id);
   ASSERT_EQ(test_base_frame_id, ns_prefix + base_link_id);
 }
@@ -872,6 +817,70 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   state = controller_->get_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
+}
+
+TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+
+  // chained mode needed to write directly to reference interfaces
+  controller_->set_chained_mode(true);
+
+  auto state = controller_->get_node()->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  assignResourcesPosFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  const double dt = 0.01;  // 100 Hz
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  // simulate movement
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    controller_->reference_interfaces_[0] = vx;  // linear x
+    controller_->reference_interfaces_[1] = vy;  // linear y
+    controller_->reference_interfaces_[2] = wz;  // angular z
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+    for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
+    {
+      double velocity_command = command_itfs_[i]->get_optional().value();
+      wheels_pos_states_[i] += velocity_command * dt;
+    }
+    test_time += period;
+  };
+
+  // 1. Move the robot forward in X
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);
+
+  // 3. Move again to ensure it still works
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
+
+  // 4. Cleanup
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
 }
 
 int main(int argc, char ** argv)

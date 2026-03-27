@@ -427,9 +427,7 @@ public:
   {
     if (traj_controller_)
     {
-      if (
-        traj_controller_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (traj_controller_->get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
         EXPECT_EQ(
           traj_controller_->get_node()->deactivate().id(),
@@ -653,11 +651,11 @@ public:
 
   void expectCommandPoint(
     std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0},
-    std::vector<double> effort = {0.0, 0.0, 0.0})
+    std::vector<double> effort = {0.0, 0.0, 0.0}, bool expect_trivial_traj = true)
   {
-    // it should be holding the given point
-    // i.e., active but trivial trajectory (one point only)
-    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+    // Check if controllers trajectory matches the expected
+    // i.e. expect_trivial_traj=true has single point
+    ASSERT_EQ(traj_controller_->has_trivial_traj(), expect_trivial_traj);
 
     if (traj_controller_->use_closed_loop_pid_adapter() == false)
     {

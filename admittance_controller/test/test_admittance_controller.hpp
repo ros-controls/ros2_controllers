@@ -77,10 +77,7 @@ public:
   CallbackReturn on_init() override
   {
     get_node()->declare_parameter("robot_description", rclcpp::ParameterType::PARAMETER_STRING);
-    get_node()->declare_parameter(
-      "robot_description_semantic", rclcpp::ParameterType::PARAMETER_STRING);
     get_node()->set_parameter({"robot_description", robot_description_});
-    get_node()->set_parameter({"robot_description_semantic", robot_description_semantic_});
 
     return admittance_controller::AdmittanceController::on_init();
   }
@@ -107,8 +104,7 @@ public:
     }
   }
 
-  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
-  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
+  std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
 };
 
 class AdmittanceControllerTest : public ::testing::Test
@@ -166,6 +162,15 @@ protected:
   {
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
+    // Extract robot_description from parameter overrides
+    auto it = std::find_if(
+      options.parameter_overrides().begin(), options.parameter_overrides().end(),
+      [](const rclcpp::Parameter & p) { return p.get_name() == "robot_description"; });
+
+    if (it != options.parameter_overrides().end())
+    {
+      controller_->robot_description_ = it->as_string();
+    }
     params.robot_description = controller_->robot_description_;
     params.update_rate = 0;
     params.node_namespace = "";
@@ -384,8 +389,6 @@ protected:
   const std::string ik_base_frame_ = "base_link";
   const std::string ik_tip_frame_ = "tool0";
   const std::string ik_group_name_ = "arm";
-  //  const std::string robot_description_ = ros2_control_test_assets::valid_6d_robot_urdf;
-  //  const std::string robot_description_semantic_ = ros2_control_test_assets::valid_6d_robot_srdf;
 
   const std::string control_frame_ = "tool0";
   const std::string endeffector_frame_ = "endeffector_frame";

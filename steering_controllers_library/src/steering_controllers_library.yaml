@@ -93,6 +93,14 @@ steering_controllers_library:
     read_only: false,
   }
 
+  tf_frame_prefix:
+    {
+      type: string,
+      default_value: "",
+      description: "(optional) Prefix to be prepended to odom_id and base_frame_id tf frames before publishing. Tilde('~') character in this prefix will be replaced with the node namespace.",
+      read_only: true,
+    }
+
   twist_covariance_diagonal: {
     type: double_array,
     default_value: [0.0, 7.0, 14.0, 21.0, 28.0, 35.0],

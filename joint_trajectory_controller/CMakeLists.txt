@@ -18,7 +18,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   rsl
-  tl_expected
   trajectory_msgs
   urdf
 )
@@ -57,7 +56,6 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       rsl::rsl
-                      tl_expected::tl_expected
                       urdf::urdf
                       angles::angles
                       ${trajectory_msgs_TARGETS}
@@ -105,7 +103,7 @@ if(BUILD_TESTING)
   ament_add_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
-  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
+  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 330)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets)
