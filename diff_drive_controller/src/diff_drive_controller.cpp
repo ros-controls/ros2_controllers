@@ -463,7 +463,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_message_.header.frame_id = odom_frame_id;
   odometry_message_.child_frame_id = base_frame_id;
 
-
   // initialize odom values zeros
   odometry_message_.twist =
     geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
