@@ -287,9 +287,7 @@ private:
 
   std::vector<std::string> configurations_list_;
   std::vector<gpio_tool_controller::Params::ConfigurationSetup::MapConfigurations> config_map_;
-  double state_value_;
   std::string configuration_key_;
-  bool check_state_ios_;
   std::string closed_state_name_;
   std::vector<std::string>::iterator config_index_;
   rclcpp::CallbackGroup::SharedPtr disengaging_service_callback_group_;

@@ -553,7 +553,7 @@ void GpioToolController::check_tool_state_and_switch(
       const auto & js_val = ios.states_joint_states.at(state_name);
       if (joint_states_start_index + js_val.size() <= joint_states.size())
       {
-        std::copy(js_val.begin(), js_val.end(), joint_states.begin() + joint_states_start_index);
+        std::copy(js_val.begin(), js_val.end(), joint_states.begin() + static_cast<std::ptrdiff_t>(joint_states_start_index));
       }
       else
       {
@@ -691,7 +691,7 @@ bool GpioToolController::prepare_command_and_state_ios()
       if (!interfaces[i].empty())
       {
         ios[interfaces[i]].first = values[i];
-        ios[interfaces[i]].second = -1;  // -1 means not set yet
+        ios[interfaces[i]].second = std::numeric_limits<size_t>::max();  // index will be set later when interfaces are matched with the ones from hardware info
         interface_list.insert(interfaces[i]);
       }
     }
@@ -856,7 +856,7 @@ bool GpioToolController::prepare_command_and_state_ios()
       auto it = std::find(interfaces.begin(), interfaces.end(), itf_name);
       if (it != interfaces.end())
       {
-        index = std::distance(interfaces.begin(), it);
+        index = static_cast<size_t>(std::distance(interfaces.begin(), it));
       }
       else
       {
