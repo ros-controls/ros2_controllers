@@ -10,7 +10,7 @@ repositories:
   control_msgs:
     type: git
     url: https://github.com/b-robotized-forks/control_msgs.git
-    version: gripper-io-msgs
+    version: gripper-io-msg
   control_toolbox:
     type: git
     url: https://github.com/ros-controls/control_toolbox.git
