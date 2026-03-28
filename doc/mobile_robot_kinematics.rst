@@ -27,7 +27,7 @@ Omnidirectional Drive Robots using Omni Wheels
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 The below explains the kinematics of omnidirectional drive robots using 3 or more omni wheels.
-It follows the coordinate conventions defined in `ROS REP 103 <https://www.ros.org/reps/rep-0103.html>`__.
+It follows the coordinate conventions defined in `ROS REP 103 <https://reps.openrobotics.org/rep-0103/>`__.
 
 .. image:: images/omni_wheel_omnidirectional_drive.svg
    :width: 550
@@ -114,7 +114,7 @@ The body twist of the robot can be obtained from the wheel velocities by using t
 Swerve Drive Robots
 ,,,,,,,,,,,,,,,,,,,
 
-The below explains the kinematics of omnidirectional drive robots using four swerve modules, each with independently controlled steering and driving motors. It follows the coordinate conventions defined in `REP-103 <https://www.ros.org/reps/rep-0103.html>`__.
+The below explains the kinematics of omnidirectional drive robots using four swerve modules, each with independently controlled steering and driving motors. It follows the coordinate conventions defined in `REP-103 <https://reps.openrobotics.org/rep-0103/>`__.
 
 .. image:: images/swerve_drive.svg
    :align: center
@@ -200,7 +200,7 @@ Nonholonomic Wheeled Mobile Robots
 Unicycle model
 ,,,,,,,,,,,,,,,,
 
-To define the coordinate systems (`ROS coordinate frame conventions <https://www.ros.org/reps/rep-0103.html#id19>`__, the coordinate systems follow the right-hand rule), consider the following simple unicycle model
+To define the coordinate systems (`ROS coordinate frame conventions <https://reps.openrobotics.org/rep-0103/#id19>`__, the coordinate systems follow the right-hand rule), consider the following simple unicycle model
 
 .. image:: images/unicycle.svg
    :width: 550
