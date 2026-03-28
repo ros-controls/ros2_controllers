@@ -60,6 +60,8 @@ public:
     const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
     std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
 
+  bool reset();
+
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -67,6 +69,12 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  controller_interface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::return_type update_reference_from_subscribers(

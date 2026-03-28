@@ -252,6 +252,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   subscribers_qos.keep_last(1);
   subscribers_qos.best_effort();
 
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
   ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
@@ -484,6 +489,26 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
         command_interfaces_[i].get_name().c_str(), i);
       return controller_interface::CallbackReturn::SUCCESS;
     }
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn SteeringControllersLibrary::on_cleanup(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn SteeringControllersLibrary::on_error(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -732,6 +757,26 @@ void SteeringControllersLibrary::set_odometry(
 
   res->success = true;
   res->message = "Odometry set request accepted";
+}
+
+bool SteeringControllersLibrary::reset()
+{
+  odometry_.set_odometry(0.0, 0.0, 0.0);
+
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
+
+  last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
+  last_angular_velocity_ = std::numeric_limits<double>::quiet_NaN();
+  for (auto & interface : reference_interfaces_)
+  {
+    interface = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  ref_subscriber_twist_.reset();
+  set_odom_service_.reset();
+
+  return true;
 }
 
 }  // namespace steering_controllers_library
