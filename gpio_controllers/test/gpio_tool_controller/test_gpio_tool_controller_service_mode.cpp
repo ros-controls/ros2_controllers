@@ -131,6 +131,35 @@ TEST_F(GpioToolControllerServiceModeTest, ReconfigureServiceCreatedWhenConfigEna
 }
 
 // ---------------------------------------------------------------------------
+// use_action=true + configurations enabled → config action server is created
+//
+// Covers the config_action_server_ creation branch inside
+// prepare_publishers_and_services() (gpio_tool_controller.cpp lines 1132-1143).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerServiceModeTest, UseActionTrueWithConfigCreatesConfigActionServer)
+{
+  SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_engaged_states),
+     rclcpp::Parameter("use_action", true),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
+  setup_parameters_with_config();
+
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  EXPECT_TRUE(controller_->has_action_server());
+  EXPECT_TRUE(controller_->has_config_action_server());
+  // Services must NOT be created in action mode
+  EXPECT_FALSE(controller_->has_disengaged_service());
+  EXPECT_FALSE(controller_->has_engaged_service());
+}
+
+// ---------------------------------------------------------------------------
 // use_action=false + no configurations → reconfigure service NOT created
 // ---------------------------------------------------------------------------
 TEST_F(GpioToolControllerServiceModeTest, NoReconfigureServiceWhenConfigDisabled)

@@ -121,6 +121,7 @@ public:
   const std::vector<double> & get_joint_states_values() const { return joint_states_values_; }
 
   bool has_action_server() const { return engaging_action_server_ != nullptr; }
+  bool has_config_action_server() const { return config_action_server_ != nullptr; }
   bool has_disengaged_service() const { return disengaged_service_ != nullptr; }
   bool has_engaged_service() const { return engaged_service_ != nullptr; }
   bool has_reconfigure_service() const { return reconfigure_tool_service_ != nullptr; }

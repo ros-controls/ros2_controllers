@@ -145,3 +145,24 @@ TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenNotDisengaged)
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
 }
+
+// ---------------------------------------------------------------------------
+// Already RECONFIGURING → second reconfigure request is rejected
+//
+// Covers the `current_tool_action_.load() != ToolAction::IDLE` guard inside
+// process_reconfigure_request() (gpio_tool_controller.cpp line 994).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenAlreadyReconfiguring)
+{
+  prepare_for_reconfigure_request(*this, possible_engaged_states, "open");
+  ASSERT_EQ(controller_->get_current_state(), "open");
+
+  controller_->start_reconfiguring("narrow_objects");
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+
+  auto resp = controller_->call_process_reconfigure_request("wide_objects");
+
+  EXPECT_FALSE(resp.success);
+  // Action must not change
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
+}

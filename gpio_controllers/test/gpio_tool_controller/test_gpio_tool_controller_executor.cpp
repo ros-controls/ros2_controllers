@@ -43,6 +43,9 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include "control_msgs/action/gpio_tool_command.hpp"
+#include "control_msgs/action/set_gpio_tool_config.hpp"
+#include "control_msgs/msg/gpio_tool_controller_state.hpp"
+#include "control_msgs/srv/set_gpio_tool_config.hpp"
 #include "test_gpio_tool_controller.hpp"
 
 // ============================================================================
@@ -185,6 +188,78 @@ void prepare_for_executor_test(
   ASSERT_EQ(
     fx.controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+}
+
+// Configure + setup_parameters_with_config + activate helper for configuration
+// action / service tests. The initial_hw_state must be one of the values
+// understood by SetInitialHardwareState (e.g. "narrow_objects").
+void prepare_for_executor_test_with_config(
+  GpioToolControllerExecutorTest & fx, const std::string & initial_hw_state,
+  bool use_action = false, double timeout = 5.0)
+{
+  const std::vector<std::string> possible_states = {"close_empty", "close_full"};
+  fx.SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_states),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
+     rclcpp::Parameter("use_action", use_action),
+     rclcpp::Parameter("timeout", timeout)});
+  fx.setup_parameters_with_config();
+  fx.controller_->get_node()->set_parameter({"use_action", use_action});
+  fx.controller_->get_node()->set_parameter({"timeout", timeout});
+
+  ASSERT_EQ(
+    fx.controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  fx.SetupInterfaces();
+  fx.SetInitialHardwareState(initial_hw_state);
+  ASSERT_EQ(
+    fx.controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+
+// Hardware simulator that also responds to configuration command interfaces.
+auto make_config_hw_sim(IOGripperControllerFixture<TestableGpioToolController> & fx)
+{
+  return [&fx]()
+  {
+    // Main valve commands → tool state
+    if (fx.GetCmdValue("Close_valve") > 0.5)
+    {
+      fx.SetStateValue("Closed_signal", 1.0);
+      fx.SetStateValue("Opened_signal", 0.0);
+    }
+    else if (fx.GetCmdValue("Open_valve") > 0.5)
+    {
+      fx.SetStateValue("Opened_signal", 1.0);
+      fx.SetStateValue("Closed_signal", 0.0);
+    }
+
+    // After-command signals → brake state
+    if (fx.GetCmdValue("Release_Something") > 0.5)
+    {
+      fx.SetStateValue("Break_Engaged", 1.0);
+    }
+    else if (fx.GetCmdValue("Release_Break_valve") > 0.5)
+    {
+      fx.SetStateValue("Break_Engaged", 0.0);
+    }
+
+    // Configuration commands → configuration signals
+    if (fx.GetCmdValue("Wide_Configuration_Cmd") > 0.5)
+    {
+      fx.SetStateValue("Wide_Configuration_Signal", 1.0);
+      fx.SetStateValue("Narrow_Configuraiton_Signal", 0.0);
+    }
+    else if (fx.GetCmdValue("Narrow_Configuration_Cmd") > 0.5)
+    {
+      fx.SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+      fx.SetStateValue("Wide_Configuration_Signal", 0.0);
+    }
+  };
 }
 }  // namespace
 
@@ -428,4 +503,271 @@ TEST_F(GpioToolControllerExecutorTest, ActionCancelGoalResultsInAbort)
   ASSERT_TRUE(result_received);
 
   EXPECT_EQ(result_code, rclcpp_action::ResultCode::ABORTED);
+}
+
+// ============================================================================
+// Configuration action tests (use_action=true, configurations enabled)
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Sending a reconfigure action goal from "narrow_objects" succeeds when the
+// hw_sim responds to the configuration command interfaces.
+// Covers handle_config_goal(), handle_config_cancel(), and the
+// handle_action_accepted<ConfigActionType> success path.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ConfigActionGoalSucceeds)
+{
+  using ConfigActionType = control_msgs::action::SetGPIOToolConfig;
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ConfigActionType>;
+  using GoalOptions = rclcpp_action::Client<ConfigActionType>::SendGoalOptions;
+
+  prepare_for_executor_test_with_config(*this, "narrow_objects", true);
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+  ASSERT_EQ(controller_->get_current_state(), "open");
+
+  SetUpExecutor();
+  StartControllerThread(make_config_hw_sim(*this));
+
+  auto action_client = rclcpp_action::create_client<ConfigActionType>(
+    client_node_, "/test_gpio_tool_controller/reconfigure");
+  ASSERT_TRUE(action_client->wait_for_action_server(std::chrono::seconds(5)));
+
+  std::atomic<bool> result_received{false};
+  rclcpp_action::ResultCode result_code{rclcpp_action::ResultCode::UNKNOWN};
+  bool result_success{false};
+
+  GoalOptions opts;
+  opts.result_callback = [&](const GoalHandle::WrappedResult & result)
+  {
+    result_code = result.code;
+    result_success = result.result->success;
+    result_received = true;
+  };
+
+  auto goal = ConfigActionType::Goal();
+  goal.config_name = "wide_objects";
+  auto goal_handle_future = action_client->async_send_goal(goal, opts);
+
+  ASSERT_EQ(goal_handle_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  auto goal_handle = goal_handle_future.get();
+  ASSERT_NE(goal_handle, nullptr);  // goal accepted
+
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(15);
+  while (!result_received && std::chrono::steady_clock::now() < deadline)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  ASSERT_TRUE(result_received);
+
+  EXPECT_EQ(result_code, rclcpp_action::ResultCode::SUCCEEDED);
+  EXPECT_TRUE(result_success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
+
+// ---------------------------------------------------------------------------
+// Sending a reconfigure action goal while the tool is engaged (not disengaged)
+// causes the goal to be REJECTED by handle_config_goal().
+// Covers the !result.success → REJECT path in handle_config_goal()
+// (gpio_tool_controller.cpp lines 1313-1318).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ConfigActionGoalRejectedWhenEngaged)
+{
+  using ConfigActionType = control_msgs::action::SetGPIOToolConfig;
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ConfigActionType>;
+  using GoalOptions = rclcpp_action::Client<ConfigActionType>::SendGoalOptions;
+
+  // Start with close_empty tool state + narrow_objects config so on_activate() succeeds.
+  const std::vector<std::string> possible_states = {"close_empty", "close_full"};
+  SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_states),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
+     rclcpp::Parameter("use_action", true)});
+  setup_parameters_with_config();
+  controller_->get_node()->set_parameter({"use_action", true});
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  SetupInterfaces();
+  // Set close_empty tool state + narrow_objects configuration
+  SetStateValue("Closed_signal", 1.0);
+  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(controller_->get_current_state(), "close_empty");
+
+  SetUpExecutor();
+  // No controller thread needed – goal is rejected before any state machine runs.
+
+  auto action_client = rclcpp_action::create_client<ConfigActionType>(
+    client_node_, "/test_gpio_tool_controller/reconfigure");
+  ASSERT_TRUE(action_client->wait_for_action_server(std::chrono::seconds(5)));
+
+  std::atomic<bool> response_received{false};
+  std::shared_ptr<GoalHandle> received_goal_handle{nullptr};
+
+  GoalOptions opts;
+  opts.goal_response_callback = [&](const std::shared_ptr<GoalHandle> & gh)
+  {
+    received_goal_handle = gh;
+    response_received = true;
+  };
+
+  auto goal = ConfigActionType::Goal();
+  goal.config_name = "wide_objects";
+  action_client->async_send_goal(goal, opts);
+
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!response_received && std::chrono::steady_clock::now() < deadline)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  ASSERT_TRUE(response_received);
+  // Goal must have been rejected: goal handle is null when the server sends REJECT.
+  EXPECT_EQ(received_goal_handle, nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// Cancelling a running reconfigure action causes it to be ABORTED.
+//
+// No hw_sim → SET_COMMAND fires but CHECK_COMMAND stalls (Wide_Configuration_Signal
+// is never asserted).  The cancel sets CANCELING; the 1-second timeout then fires
+// HALTED; handle_action_accepted<ConfigActionType> aborts the goal.
+// Covers handle_config_cancel() (gpio_tool_controller.cpp line 1324) and the
+// HALTED abort path in handle_action_accepted<ConfigActionType>.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ConfigActionCancelGoalResultsInAbort)
+{
+  using ConfigActionType = control_msgs::action::SetGPIOToolConfig;
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ConfigActionType>;
+  using GoalOptions = rclcpp_action::Client<ConfigActionType>::SendGoalOptions;
+
+  // Short timeout so the test completes quickly.
+  prepare_for_executor_test_with_config(*this, "narrow_objects", true, /*timeout=*/1.0);
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+
+  SetUpExecutor();
+  // No hw_sim – action stalls in CHECK_COMMAND waiting for Wide_Configuration_Signal.
+  StartControllerThread();
+
+  auto action_client = rclcpp_action::create_client<ConfigActionType>(
+    client_node_, "/test_gpio_tool_controller/reconfigure");
+  ASSERT_TRUE(action_client->wait_for_action_server(std::chrono::seconds(5)));
+
+  std::atomic<bool> result_received{false};
+  rclcpp_action::ResultCode result_code{rclcpp_action::ResultCode::UNKNOWN};
+
+  GoalOptions opts;
+  opts.result_callback = [&](const GoalHandle::WrappedResult & result)
+  {
+    result_code = result.code;
+    result_received = true;
+  };
+
+  auto goal = ConfigActionType::Goal();
+  goal.config_name = "wide_objects";
+  auto goal_handle_future = action_client->async_send_goal(goal, opts);
+
+  ASSERT_EQ(goal_handle_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  auto goal_handle = goal_handle_future.get();
+  ASSERT_NE(goal_handle, nullptr);  // goal accepted, now running
+
+  // Cancel shortly after acceptance.
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  auto cancel_future = action_client->async_cancel_goal(goal_handle);
+  cancel_future.wait_for(std::chrono::seconds(3));
+
+  // Wait for result callback (should arrive within ~2 s of the 1-second CHECK_COMMAND timeout).
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!result_received && std::chrono::steady_clock::now() < deadline)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  ASSERT_TRUE(result_received);
+  EXPECT_EQ(result_code, rclcpp_action::ResultCode::ABORTED);
+}
+
+// ============================================================================
+// service_wait_for_transition_end() HALTED path
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// When the reconfigure service is called but hardware never confirms the
+// target configuration, the state machine times out (HALTED) and
+// service_wait_for_transition_end() returns success=false.
+// Covers gpio_tool_controller.cpp lines 1031-1036.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ServiceReconfigureHaltedReturnsFailure)
+{
+  using ConfigSrvType = control_msgs::srv::SetGPIOToolConfig;
+
+  // service mode (use_action=false), short 1-second timeout.
+  prepare_for_executor_test_with_config(*this, "narrow_objects", /*use_action=*/false, /*timeout=*/1.0);
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+
+  SetUpExecutor();
+  // No hw_sim – reconfigure stalls at CHECK_COMMAND → 1-second timeout → HALTED.
+  StartControllerThread();
+
+  auto client =
+    client_node_->create_client<ConfigSrvType>("/test_gpio_tool_controller/reconfigure");
+  ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(5)));
+
+  auto request = std::make_shared<ConfigSrvType::Request>();
+  request->config_name = "wide_objects";
+  auto future = client->async_send_request(request);
+
+  // The service blocks in service_wait_for_transition_end() until HALTED is detected.
+  auto status = future.wait_for(std::chrono::seconds(10));
+  ASSERT_EQ(status, std::future_status::ready);
+
+  auto response = future.get();
+  // HALTED path must produce success=false
+  EXPECT_FALSE(response->success);
+}
+
+// ============================================================================
+// publish_topics() output validation
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// After update() is called the controller publishes ~/controller_state with
+// the current tool state and IDLE transition.
+// Verifies that publish_topics() emits correctly populated messages.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, PublishTopicsMatchControllerState)
+{
+  using ControllerStateMsg = control_msgs::msg::GPIOToolControllerState;
+
+  prepare_for_executor_test(*this, possible_engaged_states, "open", false);
+  ASSERT_EQ(controller_->get_current_state(), "open");
+
+  SetUpExecutor();
+
+  std::atomic<bool> msg_received{false};
+  ControllerStateMsg received_msg;
+  auto sub = client_node_->create_subscription<ControllerStateMsg>(
+    "/test_gpio_tool_controller/controller_state", rclcpp::SystemDefaultsQoS(),
+    [&](const ControllerStateMsg::SharedPtr msg)
+    {
+      received_msg = *msg;
+      msg_received = true;
+    });
+
+  StartControllerThread();
+
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!msg_received && std::chrono::steady_clock::now() < deadline)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  StopController();
+
+  ASSERT_TRUE(msg_received);
+  EXPECT_EQ(received_msg.state, "open");
+  EXPECT_EQ(received_msg.current_transition.state, GPIOToolTransition::IDLE);
 }

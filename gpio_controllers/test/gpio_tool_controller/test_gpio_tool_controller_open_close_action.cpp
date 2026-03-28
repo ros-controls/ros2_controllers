@@ -201,3 +201,26 @@ TEST_F(GpioToolControllerRequestTest, RejectsDisengageWhenReconfiguring)
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
 }
+
+// ---------------------------------------------------------------------------
+// CANCELING → ENGAGING request is accepted and overrides the cancel
+//
+// CANCELING is not RECONFIGURING (first guard passes) and not IDLE (second
+// guard triggers).  Because CANCELING != ENGAGING the "already same action"
+// early-return is NOT taken, so the function falls through and starts the
+// new ENGAGING action.  This covers the CANCELING branch of the
+// current_tool_action_ != IDLE path (gpio_tool_controller.cpp line 929).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerRequestTest, ProcessEngagingRequestDuringCancelingAcceptsNewAction)
+{
+  prepare_for_request(*this, possible_engaged_states, "open");
+  controller_->force_canceling();
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::CANCELING);
+
+  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+
+  EXPECT_TRUE(resp.success);
+  // CANCELING is overridden by the new ENGAGING action
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
+  EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::SET_BEFORE_COMMAND);
+}

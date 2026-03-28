@@ -170,6 +170,45 @@ TEST_F(GpioToolControllerLifecycleTest, UpdateIdleWithKnownStateRemainsIdle)
 }
 
 // ---------------------------------------------------------------------------
+// configuration_control_enabled_=true but no configuration signal matches any
+// known configuration → check_tool_state() stores CANCELING
+//
+// Tool state IS determinable ("open"), but with all configuration signals at 0.0
+// neither narrow_objects (needs Narrow_Configuraiton_Signal=1.0) nor wide_objects
+// (needs Wide_Configuration_Signal=1.0) is confirmed.
+// Covers gpio_tool_controller.cpp lines 1408-1414.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerLifecycleTest, ConfigurationUndeterminedGoesToCanceling)
+{
+  SetUpController(
+    "test_gpio_tool_controller",
+    {rclcpp::Parameter("possible_engaged_states", possible_engaged_states),
+     rclcpp::Parameter(
+       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+     rclcpp::Parameter(
+       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
+  setup_parameters_with_config();
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  SetupInterfaces();
+  // Tool state is known ("open"): Opened_signal=1, Closed_signal=0
+  SetInitialHardwareState("open");
+  // Configuration signals stay at 0.0 (default):
+  //   Narrow_Configuraiton_Signal=0 → narrow_objects not matched
+  //   Wide_Configuration_Signal=0  → wide_objects  not matched
+  // → configuration undetermined → CANCELING
+
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::CANCELING);
+  // Tool state was determined correctly despite config being ambiguous
+  EXPECT_EQ(controller_->get_current_state(), "open");
+}
+
+// ---------------------------------------------------------------------------
 // When configuration_control_enabled_=false (configurations=[]) the controller
 // does NOT go to CANCELING even though no configuration signals are set.
 // ---------------------------------------------------------------------------
