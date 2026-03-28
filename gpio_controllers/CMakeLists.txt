@@ -114,6 +114,9 @@ if(BUILD_TESTING)
     test/gpio_tool_controller/test_gpio_tool_controller_open_close_action.cpp
     test/gpio_tool_controller/test_gpio_tool_controller_reconfigure.cpp
     test/gpio_tool_controller/test_gpio_tool_controller_reconfigure_action.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_lifecycle.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_service_mode.cpp
+    test/gpio_tool_controller/test_gpio_tool_controller_executor.cpp
   )
   target_include_directories(test_gpio_tool_controller PRIVATE include)
   target_link_libraries(test_gpio_tool_controller

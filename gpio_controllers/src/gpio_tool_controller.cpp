@@ -350,7 +350,7 @@ controller_interface::CallbackReturn GpioToolController::on_activate(
 controller_interface::CallbackReturn GpioToolController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  joint_states_values_.resize(
+  joint_states_values_.assign(
     params_.engaged_joints.size() + params_.configuration_joints.size(),
     std::numeric_limits<double>::quiet_NaN());
   return controller_interface::CallbackReturn::SUCCESS;
