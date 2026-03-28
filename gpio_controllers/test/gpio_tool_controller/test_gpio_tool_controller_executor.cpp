@@ -203,10 +203,8 @@ void prepare_for_executor_test_with_config(
     {rclcpp::Parameter("possible_engaged_states", possible_states),
      rclcpp::Parameter(
        "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
-     rclcpp::Parameter(
-       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
-     rclcpp::Parameter("use_action", use_action),
-     rclcpp::Parameter("timeout", timeout)});
+     rclcpp::Parameter("configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
+     rclcpp::Parameter("use_action", use_action), rclcpp::Parameter("timeout", timeout)});
   fx.setup_parameters_with_config();
   fx.controller_->get_node()->set_parameter({"use_action", use_action});
   fx.controller_->get_node()->set_parameter({"timeout", timeout});
@@ -583,8 +581,7 @@ TEST_F(GpioToolControllerExecutorTest, ConfigActionGoalRejectedWhenEngaged)
     {rclcpp::Parameter("possible_engaged_states", possible_states),
      rclcpp::Parameter(
        "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
-     rclcpp::Parameter(
-       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
+     rclcpp::Parameter("configuration_joints", std::vector<std::string>{"gripper_distance_joint"}),
      rclcpp::Parameter("use_action", true)});
   setup_parameters_with_config();
   controller_->get_node()->set_parameter({"use_action", true});
@@ -706,7 +703,8 @@ TEST_F(GpioToolControllerExecutorTest, ServiceReconfigureHaltedReturnsFailure)
   using ConfigSrvType = control_msgs::srv::SetGPIOToolConfig;
 
   // service mode (use_action=false), short 1-second timeout.
-  prepare_for_executor_test_with_config(*this, "narrow_objects", /*use_action=*/false, /*timeout=*/1.0);
+  prepare_for_executor_test_with_config(
+    *this, "narrow_objects", /*use_action=*/false, /*timeout=*/1.0);
   ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
 
   SetUpExecutor();

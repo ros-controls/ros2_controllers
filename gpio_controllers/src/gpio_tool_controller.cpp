@@ -639,9 +639,10 @@ void GpioToolController::handle_tool_state_transition(
       break;
 
     case GPIOToolTransition::CHECK_AFTER_COMMAND:
-      if (check_states(
-            current_time, ios.set_after_states.at(current_state),
-            target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
+      if (
+        check_states(
+          current_time, ios.set_after_states.at(current_state),
+          target_state + " - CHECK_AFTER_COMMAND", GPIOToolTransition::IDLE))
       {
         finish_transition_to_state = true;
       }

@@ -51,8 +51,7 @@ TEST_F(GpioToolControllerTest, DisengagedCommandInterfacesValuesMismatch)
   // 2 interfaces but only 1 value → size mismatch
   controller_->get_node()->set_parameter(
     {"disengaged.command.interfaces", std::vector<std::string>{"Open_valve", "Close_valve"}});
-  controller_->get_node()->set_parameter(
-    {"disengaged.command.values", std::vector<double>{1.0}});
+  controller_->get_node()->set_parameter({"disengaged.command.values", std::vector<double>{1.0}});
 
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
