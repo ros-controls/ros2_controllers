@@ -483,7 +483,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   {
     RCLCPP_WARN(
       get_node()->get_logger(),
-      "[deprecated] publish_rate parameter is deprecated, please set the value to 0.0. "
+      "[deprecated] publish_rate parameter is deprecated and will be removed in a future release. "
       "The publish rate of odometry and TF messages should not be limited.");
   }
 

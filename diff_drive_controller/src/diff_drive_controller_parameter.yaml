@@ -110,7 +110,7 @@ diff_drive_controller:
     publish_rate: {
       type: double,
       default_value: 50.0, # Hz
-      description: "Publishing rate (Hz) of the odometry and TF messages. This parameter is deprecated and limiting should not be performed.",
+      description: "Publishing rate (Hz) of the odometry and TF messages. This parameter is deprecated and will be removed in a future release.",
     }
   linear:
     x:
