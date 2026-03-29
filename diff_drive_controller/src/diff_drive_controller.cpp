@@ -238,54 +238,31 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
-    // TODO(bhavin-umatiya): Remove publish rate functionality
-    bool should_publish = false;
-    if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
+    if (realtime_odometry_publisher_)
     {
-      should_publish = true;
+      odometry_message_.header.stamp = time;
+      odometry_message_.pose.pose.position.x = odometry_.getX();
+      odometry_message_.pose.pose.position.y = odometry_.getY();
+      odometry_message_.pose.pose.orientation.x = orientation.x();
+      odometry_message_.pose.pose.orientation.y = orientation.y();
+      odometry_message_.pose.pose.orientation.z = orientation.z();
+      odometry_message_.pose.pose.orientation.w = orientation.w();
+      odometry_message_.twist.twist.linear.x = odometry_.getLinear();
+      odometry_message_.twist.twist.angular.z = odometry_.getAngular();
+      realtime_odometry_publisher_->try_publish(odometry_message_);
     }
-    else if (previous_publish_timestamp_ + publish_period_ <= time)
+
+    if (params_.enable_odom_tf && realtime_odometry_transform_publisher_)
     {
-      should_publish = true;
-    }
-
-    if (should_publish)
-    {
-      if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
-      {
-        previous_publish_timestamp_ = time;
-      }
-      else
-      {
-        previous_publish_timestamp_ += publish_period_;
-      }
-
-      if (realtime_odometry_publisher_)
-      {
-        odometry_message_.header.stamp = time;
-        odometry_message_.pose.pose.position.x = odometry_.getX();
-        odometry_message_.pose.pose.position.y = odometry_.getY();
-        odometry_message_.pose.pose.orientation.x = orientation.x();
-        odometry_message_.pose.pose.orientation.y = orientation.y();
-        odometry_message_.pose.pose.orientation.z = orientation.z();
-        odometry_message_.pose.pose.orientation.w = orientation.w();
-        odometry_message_.twist.twist.linear.x = odometry_.getLinear();
-        odometry_message_.twist.twist.angular.z = odometry_.getAngular();
-        realtime_odometry_publisher_->try_publish(odometry_message_);
-      }
-
-      if (params_.enable_odom_tf && realtime_odometry_transform_publisher_)
-      {
-        auto & transform = odometry_transform_message_.transforms.front();
-        transform.header.stamp = time;
-        transform.transform.translation.x = odometry_.getX();
-        transform.transform.translation.y = odometry_.getY();
-        transform.transform.rotation.x = orientation.x();
-        transform.transform.rotation.y = orientation.y();
-        transform.transform.rotation.z = orientation.z();
-        transform.transform.rotation.w = orientation.w();
-        realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
-      }
+      auto & transform = odometry_transform_message_.transforms.front();
+      transform.header.stamp = time;
+      transform.transform.translation.x = odometry_.getX();
+      transform.transform.translation.y = odometry_.getY();
+      transform.transform.rotation.x = orientation.x();
+      transform.transform.rotation.y = orientation.y();
+      transform.transform.rotation.z = orientation.z();
+      transform.transform.rotation.w = orientation.w();
+      realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
     }
   }
 
@@ -486,19 +463,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_message_.header.frame_id = odom_frame_id;
   odometry_message_.child_frame_id = base_frame_id;
 
-  // limit the publication on the topics /odom and /tf
-  publish_rate_ = params_.publish_rate;
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
-
-  // TODO(bhavin-umatiya): Remove this warning
-  if (publish_rate_ > 0.0 && !std::isnan(publish_rate_))
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "[deprecated] publish_rate parameter is deprecated and will be removed in a future release. "
-      "The publish rate of odometry and TF messages should not be limited.");
-  }
-
   // initialize odom values zeros
   odometry_message_.twist =
     geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
@@ -530,7 +494,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
                                 std::placeholders::_2, std::placeholders::_3));
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
-  previous_publish_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
