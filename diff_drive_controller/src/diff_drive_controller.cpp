@@ -240,14 +240,26 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 
     // TODO(bhavin-umatiya): Remove publish rate functionality
     bool should_publish = false;
-    if (previous_publish_timestamp_ + publish_period_ <= time)
+    if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
     {
-      previous_publish_timestamp_ += publish_period_;
+      should_publish = true;
+    }
+    else if (previous_publish_timestamp_ + publish_period_ <= time)
+    {
       should_publish = true;
     }
 
     if (should_publish)
     {
+      if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
+      {
+        previous_publish_timestamp_ = time;
+      }
+      else
+      {
+        previous_publish_timestamp_ += publish_period_;
+      }
+
       if (realtime_odometry_publisher_)
       {
         odometry_message_.header.stamp = time;

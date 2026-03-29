@@ -106,12 +106,12 @@ diff_drive_controller:
     default_value: 10,
     description: "Size of the rolling window for calculation of mean velocity use in odometry.",
   }
-    # TODO(bhavin-umatiya): Remove this parameter as it is deprecated
-    publish_rate: {
-      type: double,
-      default_value: 50.0, # Hz
-      description: "Publishing rate (Hz) of the odometry and TF messages. This parameter is deprecated and will be removed in a future release.",
-    }
+  # TODO(bhavin-umatiya): Remove this parameter as it is deprecated
+  publish_rate: {
+    type: double,
+    default_value: 50.0, # Hz
+    description: "Publishing rate (Hz) of the odometry and TF messages. This parameter is deprecated and will be removed in a future release.",
+  }
   linear:
     x:
       max_velocity: {
