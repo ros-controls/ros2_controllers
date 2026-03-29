@@ -164,6 +164,15 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const double right_wheel_radius = params_.right_wheel_radius_multiplier * params_.wheel_radius;
 
   bool odometry_updated = false;
+  double & last_linear = previous_two_commands_.back()[0];
+  double & second_to_last_linear = previous_two_commands_.front()[0];
+  double & last_angular = previous_two_commands_.back()[1];
+  double & second_to_last_angular = previous_two_commands_.front()[1];
+
+  limiter_linear_->limit(linear_command, last_linear, second_to_last_linear, period.seconds());
+  limiter_angular_->limit(angular_command, last_angular, second_to_last_angular, period.seconds());
+  previous_two_commands_.pop();
+  previous_two_commands_.push({{linear_command, angular_command}});
 
   // check if odometry set or reset was requested by non-RT thread
   if (set_odom_requested_.load())
@@ -288,16 +297,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
       }
     }
   }
-
-  double & last_linear = previous_two_commands_.back()[0];
-  double & second_to_last_linear = previous_two_commands_.front()[0];
-  double & last_angular = previous_two_commands_.back()[1];
-  double & second_to_last_angular = previous_two_commands_.front()[1];
-
-  limiter_linear_->limit(linear_command, last_linear, second_to_last_linear, period.seconds());
-  limiter_angular_->limit(angular_command, last_angular, second_to_last_angular, period.seconds());
-  previous_two_commands_.pop();
-  previous_two_commands_.push({{linear_command, angular_command}});
 
   //    Publish limited velocity
   if (publish_limited_velocity_ && realtime_limited_velocity_publisher_)
