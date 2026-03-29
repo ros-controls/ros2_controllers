@@ -355,6 +355,14 @@ void SteeringKinematics::reset_odometry()
   reset_accumulators();
 }
 
+void SteeringKinematics::set_odometry(const double & x, const double & y, const double & heading)
+{
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
+  reset_accumulators();
+}
+
 void SteeringKinematics::integrate_runge_kutta_2(
   const double v_bx, const double omega_bz, const double dt)
 {
