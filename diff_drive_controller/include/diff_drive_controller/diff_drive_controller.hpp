@@ -150,9 +150,10 @@ protected:
   rclcpp::Time previous_update_timestamp_{0};
 
   // publish rate limiter
+  // TODO(bhavin-umatiya): Remove these two member variables
   double publish_rate_ = 50.0;
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
+  rclcpp::Duration publish_period_ = rclcpp::Duration::from_seconds(0.0);
+  rclcpp::Time previous_publish_timestamp_{0};
 
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   std::atomic<bool> set_odom_requested_{false};
