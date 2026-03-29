@@ -238,6 +238,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
+    // TODO(bhavin-umatiya): Remove publish rate functionality
     bool should_publish = false;
     if (previous_publish_timestamp_ + publish_period_ <= time)
     {
@@ -476,6 +477,15 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   // limit the publication on the topics /odom and /tf
   publish_rate_ = params_.publish_rate;
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
+
+  // TODO(bhavin-umatiya): Remove this warning
+  if (publish_rate_ > 0.0 && !std::isnan(publish_rate_))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[deprecated] publish_rate parameter is deprecated, please set the value to 0.0. "
+      "The publish rate of odometry and TF messages should not be limited.");
+  }
 
   // initialize odom values zeros
   odometry_message_.twist =
