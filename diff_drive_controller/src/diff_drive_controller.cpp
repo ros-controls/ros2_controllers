@@ -238,24 +238,28 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     tf2::Quaternion orientation;
     orientation.setRPY(0.0, 0.0, odometry_.getHeading());
 
+    // TODO(bhavin-umatiya): Remove publish rate functionality
     bool should_publish = false;
-    try
+    if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
     {
-      if (previous_publish_timestamp_ + publish_period_ <= time)
-      {
-        previous_publish_timestamp_ += publish_period_;
-        should_publish = true;
-      }
+      should_publish = true;
     }
-    catch (const std::runtime_error &)
+    else if (previous_publish_timestamp_ + publish_period_ <= time)
     {
-      // Handle exceptions when the time source changes and initialize publish timestamp
-      previous_publish_timestamp_ = time;
       should_publish = true;
     }
 
     if (should_publish)
     {
+      if (previous_publish_timestamp_.get_clock_type() != time.get_clock_type())
+      {
+        previous_publish_timestamp_ = time;
+      }
+      else
+      {
+        previous_publish_timestamp_ += publish_period_;
+      }
+
       if (realtime_odometry_publisher_)
       {
         odometry_message_.header.stamp = time;
@@ -486,6 +490,15 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   publish_rate_ = params_.publish_rate;
   publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
 
+  // TODO(bhavin-umatiya): Remove this warning
+  if (publish_rate_ > 0.0 && !std::isnan(publish_rate_))
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "[deprecated] publish_rate parameter is deprecated and will be removed in a future release. "
+      "The publish rate of odometry and TF messages should not be limited.");
+  }
+
   // initialize odom values zeros
   odometry_message_.twist =
     geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
@@ -517,6 +530,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
                                 std::placeholders::_2, std::placeholders::_3));
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
+  previous_publish_timestamp_ = get_node()->get_clock()->now();
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
