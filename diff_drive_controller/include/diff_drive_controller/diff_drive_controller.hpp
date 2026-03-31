@@ -141,7 +141,6 @@ protected:
   std::unique_ptr<SpeedLimiter> limiter_linear_;
   std::unique_ptr<SpeedLimiter> limiter_angular_;
 
-  bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<TwistStamped>>
     realtime_limited_velocity_publisher_ = nullptr;
