@@ -23,9 +23,6 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-// NOTE: Controller currently fails to load with this configuration,
-// so expecting nullptr here.
-// This test ensures failure is properly detected.
 TEST(TestLoadAdmittanceController, load_controller)
 {
   std::shared_ptr<rclcpp::Executor> executor =
@@ -39,7 +36,7 @@ TEST(TestLoadAdmittanceController, load_controller)
   cm.set_parameter(
     {"load_admittance_controller.type", "admittance_controller/AdmittanceController"});
 
-  ASSERT_EQ(cm.load_controller("load_admittance_controller"), nullptr);
+  ASSERT_NE(cm.load_controller("load_admittance_controller"), nullptr);
 }
 
 TEST(TestLoadAdmittanceController, load_invalid_controller_fails)
