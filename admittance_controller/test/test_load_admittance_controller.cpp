@@ -39,7 +39,7 @@ TEST(TestLoadAdmittanceController, load_controller)
   ASSERT_NE(cm.load_controller("load_admittance_controller"), nullptr);
 }
 
-TEST(TestLoadAdmittanceController, load_invalid_controller_fails)
+TEST(TestLoadAdmittanceController, load_invalid_controller)
 {
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
