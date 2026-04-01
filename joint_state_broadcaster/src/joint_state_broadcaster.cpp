@@ -124,11 +124,16 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       params_.interfaces.end())
     {
       map_interface_to_joint_state_[interface] = interface;
-      RCLCPP_WARN(
-        get_node()->get_logger(),
-        "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
-        "in 'interface' parameter.",
-        interface_to_map.c_str(), interface.c_str(), interface.c_str());
+      // Only warn if there's a custom mapping being ignored (interface != interface_to_map)
+      // When they're equal (e.g., both "velocity"), it's the standard case and no warning is needed
+      if (interface != interface_to_map)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
+          "in 'interface' parameter.",
+          interface_to_map.c_str(), interface.c_str(), interface.c_str());
+      }
     }
     else
     {
