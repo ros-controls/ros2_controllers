@@ -25,7 +25,7 @@
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>python_qt_binding</exec_depend>
   <exec_depend>python3-rospkg</exec_depend>
-  <exec_depend>python3-urdf-parser-py</exec_depend>
+  <exec_depend>urdfdom_py</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>rqt_gui</exec_depend>
