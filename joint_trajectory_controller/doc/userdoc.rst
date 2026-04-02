@@ -61,6 +61,8 @@ Other features
 
 * Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
 
+* Optional smooth deceleration on cancel: Instead of abruptly holding position, the controller can decelerate joints to a stop using configurable per-joint deceleration limits. See :ref:`joint_trajectory_controller_decelerate_on_cancel`.
+
 
 Using Joint Trajectory Controller(s)
 ------------------------------------
@@ -209,6 +211,7 @@ Further information
    :titlesonly:
 
    Trajectory Representation <trajectory.rst>
+   Decelerate on cancel <decelerate_on_cancel.rst>
    Speed scaling <speed_scaling.rst>
    joint_trajectory_controller Parameters <parameters.rst>
    rqt_joint_trajectory_controller <../../rqt_joint_trajectory_controller/doc/userdoc.rst>
