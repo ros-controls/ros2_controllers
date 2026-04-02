@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* GPL custom validator: Use tl_expected from libexpected-dev instead (backport `#2212 <https://github.com/ros-controls/ros2_controllers/issues/2212>`_) (`#2238 <https://github.com/ros-controls/ros2_controllers/issues/2238>`_)
+* Contributors: mergify[bot]
+
 2.52.1 (2026-03-11)
 -------------------
 * Consistently add <cmath> include with define for windows (backport `#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_) (`#2194 <https://github.com/ros-controls/ros2_controllers/issues/2194>`_)

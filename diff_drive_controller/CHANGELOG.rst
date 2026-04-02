@@ -2,6 +2,9 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.52.1 (2026-03-11)
 -------------------
 * Fix the teardown of the diff_drive_controller test (backport `#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_) (`#2184 <https://github.com/ros-controls/ros2_controllers/issues/2184>`_)
