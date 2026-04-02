@@ -769,7 +769,7 @@ bool SteeringControllersLibrary::reset()
 {
   odometry_.set_odometry(0.0, 0.0, 0.0);
 
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.set(current_ref_);
 
   last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
