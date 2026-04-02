@@ -15,6 +15,7 @@
 #include "gpio_controllers/gpio_command_controller.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/component_parser.hpp"
@@ -53,6 +54,7 @@ std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
   }
   return result;
 }
+
 }  // namespace
 
 namespace gpio_controllers
@@ -417,20 +419,35 @@ void GpioCommandController::apply_state_value(
     state_msg.interface_values[gpio_index].interface_names[interface_index];
   try
   {
-    auto state_msg_interface_value_op =
-      state_interfaces_map_.at(interface_name).get().get_optional();
+    double state_value = std::numeric_limits<double>::quiet_NaN();
+    const auto & interface = state_interfaces_map_.at(interface_name).get();
+    const auto & type = interface.get_data_type();
 
-    if (!state_msg_interface_value_op.has_value())
+    if (type == hardware_interface::HandleDataType::DOUBLE)
     {
-      RCLCPP_DEBUG(
-        get_node()->get_logger(), "Unable to retrieve the data from state: %s \n",
-        interface_name.c_str());
+      const auto val_opt = interface.get_optional<double>();
+      if (val_opt.has_value())
+      {
+        state_value = val_opt.value();
+      }
+    }
+    else if (type == hardware_interface::HandleDataType::BOOL)
+    {
+      const auto val_opt = interface.get_optional<bool>();
+      if (val_opt.has_value())
+      {
+        state_value = val_opt.value() ? 1.0 : 0.0;
+      }
     }
     else
     {
-      state_msg.interface_values[gpio_index].values[interface_index] =
-        state_msg_interface_value_op.value();
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 10000,
+        "Interface '%s' has unsupported type. Only 'double' and 'bool' are supported.",
+        interface_name.c_str());
     }
+
+    state_msg.interface_values[gpio_index].values[interface_index] = state_value;
   }
   catch (const std::exception & e)
   {
