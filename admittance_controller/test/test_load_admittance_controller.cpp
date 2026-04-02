@@ -36,7 +36,20 @@ TEST(TestLoadAdmittanceController, load_controller)
   cm.set_parameter(
     {"load_admittance_controller.type", "admittance_controller/AdmittanceController"});
 
-  ASSERT_EQ(cm.load_controller("load_admittance_controller"), nullptr);
+  ASSERT_NE(cm.load_controller("load_admittance_controller"), nullptr);
+}
+
+TEST(TestLoadAdmittanceController, load_invalid_controller)
+{
+  std::shared_ptr<rclcpp::Executor> executor =
+    std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+
+  controller_manager::ControllerManager cm(
+    executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+
+  cm.set_parameter({"bad_controller.type", "invalid/Controller"});
+
+  ASSERT_EQ(cm.load_controller("bad_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)
