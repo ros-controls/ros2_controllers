@@ -2,8 +2,8 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.5.0 (2026-04-02)
+------------------
 * reset odometry service update - tricycle controller (`#2081 <https://github.com/ros-controls/ros2_controllers/issues/2081>`_)
 * Contributors: Ege Kural
 
