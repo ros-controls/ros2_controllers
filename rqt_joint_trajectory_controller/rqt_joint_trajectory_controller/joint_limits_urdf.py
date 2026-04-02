@@ -27,9 +27,14 @@ import xml.dom.minidom
 from math import pi
 
 import rclpy
+import rclpy.subscription
 from std_msgs.msg import String
 
 description = ""
+robot_description_subscriber_created = False
+subscription = None
+_robot_description_topic = ""
+_spin_count = 0
 
 
 def callback(msg):
@@ -37,23 +42,44 @@ def callback(msg):
     description = msg.data
 
 
-def subscribe_to_robot_description(node, key="robot_description"):
+def subscribe_to_robot_description(
+    node, key="robot_description"
+) -> rclpy.subscription.Subscription:
+    global robot_description_subscriber_created, subscription, _robot_description_topic, _spin_count
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    _robot_description_topic = key
+    _spin_count = 0
+    subscription = node.create_subscription(String, key, callback, qos_profile)
+    robot_description_subscriber_created = True
+    return subscription
+
+
+def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
+    if subscription is not None:
+        node.destroy_subscription(subscription)
 
 
 def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+    if not robot_description_subscriber_created:
+        return {}
+
     use_small = use_smallest_joint_limits
     use_mimic = True
 
+    global _spin_count
+
     count = 0
     while description == "" and count < 10:
-        print("Waiting for the robot_description!")
         count += 1
+        _spin_count += 1
         rclpy.spin_once(node, timeout_sec=1.0)
+        if _spin_count % 5 == 0:
+            node.get_logger().info(
+                f'Waiting for robot description on topic "{_robot_description_topic}" ...'
+            )
 
     free_joints = {}
     dependent_joints = {}
@@ -81,9 +107,19 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                             minval = -pi
                             maxval = pi
                         else:
-                            raise Exception(
-                                f"Missing lower/upper position limits for the joint : {name} of type : {jtype} in the robot_description!"
-                            )
+                            if name in joints_names:
+                                node.get_logger().warn(
+                                    f"Joint '{name}' of type '{jtype}' has missing/empty "
+                                    f"lower/upper position limits in the robot_description. "
+                                    f"Slider will be displayed but disabled."
+                                )
+                            free_joints[name] = {
+                                "min_position": -2 * pi,
+                                "max_position": 2 * pi,
+                                "has_position_limits": False,
+                                "max_velocity": 1.0,
+                            }
+                            continue
                     try:
                         maxvel = float(limit.getAttribute("velocity"))
                     except ValueError:
@@ -92,9 +128,17 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                         )
                 except IndexError:
                     if name in joints_names:
-                        raise Exception(
-                            f"Missing limits tag for the joint : {name} in the robot_description!"
+                        print(
+                            f"Warning: joint '{name}' has no <limit> tag in the "
+                            f"robot_description. Slider will be displayed but disabled."
                         )
+                        free_joints[name] = {
+                            "min_position": -2 * pi,
+                            "max_position": 2 * pi,
+                            "has_position_limits": False,
+                            "max_velocity": 1.0,
+                        }
+                    continue
                 safety_tags = child.getElementsByTagName("safety_controller")
                 if use_small and len(safety_tags) == 1:
                     tag = safety_tags[0]
