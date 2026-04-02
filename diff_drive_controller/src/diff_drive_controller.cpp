@@ -155,6 +155,17 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     return controller_interface::return_type::OK;
   }
 
+  // Apply speed limits and update buffers
+  double & last_linear = previous_two_commands_.back()[0];
+  double & second_to_last_linear = previous_two_commands_.front()[0];
+  double & last_angular = previous_two_commands_.back()[1];
+  double & second_to_last_angular = previous_two_commands_.front()[1];
+
+  limiter_linear_->limit(linear_command, last_linear, second_to_last_linear, period.seconds());
+  limiter_angular_->limit(angular_command, last_angular, second_to_last_angular, period.seconds());
+  previous_two_commands_.pop();
+  previous_two_commands_.push({{linear_command, angular_command}});
+
   // Apply (possibly new) multipliers:
   const double wheel_separation = params_.wheel_separation_multiplier * params_.wheel_separation;
   const double left_wheel_radius = params_.left_wheel_radius_multiplier * params_.wheel_radius;
@@ -258,16 +269,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
       realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
     }
   }
-
-  double & last_linear = previous_two_commands_.back()[0];
-  double & second_to_last_linear = previous_two_commands_.front()[0];
-  double & last_angular = previous_two_commands_.back()[1];
-  double & second_to_last_angular = previous_two_commands_.front()[1];
-
-  limiter_linear_->limit(linear_command, last_linear, second_to_last_linear, period.seconds());
-  limiter_angular_->limit(angular_command, last_angular, second_to_last_angular, period.seconds());
-  previous_two_commands_.pop();
-  previous_two_commands_.push({{linear_command, angular_command}});
 
   //    Publish limited velocity
   if (params_.publish_limited_velocity && realtime_limited_velocity_publisher_)
