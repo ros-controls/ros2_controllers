@@ -301,7 +301,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   }
 
   //    Publish limited velocity
-  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_)
+  if (params_.publish_limited_velocity && realtime_limited_velocity_publisher_)
   {
     limited_velocity_message_.header.stamp = time;
     limited_velocity_message_.twist.linear.x = linear_command;
@@ -362,7 +362,6 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   odometry_.setVelocityRollingWindowSize(static_cast<size_t>(params_.velocity_rolling_window_size));
 
   cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
-  publish_limited_velocity_ = params_.publish_limited_velocity;
 
   // Allocate reference interfaces if needed
   const int nr_ref_itfs = 2;
@@ -388,7 +387,7 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   // left and right sides are both equal at this point
   wheels_per_side_ = static_cast<int>(params_.left_wheel_names.size());
 
-  if (publish_limited_velocity_)
+  if (params_.publish_limited_velocity)
   {
     limited_velocity_publisher_ = get_node()->create_publisher<TwistStamped>(
       DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
