@@ -2,6 +2,9 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.4.0 (2026-03-12)
 ------------------
 * fix(gpio_controllers): resolve build failure (`#2128 <https://github.com/ros-controls/ros2_controllers/issues/2128>`_)

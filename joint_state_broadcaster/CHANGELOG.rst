@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [JSB] Fix joint_state message corruption issue (`#2217 <https://github.com/ros-controls/ros2_controllers/issues/2217>`_)
+* Deprecate publish_dynamic_joint_states parameter in joint_state_broadcaster (`#2107 <https://github.com/ros-controls/ros2_controllers/issues/2107>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
 6.4.0 (2026-03-12)
 ------------------
 

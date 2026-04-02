@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* reset odometry service update - tricycle controller (`#2081 <https://github.com/ros-controls/ros2_controllers/issues/2081>`_)
+* Contributors: Ege Kural
+
 6.4.0 (2026-03-12)
 ------------------
 * Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
