@@ -46,6 +46,32 @@ joint_trajectory_controller:
       "joint_trajectory_controller::state_interface_type_combinations": null,
     }
   }
+  speed_scaling: {
+
+    initial_scaling_factor: {
+      type: double,
+      default_value: 1.0,
+      read_only: true,
+      description: "The initial value of the scaling factor if no exchange with hardware takes place.",
+      validation: {
+        gt_eq<>: 0.0,
+      }
+    },
+
+    state_interface: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "Fully qualified name of the speed scaling state interface name"
+    },
+
+    command_interface: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "Command interface name used for setting the speed scaling factor on the hardware."
+    }
+  }
   allow_partial_joints_goal: {
     type: bool,
     default_value: false,
@@ -202,6 +228,14 @@ joint_trajectory_controller:
         gt_eq: [0.0],
       }
     }
+    decelerate_on_cancel: {
+      type: bool,
+      default_value: false,
+      description: "If true and each joints max_deceleration_on_cancel is greater than 0,
+        decelerate to a stop when the request is canceled or the goal constraints are violated.
+        Requires velocity state interface from all joints in the controller.",
+      read_only: true,
+    }
     __map_joints:
       trajectory: {
         type: double,
@@ -212,4 +246,13 @@ joint_trajectory_controller:
         type: double,
         default_value: 0.0,
         description: "Per-joint trajectory offset tolerance at the goal position.",
+      }
+      max_deceleration_on_cancel: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint max acceleration used to calculate the stopping position when a request is canceled or preempted.",
+        read_only: true,
+        validation: {
+          gt_eq: [0.0]
+        }
       }
