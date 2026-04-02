@@ -426,6 +426,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
   ASSERT_GT(controller_->odometry_.get_x(), 0.0);
 
+  move_robot(0.0, 0.0, 0.0);
+
   // 2. Call the odometry set service
   auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
   auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
