@@ -124,8 +124,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       params_.interfaces.end())
     {
       map_interface_to_joint_state_[interface] = interface;
-      // Only warn if there's a custom mapping being ignored (interface != interface_to_map)
-      // When they're equal (e.g., both "velocity"), it's the standard case and no warning is needed
+      // Warn if custom mapping is being ignored
       if (interface != interface_to_map)
       {
         RCLCPP_WARN(
