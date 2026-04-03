@@ -2,6 +2,11 @@
 Changelog for package gps_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove ament linters (backport `#2267 <https://github.com/ros-controls/ros2_controllers/issues/2267>`_) (`#2271 <https://github.com/ros-controls/ros2_controllers/issues/2271>`_)
+* Contributors: mergify[bot]
+
 5.13.1 (2026-03-12)
 -------------------
 
