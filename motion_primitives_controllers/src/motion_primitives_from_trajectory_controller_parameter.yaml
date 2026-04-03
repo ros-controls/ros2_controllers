@@ -1,0 +1,98 @@
+motion_primitives_from_trajectory_controller:
+  tf_prefix: {
+    type: string,
+    default_value: "",
+    description: "tf_prefix",
+    read_only: true,
+  }
+  local_joint_order: {
+    type: string_array,
+    default_value: [],
+    description: "Local joint order used internally by the controller.",
+    read_only: false,
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+  approximate_mode: {
+    type: string,
+    default_value: "RDP_PTP",
+    description: "Approximation mode for motion primitives: 'RDP_PTP' or 'RDP_LIN'.",
+    read_only: false,
+    validation: {
+      not_empty<>: []
+    }
+  }
+  use_time_not_vel_and_acc: {
+    type: bool,
+    default_value: false,
+    description: "If true, uses time for motion primitives (e.g., UR); if false, uses velocity and acceleration (e.g., UR, KUKA).",
+    read_only: false
+  }
+  epsilon_joint_angle: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in joint space (angle difference threshold).",
+    read_only: false
+  }
+  epsilon_cart_position: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in Cartesian space (position threshold).",
+    read_only: false
+  }
+  epsilon_cart_angle: {
+    type: double,
+    default_value: 0.0,
+    description: "Epsilon for RDP simplification in Cartesian space (orientation angle threshold).",
+    read_only: false
+  }
+  blend_radius_percentage: {
+    type: double,
+    default_value: 0.1,
+    description: "Relative blend radius (percentage of the smaller distance to the previous or next point).",
+    read_only: false
+  }
+  blend_radius_lower_limit: {
+    type: double,
+    default_value: 0.01,
+    description: "Lower limit for the blend radius in meters.",
+    read_only: false
+  }
+  blend_radius_upper_limit: {
+    type: double,
+    default_value: 0.1,
+    description: "Upper limit for the blend radius in meters.",
+    read_only: false
+  }
+  blend_radius_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Blend radius overwrite for motion primitives.",
+    read_only: false
+  }
+  joint_vel_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Joint velocity overwrite for motion primitives.",
+    read_only: false
+  }
+  joint_acc_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Joint acceleration overwrite for motion primitives.",
+    read_only: false
+  }
+  cart_vel_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Cartesian velocity overwrite for motion primitives.",
+    read_only: false
+  }
+  cart_acc_overwrite: {
+    type: double,
+    default_value: -1.0,
+    description: "Cartesian acceleration overwrite for motion primitives.",
+    read_only: false
+  }
