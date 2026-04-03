@@ -1381,23 +1381,13 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
 // written into index i instead of index i+1, corrupting all subsequent joint state values.
 TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
 {
-  const std::string JOINT_NAMES[] = {"joint1", "joint2", "joint3"};
-  const double INIT_POS[] = {1.1, 2.2, 3.3};
-
-  auto j1 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[0], HW_IF_POSITION, "double", std::to_string(INIT_POS[0]));
-  auto j2 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[1], HW_IF_POSITION, "double", std::to_string(INIT_POS[1]));
-  auto j3 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[2], HW_IF_POSITION, "double", std::to_string(INIT_POS[2]));
-
   init_broadcaster_and_set_parameters(
-    "", {JOINT_NAMES[0], JOINT_NAMES[1], JOINT_NAMES[2]}, {HW_IF_POSITION});
+    "", {joint_names_[0], joint_names_[1], joint_names_[2]}, {HW_IF_POSITION});
 
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(j1);
-  state_ifs.emplace_back(j2);
-  state_ifs.emplace_back(j3);
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_2_pos_state_);
+  state_ifs.emplace_back(joint_3_pos_state_);
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
@@ -1405,7 +1395,7 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
 
   ASSERT_THAT(
     state_broadcaster_->joint_state_msg_.name,
-    ElementsAreArray({JOINT_NAMES[0], JOINT_NAMES[1], JOINT_NAMES[2]}));
+    ElementsAreArray({joint_names_[0], joint_names_[1], joint_names_[2]}));
 
   /// Simulate a temporarily-unavailable first interface
   // Hold an exclusive lock on state_interfaces_[0]'s mutex from a helper thread.
@@ -1418,7 +1408,7 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
     [&]()
     {
       // Acquire exclusive lock on the first interface's handle mutex
-      std::unique_lock<std::shared_mutex> lk(j1->get_mutex());
+      std::unique_lock<std::shared_mutex> lk(joint_1_pos_state_.get_mutex());
       lock_held.store(true, std::memory_order_release);
       // Hold it until the main thread finishes its update() call
       while (!release_lock.load(std::memory_order_acquire))
@@ -1446,15 +1436,15 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
 
   // joint1 was not readable, its index must NOT contain joint2's value (2.2).
   // (It will hold the initial NaN or any prior value, not 2.2.)
-  EXPECT_EQ(names[0], JOINT_NAMES[0]);
-  EXPECT_NE(pos[0], INIT_POS[1])
+  EXPECT_EQ(names[0], joint_names_[0]);
+  EXPECT_NE(pos[0], joint_values_[1])
     << "joint1's position slot was overwritten with joint2's value — map_index bug is present";
 
-  EXPECT_EQ(names[1], JOINT_NAMES[1]);
-  EXPECT_DOUBLE_EQ(pos[1], INIT_POS[1])
+  EXPECT_EQ(names[1], joint_names_[1]);
+  EXPECT_DOUBLE_EQ(pos[1], joint_values_[1])
     << "joint2's position slot has wrong value — map_index was shifted by the nullopt";
 
-  EXPECT_EQ(names[2], JOINT_NAMES[2]);
-  EXPECT_DOUBLE_EQ(pos[2], INIT_POS[2])
+  EXPECT_EQ(names[2], joint_names_[2]);
+  EXPECT_DOUBLE_EQ(pos[2], joint_values_[2])
     << "joint3's position slot has wrong value — map_index was shifted by the nullopt";
 }
