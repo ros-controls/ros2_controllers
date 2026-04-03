@@ -35,6 +35,7 @@ generate_parameter_library(joint_trajectory_controller_parameters
 
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
+  src/tolerances.cpp
   src/trajectory.cpp
 )
 target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
