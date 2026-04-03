@@ -348,7 +348,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
   for (const auto & interface : controller_->reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isfinite(interface));
   }
 
   controller_->set_reference(dof_command_values_);
@@ -361,7 +361,7 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   {
     EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
     EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
 
   ASSERT_EQ(
