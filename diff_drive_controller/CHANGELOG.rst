@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.39.0 (2026-04-04)
+-------------------
 * Fix open-loop odometry by applying SpeedLimiter first (backport `#2260 <https://github.com/ros-controls/ros2_controllers/issues/2260>`_) (`#2277 <https://github.com/ros-controls/ros2_controllers/issues/2277>`_)
 * Remove unnecessary publish_limited_velocity\_ member (backport `#2266 <https://github.com/ros-controls/ros2_controllers/issues/2266>`_) (`#2268 <https://github.com/ros-controls/ros2_controllers/issues/2268>`_)
 * Contributors: mergify[bot]
