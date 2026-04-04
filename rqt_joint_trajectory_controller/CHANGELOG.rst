@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rqt_jtc: Check for interface type when adding joint names (backport `#2231 <https://github.com/ros-controls/ros2_controllers/issues/2231>`_) (`#2241 <https://github.com/ros-controls/ros2_controllers/issues/2241>`_)
+* Contributors: mergify[bot]
+
 4.38.0 (2026-03-12)
 -------------------
 

@@ -2,6 +2,11 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove ament linters (backport `#2267 <https://github.com/ros-controls/ros2_controllers/issues/2267>`_) (`#2270 <https://github.com/ros-controls/ros2_controllers/issues/2270>`_)
+* Contributors: mergify[bot]
+
 4.38.0 (2026-03-12)
 -------------------
 * Fix the teardown of the controller tests (backport `#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_) (`#2185 <https://github.com/ros-controls/ros2_controllers/issues/2185>`_)

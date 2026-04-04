@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add decelerate to stop functionality when trajectory is canceled or preempted (backport `#2163 <https://github.com/ros-controls/ros2_controllers/issues/2163>`_) (`#2222 <https://github.com/ros-controls/ros2_controllers/issues/2222>`_)
+* Scaled jtc (backport `#1191 <https://github.com/ros-controls/ros2_controllers/issues/1191>`_) (`#2105 <https://github.com/ros-controls/ros2_controllers/issues/2105>`_)
+* GPL custom validator: Use tl_expected from libexpected-dev instead (backport `#2212 <https://github.com/ros-controls/ros2_controllers/issues/2212>`_) (`#2239 <https://github.com/ros-controls/ros2_controllers/issues/2239>`_)
+* Contributors: mergify[bot]
+
 4.38.0 (2026-03-12)
 -------------------
 * Consistently add <cmath> include with define for windows (backport `#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_) (`#2195 <https://github.com/ros-controls/ros2_controllers/issues/2195>`_)
