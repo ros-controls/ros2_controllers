@@ -2,6 +2,17 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.5.0 (2026-04-02)
+------------------
+* Remove ament linters (`#2267 <https://github.com/ros-controls/ros2_controllers/issues/2267>`_)
+* Contributors: Ivane Kotanov
+
+6.4.0 (2026-03-12)
+------------------
+* Fix the teardown of the controller tests (`#2183 <https://github.com/ros-controls/ros2_controllers/issues/2183>`_)
+* Add set_odometry service - omni wheel drive controller (`#2148 <https://github.com/ros-controls/ros2_controllers/issues/2148>`_)
+* Contributors: Ege Kural, Sai Kishor Kothakota
+
 6.3.0 (2026-02-03)
 ------------------
 
