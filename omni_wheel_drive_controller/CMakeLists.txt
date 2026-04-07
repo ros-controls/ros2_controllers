@@ -85,6 +85,14 @@ if(BUILD_TESTING)
     controller_manager::controller_manager
     ros2_control_test_assets::ros2_control_test_assets
   )
+
+  ament_add_gmock(test_odometry
+    test/test_odometry.cpp
+    src/odometry.cpp
+  )
+  target_link_libraries(test_odometry
+    omni_wheel_drive_controller
+  )
 endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
