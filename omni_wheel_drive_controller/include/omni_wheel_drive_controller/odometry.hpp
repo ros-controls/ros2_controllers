@@ -27,12 +27,27 @@ class Odometry
 public:
   Odometry();
 
+  [[deprecated(
+    "Replaced by bool update_from_pos(const std::vector<double> & wheels_pos, double "
+    "dt).")]]
   bool updateFromPos(const std::vector<double> & wheels_pos, const rclcpp::Time & time);
+  [[deprecated(
+    "Replaced by bool update_from_vel(const std::vector<double> & wheels_vel, double "
+    "dt).")]]
   bool updateFromVel(const std::vector<double> & wheels_vel, const rclcpp::Time & time);
+  [[deprecated(
+    "Replaced by bool try_update_open_loop(const double & linear_x_vel, const double "
+    "& linear_y_vel, const double & angular_vel, double dt).")]]
   bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);
   [[deprecated("Use setOdometry(0.0, 0.0, 0.0) instead")]] void resetOdometry();
+
+  bool update_from_pos(const std::vector<double> & wheels_pos, double dt);
+  bool update_from_vel(const std::vector<double> & wheels_vel, double dt);
+  bool try_update_open_loop(
+    const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
+    double dt);
   void setOdometry(const double & x, const double & y, const double & heading);
 
   double getX() const { return x_; }
@@ -48,7 +63,9 @@ public:
 
 private:
   Eigen::Vector3d compute_robot_velocity(const std::vector<double> & wheels_vel) const;
-  void integrate(const double & dx, const double & dy, const double & dheading);
+  void integrate(
+    const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
+    double dt);
 
   // Current timestamp:
   rclcpp::Time timestamp_;

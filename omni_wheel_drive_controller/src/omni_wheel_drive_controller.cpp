@@ -312,7 +312,7 @@ controller_interface::return_type OmniWheelDriveController::update_reference_fro
 }
 
 controller_interface::return_type OmniWheelDriveController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration &)
+  const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   rclcpp::Logger logger = get_node()->get_logger();
 
@@ -343,8 +343,9 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
     // Update odometry
     if (params_.open_loop)
     {
-      odometry_updated = odometry_.updateOpenLoop(
-        reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2], time);
+      odometry_updated = odometry_.try_update_open_loop(
+        reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2],
+        period.seconds());
     }
     else
     {
@@ -371,11 +372,11 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
       }
       if (params_.position_feedback)
       {
-        odometry_updated = odometry_.updateFromPos(wheels_feedback, time);
+        odometry_updated = odometry_.update_from_pos(wheels_feedback, period.seconds());
       }
       else
       {
-        odometry_updated = odometry_.updateFromVel(wheels_feedback, time);
+        odometry_updated = odometry_.update_from_vel(wheels_feedback, period.seconds());
       }
     }
   }
