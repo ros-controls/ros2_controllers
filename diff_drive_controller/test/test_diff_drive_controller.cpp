@@ -1221,6 +1221,208 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   executor.cancel();
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(TestDiffDriveController, odometry_set_service)
+{
+  // 0. Initialize and activate the controller
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  assignResourcesPosFeedback();
+
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
+
+  // 1. Move the robot first
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+  controller_->update(test_time, period);
+  test_time += period;
+
+  // verify initial movement
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Stop and call odom set service
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  // run update to process and verify odom values
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);  // 90 deg
+
+  // 3. Move again to ensure it still works
+  publish(1.0, 0.0);  // we move in Y now
+  controller_->wait_for_twist(executor);
+
+  // simulate the movement by updating the position feedback
+  position_values_[0] += 0.1;  // left wheel moved
+  position_values_[1] += 0.1;  // right wheel moved
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_GT(controller_->odometry_.getY(), -2.0);
+
+  // 4. Deactivate and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
+{
+  const double max_linear_vel = 0.5;
+  const double max_angular_vel = 0.5;
+
+  // Initialize the controller with open_loop enabled and strict velocity limits
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("linear.x.max_velocity", rclcpp::ParameterValue(max_linear_vel)),
+       rclcpp::Parameter("angular.z.max_velocity", rclcpp::ParameterValue(max_angular_vel))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+  assignResourcesNoFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup(executor);
+
+  const double dt = 0.1;
+
+  // Test Linear Clamping
+  const double commanded_linear = 5.0;
+  publish(commanded_linear, 0.0);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  // Odometry should reflect the clamped linear velocity
+  EXPECT_NEAR(controller_->odometry_.getLinear(), max_linear_vel, 1e-3);
+
+  // Verify that the position integration uses the clamped value (0.5 * 0.1s = 0.05m)
+  EXPECT_NEAR(controller_->odometry_.getX(), max_linear_vel * dt, 1e-3);
+
+  // Test Angular Clamping
+  const double commanded_angular = 5.0;
+  publish(0.0, commanded_angular);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  // Verify the angular velocity and heading integration are properly clamped
+  EXPECT_NEAR(controller_->odometry_.getAngular(), max_angular_vel, 1e-3);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), max_angular_vel * dt, 1e-3);
+
+  // Safely spin down the lifecycle
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
+{
+  // Initialize the controller with open_loop enabled without velocity limits
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+  assignResourcesNoFeedback();
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  waitForSetup(executor);
+
+  const double dt = 0.1;
+
+  // Test Linear
+  const double commanded_linear = 5.0;
+  publish(commanded_linear, 0.0);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  // Odometry should exactly reflect the commanded linear velocity
+  EXPECT_NEAR(controller_->odometry_.getLinear(), commanded_linear, 1e-3);
+
+  // Verify that the position integration uses the commanded value (5.0 * 0.1s = 0.5m)
+  EXPECT_NEAR(controller_->odometry_.getX(), commanded_linear * dt, 1e-3);
+
+  // Test Angular
+  const double commanded_angular = 5.0;
+  publish(0.0, commanded_angular);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  // Verify the angular velocity and heading integration use the commanded value
+  EXPECT_NEAR(controller_->odometry_.getAngular(), commanded_angular, 1e-3);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), commanded_angular * dt, 1e-3);
+
+  // Safely spin down the lifecycle
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  executor.cancel();
+}
+
+>>>>>>> 6c1299f (Added test for open-loop odometry with clamped input (#2280))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
