@@ -45,6 +45,7 @@ class TestableDiffDriveController : public diff_drive_controller::DiffDriveContr
 {
 public:
   using DiffDriveController::DiffDriveController;
+  using DiffDriveController::odometry_;
 
   /**
    * @brief wait_for_twist block until a new twist is received.
