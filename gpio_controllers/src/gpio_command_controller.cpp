@@ -364,7 +364,7 @@ controller_interface::return_type GpioCommandController::update_gpios_commands()
 }
 
 void GpioCommandController::apply_command(
-  const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index) const
+  const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index)
 {
   const auto full_command_interface_name =
     gpio_commands.interface_groups[gpio_index] + '/' +
@@ -375,11 +375,34 @@ void GpioCommandController::apply_command(
 
   try
   {
-    if (!command_interfaces_map_.at(full_command_interface_name).get().set_value(command_value))
+    auto & interface = command_interfaces_map_.at(full_command_interface_name).get();
+    const auto & type = interface.get_data_type();
+    if (type == hardware_interface::HandleDataType::DOUBLE)
+    {
+      if (!interface.set_value<double>(command_value))
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
+          full_command_interface_name.c_str(), command_value);
+      }
+    }
+    else if (type == hardware_interface::HandleDataType::BOOL)
+    {
+      const bool bool_command_value =
+        std::abs(command_value) > std::numeric_limits<double>::epsilon();
+      if (!interface.set_value<bool>(bool_command_value))
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
+          full_command_interface_name.c_str(), command_value);
+      }
+    }
+    else
     {
       RCLCPP_WARN(
-        get_node()->get_logger(), "Unable to set the command for interface '%s' with value '%f'.",
-        full_command_interface_name.c_str(), command_value);
+        get_node()->get_logger(),
+        "Interface '%s' has unsupported type. Only 'double' and 'bool' are supported.",
+        full_command_interface_name.c_str());
     }
   }
   catch (const std::exception & e)
