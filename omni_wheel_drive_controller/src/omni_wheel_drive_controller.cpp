@@ -312,7 +312,7 @@ controller_interface::return_type OmniWheelDriveController::update_reference_fro
 }
 
 controller_interface::return_type OmniWheelDriveController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
+  const rclcpp::Time &, const rclcpp::Duration & period)
 {
   rclcpp::Logger logger = get_node()->get_logger();
 

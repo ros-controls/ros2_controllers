@@ -51,7 +51,11 @@ bool Odometry::updateFromPos(const std::vector<double> & wheels_pos, const rclcp
     wheels_old_pos_[i] = wheels_pos[i];
   }
 
+  // Disable deprecated warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   if (updateFromVel(wheels_vel, time))
+#pragma GCC diagnostic pop
   {
     return true;
   }
