@@ -30,6 +30,25 @@ joint_state_broadcaster:
     If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
     published."
   }
+  initial_value:
+    position: {
+      type: double,
+      default_value: .nan,
+      read_only: true,
+      description: "Initial joint position value."
+    }
+    velocity: {
+      type: double,
+      default_value: .nan,
+      read_only: true,
+      description: "Initial joint velocity value."
+    }
+    effort: {
+      type: double,
+      default_value: .nan,
+      read_only: true,
+      description: "Initial joint effort value."
+    }
   map_interface_to_joint_state:
     position: {
       type: string,
