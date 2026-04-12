@@ -399,9 +399,11 @@ void JointStateBroadcaster::init_joint_state_msg()
   joint_states_data_.clear();
   for (auto i = 0u; i < joint_names_.size(); ++i)
   {
-    joint_states_data_.push_back(JointStateData(
-      get_address(joint_names_[i], HW_IF_POSITION), get_address(joint_names_[i], HW_IF_VELOCITY),
-      get_address(joint_names_[i], HW_IF_EFFORT)));
+    joint_states_data_.push_back(JointStateData{
+      get_address(joint_names_[i], HW_IF_POSITION),
+      get_address(joint_names_[i], HW_IF_VELOCITY),
+      get_address(joint_names_[i], HW_IF_EFFORT),
+    });
   }
 }
 
