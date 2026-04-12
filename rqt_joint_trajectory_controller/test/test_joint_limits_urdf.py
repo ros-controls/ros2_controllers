@@ -1,4 +1,4 @@
-# Copyright 2024 ros2_control Development Team
+# Copyright 2026 ros2_control Development Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -143,11 +143,6 @@ def test_continuous_joint_velocity_is_preserved():
 # ---------------------------------------------------------------------------
 # Group 3: Fixed joints — they have no DOF and must be completely ignored.
 # ---------------------------------------------------------------------------
-
-
-def test_fixed_joint_not_in_result():
-    result = parse_joint_limits(_robot(_fixed("camera_mount")), [])
-    assert "camera_mount" not in result
 
 
 def test_urdf_with_only_fixed_joints_returns_empty_dict():

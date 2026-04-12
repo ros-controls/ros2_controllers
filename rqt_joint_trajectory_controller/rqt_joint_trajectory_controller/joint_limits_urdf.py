@@ -155,9 +155,6 @@ def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True
                 dependent_joints[name] = entry
                 continue
 
-            if name in dependent_joints:
-                continue
-
             joint = {"min_position": minval, "max_position": maxval}
             joint["has_position_limits"] = jtype != "continuous"
             joint["max_velocity"] = maxvel
