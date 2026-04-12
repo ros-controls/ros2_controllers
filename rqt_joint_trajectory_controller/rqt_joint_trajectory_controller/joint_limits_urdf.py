@@ -18,12 +18,16 @@
 # https://github.com/ros/robot_model/blob/indigo-devel/
 # joint_state_publisher/joint_state_publisher/joint_state_publisher
 
+# TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
+#  Exception: Required attribute not set in XML: upper
+# upper is an optional attribute, so I don't understand what's going on
+# See comments in https://github.com/ros/urdfdom/issues/36
+
+import xml.dom.minidom
 from math import pi
 
-import xml.etree.ElementTree as ET
 import rclpy
 from std_msgs.msg import String
-from urdf_parser_py.urdf import Robot
 
 description = ""
 
@@ -41,91 +45,139 @@ def subscribe_to_robot_description(node, key="robot_description"):
     node.create_subscription(String, key, callback, qos_profile)
 
 
-def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True):
+    """
+    Parse joint position and velocity limits from a URDF XML string.
+
+    This function contains all the real parsing logic and has no dependency
+    on ROS, global variables, or any running infrastructure. It accepts the
+    URDF as a plain Python string, which makes it directly unit-testable
+    without needing a ROS node or a robot_description topic.
+
+    Parameters
+    ----------
+    urdf_string : str
+        A complete URDF XML document as a string.
+    joints_names : list[str]
+        The joints that the active controller manages. A joint in this list
+        that is missing its <limit> element will raise an Exception. Joints
+        NOT in this list that are missing limits are silently skipped.
+    use_smallest_joint_limits : bool
+        When True, safety_controller soft limits narrow the reported range.
+
+    Returns
+    -------
+    dict
+        Maps joint name to a dict with keys:
+        min_position, max_position, has_position_limits, max_velocity.
+
+    """
     use_small = use_smallest_joint_limits
     use_mimic = True
 
+    free_joints = {}
+    dependent_joints = {}
+
+    # minidom raises xml.parsers.expat.ExpatError for completely invalid XML.
+    # We let that propagate naturally — the caller (get_joint_limits) can
+    # decide how to handle it. For unit tests, we test our own logic only.
+    robot = xml.dom.minidom.parseString(urdf_string).getElementsByTagName("robot")[0]
+
+    # Walk every direct child of the <robot> element.
+    # Non-joint tags like <link>, <ros2_control>, <gazebo> are naturally
+    # skipped because we only act when localName == "joint".
+    for child in robot.childNodes:
+        # minidom includes whitespace text nodes between elements — skip them
+        if child.nodeType is child.TEXT_NODE:
+            continue
+        if child.localName == "joint":
+            jtype = child.getAttribute("type")
+            if jtype == "fixed":
+                # Fixed joints have no DOF — no slider needed in the GUI
+                continue
+            name = child.getAttribute("name")
+
+            try:
+                limit = child.getElementsByTagName("limit")[0]
+
+                # minidom returns "" for absent attributes.
+                # float("") raises ValueError, which we catch below.
+                try:
+                    minval = float(limit.getAttribute("lower"))
+                    maxval = float(limit.getAttribute("upper"))
+                except ValueError:
+                    if jtype == "continuous":
+                        # Continuous joints have no position bounds by definition
+                        minval = -pi
+                        maxval = pi
+                    else:
+                        raise Exception(
+                            f"Missing lower/upper position limits for the joint"
+                            f" : {name} of type : {jtype} in the robot_description!"
+                        )
+
+                try:
+                    maxvel = float(limit.getAttribute("velocity"))
+                except ValueError:
+                    raise Exception(
+                        f"Missing velocity limits for the joint"
+                        f" : {name} of type : {jtype} in the robot_description!"
+                    )
+
+            except IndexError:
+                # No <limit> element found at all for this joint
+                if name in joints_names:
+                    raise Exception(
+                        f"Missing limits tag for the joint" f" : {name} in the robot_description!"
+                    )
+                # Joint is not managed by this controller — skip silently
+                continue
+
+            # Optionally narrow the range with safety controller soft limits
+            safety_tags = child.getElementsByTagName("safety_controller")
+            if use_small and len(safety_tags) == 1:
+                tag = safety_tags[0]
+                if tag.hasAttribute("soft_lower_limit"):
+                    minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
+                if tag.hasAttribute("soft_upper_limit"):
+                    maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
+
+            # Mimic joints follow another joint — exclude from free_joints
+            mimic_tags = child.getElementsByTagName("mimic")
+            if use_mimic and len(mimic_tags) == 1:
+                tag = mimic_tags[0]
+                entry = {"parent": tag.getAttribute("joint")}
+                if tag.hasAttribute("multiplier"):
+                    entry["factor"] = float(tag.getAttribute("multiplier"))
+                if tag.hasAttribute("offset"):
+                    entry["offset"] = float(tag.getAttribute("offset"))
+
+                dependent_joints[name] = entry
+                continue
+
+            joint = {"min_position": minval, "max_position": maxval}
+            joint["has_position_limits"] = jtype != "continuous"
+            joint["max_velocity"] = maxvel
+            free_joints[name] = joint
+
+    return free_joints
+
+
+def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+    """
+    ROS-aware wrapper around parse_joint_limits.
+
+    Waits for the robot_description topic to publish, then delegates all
+    real parsing work to parse_joint_limits(). This separation means
+    parse_joint_limits() can be tested without any ROS infrastructure.
+    """
     count = 0
     while description == "" and count < 10:
         print("Waiting for the robot_description!")
         count += 1
         rclpy.spin_once(node, timeout_sec=1.0)
 
-    free_joints = {}
-    dependent_joints = {}
+    if description == "":
+        return {}
 
-    if description != "":
-        try:
-            # urdf_parser_py does not recognize non-URDF tags such as
-            # <ros2_control> and raises an AssertionError.
-            # Strip them before parsing.
-            root = ET.fromstring(description)
-            for tag_name in ["ros2_control"]:
-                for element in root.findall(tag_name):
-                    root.remove(element)
-            cleaned_description = ET.tostring(root, encoding="unicode")
-            robot = Robot.from_xml_string(cleaned_description)
-        except BaseException as e:
-            print(f"Unexpected error: {type(e)}")
-            return free_joints
-
-        for joint in robot.joints:
-            if joint.type == "fixed":
-                continue
-            name = joint.name
-
-            if joint.limit is None:
-                if name in joints_names:
-                    raise Exception(
-                        f"Missing limits tag for the joint : {name} in the robot_description!"
-                    )
-                continue
-
-            minval = joint.limit.lower if joint.limit.lower is not None else 0.0
-            maxval = joint.limit.upper if joint.limit.upper is not None else 0.0
-
-            # urdf_parser_py defaults lower/upper to 0.0 when not
-            # specified in the URDF, so check for invalid range.
-            if minval >= maxval:
-                if joint.type == "continuous":
-                    minval = -pi
-                    maxval = pi
-                else:
-                    raise Exception(
-                        f"Missing lower/upper position limits for the joint : {name}"
-                        f" of type : {joint.type} in the robot_description!"
-                    )
-
-            if joint.limit.velocity is None:
-                raise Exception(
-                    f"Missing velocity limits for the joint : {name}"
-                    f" of type : {joint.type} in the robot_description!"
-                )
-            maxvel = joint.limit.velocity
-
-            if use_small and joint.safety_controller is not None:
-                if joint.safety_controller.soft_lower_limit is not None:
-                    minval = max(minval, joint.safety_controller.soft_lower_limit)
-                if joint.safety_controller.soft_upper_limit is not None:
-                    maxval = min(maxval, joint.safety_controller.soft_upper_limit)
-
-            if use_mimic and joint.mimic is not None:
-                entry = {"parent": joint.mimic.joint}
-                if joint.mimic.multiplier is not None:
-                    entry["factor"] = joint.mimic.multiplier
-                if joint.mimic.offset is not None:
-                    entry["offset"] = joint.mimic.offset
-                dependent_joints[name] = entry
-                continue
-
-            if name in dependent_joints:
-                continue
-
-            free_joints[name] = {
-                "min_position": minval,
-                "max_position": maxval,
-                "has_position_limits": joint.type != "continuous",
-                "max_velocity": maxvel,
-            }
-
-    return free_joints
+    return parse_joint_limits(description, joints_names, use_smallest_joint_limits)
