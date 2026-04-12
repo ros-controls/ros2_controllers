@@ -30,6 +30,7 @@
   <exec_depend>rqt_gui</exec_depend>
   <exec_depend>rqt_gui_py</exec_depend>
   <exec_depend>qt_gui</exec_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
     <build_type>ament_python</build_type>
