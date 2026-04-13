@@ -684,7 +684,7 @@ TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_1)
 
   assignResourcesPosFeedback();
 
-  ASSERT_FALSE(activate_succeeds(controller_));
+  ASSERT_THROW(activate_succeeds(controller_), std::runtime_error);
 }
 
 TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_2)
@@ -699,7 +699,7 @@ TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_2)
 
   assignResourcesVelFeedback();
 
-  ASSERT_FALSE(activate_succeeds(controller_));
+  ASSERT_THROW(activate_succeeds(controller_), std::runtime_error);
 }
 
 TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_1)
