@@ -68,7 +68,11 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
   left_wheel_old_pos_ = left_wheel_cur_pos;
   right_wheel_old_pos_ = right_wheel_cur_pos;
 
+// Disable deprecated warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   updateFromVelocity(left_wheel_est_vel, right_wheel_est_vel, time);
+#pragma GCC diagnostic pop
 
   return true;
 }
@@ -105,7 +109,11 @@ bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcp
   const double angular = (right_vel - left_vel) / wheel_separation_;
 
   // Integrate odometry:
+// Disable deprecated warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   integrateExact(linear, angular);
+#pragma GCC diagnostic pop
 
   timestamp_ = time;
 
@@ -152,7 +160,11 @@ void Odometry::updateOpenLoop(double linear, double angular, const rclcpp::Time 
   /// Integrate odometry:
   const double dt = time.seconds() - timestamp_.seconds();
   timestamp_ = time;
+// Disable deprecated warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   integrateExact(linear * dt, angular * dt);
+#pragma GCC diagnostic pop
 }
 
 bool Odometry::try_update_open_loop(double linear_vel, double angular_vel, double dt)
@@ -167,11 +179,19 @@ bool Odometry::try_update_open_loop(double linear_vel, double angular_vel, doubl
   return true;
 }
 
+void Odometry::setOdometry(double x, double y, double heading)
+{
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
+  resetAccumulators();
+}
 void Odometry::resetOdometry()
 {
   x_ = 0.0;
   y_ = 0.0;
   heading_ = 0.0;
+  resetAccumulators();
 }
 
 void Odometry::setWheelParams(
@@ -203,7 +223,11 @@ void Odometry::integrateExact(double linear, double angular)
 {
   if (fabs(angular) < 1e-6)
   {
+// Disable deprecated warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     integrateRungeKutta2(linear, angular);
+#pragma GCC diagnostic pop
   }
   else
   {

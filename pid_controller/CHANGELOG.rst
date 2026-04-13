@@ -2,6 +2,17 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+* [PID Controllers] Set first set point to current measurement (`#2205 <https://github.com/ros-controls/ros2_controllers/issues/2205>`_)
+* Contributors: Sai Kishor Kothakota
+
+6.3.0 (2026-02-03)
+------------------
+
 6.2.0 (2025-12-31)
 ------------------
 

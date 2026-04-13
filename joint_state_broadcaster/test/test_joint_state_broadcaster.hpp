@@ -34,7 +34,6 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
-  FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyWithoutDynamicJointStatesPublisherTest);
   FRIEND_TEST(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF);
@@ -50,6 +49,9 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMapping);
   FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
+  FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest);
+  FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest);
+  FRIEND_TEST(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest);
 };
 
 class JointStateBroadcasterTest : public ::testing::Test
@@ -76,8 +78,6 @@ public:
     const std::vector<std::string> & interfaces = {});
 
   void test_published_joint_state_message(const std::string & topic);
-
-  void test_published_dynamic_joint_state_message(const std::string & topic);
 
   void activate_and_get_joint_state_message(
     const std::string & topic, sensor_msgs::msg::JointState & msg);
@@ -121,6 +121,10 @@ protected:
   hardware_interface::StateInterface::SharedPtr joint_X_custom_state =
     std::make_shared<hardware_interface::StateInterface>(
       joint_names_[0], custom_interface_name_, &custom_joint_value_);
+
+  hardware_interface::StateInterface::SharedPtr joint_1_moving_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      joint_names_[0], "is_moving", "bool", "false");
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
