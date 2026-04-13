@@ -641,7 +641,7 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
 
 void JointTrajectoryController::assign_point_from_command_interface(
   std::vector<double> & trajectory_point_interface,
-  const InterfaceReference<hardware_interface::LoanedCommandInterface> & joint_interface)
+  const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> & joint_interface)
 {
   std::fill(
     trajectory_point_interface.begin(), trajectory_point_interface.end(),
@@ -675,6 +675,7 @@ void JointTrajectoryController::update_state_from_command_interfaces(JointTrajec
   // velocity and acceleration states are optional
   if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
   {
+    // If no state interface exists, then our velocities vector will be empty, and we must resize before assigning.
     if (!has_velocity_state_interface_) {
       state.velocities.resize(dof_, std::numeric_limits<double>::quiet_NaN());
     }
