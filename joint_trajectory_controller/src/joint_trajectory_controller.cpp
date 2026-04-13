@@ -607,27 +607,6 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       }
     }
   };
-  auto assign_point_from_command_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    std::fill(
-      trajectory_point_interface.begin(), trajectory_point_interface.end(),
-      std::numeric_limits<double>::quiet_NaN());
-    for (size_t index = 0; index < num_cmd_joints_; ++index)
-    {
-      const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
-      if (!joint_command_interface_value_op.has_value())
-      {
-        RCLCPP_DEBUG(
-          logger, "Unable to retrieve joint command interface value for joint at index %zu", index);
-      }
-      else
-      {
-        trajectory_point_interface[map_cmd_to_joints_[index]] =
-          joint_command_interface_value_op.value();
-      }
-    }
-  };
 
   // Assign values from the hardware
   // Position states always exist
