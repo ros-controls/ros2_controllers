@@ -318,10 +318,12 @@ def test_revolute_joint_missing_lower_upper_raises():
 
 
 def test_missing_velocity_raises():
-    """Joint with no velocity attribute raises.
+    """Joint with no velocity attribute raises a parse error.
 
-    minidom returns "" for absent velocity. float("") raises ValueError.
-    Our except block turns that into a meaningful message. Our own logic.
+    urdf_parser_py performs strict XML validation during parsing and
+    rejects a <limit> element missing the required velocity attribute.
+    The error comes from the library itself, before our code inspects
+    the joint.
     """
     urdf = _robot(
         '<link name="j_link"/>'
@@ -330,5 +332,5 @@ def test_missing_velocity_raises():
         '<limit lower="-1.0" upper="1.0" effort="5"/>'
         "</joint>"
     )
-    with pytest.raises(Exception, match="Missing velocity limits"):
+    with pytest.raises(Exception, match="Required attribute not set in XML: velocity"):
         parse_joint_limits(urdf, ["j"])
