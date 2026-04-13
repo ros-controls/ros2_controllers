@@ -2404,7 +2404,8 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
     {
       EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
     }
-    else if (traj_controller_->has_velocity_state_interface()){
+    else if (traj_controller_->has_velocity_state_interface())
+    {
       EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
     }
 
