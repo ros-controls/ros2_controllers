@@ -607,6 +607,27 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       }
     }
   };
+  auto assign_point_from_command_interface =
+  [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    std::fill(
+      trajectory_point_interface.begin(), trajectory_point_interface.end(),
+      std::numeric_limits<double>::quiet_NaN());
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
+    {
+      const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
+      if (!joint_command_interface_value_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          logger, "Unable to retrieve joint command interface value for joint at index %zu", index);
+      }
+      else
+      {
+        trajectory_point_interface[map_cmd_to_joints_[index]] =
+          joint_command_interface_value_op.value();
+      }
+    }
+  };
 
   // Assign values from the hardware
   // Position states always exist
@@ -702,12 +723,29 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
 {
   bool has_values = true;
 
+  auto assign_point_from_interface =
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+  {
+    for (size_t index = 0; index < num_cmd_joints_; ++index)
+    {
+      auto joint_interface_op = joint_interface[index].get().get_optional();
+      if (!joint_interface_op.has_value())
+      {
+        RCLCPP_DEBUG(
+          get_node()->get_logger(), "Unable to retrieve value of joint interface at index %zu",
+          index);
+        continue;
+      }
+      trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_op.value();
+    }
+  };
+
   // Assign values from the command interfaces as command.
   if (has_position_command_interface_)
   {
     if (interface_has_values(joint_command_interface_[0]))
     {
-      assign_point_from_command_interface(commands.positions, joint_command_interface_[0]);
+      assign_point_from_interface(commands.positions, joint_command_interface_[0]);
     }
     else
     {
@@ -719,7 +757,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   {
     if (interface_has_values(joint_command_interface_[1]))
     {
-      assign_point_from_command_interface(commands.velocities, joint_command_interface_[1]);
+      assign_point_from_interface(commands.velocities, joint_command_interface_[1]);
     }
     else
     {
@@ -731,7 +769,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   {
     if (interface_has_values(joint_command_interface_[2]))
     {
-      assign_point_from_command_interface(commands.accelerations, joint_command_interface_[2]);
+      assign_point_from_interface(commands.accelerations, joint_command_interface_[2]);
     }
     else
     {
@@ -743,7 +781,7 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
   {
     if (interface_has_values(joint_command_interface_[3]))
     {
-      assign_point_from_command_interface(commands.effort, joint_command_interface_[3]);
+      assign_point_from_interface(commands.effort, joint_command_interface_[3]);
     }
     else
     {
