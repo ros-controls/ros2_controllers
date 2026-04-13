@@ -608,7 +608,7 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
     }
   };
   auto assign_point_from_command_interface =
-  [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
+    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
   {
     std::fill(
       trajectory_point_interface.begin(), trajectory_point_interface.end(),
@@ -660,30 +660,6 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
   }
 }
 
-void JointTrajectoryController::assign_point_from_command_interface(
-  std::vector<double> & trajectory_point_interface,
-  const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> & joint_interface)
-{
-  std::fill(
-    trajectory_point_interface.begin(), trajectory_point_interface.end(),
-    std::numeric_limits<double>::quiet_NaN());
-  for (size_t index = 0; index < num_cmd_joints_; ++index)
-  {
-    const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
-    if (!joint_command_interface_value_op.has_value())
-    {
-      RCLCPP_DEBUG(
-        get_node()->get_logger(),
-        "Unable to retrieve joint command interface value for joint at index %zu", index);
-    }
-    else
-    {
-      trajectory_point_interface.at(map_cmd_to_joints_[index]) =
-        joint_command_interface_value_op.value();
-    }
-  }
-}
-
 void JointTrajectoryController::update_state_from_command_interfaces(JointTrajectoryPoint & state)
 {
   // Assign values from the command interfaces as state
@@ -696,8 +672,10 @@ void JointTrajectoryController::update_state_from_command_interfaces(JointTrajec
   // velocity and acceleration states are optional
   if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
   {
-    // If no state interface exists, then our velocities vector will be empty, and we must resize before assigning.
-    if (!has_velocity_state_interface_) {
+    // If no state interface exists, then our velocities vector will be empty, and we must resize
+    // before assigning.
+    if (!has_velocity_state_interface_)
+    {
       state.velocities.resize(dof_, std::numeric_limits<double>::quiet_NaN());
     }
     assign_point_from_command_interface(state.velocities, joint_command_interface_[1]);
@@ -705,7 +683,8 @@ void JointTrajectoryController::update_state_from_command_interfaces(JointTrajec
 
   if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2]))
   {
-    if (!has_acceleration_state_interface_) {
+    if (!has_acceleration_state_interface_)
+    {
       state.accelerations.resize(dof_, std::numeric_limits<double>::quiet_NaN());
     }
     assign_point_from_command_interface(state.accelerations, joint_command_interface_[2]);
@@ -2112,6 +2091,31 @@ void JointTrajectoryController::init_hold_position_msg()
   if (has_effort_command_interface_)
   {
     hold_position_msg_ptr_->points[0].effort.resize(dof_, 0.0);
+  }
+}
+
+void JointTrajectoryController::assign_point_from_command_interface(
+  std::vector<double> & trajectory_point_interface,
+  const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> &
+    joint_interface)
+{
+  std::fill(
+    trajectory_point_interface.begin(), trajectory_point_interface.end(),
+    std::numeric_limits<double>::quiet_NaN());
+  for (size_t index = 0; index < num_cmd_joints_; ++index)
+  {
+    const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
+    if (!joint_command_interface_value_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Unable to retrieve joint command interface value for joint at index %zu", index);
+    }
+    else
+    {
+      trajectory_point_interface.at(map_cmd_to_joints_[index]) =
+        joint_command_interface_value_op.value();
+    }
   }
 }
 
