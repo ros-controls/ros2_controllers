@@ -2,6 +2,17 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.5.0 (2026-04-02)
+------------------
+* mecanum_drive_controller: Don't require std_srvs (`#2213 <https://github.com/ros-controls/ros2_controllers/issues/2213>`_)
+* Contributors: Michal Sojka
+
+6.4.0 (2026-03-12)
+------------------
+* Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
+* Add set_odometry service to mecanum drive controller (`#2110 <https://github.com/ros-controls/ros2_controllers/issues/2110>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
 6.3.0 (2026-02-03)
 ------------------
 
