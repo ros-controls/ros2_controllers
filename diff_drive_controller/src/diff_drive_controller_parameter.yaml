@@ -105,19 +105,16 @@ diff_drive_controller:
     type: bool,
     default_value: true,
     description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
-    read_only: true,
   }
   cmd_vel_timeout: {
     type: double,
     default_value: 0.5, # seconds
     description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
-    read_only: true,
   }
   publish_limited_velocity: {
     type: bool,
     default_value: false,
     description: "Publish limited velocity value.",
-    read_only: true,
   }
   velocity_rolling_window_size: {
     type: int,
@@ -137,7 +134,6 @@ diff_drive_controller:
       max_velocity: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -145,7 +141,6 @@ diff_drive_controller:
       min_velocity: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -154,7 +149,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in forward direction.",
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -163,7 +157,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in forward direction.",
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -172,7 +165,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -181,7 +173,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -189,7 +180,6 @@ diff_drive_controller:
       max_jerk: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -197,7 +187,6 @@ diff_drive_controller:
       min_jerk: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -207,7 +196,6 @@ diff_drive_controller:
       max_velocity: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -215,7 +203,6 @@ diff_drive_controller:
       min_velocity: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -224,7 +211,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in positive direction.",
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -233,7 +219,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in positive direction.",
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -242,7 +227,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum acceleration in negative direction. If not set, -max_acceleration will be used.",
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
@@ -251,7 +235,6 @@ diff_drive_controller:
         type: double,
         default_value: .NAN,
         description: "Maximum deceleration in negative direction. If not set, -max_deceleration will be used.",
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -259,7 +242,6 @@ diff_drive_controller:
       max_jerk: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::gt_eq_or_nan<>": [0.0]
         }
@@ -267,7 +249,6 @@ diff_drive_controller:
       min_jerk: {
         type: double,
         default_value: .NAN,
-        read_only: true,
         validation: {
           "control_filters::lt_eq_or_nan<>": [0.0]
         }
