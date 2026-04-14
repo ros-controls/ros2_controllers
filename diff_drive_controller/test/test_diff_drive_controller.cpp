@@ -423,7 +423,7 @@ TEST_F(TestDiffDriveController, activate_fails_without_resources_assigned)
 
   ASSERT_TRUE(configure_succeeds(controller_));
 
-  ASSERT_FALSE(activate_succeeds(controller_));
+  ASSERT_THROW(activate_succeeds(controller_), std::runtime_error);
 }
 
 TEST_F(TestDiffDriveController, activate_succeeds_with_pos_resources_assigned)
