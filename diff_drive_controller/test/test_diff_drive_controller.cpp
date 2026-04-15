@@ -842,14 +842,8 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
 
   assignResourcesPosFeedback();
 
-<<<<<<< HEAD
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_optional().value());
   EXPECT_EQ(0.02, right_wheel_vel_cmd_.get_optional().value());
-=======
-  EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
-  EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
->>>>>>> ab5ce0c (Update controller tests to use configure/activate instead of on_configure/on_activate  (#1682))
 
   ASSERT_TRUE(activate_succeeds(controller_));
 
@@ -879,16 +873,9 @@ TEST_F(TestDiffDriveController, correct_initialization_using_parameters)
     << "Wheels are halted on deactivate()";
 
   // cleanup
-<<<<<<< HEAD
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value());
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value());
-=======
-  ASSERT_TRUE(cleanup_succeeds(controller_));
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
-  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
->>>>>>> ab5ce0c (Update controller tests to use configure/activate instead of on_configure/on_activate  (#1682))
 
   ASSERT_TRUE(configure_succeeds(controller_));
 
@@ -978,14 +965,8 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
     << "Wheels should be halted on deactivate()";
 
   // cleanup
-<<<<<<< HEAD
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value())
-=======
   ASSERT_TRUE(cleanup_succeeds(controller_));
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
->>>>>>> ab5ce0c (Update controller tests to use configure/activate instead of on_configure/on_activate  (#1682))
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
@@ -1060,14 +1041,8 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
     << "Wheels should be halted on deactivate()";
 
   // cleanup
-<<<<<<< HEAD
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value())
-=======
   ASSERT_TRUE(cleanup_succeeds(controller_));
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
->>>>>>> ab5ce0c (Update controller tests to use configure/activate instead of on_configure/on_activate  (#1682))
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should be halted on cleanup()";
