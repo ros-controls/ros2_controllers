@@ -410,25 +410,7 @@ TEST_F(
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1"}},
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
-<<<<<<< HEAD
-  ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  std::vector<LoanedCommandInterface> command_interfaces;
-  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
-  command_interfaces.emplace_back(gpio_1_2_dig_cmd);
-  command_interfaces.emplace_back(gpio_2_ana_cmd);
-
-  std::vector<LoanedStateInterface> state_interfaces;
-  state_interfaces.emplace_back(gpio_1_1_dig_state);
-  state_interfaces.emplace_back(gpio_2_ana_state);
-
-  controller_->assign_interfaces(std::move(command_interfaces), std::move(state_interfaces));
-
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-=======
   move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
->>>>>>> ab5ce0c (Update controller tests to use configure/activate instead of on_configure/on_activate  (#1682))
 }
 
 TEST_F(
