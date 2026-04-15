@@ -41,6 +41,7 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "tl_expected/expected.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -233,15 +234,16 @@ protected:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  /// Validate a trajectory message. Returns an empty string if valid, or a
-  /// human-readable error description if the trajectory should be rejected.
-  std::string validate_trajectory_msg(
+  /// Validate a trajectory message. Returns an empty expected if valid, or an
+  /// unexpected with a human-readable error description if the trajectory should be rejected.
+  tl::expected<void, std::string> validate_trajectory_msg(
     const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
   /// Validate a single field (positions/velocities/accelerations) of a trajectory point.
-  /// Returns an empty string if valid, or a human-readable error description on mismatch.
-  std::string validate_trajectory_point_field(
+  /// Returns an empty expected if valid, or an unexpected with a human-readable error
+  /// description on mismatch.
+  tl::expected<void, std::string> validate_trajectory_point_field(
     size_t joint_names_size, const std::vector<double> & vector_field,
     const std::string & string_for_vector_field, size_t i, bool allow_empty) const;
 
