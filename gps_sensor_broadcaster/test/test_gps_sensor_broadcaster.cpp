@@ -21,19 +21,25 @@
 #include <rclcpp/node.hpp>
 #include <rclcpp/wait_result_kind.hpp>
 #include <rclcpp/wait_set.hpp>
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "gps_sensor_broadcaster/gps_sensor_broadcaster.hpp"
 #include "gps_sensor_broadcaster/gps_sensor_broadcaster_parameters.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 using hardware_interface::LoanedStateInterface;
+using lifecycle_msgs::msg::State;
 using callback_return_type =
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 namespace
 {
 constexpr uint16_t GPS_SERVICE = 1;
@@ -60,7 +66,11 @@ class GPSSensorBroadcasterTest : public ::testing::Test
 public:
   GPSSensorBroadcasterTest() { rclcpp::init(0, nullptr); }
 
-  ~GPSSensorBroadcasterTest() { rclcpp::shutdown(); }
+  ~GPSSensorBroadcasterTest()
+  {
+    gps_broadcaster_.reset(nullptr);
+    rclcpp::shutdown();
+  }
 
   void SetUp()
   {
@@ -161,10 +171,10 @@ TEST_F(
   const auto result = gps_broadcaster_->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(configure_succeeds(gps_broadcaster_));
+
+  ASSERT_TRUE(activate_succeeds(gps_broadcaster_));
 }
 
 TEST_F(
@@ -175,11 +185,12 @@ TEST_F(
   const auto result = gps_broadcaster_->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(configure_succeeds(gps_broadcaster_));
+
   setup_gps_broadcaster();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(activate_succeeds(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
@@ -206,11 +217,12 @@ TEST_F(
   const auto result = gps_broadcaster_->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(configure_succeeds(gps_broadcaster_));
+
   setup_gps_broadcaster();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(activate_succeeds(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
@@ -234,11 +246,12 @@ TEST_F(
   const auto result = gps_broadcaster_->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(
-    gps_broadcaster_->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(configure_succeeds(gps_broadcaster_));
+
   setup_gps_broadcaster<semantic_components::GPSSensorOption::WithCovariance>();
-  ASSERT_EQ(
-    gps_broadcaster_->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+
+  ASSERT_TRUE(activate_succeeds(gps_broadcaster_));
 
   const auto gps_msg = subscribe_and_get_message();
   EXPECT_EQ(gps_msg.header.frame_id, frame_id_.get_value<std::string>());
