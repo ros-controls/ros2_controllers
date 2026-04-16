@@ -278,7 +278,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   }
   catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Failed to configure linear x speed limiter: %s", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear x speed limiter: %s", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
   try
@@ -291,7 +292,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   }
   catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Failed to configure linear y speed limiter: %s", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear y speed limiter: %s", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
   try
@@ -304,7 +306,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   }
   catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Failed to configure angular z speed limiter: %s", e.what());
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure angular z speed limiter: %s", e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -576,17 +579,14 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
-      rotation_from_base_to_center *
-      tf2::Vector3(linear_x_command, linear_y_command, 0.0);
+      rotation_from_base_to_center * tf2::Vector3(linear_x_command, linear_y_command, 0.0);
     tf2::Vector3 linear_trans_from_base_to_center = tf2::Vector3(
       params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x_ =
-      velocity_in_base_frame_w_r_t_center_frame_.x() +
-      linear_trans_from_base_to_center.y() * angular_z_command;
-    velocity_in_center_frame_linear_y_ =
-      velocity_in_base_frame_w_r_t_center_frame_.y() -
-      linear_trans_from_base_to_center.x() * angular_z_command;
+    velocity_in_center_frame_linear_x_ = velocity_in_base_frame_w_r_t_center_frame_.x() +
+                                         linear_trans_from_base_to_center.y() * angular_z_command;
+    velocity_in_center_frame_linear_y_ = velocity_in_base_frame_w_r_t_center_frame_.y() -
+                                         linear_trans_from_base_to_center.x() * angular_z_command;
     velocity_in_center_frame_angular_z_ = angular_z_command;
 
     const double wheel_front_left_vel =
