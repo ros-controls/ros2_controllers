@@ -42,7 +42,7 @@ void reset_controller_reference_msg(
   msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
-
+constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
 }  // namespace
 
 namespace steering_controllers_library
@@ -252,6 +252,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   subscribers_qos.keep_last(1);
   subscribers_qos.best_effort();
 
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
   // Reference Subscriber
   ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
   ref_subscriber_twist_ = get_node()->create_subscription<ControllerTwistReferenceMsg>(
@@ -290,14 +295,15 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   odom_state_msg_.child_frame_id = base_frame_id;
   odom_state_msg_.pose.pose.position.z = 0;
 
-  auto & covariance = odom_state_msg_.twist.covariance;
-  constexpr size_t NUM_DIMENSIONS = 6;
-  for (size_t index = 0; index < 6; ++index)
+  const size_t NUM_DIMENSIONS = 6;
+  auto & pose_cov = odom_state_msg_.pose.covariance;
+  auto & twist_cov = odom_state_msg_.twist.covariance;
+  for (size_t i = 0; i < NUM_DIMENSIONS; ++i)
   {
-    // 0, 7, 14, 21, 28, 35
-    const size_t diagonal_index = NUM_DIMENSIONS * index + index;
-    covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
-    covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
+    // indices of the diagonal: 0, 7, 14, 21, 28, 35
+    const size_t index = (NUM_DIMENSIONS + 1) * i;
+    pose_cov[index] = params_.pose_covariance_diagonal[i];
+    twist_cov[index] = params_.twist_covariance_diagonal[i];
   }
 
   try
@@ -334,6 +340,24 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   {
     fprintf(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  try
+  {
+    set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
+      DEFAULT_SET_ODOM_SERVICE,
+      std::bind(
+        &SteeringControllersLibrary::set_odometry, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3));
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr,
+      "Exception thrown during service creation at configure stage "
+      "with message : %s \n",
       e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -469,6 +493,26 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
+controller_interface::CallbackReturn SteeringControllersLibrary::on_cleanup(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn SteeringControllersLibrary::on_error(
+  const rclcpp_lifecycle::State & /*previous_state*/)
+{
+  if (!reset())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
 controller_interface::return_type SteeringControllersLibrary::update_reference_from_subscribers(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
@@ -519,10 +563,24 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 {
   auto logger = get_node()->get_logger();
 
-  // store current ref (for open loop odometry) and update odometry
-  last_linear_velocity_ = reference_interfaces_[0];
-  last_angular_velocity_ = reference_interfaces_[1];
-  update_odometry(period);
+  // check if odometry set was requested by non-RT thread
+  if (set_odom_requested_.load())
+  {
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.set_odometry(params.x, params.y, params.yaw);
+      set_odom_requested_.store(false);
+    }
+  }
+  else
+  {
+    // store current ref (for open loop odometry) and update odometry
+    last_linear_velocity_ = reference_interfaces_[0];
+    last_angular_velocity_ = reference_interfaces_[1];
+    update_odometry(period);
+  }
 
   // MOVE ROBOT
 
@@ -677,6 +735,48 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
 
   return controller_interface::return_type::OK;
+}
+
+void SteeringControllersLibrary::set_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+  std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
+{
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
+}
+
+bool SteeringControllersLibrary::reset()
+{
+  odometry_.set_odometry(0.0, 0.0, 0.0);
+
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
+
+  last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
+  last_angular_velocity_ = std::numeric_limits<double>::quiet_NaN();
+  for (auto & interface : reference_interfaces_)
+  {
+    interface = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  ref_subscriber_twist_.reset();
+  set_odom_service_.reset();
+
+  return true;
 }
 
 }  // namespace steering_controllers_library

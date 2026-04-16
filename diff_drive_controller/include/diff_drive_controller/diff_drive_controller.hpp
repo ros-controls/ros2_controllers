@@ -19,12 +19,14 @@
 #ifndef DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 #define DIFF_DRIVE_CONTROLLER__DIFF_DRIVE_CONTROLLER_HPP_
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <queue>
 #include <string>
 #include <vector>
 
+#include "control_msgs/srv/set_odometry.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "diff_drive_controller/odometry.hpp"
 #include "diff_drive_controller/speed_limiter.hpp"
@@ -75,6 +77,11 @@ public:
 
   controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
+
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
 
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
@@ -134,7 +141,6 @@ protected:
   std::unique_ptr<SpeedLimiter> limiter_linear_;
   std::unique_ptr<SpeedLimiter> limiter_angular_;
 
-  bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<TwistStamped>>
     realtime_limited_velocity_publisher_ = nullptr;
@@ -143,9 +149,15 @@ protected:
   rclcpp::Time previous_update_timestamp_{0};
 
   // publish rate limiter
+  // TODO(bhavin-umatiya): Remove these two member variables
   double publish_rate_ = 50.0;
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
+  rclcpp::Duration publish_period_ = rclcpp::Duration::from_seconds(0.0);
+  rclcpp::Time previous_publish_timestamp_{0};
+
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
   bool reset();
   void halt();

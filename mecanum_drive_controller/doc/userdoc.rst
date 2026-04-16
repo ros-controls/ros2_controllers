@@ -60,6 +60,11 @@ Publishers
 - ``<controller_name>/tf_odometry``       [``tf2_msgs/msg/TFMessage``]
 - ``<controller_name>/controller_state``  [``control_msgs/msg/MecanumDriveControllerState``]
 
+Services
+,,,,,,,,,,,
+~/set_odometry [control_msgs::srv::SetOdometry]
+  This service can be used to set the current odometry of the robot to desired values.
+
 Parameters
 ,,,,,,,,,,,
 
