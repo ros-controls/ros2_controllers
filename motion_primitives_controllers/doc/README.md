@@ -1,6 +1,8 @@
 **This package contains two controllers:**
 1. [motion_primitives_forward_controller](#moprim_forward_controller)
-2. [motion_primitives_from_trajectory_controller](#moprim_from_traj_controller)
+2. [motion_primitives_from_trajectory_controller](#moprim_from_traj_controller) (planned — not yet implemented)
+
+Note: `motion_primitives_from_trajectory_controller` is planned and currently not implemented in this repository. It is documented here for completeness; implementation is tracked separately (add issue/PR reference as needed).
 
 ## Command and State Interfaces
 Both controllers use the following command and state interfaces to transmit the motion primitives. All interfaces use the naming scheme `tf_prefix_ + "motion_primitive/<interface name>"` where the `tf_prefix` is provided to the controller as a parameter.
