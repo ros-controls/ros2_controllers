@@ -16,6 +16,12 @@ load_admittance_controller:
       - position
       - velocity
 
+    kinematics:
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
+      plugin_package: kinematics_interface
+      base: base_link
+      tip: link_2
+      group_name: arm
 
 test_admittance_controller:
   # contains minimal needed parameters for kuka_kr6
