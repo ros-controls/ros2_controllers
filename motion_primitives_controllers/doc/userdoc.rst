@@ -2,8 +2,8 @@
 
 .. _motion_primitives_controllers_userdoc:
 
-motion_primitive_controllers
-==========================================
+motion_primitives_controllers
+===========================================
 
 Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ),
 LINEAR_CARTESIAN (LIN/ MOVEL) and CIRCULAR_CARTESIAN (CIRC/ MOVEC)
