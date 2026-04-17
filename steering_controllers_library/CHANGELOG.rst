@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.5.0 (2026-04-02)
+------------------
+* set odometry service addition - steering controllers library (`#2244 <https://github.com/ros-controls/ros2_controllers/issues/2244>`_)
+* Contributors: Ege Kural
+
 6.4.0 (2026-03-12)
 ------------------
 * Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
