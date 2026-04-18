@@ -126,8 +126,8 @@ def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True
         # absent in the URDF. We treat min >= max as "limits missing" and
         # either fall back to -pi..pi for continuous joints or raise for
         # revolute joints where valid bounds are required.
-        minval = joint.limit.lower if joint.limit.lower is not None else 0.0
-        maxval = joint.limit.upper if joint.limit.upper is not None else 0.0
+        minval = joint.limit.lower
+        maxval = joint.limit.upper
 
         if minval >= maxval:
             if joint.type == "continuous":
