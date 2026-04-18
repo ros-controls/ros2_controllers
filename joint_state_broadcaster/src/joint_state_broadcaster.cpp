@@ -264,7 +264,23 @@ bool JointStateBroadcaster::init_joint_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
+
+    if (interface_name == HW_IF_POSITION)
+    {
+      name_if_value_mapping_[prefix_name][interface_name] = params_.initial_value.position;
+    }
+    else if (interface_name == HW_IF_VELOCITY)
+    {
+      name_if_value_mapping_[prefix_name][interface_name] = params_.initial_value.velocity;
+    }
+    else if (interface_name == HW_IF_EFFORT)
+    {
+      name_if_value_mapping_[prefix_name][interface_name] = params_.initial_value.effort;
+    }
+    else
+    {
+      name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
+    }
 
     // filter state interfaces that have at least one of the joint_states fields,
     // the rest will be ignored for this message
@@ -345,9 +361,9 @@ void JointStateBroadcaster::init_joint_state_msg()
   // default initialization for joint state message
   joint_state_msg_.header.frame_id = frame_id_;
   joint_state_msg_.name = joint_names_;
-  joint_state_msg_.position.resize(num_joints, kUninitializedValue);
-  joint_state_msg_.velocity.resize(num_joints, kUninitializedValue);
-  joint_state_msg_.effort.resize(num_joints, kUninitializedValue);
+  joint_state_msg_.position.resize(num_joints, params_.initial_value.position);
+  joint_state_msg_.velocity.resize(num_joints, params_.initial_value.velocity);
+  joint_state_msg_.effort.resize(num_joints, params_.initial_value.effort);
 
   // save joint state data
   auto get_address =
@@ -361,16 +377,33 @@ void JointStateBroadcaster::init_joint_state_msg()
     }
     else
     {
-      return kUninitializedValue;
+      if (interface_name == HW_IF_POSITION)
+      {
+        return params_.initial_value.position;
+      }
+      else if (interface_name == HW_IF_VELOCITY)
+      {
+        return params_.initial_value.velocity;
+      }
+      else if (interface_name == HW_IF_EFFORT)
+      {
+        return params_.initial_value.effort;
+      }
+      else
+      {
+        return kUninitializedValue;
+      }
     }
   };
 
   joint_states_data_.clear();
   for (auto i = 0u; i < joint_names_.size(); ++i)
   {
-    joint_states_data_.push_back(JointStateData(
-      get_address(joint_names_[i], HW_IF_POSITION), get_address(joint_names_[i], HW_IF_VELOCITY),
-      get_address(joint_names_[i], HW_IF_EFFORT)));
+    joint_states_data_.push_back(JointStateData{
+      get_address(joint_names_[i], HW_IF_POSITION),
+      get_address(joint_names_[i], HW_IF_VELOCITY),
+      get_address(joint_names_[i], HW_IF_EFFORT),
+    });
   }
 }
 
@@ -388,7 +421,7 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
     for (const auto & interface_and_value : interfaces_and_values)
     {
       if_value.interface_names.emplace_back(interface_and_value.first);
-      if_value.values.emplace_back(kUninitializedValue);
+      if_value.values.emplace_back(std::numeric_limits<double>::quiet_NaN());
     }
     dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
   }
