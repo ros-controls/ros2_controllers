@@ -2385,7 +2385,65 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
     initial_acc_cmd);
 
   // no call of update method, so the values should be read from command interfaces
+  auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
+  for (size_t i = 0; i < 3; ++i)
+  {
+    if (traj_controller_->has_position_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
+    }
+    else
+    {
+      // should have set it to the state interface instead
+      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+    }
+
+    if (traj_controller_->has_velocity_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
+    }
+    else if (traj_controller_->has_velocity_state_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
+    }
+
+    if (traj_controller_->has_acceleration_command_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.accelerations[i], initial_acc_cmd[i]);
+    }
+    else if (traj_controller_->has_acceleration_state_interface())
+    {
+      EXPECT_EQ(current_state_when_offset.accelerations[i], joint_state_acc_[i]);
+    }
+  }
+
+  executor.cancel();
+}
+
+// Testing the behavior of the set_last_command_interface_value_as_state_on_activation parameter.
+// On activation, both state and command should be equal to the current command values, not current
+// state values.
+TEST_P(TrajectoryControllerTestParameterized, test_set_last_command_interface_on_activation)
+{
+  rclcpp::Parameter const set_last_command_on_activation(
+    "set_last_command_interface_value_as_state_on_activation", true);
+
+  // set command values to arbitrary values
+  std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
+  for (size_t i = 0; i < 3; ++i)
+  {
+    initial_pos_cmd.push_back(3.1 + static_cast<double>(i));
+    initial_vel_cmd.push_back(0.25 + static_cast<double>(i));
+    initial_acc_cmd.push_back(0.02 + static_cast<double>(i) / 10.0);
+  }
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {set_last_command_on_activation}, true, 0., 1., initial_pos_cmd, initial_vel_cmd,
+    initial_acc_cmd);
+
+  // no call of update method, so the values should be read from command interfaces
   auto current_state_when_offset = traj_controller_->get_current_state_when_offset();
 
   for (size_t i = 0; i < 3; ++i)
