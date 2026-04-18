@@ -1204,7 +1204,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   {
     // Handle restart of controller by reading from commands if those are not NaN (a controller was
     // running already)
-    // Thue function checks if all joints have values on the command interfaces.
+    // The function checks if all joints have values on the command interfaces.
     // otherwise it will not update them, leaving them based on the state interfaces.
     update_state_from_command_interfaces(state_current_);
     update_state_from_command_interfaces(last_commanded_state_);
