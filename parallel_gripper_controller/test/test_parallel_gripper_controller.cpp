@@ -157,6 +157,108 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
     this->controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
 }
+TEST_F(GripperControllerTest, ActivateWithEffortInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  // verify effort interface is in command interface configuration
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/effort"));
+
+  ASSERT_EQ(
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+
+TEST_F(GripperControllerTest, ActivateWithVelocityInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/velocity"));
+
+  ASSERT_EQ(
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+
+TEST_F(GripperControllerTest, ActivateWithEffortAndVelocityInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort_and_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/effort"));
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/velocity"));
+
+  ASSERT_EQ(
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
+
+TEST_F(GripperControllerTest, DeactivateSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort_and_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_EQ(
+    this->controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(
+    this->controller_->on_deactivate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+}
 
 int main(int argc, char ** argv)
 {
