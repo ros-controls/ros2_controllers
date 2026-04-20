@@ -14,6 +14,7 @@
 
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 
+#include <deque>
 #include <limits>
 #include <memory>
 #include <string>
@@ -309,8 +310,9 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Initialize previous commands queue for jerk limiting
-    previous_two_commands_ = std::queue<std::array<double, 3>>({{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});                                                                                                                                                                                     
+  // Allocate reference interfaces and reset their values to NaN to catch uninitialized usage.
+  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
+  reset_buffers();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
@@ -407,11 +409,10 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Try to set default value in command.
-  // If this fails, then another command will be received soon anyways.
-  ControllerReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set(emtpy_msg);
+  // Reset limiter history and reference buffers so a previous activation cannot
+  // influence the behavior of the controller after a deactivate->activate cycle.
+  reset_buffers();
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -433,7 +434,24 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
     return controller_interface::CallbackReturn::FAILURE;
   }
 
+  reset_buffers();
+
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void MecanumDriveController::reset_buffers()
+{
+  std::fill(
+    reference_interfaces_.begin(), reference_interfaces_.end(),
+    std::numeric_limits<double>::quiet_NaN());
+
+  // Replace the queue with one initialized to two zero entries.
+  previous_two_commands_ = std::queue<std::array<double, 3>>(
+    std::deque<std::array<double, 3>>{{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});
+
+  // Reset the latest received reference back to NaN so no stale command is applied.
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 }
 
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(

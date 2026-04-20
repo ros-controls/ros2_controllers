@@ -19,6 +19,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1219,6 +1220,101 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_angular_z)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
   EXPECT_NEAR(k * angular_z / wheels_radius, joint_command_values_[fr], 1e-3);
+}
+
+// Test that reset_buffers() clears the jerk-limiter history, the reference interfaces,
+// and the latest received reference back to NaN/zero.
+TEST_F(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state)
+{
+  SetUpController("test_mecanum_drive_controller_with_limits");
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  // Dirty all buffers that reset_buffers() is responsible for clearing.
+  controller_->reference_interfaces_[0] = 1.0;
+  controller_->reference_interfaces_[1] = 2.0;
+  controller_->reference_interfaces_[2] = 3.0;
+
+  std::queue<std::array<double, 3>> dirty;
+  dirty.push({{4.0, 5.0, 6.0}});
+  dirty.push({{7.0, 8.0, 9.0}});
+  std::swap(controller_->previous_two_commands_, dirty);
+
+  ControllerReferenceMsg dirty_ref;
+  dirty_ref.header.stamp = controller_->get_node()->now();
+  dirty_ref.twist.linear.x = 1.0;
+  dirty_ref.twist.linear.y = 2.0;
+  dirty_ref.twist.angular.z = 3.0;
+  controller_->input_ref_.set(dirty_ref);
+
+  controller_->reset_buffers();
+
+  for (const auto & itf : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(itf));
+  }
+  ASSERT_EQ(controller_->previous_two_commands_.size(), 2u);
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+
+  auto reset_ref = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reset_ref.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reset_ref.twist.linear.y));
+  EXPECT_TRUE(std::isnan(reset_ref.twist.angular.z));
+}
+
+// Test that lifecycle transitions reset the limiter history so that re-activating
+// the controller re-limits commands from zero.
+TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buffers)
+{
+  SetUpController("test_mecanum_drive_controller_with_limits");
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  const double dt = 0.001;
+  const double wheels_radius = 0.5;
+  const double linear = 1.0;
+  const double max_acceleration = 2.0;  // m/s^2 (from test_mecanum_drive_controller_params.yaml)
+  const double time_acc = linear / max_acceleration;
+
+  // Ramp up linear x to the steady-state target so the limiter buffer holds
+  // non-zero history.
+  for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) + 5; ++i)
+  {
+    controller_->reference_interfaces_[0] = linear;
+    controller_->reference_interfaces_[1] = 0.0;
+    controller_->reference_interfaces_[2] = 0.0;
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+  }
+  EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+  EXPECT_NEAR(linear, controller_->previous_two_commands_.back()[0], 1e-3);
+
+  // Deactivate then re-activate: limiter history must be reset to zero.
+  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
+
+  // After reactivation, requesting the same target should once again be limited
+  // by max_acceleration starting from zero, not pass through immediately.
+  controller_->reference_interfaces_[0] = linear;
+  controller_->reference_interfaces_[1] = 0.0;
+  controller_->reference_interfaces_[2] = 0.0;
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+  EXPECT_LT(joint_command_values_[0], linear / wheels_radius)
+    << "Limiter history was not reset across lifecycle transitions; the wheel command "
+       "should be ramping up from zero again.";
 }
 
 int main(int argc, char ** argv)

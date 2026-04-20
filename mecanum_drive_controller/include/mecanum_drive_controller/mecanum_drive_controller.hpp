@@ -69,6 +69,8 @@ public:
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  void reset_buffers();
+
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -164,6 +166,8 @@ private:
   std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_x_;
   std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_y_;
   std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_angular_z_;
+
+protected:
   // Previous two commands for jerk limiting: queue of [linear_x, linear_y, angular_z]
   std::queue<std::array<double, 3>> previous_two_commands_;
 };
