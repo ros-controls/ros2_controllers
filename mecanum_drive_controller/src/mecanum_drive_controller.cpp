@@ -265,8 +265,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
-
   // Configure speed limiters
   try
   {
@@ -313,6 +311,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   // Initialize previous commands queue for jerk limiting
     previous_two_commands_ = std::queue<std::array<double, 3>>({{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});                                                                                                                                                                                     
+
+  RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
