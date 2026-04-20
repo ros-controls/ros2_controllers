@@ -312,9 +312,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   }
 
   // Initialize previous commands queue for jerk limiting
-  previous_two_commands_ = std::queue<std::array<double, 3>>();
-  previous_two_commands_.push({{0.0, 0.0, 0.0}});
-  previous_two_commands_.push({{0.0, 0.0, 0.0}});
+    previous_two_commands_ = std::queue<std::array<double, 3>>({{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});                                                                                                                                                                                     
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
