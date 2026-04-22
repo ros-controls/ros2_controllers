@@ -1,0 +1,222 @@
+:github_url: https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/motion_primitives_controllers/userdoc.rst
+
+.. _motion_primitives_controllers_userdoc:
+
+motion_primitive_controllers
+==========================================
+
+Package to control robots using motion primitives like LINEAR_JOINT (PTP/ MOVEJ), LINEAR_CARTESIAN (LIN/ MOVEL) and CIRCULAR_CARTESIAN (CIRC/ MOVEC)
+
+.. warning::
+
+  There is no guarantee that the motion defined by the motion primitive will actually be executed exactly as planned. In particular, for motions in Cartesian space such as LIN primitives, it is not necessarily ensured that the robot will execute the motion exactly in that way, since the inverse kinematics is not always unique.
+
+
+
+This package contains two controllers:
+
+1. :ref:`moprim_forward_controller`
+2. :ref:`moprim_from_traj_controller`
+
+Command and State Interfaces
+----------------------------
+
+Both controllers use the following command and state interfaces to transmit the motion primitives.
+All interfaces use the naming scheme ``tf_prefix_ + "motion_primitive/<interface name>"``
+where the ``tf_prefix`` is provided to the controller as a parameter.
+
+Command Interfaces
+....................................
+
+These interfaces are used to send motion primitive data to the hardware interface:
+
+- ``motion_type``: Type of motion primitive (LINEAR_JOINT, LINEAR_CARTESIAN, CIRCULAR_CARTESIAN)
+- ``q1`` – ``q6``: Target joint positions for joint-based motion
+- ``pos_x``, ``pos_y``, ``pos_z``: Target Cartesian position
+- ``pos_qx``, ``pos_qy``, ``pos_qz``, ``pos_qw``: Orientation quaternion of the target pose
+- ``pos_via_x``, ``pos_via_y``, ``pos_via_z``: Intermediate via-point position for circular motion
+- ``pos_via_qx``, ``pos_via_qy``, ``pos_via_qz``, ``pos_via_qw``: Orientation quaternion of via-point
+- ``blend_radius``: Blending radius for smooth transitions
+- ``velocity``: Desired motion velocity
+- ``acceleration``: Desired motion acceleration
+- ``move_time``: Optional duration for time-based execution (For LINEAR_JOINT and
+  LINEAR_CARTESIAN. If move_time > 0, velocity and acceleration are ignored)
+
+State Interfaces
+................................
+
+These interfaces are used to communicate the internal status of the hardware interface back to the
+``motion_primitives_forward_controller``.
+
+- ``execution_status``: Indicates the current execution state of the primitive. Possible values are:
+
+  - ``IDLE``: No motion in progress
+  - ``EXECUTING``: Currently executing a primitive
+  - ``SUCCESS``: Last command finished successfully
+  - ``ERROR``: An error occurred during execution
+  - ``STOPPING``: The hardware interface has received the ``STOP_MOTION`` command, but the robot has not yet come to a stop.
+  - ``STOPPED``: The robot was stopped using the ``STOP_MOTION`` command and must be reset with the ``RESET_STOP`` command before executing new commands.
+
+- ``ready_for_new_primitive``: Boolean flag indicating whether the interface is ready to receive a new motion primitive
+
+.. _moprim_forward_controller:
+
+motion_primitives_forward_controller
+--------------------------------------------------------
+
+This controller provides an interface for sending motion primitives to an industrial robot
+controller using the ``ExecuteMotionPrimitiveSequence.action`` action from
+`control_msgs <https://github.com/ros-controls/control_msgs/blob/motion_primitives/control_msgs/action/ExecuteMotionPrimitiveSequence.action>`_.
+The controller receives the primitives via the action interface and forwards them through command
+interfaces to the robot-specific hardware interface. Currently, hardware interfaces for
+`Universal Robots <https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver>`_ and
+`KUKA Robots <https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver>`_
+are implemented.
+
+- Supported motion primitives:
+
+  - ``LINEAR_JOINT``
+  - ``LINEAR_CARTESIAN``
+  - ``CIRCULAR_CARTESIAN``
+
+If multiple motion primitives are passed to the controller via the action, the controller forwards
+them to the hardware interface as a sequence. To do this, it first sends ``MOTION_SEQUENCE_START``,
+followed by each individual primitive, and finally ``MOTION_SEQUENCE_END``. All primitives between
+these two markers will be executed as a single, continuous sequence. This allows seamless
+transitions (blending) between primitives.
+
+The action interface also allows stopping the current execution of motion primitives. When a stop
+request is received, the controller sends ``STOP_MOTION`` to the hardware interface, which then
+halts the robot's movement. Once the controller receives confirmation that the robot has stopped, it
+sends ``RESET_STOP`` to the hardware interface. After that, new commands can be sent.
+
+.. image:: Moprim_Controller_ExecuteMotion_Action.drawio.png
+  :alt: Action Image
+
+This can be done, for example, via a Python script as demonstrated in the
+`example python script <https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives_ur10e.py>`_
+in the ``Universal_Robots_ROS2_Driver`` package.
+
+Architecture overview of motion_primitives_forward_controller
+........................................................................................................................
+
+Architecture for a UR robot with
+`Universal_Robots_ROS2_Driver in motion primitives mode <https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver>`_.
+
+.. image:: ros2_control_motion_primitives_ur.drawio.png
+  :alt: UR Robot Architecture
+
+Architecture for a KUKA robot with
+`kuka_eki_motion_primitives_hw_interface <https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver/kuka_eki_motion_primitives_hw_interface>`_.
+
+.. image:: ros2_control_motion_primitives_kuka.drawio.png
+  :alt: KUKA Robot Architecture
+
+Demo-Videos with motion_primitives_forward_controller
+.....................................................
+
+..  youtube:: SKz6LFvJmhQ
+
+..  youtube:: _BWCO36j9bg
+
+Parameters forward controller
+.............................
+
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+
+.. _definition_file_forward:
+
+The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/motion_primitives_controllers/src/motion_primitives_forward_controller_parameter.yaml>`__ contains descriptions for all the parameters used by this controller.
+
+.. generate_parameter_library_details:: ../src/motion_primitives_forward_controller_parameter.yaml
+
+.. _test_file_forward:
+
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/motion_primitives_controllers/test/motion_primitives_forward_controller_params.yaml>`__:
+
+.. literalinclude:: ../test/motion_primitives_forward_controller_params.yaml
+   :language: yaml
+
+.. _moprim_from_traj_controller:
+
+motion_primitives_from_trajectory_controller
+------------------------------------------------------------------------
+
+The ``motion_primitives_from_trajectory_controller`` builds on the same architecture as the
+``motion_primitives_forward_controller`` and uses the same command and state interfaces, making it
+compatible with the same hardware interfaces. However, instead of receiving motion primitives
+directly, it takes a ``FollowJointTrajectory`` action as input and approximates the trajectory using
+either ``PTP`` (``LINEAR_JOINT``) or ``LIN`` (``LINEAR_CARTESIAN``) motion primitives.
+
+The approximation mode can be selected via the ``approximate_mode`` parameter, with options
+``"RDP_PTP"`` or ``"RDP_LIN"``, using the Ramer-Douglas-Peucker algorithm to reduce the trajectory
+points. Tolerances for the approximation are defined by:
+
+- ``epsilon_joint_angle`` for PTP (in radians)
+- ``epsilon_cart_position`` (in meters) and ``epsilon_cart_angle`` (in radians) for LIN
+
+The ``use_time_not_vel_and_acc`` parameter determines whether motion duration is calculated based on
+time stamps or if velocity and acceleration values are used instead. For PTP primitives, joint
+velocity and acceleration are taken as the maximum values from the original trajectory. For LIN
+primitives, Cartesian velocity and acceleration are estimated numerically from the end-effector path.
+
+The blend radius is automatically computed based on the smaller of the distances to the previous and
+next target points, scaled by a user-configurable blend_radius_percentage. The resulting value is
+then clamped between a lower and upper limit, specified by blend_radius_lower_clamp and
+blend_radius_upper_clamp. All three parameters can be configured by the user:
+
+- blend_radius_percentage (default: 0.1) – relative scale factor applied to the smaller neighboring
+  distance
+- blend_radius_lower_clamp (default: 0.01 m) – minimum allowable blend radius
+- blend_radius_upper_clamp (default: 0.1 m) – maximum allowable blend radius
+
+Alternatively, users can override velocity, acceleration, and blend radius values with the following
+parameters:
+
+- PTP: ``joint_vel_overwrite``, ``joint_acc_overwrite``
+- LIN: ``cart_vel_overwrite``, ``cart_acc_overwrite``
+- Blend radius: ``blend_radius_overwrite``
+
+This controller enables executing collision-free trajectories planned with MoveIt using approximated
+motion primitives.
+
+Architecture overview of motion_primitives_from_trajectory_controller
+............................................................................................................................................
+
+Architecture for a UR robot with
+`Universal_Robots_ROS2_Driver in motion primitives mode <https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver>`_.
+
+.. image:: ros2_control_motion_primitives_from_traj_ur.drawio.png
+  :alt: UR Robot Architecture
+
+Architecture for a KUKA robot with
+`kuka_eki_motion_primitives_hw_interface <https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver/kuka_eki_motion_primitives_hw_interface>`_.
+
+.. image:: ros2_control_motion_primitives_from_traj_kuka.drawio.png
+  :alt: KUKA Robot Architecture
+
+Demo-Videos with motion_primitives_from_trajectory_controller
+.............................................................
+
+..  youtube:: Z_NCaSyE-KA
+
+..  youtube:: SvUU6PM1qRk
+
+
+Parameters trajectory controller
+................................
+
+This controller uses the `generate_parameter_library <https://github.com/PickNikRobotics/generate_parameter_library>`_ to handle its parameters.
+
+.. _definition_file_trajectory:
+
+The parameter `definition file located in the src folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/motion_primitives_controllers/src/motion_primitives_from_trajectory_controller_parameter.yaml>`__ contains descriptions for all the parameters used by this controller.
+
+.. generate_parameter_library_details:: ../src/motion_primitives_from_trajectory_controller_parameter.yaml
+
+.. _test_file_trajectory:
+
+An example parameter file for this controller can be found in `the test directory <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/motion_primitives_controllers/test/motion_primitives_from_trajectory_controller_params.yaml>`__:
+
+.. literalinclude:: ../test/motion_primitives_from_trajectory_controller_params.yaml
+   :language: yaml
