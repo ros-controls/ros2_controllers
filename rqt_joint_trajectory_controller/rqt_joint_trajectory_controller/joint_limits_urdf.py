@@ -30,9 +30,8 @@ description = ""
 
 # Tags defined as direct children of <robot> in the URDF specification.
 # Any other tag is a vendor extension (ros2_control, gazebo, xacro
-# remnants, etc.) that urdf_parser_py rejects with an AssertionError
-# during strict validation. We whitelist the standard tags and strip
-# everything else before parsing.
+# remnants, etc.) that urdf_parser_py warns about on stderr during
+# parsing. We strip non-standard tags to keep logs clean.
 _URDF_STANDARD_TAGS = frozenset({"link", "joint", "transmission", "material"})
 
 
@@ -55,9 +54,9 @@ def _strip_non_urdf_tags(urdf_string):
 
     Robot descriptions published to /robot_description commonly carry
     vendor-specific extensions like <ros2_control> and <gazebo> alongside
-    the standard URDF elements. urdf_parser_py validates strictly and
-    raises AssertionError on any unknown tag, so we keep only the tags
-    defined by the URDF specification and drop the rest.
+    the standard URDF elements. urdf_parser_py prints warnings to stderr
+    for unrecognised tags (e.g. <ros2_control>). We strip them to keep
+    production logs clean.
     """
     root = ET.fromstring(urdf_string)
     # Iterate over a list copy because we are mutating root during the loop
@@ -100,9 +99,8 @@ def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True
     free_joints = {}
     dependent_joints = {}
 
-    # Strip vendor extensions before strict urdf_parser_py validation.
-    # Parsing errors on the cleaned URDF propagate to the caller, which
-    # matches the old minidom-based behavior on malformed input.
+    # Strip vendor extensions to suppress urdf_parser_py stderr warnings
+    # for unrecognised tags like <ros2_control>
     cleaned = _strip_non_urdf_tags(urdf_string)
     robot = Robot.from_xml_string(cleaned)
 
