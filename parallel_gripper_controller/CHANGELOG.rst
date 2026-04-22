@@ -2,6 +2,11 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(parallel_gripper): rename variables for consistency (backport `#2314 <https://github.com/ros-controls/ros2_controllers/issues/2314>`_) (`#2315 <https://github.com/ros-controls/ros2_controllers/issues/2315>`_)
+* Contributors: mergify[bot]
+
 4.39.0 (2026-04-04)
 -------------------
 

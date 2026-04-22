@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix segfault in jtc if joint name not in urdf (backport `#2321 <https://github.com/ros-controls/ros2_controllers/issues/2321>`_) (`#2323 <https://github.com/ros-controls/ros2_controllers/issues/2323>`_)
+* Contributors: mergify[bot]
+
 4.39.0 (2026-04-04)
 -------------------
 * Add decelerate to stop functionality when trajectory is canceled or preempted (backport `#2163 <https://github.com/ros-controls/ros2_controllers/issues/2163>`_) (`#2222 <https://github.com/ros-controls/ros2_controllers/issues/2222>`_)

@@ -2,6 +2,9 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.39.0 (2026-04-04)
 -------------------
 * [JSB] Fix joint_state message corruption issue (backport `#2217 <https://github.com/ros-controls/ros2_controllers/issues/2217>`_) (`#2218 <https://github.com/ros-controls/ros2_controllers/issues/2218>`_)

@@ -2,6 +2,9 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.39.0 (2026-04-04)
 -------------------
 

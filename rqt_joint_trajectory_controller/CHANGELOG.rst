@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [RQT_JTC] add unit tests for parse_joint_limits (backport `#2281 <https://github.com/ros-controls/ros2_controllers/issues/2281>`_) (`#2288 <https://github.com/ros-controls/ros2_controllers/issues/2288>`_)
+* Contributors: mergify[bot]
+
 4.39.0 (2026-04-04)
 -------------------
 * rqt_jtc: Check for interface type when adding joint names (backport `#2231 <https://github.com/ros-controls/ros2_controllers/issues/2231>`_) (`#2241 <https://github.com/ros-controls/ros2_controllers/issues/2241>`_)
