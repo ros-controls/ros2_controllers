@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update admittance_controller to use shared 6D robot description (backport `#2173 <https://github.com/ros-controls/ros2_controllers/issues/2173>`_) (`#2311 <https://github.com/ros-controls/ros2_controllers/issues/2311>`_)
+* Contributors: mergify[bot]
+
 5.14.0 (2026-04-03)
 -------------------
 

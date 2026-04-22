@@ -2,6 +2,9 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 5.14.0 (2026-04-03)
 -------------------
 * [PID Controllers] Set first set point to current measurement (backport `#2205 <https://github.com/ros-controls/ros2_controllers/issues/2205>`_) (`#2211 <https://github.com/ros-controls/ros2_controllers/issues/2211>`_)
