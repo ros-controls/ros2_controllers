@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.15.0 (2026-04-22)
+-------------------
 * Update controller tests to use configure/activate instead of on_configure/on_activate  (backport `#1682 <https://github.com/ros-controls/ros2_controllers/issues/1682>`_) (`#2301 <https://github.com/ros-controls/ros2_controllers/issues/2301>`_)
 * RateLimiter: Don't update parameters before input checks (backport `#2074 <https://github.com/ros-controls/ros2_controllers/issues/2074>`_) (`#2292 <https://github.com/ros-controls/ros2_controllers/issues/2292>`_)
 * Added test for open-loop odometry with clamped input (backport `#2280 <https://github.com/ros-controls/ros2_controllers/issues/2280>`_) (`#2285 <https://github.com/ros-controls/ros2_controllers/issues/2285>`_)
