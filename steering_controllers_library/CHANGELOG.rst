@@ -2,6 +2,9 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.5.0 (2026-04-02)
 ------------------
 * set odometry service addition - steering controllers library (`#2244 <https://github.com/ros-controls/ros2_controllers/issues/2244>`_)
