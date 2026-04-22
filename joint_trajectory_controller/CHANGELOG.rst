@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.6.0 (2026-04-22)
+------------------
 * Fix segfault in jtc if joint name not in urdf (`#2321 <https://github.com/ros-controls/ros2_controllers/issues/2321>`_)
 * Contributors: Iñigo Moreno
 
