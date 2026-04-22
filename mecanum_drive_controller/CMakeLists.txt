@@ -8,6 +8,7 @@ export_windows_symbols()
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
+  control_toolbox
   controller_interface
   hardware_interface
   generate_parameter_library
@@ -27,8 +28,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(mecanum_drive_controller_parameters
   src/mecanum_drive_controller.yaml
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(
@@ -43,6 +47,8 @@ target_include_directories(mecanum_drive_controller PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mecanum_drive_controller PUBLIC
                       mecanum_drive_controller_parameters
+                      control_toolbox::rate_limiter_parameters
+                      control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib
