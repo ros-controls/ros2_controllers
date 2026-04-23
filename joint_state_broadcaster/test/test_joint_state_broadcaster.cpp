@@ -66,7 +66,8 @@ void JointStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces,
   const std::vector<rclcpp::Parameter> & parameter_overrides)
 {
-  init_broadcaster_and_set_parameters("", joint_names, interfaces, parameter_overrides);
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, joint_names, interfaces, parameter_overrides);
   assign_state_interfaces(joint_names, interfaces);
 }
 
@@ -182,8 +183,10 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -215,8 +218,10 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -244,8 +249,10 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // params are still cleared from configure (URDF mode), so still INDIVIDUAL_BEST_EFFORT
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -277,8 +284,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -299,30 +308,8 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   init_broadcaster_and_set_parameters("<invalid_urdf></invalid_urdf>", JOINT_NAMES, IF_NAMES);
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
-  // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  const size_t NUM_JOINTS = joint_names_.size();
-
-  // check interface configuration
-  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
-  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
-  auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
-
-  // publisher initialized
-  ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
-
-  // joint state initialized
-  const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
-  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(joint_names_));
-  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+  // URDF mode (joints empty) with an unparsable robot description must fail at configure
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription)
@@ -349,8 +336,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDes
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // URDF loaded: request specific joints with BEST_EFFORT (3 standard interfaces per joint)
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_in_urdf.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -386,8 +375,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // URDF loaded: request specific joints with BEST_EFFORT (3 standard interfaces per joint)
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_in_urdf.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -454,8 +445,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -751,9 +744,25 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 
 TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 {
+  // Generate a URDF with all 29 test joints (joint_1 ... joint_29)
+  std::string perf_urdf =
+    "<?xml version=\"1.0\" ?><robot name=\"PerfRobot\"><link name=\"base_link\"/>";
+  for (auto joint = 1u; joint < 30; ++joint)
+  {
+    const auto jname = "joint_" + std::to_string(joint);
+    const auto parent = joint == 1u ? "base_link" : "link_" + std::to_string(joint - 1);
+    const auto child = "link_" + std::to_string(joint);
+    perf_urdf += "<link name=\"" + child + "\"/>";
+    perf_urdf += "<joint name=\"" + jname + "\" type=\"revolute\">";
+    perf_urdf += "<parent link=\"" + parent + "\"/><child link=\"" + child + "\"/>";
+    perf_urdf += "<limit effort=\"1\" velocity=\"1\" lower=\"-3.14\" upper=\"3.14\"/>";
+    perf_urdf += "<axis xyz=\"0 0 1\"/></joint>";
+  }
+  perf_urdf += "</robot>";
+
   controller_interface::ControllerInterfaceParams params;
   params.controller_name = "joint_state_broadcaster";
-  params.robot_description = "";
+  params.robot_description = perf_urdf;
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = state_broadcaster_->define_custom_node_options();
