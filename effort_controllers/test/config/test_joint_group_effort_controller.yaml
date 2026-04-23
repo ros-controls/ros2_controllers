@@ -1,3 +1,0 @@
-test_joint_group_effort_controller:
-  ros__parameters:
-    joints: ["joint1"]
