@@ -86,9 +86,7 @@ TEST_F(PidControllerTest, check_exported_interfaces)
   // check ref itfs
   auto ref_if_conf = controller_->export_reference_interfaces();
   size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
-                           (controller_->params_.export_params.gain_references
-                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                              : 0);
+                           dof_names_.size() * controller_->GAIN_INTERFACES.size();
   ASSERT_EQ(ref_if_conf.size(), actual_ref_size);
   size_t ri_index = 0;
   for (const auto & interface : state_interfaces_)
@@ -145,17 +143,13 @@ TEST_F(PidControllerTest, activate_success)
   {
     EXPECT_TRUE(std::isnan(cmd));
   }
-
-  // With set_current_state_as_first_setpoint=true (default), reference interfaces are initialized
-  // to the current state values on activation
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
-                             (controller_->params_.export_params.gain_references
-                                ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                                : 0);
+                             dof_names_.size() * controller_->GAIN_INTERFACES.size();
   EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
-  for (const auto & interface : controller_->reference_interfaces_)
+
+  // With set_current_state_as_first_setpoint=true, the first dof_state_values_.size() reference
+  // interfaces are initialized to current state, and gain interfaces remain NaN
+  for (size_t i = 0; i < dof_state_values_.size(); ++i)
   {
     EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
   }
@@ -223,9 +217,10 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
-  for (const auto & interface : controller_->reference_interfaces_)
+  size_t num_control_references = dof_names_.size() * state_interfaces_.size();
+  for (size_t i = 0; i < num_control_references; ++i)
   {
-    EXPECT_TRUE(std::isfinite(interface));
+    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
 
   controller_->set_reference(dof_command_values_);
@@ -241,9 +236,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
   size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
-                           (controller_->params_.export_params.gain_references
-                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                              : 0);
+                           dof_names_.size() * controller_->GAIN_INTERFACES.size();
   EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
   EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
@@ -301,10 +294,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
 
   ASSERT_TRUE(controller_->is_in_chained_mode());
   size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
-                           (controller_->params_.export_params.gain_references
-                              ? dof_names_.size() * controller_->GAIN_INTERFACES.size()
-                              : 0);
-
+                           dof_names_.size() * controller_->GAIN_INTERFACES.size();
   EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
   EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
 
@@ -437,7 +427,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
     ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
   }
 
-  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  size_t num_control_references = dof_names_.size() * state_interfaces_.size();
+  for (size_t i = 0; i < num_control_references; ++i)
   {
     EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
@@ -445,7 +436,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   publish_commands();
   controller_->wait_for_commands(executor);
 
-  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  for (size_t i = 0; i < num_control_references; ++i)
   {
     EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
   }
@@ -454,19 +445,14 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  size_t num_control_references = dof_names_.size() * state_interfaces_.size();
-
   for (size_t i = 0; i < num_control_references; ++i)
   {
     ASSERT_EQ(controller_->reference_interfaces_[i], 0.45);
   }
-  if (controller_->params_.export_params.gain_references)
+  for (size_t i = num_control_references; i < controller_->reference_interfaces_.size(); ++i)
   {
-    for (size_t i = num_control_references; i < controller_->reference_interfaces_.size(); ++i)
-    {
-      // Check the remaining interfaces (P, I, D gains) are NaN
-      EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
-    }
+    // Always check gain interfaces (P, I, D gains) are NaN
+    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
   }
 
   subscribe_and_get_messages(msg);
@@ -620,6 +606,62 @@ TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
 }
 
 /**
+ * @brief Test that gains can be updated via reference interfaces.
+ * When a preceding controller writes finite values values to the gain reference interfaces,
+ * the PID Controller should pick them up and use the new gains
+ */
+TEST_F(PidControllerTest, test_update_gain_via_reference_interfaces)
+{
+  SetUpController("test_pid_controller_unlimited");
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(false);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_FALSE(controller_->is_in_chained_mode());
+
+  // Verify initial gains from params yaml
+  auto initial_gains = controller_->pids_[0]->get_gains();
+  EXPECT_EQ(initial_gains.p_gain_, 1.0);
+  EXPECT_EQ(initial_gains.i_gain_, 2.0);
+  EXPECT_EQ(initial_gains.d_gain_, 3.0);
+
+  // Set a known reference for the control interface
+  controller_->reference_interfaces_[0] = 5.0;
+
+  const size_t dof_reference_size = dof_names_.size() * state_interfaces_.size();
+  const size_t p_index = dof_reference_size;                          // P gain for joint1
+  const size_t i_index = dof_reference_size + dof_names_.size();      // I gain for joint1
+  const size_t d_index = dof_reference_size + 2 * dof_names_.size();  // D gain for joint1
+
+  controller_->reference_interfaces_[p_index] = 10.0;
+  controller_->reference_interfaces_[i_index] = 20.0;
+  controller_->reference_interfaces_[d_index] = 30.0;
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  auto updated_gains = controller_->pids_[0]->get_gains();
+  EXPECT_EQ(updated_gains.p_gain_, 10.0);
+  EXPECT_EQ(updated_gains.i_gain_, 20.0);
+  EXPECT_EQ(updated_gains.d_gain_, 30.0);
+
+  // check the gain reference interfaces are reset to NaN after being consumed
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[p_index]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i_index]));
+  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[d_index]));
+
+  // check the command value computed using the new gains
+  // ref = 5.0, state = 1.1, error = 3.9, error_dot = 3.9/0.01 = 390.0
+  // p_term = 3.9 * 10.0 = 39.0, i_term = zero at first update, d_term = 390.0 * 30.0 = 11700.0
+  // cmd = p_term + i_term + d_term = 11739.0
+  const double expected_command_value = 11739.0;
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), expected_command_value);
+}
+
+/**
  * @brief Test if retention of the integral state is deactivated
  *
  */
@@ -734,8 +776,10 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_true
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // reference interfaces must be initialized to the current state values (dof_state_values_)
-  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
+                             dof_names_.size() * controller_->GAIN_INTERFACES.size();
+  ASSERT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  for (size_t i = 0; i < dof_state_values_.size(); ++i)
   {
     EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
   }
@@ -755,7 +799,9 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_fals
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // reference interfaces must remain NaN since set_current_state_as_first_setpoint is false
-  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+  size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
+                             dof_names_.size() * controller_->GAIN_INTERFACES.size();
+  ASSERT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
   for (const auto & interface : controller_->reference_interfaces_)
   {
     EXPECT_TRUE(std::isnan(interface));

@@ -15,9 +15,6 @@ test_pid_controller:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_params:
-      gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, u_clamp_max: 5.0, u_clamp_min: -5.0}
@@ -32,10 +29,6 @@ test_pid_controller_unlimited:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_gain_references: true
-    export_params:
-      gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0}
@@ -50,10 +43,6 @@ test_pid_controller_angle_wraparound_on:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_gain_references: true
-    export_params:
-      gain_references: false
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, angle_wraparound: true}
@@ -68,10 +57,6 @@ test_pid_controller_with_feedforward_gain:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_gain_references: true
-    export_params:
-      gain_references: true
 
     gains:
       joint1: {p: 0.5, i: 0.0, d: 0.0, feedforward_gain: 1.0}
@@ -87,10 +72,6 @@ test_pid_controller_with_feedforward_gain_dual_interface:
     reference_and_state_interfaces: ["position", "velocity"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_gain_references: true
-    export_params:
-      gain_references: true
 
     gains:
       joint1: {p: 0.5, i: 0.3, d: 0.4, feedforward_gain: 1.0}
@@ -106,9 +87,6 @@ test_save_i_term_off:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_params:
-      gain_references: false
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, save_i_term: false}
@@ -123,10 +101,6 @@ test_save_i_term_on:
     reference_and_state_interfaces: ["position"]
 
     set_current_state_as_first_setpoint: true
-    export_gain_references: false
-    export_gain_references: true
-    export_params:
-      gain_references: true
 
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, save_i_term: true}
