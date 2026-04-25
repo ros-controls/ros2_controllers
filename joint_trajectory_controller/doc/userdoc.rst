@@ -45,7 +45,7 @@ This leads to the following allowed combinations of command and state interfaces
 Further restrictions of state interfaces exist:
 
 * ``velocity`` state interface cannot be used if ``position`` interface  is missing.
-* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present.
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
@@ -75,7 +75,7 @@ A yaml file for using it could be:
       controller_manager:
         ros__parameters:
           joint_trajectory_controller:
-          type: "joint_trajectory_controller/JointTrajectoryController"
+            type: "joint_trajectory_controller/JointTrajectoryController"
 
       joint_trajectory_controller:
         ros__parameters:
