@@ -37,7 +37,6 @@ add_library(
   src/mecanum_drive_controller.cpp
   src/odometry.cpp
 )
-target_compile_features(mecanum_drive_controller PUBLIC cxx_std_17)
 target_include_directories(mecanum_drive_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")

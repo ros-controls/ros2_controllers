@@ -27,7 +27,6 @@ generate_parameter_library(state_interfaces_broadcaster_parameters
 add_library(state_interfaces_broadcaster SHARED
   src/state_interfaces_broadcaster.cpp
 )
-target_compile_features(state_interfaces_broadcaster PUBLIC cxx_std_17)
 target_include_directories(state_interfaces_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/state_interfaces_broadcaster>
