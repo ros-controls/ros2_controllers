@@ -40,7 +40,6 @@ Controllers for Manipulators and Other Robots
    :titlesonly:
 
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
-   Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
