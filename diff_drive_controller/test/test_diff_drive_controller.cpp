@@ -672,6 +672,136 @@ TEST_F(TestDiffDriveController, test_speed_limiter)
   }
 }
 
+TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
+{
+  // If you send a linear velocity command without acceleration limits,
+  // then the wheel velocity command (rotations/s) will be:
+  // ideal_wheel_velocity_command (rotations/s) = linear_velocity_command (m/s) / wheel_radius (m).
+  // (The velocity command looks like a step function).
+  // However, if there are acceleration limits, then the actual wheel velocity command
+  // should always be less than the ideal velocity, and should only become
+  // equal at time = linear_velocity_command (m/s) / acceleration_limit (m/s^2).
+  // This test verifies that parameters can be updated at runtime.
+  const double max_acceleration_1 = 2.0;
+  const double max_acceleration_2 = 5.0;
+  const double max_deceleration = -4.0;
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {
+        rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration_1)),
+        rclcpp::Parameter("linear.x.max_deceleration", rclcpp::ParameterValue(max_deceleration)),
+      }),
+    controller_interface::return_type::OK);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesPosFeedback();
+
+  auto wait_for_limiter = [&](double expected_vel)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      EXPECT_NEAR(expected_vel, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
+      EXPECT_NEAR(expected_vel, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    }
+  };
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  // send msg
+  publish(0.0, 0.0);
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+  // wait for the speed limiter to fill the queue
+  wait_for_limiter(0.0);
+
+  const double dt = 0.001;
+  const double wheel_radius = 0.1;
+  // Phase 1: accelerate with max_acceleration = 2.0
+  {
+    const double linear = 1.0;
+    // send msg
+    publish(linear, 0.0);
+    // wait for msg is be published to the system
+    controller_->wait_for_twist(executor);
+    const double time_acc = linear / max_acceleration_1;
+    for (int i = 0; i < floor(time_acc / dt) - 1; ++i)
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(linear / wheel_radius);
+  }
+  // Stop the robot
+  {
+    const double linear = 0.0;
+    // send msg
+    publish(linear, 0.0);
+    // wait for msg is be published to the system
+    controller_->wait_for_twist(executor);
+    const double time_dec = 1.0 / std::abs(max_deceleration);
+    for (int i = 0; i < floor(time_dec / dt) - 1; ++i)
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(0.0);
+  }
+  // Phase 2: update parameter at runtime to max_acceleration = 5.0
+  {
+    auto result = controller_->get_node()->set_parameter(
+      rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration_2)));
+    ASSERT_TRUE(result.successful);
+  }
+  // Phase 3: accelerate with max_acceleration = 5.0
+  {
+    const double linear = 1.0;
+    // send msg
+    publish(linear, 0.0);
+    // wait for msg is be published to the system
+    controller_->wait_for_twist(executor);
+    const double time_acc_1 = linear / max_acceleration_1;
+    const double time_acc_2 = linear / max_acceleration_2;
+    // With higher acceleration, should reach target faster
+    ASSERT_LT(time_acc_2, time_acc_1);
+    for (int i = 0; i < floor(time_acc_2 / dt) - 1; ++i)
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(linear / wheel_radius);
+  }
+}
+
 TEST_F(TestDiffDriveController, activate_fails_with_wrong_resources_assigned_1)
 {
   ASSERT_EQ(
