@@ -2,6 +2,9 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.6.0 (2026-04-22)
+------------------
+
 6.5.0 (2026-04-02)
 ------------------
 * mecanum_drive_controller: Don't require std_srvs (`#2213 <https://github.com/ros-controls/ros2_controllers/issues/2213>`_)

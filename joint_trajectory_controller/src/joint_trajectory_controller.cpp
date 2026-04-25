@@ -92,7 +92,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        max_joint_vel[i] = urdf_joint->limits->velocity;
+        if (urdf_joint)
+        {
+          max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
           RCLCPP_DEBUG(
