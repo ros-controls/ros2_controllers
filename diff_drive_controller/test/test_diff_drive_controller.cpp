@@ -700,6 +700,18 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
 
   assignResourcesPosFeedback();
 
+  auto wait_for_limiter = [&](double expected_vel)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      EXPECT_NEAR(expected_vel, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
+      EXPECT_NEAR(expected_vel, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
+    }
+  };
+
   ASSERT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
@@ -709,14 +721,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
   // wait for msg is be published to the system
   controller_->wait_for_twist(executor);
   // wait for the speed limiter to fill the queue
-  for (int i = 0; i < 3; ++i)
-  {
-    ASSERT_EQ(
-      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
-    EXPECT_NEAR(0.0, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
-    EXPECT_NEAR(0.0, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
-  }
+  wait_for_limiter(0.0);
 
   const double dt = 0.001;
   const double wheel_radius = 0.1;
@@ -740,14 +745,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
     EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
     EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
-    for (int i = 0; i < 3; ++i)
-    {
-      ASSERT_EQ(
-        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-        controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
-      EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
-    }
+    wait_for_limiter(linear / wheel_radius);
   }
   // Stop the robot
   {
@@ -756,7 +754,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
     publish(linear, 0.0);
     // wait for msg is be published to the system
     controller_->wait_for_twist(executor);
-    const double time_dec = 1.0 / 4.0;
+    const double time_dec = 1.0 / std::abs(max_deceleration);
     for (int i = 0; i < floor(time_dec / dt) - 1; ++i)
     {
       ASSERT_EQ(
@@ -769,14 +767,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
     EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
     EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
-    for (int i = 0; i < 3; ++i)
-    {
-      ASSERT_EQ(
-        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-        controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
-      EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
-    }
+    wait_for_limiter(0.0);
   }
   // Phase 2: update parameter at runtime to max_acceleration = 5.0
   {
@@ -807,14 +798,7 @@ TEST_F(TestDiffDriveController, test_speed_limiter_runtime_update)
     EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
     EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
-    for (int i = 0; i < 3; ++i)
-    {
-      ASSERT_EQ(
-        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
-        controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheel_radius, left_wheel_vel_cmd_->get_optional().value(), 1e-3);
-      EXPECT_NEAR(linear / wheel_radius, right_wheel_vel_cmd_->get_optional().value(), 1e-3);
-    }
+    wait_for_limiter(linear / wheel_radius);
   }
 }
 
