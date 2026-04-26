@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rqt_joint_trajectory_controller</name>
-  <version>6.3.0</version>
+  <version>6.6.0</version>
   <description>Graphical frontend for interacting with joint_trajectory_controller instances.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -25,11 +25,13 @@
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>python_qt_binding</exec_depend>
   <exec_depend>python3-rospkg</exec_depend>
+  <exec_depend>urdfdom_py</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>rqt_gui</exec_depend>
   <exec_depend>rqt_gui_py</exec_depend>
   <exec_depend>qt_gui</exec_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
     <build_type>ament_python</build_type>
