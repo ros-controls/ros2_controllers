@@ -618,7 +618,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   {
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
-      if (!command_interfaces_[i].set_value(0.0))
+      if (!command_interfaces_[i].set_value(0.0,-1))
       {
         RCLCPP_WARN(logger, "Unable to set command interface to value 0.0");
         return controller_interface::return_type::OK;
