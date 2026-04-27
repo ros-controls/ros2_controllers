@@ -30,7 +30,6 @@ generate_parameter_library(imu_sensor_broadcaster_parameters
 add_library(imu_sensor_broadcaster SHARED
   src/imu_sensor_broadcaster.cpp
 )
-target_compile_features(imu_sensor_broadcaster PUBLIC cxx_std_17)
 target_include_directories(imu_sensor_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/imu_sensor_broadcaster>

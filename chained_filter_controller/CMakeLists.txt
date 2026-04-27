@@ -31,7 +31,6 @@ generate_parameter_library(
 add_library(${PROJECT_NAME} SHARED
   src/chained_filter.cpp
 )
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
