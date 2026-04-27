@@ -943,6 +943,52 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
 
+TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityInterfaceIsRequested)
+{
+  constexpr auto custom_velocity_interface = "derived_velocity";
+  const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
+  const std::vector<std::string> IF_NAMES = {HW_IF_VELOCITY};
+  SetUpStateBroadcaster(
+    JOINT_NAMES, IF_NAMES,
+    {rclcpp::Parameter(
+      std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, custom_velocity_interface)});
+
+  // configure ok; a warning is expected because the custom velocity mapping is ignored
+  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  const auto velocity_mapping =
+    state_broadcaster_->map_interface_to_joint_state_.find(HW_IF_VELOCITY);
+  ASSERT_NE(velocity_mapping, state_broadcaster_->map_interface_to_joint_state_.end());
+  EXPECT_EQ(velocity_mapping->second, HW_IF_VELOCITY);
+  EXPECT_EQ(state_broadcaster_->map_interface_to_joint_state_.count(custom_velocity_interface), 0u);
+
+  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  // joint state initialized
+  const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_EQ(joint_state_msg.header.frame_id, frame_id_);
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.position[0]));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.velocity[0]));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.effort[0]));
+
+  // publisher initialized
+  ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
+}
+
 TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
 {
   const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
