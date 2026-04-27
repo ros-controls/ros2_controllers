@@ -2421,13 +2421,12 @@ TEST_P(TrajectoryControllerTestParameterized, test_hw_states_has_offset_later_co
   executor.cancel();
 }
 
-// Testing the behavior of the set_last_command_interface_value_as_state_on_activation parameter.
-// On activation, both state and command should be equal to the current command values, not current
-// state values.
-TEST_P(TrajectoryControllerTestParameterized, test_set_last_command_interface_on_activation)
+// Testing the behavior when set_last_command_interface_value_as_state_on_activation is false.
+// On activation, both command and state should be equal to the current state values
+TEST_P(TrajectoryControllerTestParameterized, test_set_last_command_interface_on_activation_false)
 {
   rclcpp::Parameter const set_last_command_on_activation(
-    "set_last_command_interface_value_as_state_on_activation", true);
+    "set_last_command_interface_value_as_state_on_activation", false);
 
   // set command values to arbitrary values
   std::vector<double> initial_pos_cmd, initial_vel_cmd, initial_acc_cmd;
@@ -2448,32 +2447,16 @@ TEST_P(TrajectoryControllerTestParameterized, test_set_last_command_interface_on
 
   for (size_t i = 0; i < 3; ++i)
   {
-    if (traj_controller_->has_position_command_interface())
+    EXPECT_EQ(current_state_when_offset.positions[i], INITIAL_POS_JOINTS[i]);
+
+    if (traj_controller_->has_velocity_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.positions[i], initial_pos_cmd[i]);
-    }
-    else
-    {
-      // should have set it to the state interface instead
-      EXPECT_EQ(current_state_when_offset.positions[i], joint_state_pos_[i]);
+      EXPECT_EQ(current_state_when_offset.velocities[i], INITIAL_VEL_JOINTS[i]);
     }
 
-    if (traj_controller_->has_velocity_command_interface())
+    if (traj_controller_->has_acceleration_state_interface())
     {
-      EXPECT_EQ(current_state_when_offset.velocities[i], initial_vel_cmd[i]);
-    }
-    else if (traj_controller_->has_velocity_state_interface())
-    {
-      EXPECT_EQ(current_state_when_offset.velocities[i], joint_state_vel_[i]);
-    }
-
-    if (traj_controller_->has_acceleration_command_interface())
-    {
-      EXPECT_EQ(current_state_when_offset.accelerations[i], initial_acc_cmd[i]);
-    }
-    else if (traj_controller_->has_acceleration_state_interface())
-    {
-      EXPECT_EQ(current_state_when_offset.accelerations[i], joint_state_acc_[i]);
+      EXPECT_EQ(current_state_when_offset.accelerations[i], INITIAL_ACC_JOINTS[i]);
     }
   }
 
