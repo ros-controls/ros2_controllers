@@ -741,7 +741,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityI
   ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
   ASSERT_TRUE(std::isnan(joint_state_msg.position[0]));
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_EQ(joint_state_msg.velocity[0], joint_values_[0]);
+  ASSERT_TRUE(std::isnan(joint_state_msg.velocity[0]));
   ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
   ASSERT_TRUE(std::isnan(joint_state_msg.effort[0]));
 
