@@ -53,6 +53,8 @@ protected:
   const std::string joint_name_ = "joint1";
   std::vector<double> joint_states_ = {1.1, 2.1};
   std::vector<double> joint_commands_ = {3.1};
+  std::vector<double> joint_effort_commands_ = {0.0};
+  std::vector<double> joint_speed_commands_ = {0.0};
 
   hardware_interface::StateInterface::SharedPtr joint_1_pos_state_ =
     std::make_shared<hardware_interface::StateInterface>(
@@ -63,6 +65,12 @@ protected:
   hardware_interface::CommandInterface::SharedPtr joint_1_cmd_ =
     std::make_shared<hardware_interface::CommandInterface>(
       joint_name_, hardware_interface::HW_IF_POSITION, &joint_commands_[0]);
+  hardware_interface::CommandInterface::SharedPtr joint_1_effort_cmd_ =
+    std::make_shared<hardware_interface::CommandInterface>(
+      joint_name_, hardware_interface::HW_IF_EFFORT, &joint_effort_commands_[0]);
+  hardware_interface::CommandInterface::SharedPtr joint_1_speed_cmd_ =
+    std::make_shared<hardware_interface::CommandInterface>(
+      joint_name_, hardware_interface::HW_IF_VELOCITY, &joint_speed_commands_[0]);
 };
 
 }  // anonymous namespace
