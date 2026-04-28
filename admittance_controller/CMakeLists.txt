@@ -41,7 +41,6 @@ generate_parameter_library(admittance_controller_parameters
 add_library(admittance_controller SHARED
   src/admittance_controller.cpp
 )
-target_compile_features(admittance_controller PUBLIC cxx_std_17)
 target_include_directories(admittance_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/admittance_controller>
