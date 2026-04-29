@@ -114,8 +114,6 @@ public:
     double v_bx, double omega_bz, bool open_loop = true,
     bool reduce_wheel_speed_until_steering_reached = false);
 
-  void reset_odometry();
-
 private:
   steering_kinematics::SteeringKinematics sk_impl_;
 };
