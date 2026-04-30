@@ -51,6 +51,7 @@ constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 class TestablePidController : public pid_controller::PidController
 {
   FRIEND_TEST(PidControllerTest, all_parameters_set_configure_success);
+  FRIEND_TEST(PidControllerTest, check_exported_interfaces);
   FRIEND_TEST(PidControllerTest, activate_success);
   FRIEND_TEST(PidControllerTest, reactivate_success);
   FRIEND_TEST(PidControllerTest, test_update_logic_zero_feedforward_gain);
@@ -66,6 +67,7 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, test_save_i_term_off);
   FRIEND_TEST(PidControllerTest, test_activate_set_current_state_as_first_setpoint_true);
   FRIEND_TEST(PidControllerTest, test_activate_set_current_state_as_first_setpoint_false);
+  FRIEND_TEST(PidControllerTest, test_update_gain_via_reference_interfaces);
 
 public:
   controller_interface::CallbackReturn on_configure(
