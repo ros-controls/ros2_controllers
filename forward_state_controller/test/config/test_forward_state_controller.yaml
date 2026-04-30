@@ -1,0 +1,7 @@
+test_forward_state_controller:
+  ros__parameters:
+    state_interfaces:
+      - joint1/position
+    forward_state:
+      joint1/position:
+        to_command: ["joint2/position"]
