@@ -37,11 +37,9 @@ void reset_controller_reference_msg(trajectory_msgs::msg::JointTrajectoryPoint &
 }
 
 // called from RT control loop
-void reset_wrench_msg(
-  geometry_msgs::msg::WrenchStamped & msg,
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+void reset_wrench_msg(geometry_msgs::msg::WrenchStamped & msg)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0);
   msg.wrench = geometry_msgs::msg::Wrench();
 }
 
@@ -403,7 +401,7 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
     }
   }
   reset_controller_reference_msg(joint_command_msg_);
-  reset_wrench_msg(wrench_command_msg_, get_node());
+  reset_wrench_msg(wrench_command_msg_);
 
   // Use current joint_state as a default reference
   last_reference_ = joint_state_;
@@ -519,7 +517,7 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   admittance_->reset(num_joints_);
 
   reset_controller_reference_msg(joint_command_msg_);
-  reset_wrench_msg(wrench_command_msg_, get_node());
+  reset_wrench_msg(wrench_command_msg_);
 
   return CallbackReturn::SUCCESS;
 }
