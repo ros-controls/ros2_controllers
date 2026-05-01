@@ -33,9 +33,11 @@ TEST(TestLoadAdmittanceController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-  ASSERT_EQ(
-    cm.load_controller("load_admittance_controller", "admittance_controller/AdmittanceController"),
-    nullptr);
+  cm.set_parameter({"load_admittance_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"load_admittance_controller.type", "admittance_controller/AdmittanceController"});
+
+  ASSERT_NE(cm.load_controller("load_admittance_controller"), nullptr);
 }
 
 int main(int argc, char ** argv)
