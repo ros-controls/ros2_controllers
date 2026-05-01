@@ -15,3 +15,12 @@ forward_command_controller:
     },
     read_only: true
   }
+  queue_size: {
+    type: int,
+    description: "Size of the command queue",
+    default_value: 1,
+    read_only: true,
+    validation: {
+      gt_eq<>: 1
+    },
+  }
