@@ -463,14 +463,25 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
   msg.twist.angular.z = 0.0;
   controller_->input_ref_.set(msg);
 
-  controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1));
+  // 1st update: consume new ref and update internal state
+  auto now = controller_->get_node()->now();
+  controller_->update(now, rclcpp::Duration::from_seconds(0.1));
 
+  // exact internal state check
   EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 5.0);
 
-  rclcpp::Time future_time = controller_->get_node()->now() + rclcpp::Duration::from_seconds(2.0);
+  // 2nd update: lets published odom/twist catch up if there is one-cycle lag
+  now = now + rclcpp::Duration::from_seconds(0.1);
+  controller_->update(now, rclcpp::Duration::from_seconds(0.1));
 
+  // reviewer-requested nonzero-before-timeout check
+  EXPECT_GT(controller_->odom_state_msg_.twist.twist.linear.x, 0.0);
+
+  // jump beyond timeout
+  rclcpp::Time future_time = now + rclcpp::Duration::from_seconds(2.0);
   controller_->update(future_time, rclcpp::Duration::from_seconds(0.1));
 
+  // stale ref should zero out open-loop internal velocity
   EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
 }
 
