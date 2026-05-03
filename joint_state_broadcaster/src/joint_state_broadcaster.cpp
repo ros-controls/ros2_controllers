@@ -285,9 +285,8 @@ bool JointStateBroadcaster::init_joint_data()
     }
     else
     {
-      // Moreover, when there is not even the default interface (position, velocity, effort),
-      // then it should also print that it is not present and NaN's will be obtained in the
-      // respective field.
+      // If default interfaces (pos/vel/eff) are missing, log a warning and return NaN in
+      // the fields.
       RCLCPP_WARN(
         get_node()->get_logger(),
         "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be "
