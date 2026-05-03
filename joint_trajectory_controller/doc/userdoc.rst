@@ -48,7 +48,7 @@ This leads to the following allowed combinations of command and state interfaces
 Further restrictions of state interfaces exist:
 
 * ``velocity`` state interface cannot be used if ``position`` interface  is missing.
-* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present.
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
@@ -60,6 +60,8 @@ Other features
 * Proper handling of wrapping (continuous) joints.
 
 * Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
+
+* Optional smooth deceleration on cancel: Instead of abruptly holding position, the controller can decelerate joints to a stop using configurable per-joint deceleration limits. See :ref:`joint_trajectory_controller_decelerate_on_cancel`.
 
 
 Using Joint Trajectory Controller(s)
@@ -78,7 +80,7 @@ A yaml file for using it could be:
       controller_manager:
         ros__parameters:
           joint_trajectory_controller:
-          type: "joint_trajectory_controller/JointTrajectoryController"
+            type: "joint_trajectory_controller/JointTrajectoryController"
 
       joint_trajectory_controller:
         ros__parameters:
@@ -209,6 +211,7 @@ Further information
    :titlesonly:
 
    Trajectory Representation <trajectory.rst>
+   Decelerate on cancel <decelerate_on_cancel.rst>
    Speed scaling <speed_scaling.rst>
    joint_trajectory_controller Parameters <parameters.rst>
    rqt_joint_trajectory_controller <../../rqt_joint_trajectory_controller/doc/userdoc.rst>

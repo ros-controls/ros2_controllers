@@ -41,7 +41,6 @@ add_library(tricycle_controller SHARED
   src/traction_limiter.cpp
   src/steering_limiter.cpp
 )
-target_compile_features(tricycle_controller PUBLIC cxx_std_17)
 target_include_directories(tricycle_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/tricycle_controller>

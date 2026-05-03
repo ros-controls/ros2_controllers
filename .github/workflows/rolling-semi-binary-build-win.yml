@@ -15,6 +15,7 @@ on:
       - '.github/workflows/rolling-semi-binary-build-win.yml'
       - '**/package.xml'
       - '**/CMakeLists.txt'
+      - 'ros2_controllers.rolling.repos'
   push: *event
 
 concurrency:
@@ -27,6 +28,5 @@ jobs:
     uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-win-build.yml@master
     with:
       ros_distro: rolling
-      pixi_dependencies: typeguard jinja2 boost compilers octomap
-      ninja_packages: rsl
-      target_cmake_args: -DBUILD_TESTING=OFF
+      pixi_dependencies: typeguard jinja2 boost compilers octomap cpp-expected
+      upstream_workspace: ros2_controllers.rolling.repos

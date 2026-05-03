@@ -18,6 +18,11 @@ map_interface_to_joint_state: |
         \t\tvelocity: <custom_interface>
         \t\teffort: <custom_interface>
 
+  If ``interfaces`` explicitly contains ``position``, ``velocity``, or ``effort``, the matching
+  ``map_interface_to_joint_state`` entry is ignored because the standard interface is already
+  requested directly. In that wrong configuration, a warning is printed only when the configured
+  mapping value differs from the standard interface name.
+
 
   Examples:
 

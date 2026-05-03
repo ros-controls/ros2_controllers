@@ -76,6 +76,7 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -130,7 +131,15 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) override { return true; }
+  // Manual integration of odometry based on wheel states
+  bool update_odometry(const rclcpp::Duration & period) override
+  {
+    return odometry_.update_from_velocity(
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(), period.seconds());
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
