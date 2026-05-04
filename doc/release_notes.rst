@@ -40,18 +40,25 @@ omni_wheel_drive_controller
 * Set odometry service added to be used at runtime. (`#2148 <https://github.com/ros-controls/ros2_controllers/pull/2148>`_).
 
 joint_trajectory_controller
-***************************
-* Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
-  don't contain velocity / acceleration information, but the trajectory does. This way, the segment
-  up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
-  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
-* Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+*******************************
+* The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
+* Scaling support was added in `#1191
+  <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
+  "stretches the time" with which it progresses in the trajectory. Scaling can either be set
+  manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
+
+omni_wheel_drive_controller
+*********************************
+* 🚀 The omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
 
 pid_controller
-**************
-* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
+*******************************
+* The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior (`#1585 <https://github.com/ros-controls/ros2_controllers/pull/1585>`__).
+  * Output clamping via ``u_clamp_max`` and ``u_clamp_min`` was added, allowing users to bound the controller output.
+  * The legacy ``antiwindup`` boolean and integral clamp parameters ``i_clamp_max``/``i_clamp_min`` have been deprecated in favor of the new ``antiwindup_strategy`` parameter. A ``tracking_time_constant`` parameter has also been introduced to configure the back-calculation strategy.
+  * A new ``error_deadband`` parameter stops integration when the error is within a specified range.
+* PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
 
-steering_controllers_library
-*****************************
-* Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
-* Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+swerve_drive_controller
+*********************************
+* The swerve_drive_controller was added  (`#1694 <https://github.com/ros-controls/ros2_controllers/pull/1694>`_).
