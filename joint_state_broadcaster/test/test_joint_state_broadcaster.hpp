@@ -56,6 +56,40 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest);
 };
 
+// Minimal 3-joint URDF covering the joint_names_ used in tests
+constexpr char * kThreeJointURDF = R"(
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="MinimalRobot">
+  <link name="world"/>
+  <joint name="base_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+  <link name="base_link"/>
+  <joint name="joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <limit effort="1.0" lower="-3.14" upper="3.14" velocity="1.0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <link name="link1"/>
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <limit effort="1.0" lower="-3.14" upper="3.14" velocity="1.0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <link name="link2"/>
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <limit effort="1.0" lower="-3.14" upper="3.14" velocity="1.0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <link name="link3"/>
+</robot>
+)";
+
 class JointStateBroadcasterTest : public ::testing::Test
 {
 public:
