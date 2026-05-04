@@ -89,6 +89,8 @@ class FriendGpioCommandController : public gpio_controllers::GpioCommandControll
   FRIEND_TEST(
     GpioCommandControllerTestSuite,
     WhenGivenCmdContainsWrongGpioInterfacesOrWrongGpioNameThenCommandInterfacesShouldNotBeUpdated);
+  FRIEND_TEST(GpioCommandControllerTestSuite, UpdateBoolGpioInterfaces);
+  FRIEND_TEST(GpioCommandControllerTestSuite, UpdateDoubleGpioInterfaces);
 };
 
 class GpioCommandControllerTestSuite : public ::testing::Test
@@ -706,4 +708,126 @@ TEST_F(
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).interface_names.at(0), "ana.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).values.at(0), 3.1);
+}
+
+TEST_F(GpioCommandControllerTestSuite, UpdateDoubleGpioInterfaces)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", std::vector<std::string>{"gpio1"}},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_out_1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_in_1"}}});
+
+  ASSERT_EQ(
+    controller_->init(create_ctrl_params(node_options)), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  double dummy_double_value_cmd = 0.0;
+  double dummy_double_value_state = 0.0;
+
+  auto cmd_intf = std::make_shared<CommandInterface>("gpio1", "dig_out_1", &dummy_double_value_cmd);
+  std::vector<LoanedCommandInterface> cmd_loaned;
+  cmd_loaned.emplace_back(cmd_intf, nullptr);
+
+  auto state_intf =
+    std::make_shared<StateInterface>("gpio1", "dig_in_1", &dummy_double_value_state);
+  std::vector<LoanedStateInterface> state_loaned;
+  state_loaned.emplace_back(state_intf, nullptr);
+
+  controller_->assign_interfaces(std::move(cmd_loaned), std::move(state_loaned));
+
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  CmdType cmd_msg;
+  cmd_msg.interface_groups = {"gpio1"};
+  cmd_msg.interface_values.resize(1);
+  cmd_msg.interface_values.at(0).interface_names = {"dig_out_1"};
+  cmd_msg.interface_values.at(0).values = {1.0};
+
+  auto publisher = node->create_publisher<CmdType>(
+    std::string(controller_->get_node()->get_name()) + "/commands", 10);
+  publisher->publish(cmd_msg);
+
+  publisher->publish(cmd_msg);
+  wait_one_miliseconds_for_timeout();
+  controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  ASSERT_EQ(dummy_double_value_cmd, 1.0);
+
+  auto state_subscription = node->create_subscription<StateType>(
+    std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
+    [&](const StateType::SharedPtr) {});
+
+  stop_test_when_message_cannot_be_published(wait_for_subscription(state_subscription));
+
+  StateType gpio_state_msg;
+  rclcpp::MessageInfo msg_info;
+  ASSERT_TRUE(state_subscription->take(gpio_state_msg, msg_info));
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 0.0);
+
+  // This verifies that the controller no longer crashes on update
+  EXPECT_NO_THROW(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
+}
+
+TEST_F(GpioCommandControllerTestSuite, UpdateBoolGpioInterfaces)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", std::vector<std::string>{"gpio1"}},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_out_1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig_in_1"}}});
+
+  ASSERT_EQ(
+    controller_->init(create_ctrl_params(node_options)), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  auto cmd_intf = std::make_shared<CommandInterface>("gpio1", "dig_out_1", "bool", "false");
+  std::vector<LoanedCommandInterface> cmd_loaned;
+  cmd_loaned.emplace_back(cmd_intf, nullptr);
+
+  auto state_intf = std::make_shared<StateInterface>("gpio1", "dig_in_1", "bool", "true");
+  std::vector<LoanedStateInterface> state_loaned;
+  state_loaned.emplace_back(state_intf, nullptr);
+
+  controller_->assign_interfaces(std::move(cmd_loaned), std::move(state_loaned));
+
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+
+  CmdType cmd_msg;
+  cmd_msg.interface_groups = {"gpio1"};
+  cmd_msg.interface_values.resize(1);
+  cmd_msg.interface_values.at(0).interface_names = {"dig_out_1"};
+  cmd_msg.interface_values.at(0).values = {1.0};
+
+  auto publisher = node->create_publisher<CmdType>(
+    std::string(controller_->get_node()->get_name()) + "/commands", 10);
+  publisher->publish(cmd_msg);
+
+  publisher->publish(cmd_msg);
+  wait_one_miliseconds_for_timeout();
+  controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  const auto result = cmd_intf->get_optional<bool>();
+  ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result.value());
+
+  auto state_subscription = node->create_subscription<StateType>(
+    std::string(controller_->get_node()->get_name()) + "/gpio_states", 10,
+    [&](const StateType::SharedPtr) {});
+
+  stop_test_when_message_cannot_be_published(wait_for_subscription(state_subscription));
+
+  StateType gpio_state_msg;
+  rclcpp::MessageInfo msg_info;
+  ASSERT_TRUE(state_subscription->take(gpio_state_msg, msg_info));
+  ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);
+
+  // This verifies that the controller no longer crashes on update
+  EXPECT_NO_THROW(controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
 }
