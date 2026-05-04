@@ -14,6 +14,7 @@
 
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 
+#include <deque>
 #include <limits>
 #include <memory>
 #include <string>
@@ -265,6 +266,54 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  // Configure speed limiters
+  try
+  {
+    limiter_linear_x_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+      params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+      params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+      params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear x speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_linear_y_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.linear.y.min_velocity, params_.linear.y.max_velocity,
+      params_.linear.y.max_acceleration_reverse, params_.linear.y.max_acceleration,
+      params_.linear.y.max_deceleration, params_.linear.y.max_deceleration_reverse,
+      params_.linear.y.min_jerk, params_.linear.y.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear y speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_angular_z_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+      params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+      params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+      params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure angular z speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // Allocate reference interfaces and reset their values to NaN to catch uninitialized usage.
+  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
+  reset_buffers();
+
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -360,11 +409,10 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Try to set default value in command.
-  // If this fails, then another command will be received soon anyways.
-  ControllerReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set(emtpy_msg);
+  // Reset limiter history and reference buffers so a previous activation cannot
+  // influence the behavior of the controller after a deactivate->activate cycle.
+  reset_buffers();
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -386,7 +434,24 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
     return controller_interface::CallbackReturn::FAILURE;
   }
 
+  reset_buffers();
+
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void MecanumDriveController::reset_buffers()
+{
+  std::fill(
+    reference_interfaces_.begin(), reference_interfaces_.end(),
+    std::numeric_limits<double>::quiet_NaN());
+
+  // Replace the queue with one initialized to two zero entries.
+  previous_two_commands_ = std::queue<std::array<double, 3>>(
+    std::deque<std::array<double, 3>>{{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});
+
+  // Reset the latest received reference back to NaN so no stale command is applied.
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 }
 
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
@@ -498,6 +563,28 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     !std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]) &&
     !std::isnan(reference_interfaces_[2]))
   {
+    // Apply speed limits before inverse kinematics
+    double linear_x_command = reference_interfaces_[0];
+    double linear_y_command = reference_interfaces_[1];
+    double angular_z_command = reference_interfaces_[2];
+
+    double & last_linear_x = previous_two_commands_.back()[0];
+    double & second_to_last_linear_x = previous_two_commands_.front()[0];
+    double & last_linear_y = previous_two_commands_.back()[1];
+    double & second_to_last_linear_y = previous_two_commands_.front()[1];
+    double & last_angular_z = previous_two_commands_.back()[2];
+    double & second_to_last_angular_z = previous_two_commands_.front()[2];
+
+    limiter_linear_x_->limit(
+      linear_x_command, last_linear_x, second_to_last_linear_x, period.seconds());
+    limiter_linear_y_->limit(
+      linear_y_command, last_linear_y, second_to_last_linear_y, period.seconds());
+    limiter_angular_z_->limit(
+      angular_z_command, last_angular_z, second_to_last_angular_z, period.seconds());
+
+    previous_two_commands_.pop();
+    previous_two_commands_.push({{linear_x_command, linear_y_command, angular_z_command}});
+
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
     /// \note The variables meaning:
@@ -508,18 +595,15 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
-      rotation_from_base_to_center *
-      tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+      rotation_from_base_to_center * tf2::Vector3(linear_x_command, linear_y_command, 0.0);
     tf2::Vector3 linear_trans_from_base_to_center = tf2::Vector3(
       params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x_ =
-      velocity_in_base_frame_w_r_t_center_frame_.x() +
-      linear_trans_from_base_to_center.y() * reference_interfaces_[2];
-    velocity_in_center_frame_linear_y_ =
-      velocity_in_base_frame_w_r_t_center_frame_.y() -
-      linear_trans_from_base_to_center.x() * reference_interfaces_[2];
-    velocity_in_center_frame_angular_z_ = reference_interfaces_[2];
+    velocity_in_center_frame_linear_x_ = velocity_in_base_frame_w_r_t_center_frame_.x() +
+                                         linear_trans_from_base_to_center.y() * angular_z_command;
+    velocity_in_center_frame_linear_y_ = velocity_in_base_frame_w_r_t_center_frame_.y() -
+                                         linear_trans_from_base_to_center.x() * angular_z_command;
+    velocity_in_center_frame_angular_z_ = angular_z_command;
 
     const double wheel_front_left_vel =
       1.0 / params_.kinematics.wheels_radius *
