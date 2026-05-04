@@ -52,12 +52,16 @@ protected:
   SegmentTolerances default_tolerances;
   joint_trajectory_controller::Params params;
   std::vector<std::string> joint_names_;
+  std::vector<bool> is_wraparounds_;
   rclcpp::Logger logger = rclcpp::get_logger("TestTolerancesFixture");
 
   void SetUp() override
   {
     // Initialize joint_names_ with some test data
     joint_names_ = {"joint1", "joint2", "joint3"};
+
+    // No wraparounds
+    is_wraparounds_ = {false, false, false};
 
     // Initialize default_tolerances and params with common setup for all tests
     // TODO(anyone) fill params and use
@@ -437,4 +441,87 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_goal_tolerance)
   auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(
     logger, default_tolerances, goal_msg, params.joints);
   expectDefaultTolerances(active_tolerances);
+}
+
+// Create Error Point Tests
+TEST_F(TestTolerancesFixture, test_create_error_trajectory_point)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint desired;
+  trajectory_msgs::msg::JointTrajectoryPoint actual;
+
+  // Joint 0: Standard, Joint 1: Wraparound (Continuous), Joint 2: Standard
+  is_wraparounds_ = {false, true, false};
+
+  // Setup desired state
+  // Joint 1 is desired at -3.14 (near -PI)
+  desired.positions = {1.0, -3.14, 3.0};
+  desired.velocities = {0.1, 0.2, 0.3};
+  desired.accelerations = {0.01, 0.02, 0.03};
+
+  // Setup actual state
+  // Joint 1 is actually at 3.14 (near +PI). Shortest distance should be near 0.
+  actual.positions = {0.9, 3.14, 3.0};
+  actual.velocities = {0.05, 0.25, 0.3};
+  actual.accelerations = {0.0, 0.03, 0.03};
+
+  // Calculate error: Error = Desired - Actual
+  auto error_point = joint_trajectory_controller::create_error_trajectory_point(
+    desired, actual, is_wraparounds_, false);
+
+  // Verify Position Errors
+  ASSERT_EQ(error_point.positions.size(), 3);
+  EXPECT_NEAR(error_point.positions[0], 0.1, 1e-6);  // Standard: 1.0 - 0.9
+  // Wraparound: shortest distance between 3.14 and -3.14 is very small
+  EXPECT_NEAR(error_point.positions[1], 0.0, 1e-2);
+  EXPECT_NEAR(error_point.positions[2], 0.0, 1e-6);
+
+  // Verify Velocity Errors (Standard subtraction regardless of wraparound)
+  ASSERT_EQ(error_point.velocities.size(), 3);
+  EXPECT_NEAR(error_point.velocities[0], 0.05, 1e-6);
+  EXPECT_NEAR(error_point.velocities[1], -0.05, 1e-6);
+  EXPECT_NEAR(error_point.velocities[2], 0.0, 1e-6);
+
+  // Verify Acceleration Errors
+  ASSERT_EQ(error_point.accelerations.size(), 3);
+  EXPECT_NEAR(error_point.accelerations[0], 0.01, 1e-6);
+  EXPECT_NEAR(error_point.accelerations[1], -0.01, 1e-6);
+  EXPECT_NEAR(error_point.accelerations[2], 0.0, 1e-6);
+}
+
+TEST_F(TestTolerancesFixture, test_create_error_trajectory_point_mismatched_sizes)
+{
+  {
+    SCOPED_TRACE("mismatched positions size");
+    trajectory_msgs::msg::JointTrajectoryPoint desired;
+    trajectory_msgs::msg::JointTrajectoryPoint actual;
+    std::vector<bool> wraps = {false, false, false};
+
+    desired.positions = {1.0, 2.0, 3.0};
+    actual.positions = {1.0, 2.0};
+
+    // Should return empty because positions size (3) != (2)
+    auto error_point =
+      joint_trajectory_controller::create_error_trajectory_point(desired, actual, wraps, false);
+
+    EXPECT_TRUE(error_point.positions.empty());
+    EXPECT_TRUE(error_point.velocities.empty());
+    EXPECT_TRUE(error_point.accelerations.empty());
+  }
+  {
+    SCOPED_TRACE("mismatched wraps size");
+    trajectory_msgs::msg::JointTrajectoryPoint desired;
+    trajectory_msgs::msg::JointTrajectoryPoint actual;
+    std::vector<bool> mismatch_wraps = {false};
+
+    desired.positions = {1.0, 2.0};
+    actual.positions = {1.0, 2.0};
+
+    // Should return empty because mismatch_wraps size (1) != joints positions size (2)
+    auto error_point = joint_trajectory_controller::create_error_trajectory_point(
+      desired, actual, mismatch_wraps, false);
+
+    EXPECT_TRUE(error_point.positions.empty());
+    EXPECT_TRUE(error_point.velocities.empty());
+    EXPECT_TRUE(error_point.accelerations.empty());
+  }
 }
