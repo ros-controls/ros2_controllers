@@ -35,7 +35,6 @@ add_library(
   SHARED
   src/tricycle_steering_controller.cpp
 )
-target_compile_features(tricycle_steering_controller PUBLIC cxx_std_17)
 target_include_directories(tricycle_steering_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
