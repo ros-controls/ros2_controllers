@@ -41,7 +41,6 @@ generate_parameter_library(admittance_controller_parameters
 add_library(admittance_controller SHARED
   src/admittance_controller.cpp
 )
-target_compile_features(admittance_controller PUBLIC cxx_std_17)
 target_include_directories(admittance_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/admittance_controller>
@@ -96,6 +95,15 @@ if(BUILD_TESTING)
   target_link_libraries(test_admittance_controller
     admittance_controller
     ros2_control_test_assets::ros2_control_test_assets)
+
+  # test admittance rule implementation
+  ament_add_gmock(test_admittance_rule_impl
+    test/test_admittance_rule_impl.cpp
+  )
+  target_link_libraries(test_admittance_rule_impl
+    admittance_controller
+    Eigen3::Eigen
+    kinematics_interface::kinematics_interface)
 endif()
 
 install(

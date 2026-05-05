@@ -30,7 +30,6 @@ generate_parameter_library(joint_state_broadcaster_parameters
 add_library(joint_state_broadcaster SHARED
   src/joint_state_broadcaster.cpp
 )
-target_compile_features(joint_state_broadcaster PUBLIC cxx_std_17)
 target_include_directories(joint_state_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/joint_state_broadcaster>

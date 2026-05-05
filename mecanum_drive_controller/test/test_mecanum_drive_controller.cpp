@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#define _USE_MATH_DEFINES
+
 #include "test_mecanum_drive_controller.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>

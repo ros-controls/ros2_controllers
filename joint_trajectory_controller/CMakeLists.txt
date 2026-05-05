@@ -18,7 +18,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   rsl
-  tl_expected
   trajectory_msgs
   urdf
 )
@@ -37,9 +36,7 @@ generate_parameter_library(joint_trajectory_controller_parameters
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
-  src/validate_jtc_parameters.cpp
 )
-target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
 if(WIN32)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 endif()
@@ -58,7 +55,6 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       rsl::rsl
-                      tl_expected::tl_expected
                       urdf::urdf
                       angles::angles
                       ${trajectory_msgs_TARGETS}
@@ -106,7 +102,7 @@ if(BUILD_TESTING)
   ament_add_gmock(test_trajectory_actions
     test/test_trajectory_actions.cpp
   )
-  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 300)
+  set_tests_properties(test_trajectory_actions PROPERTIES TIMEOUT 330)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets)

@@ -1,7 +1,7 @@
 name: Rolling - RHEL Semi-Binary Build
 on:
   workflow_dispatch:
-  pull_request:
+  pull_request: &event
     branches:
       - master
     paths:
@@ -16,9 +16,7 @@ on:
       - 'ros2_controllers.rolling.repos'
       - 'ros2_controllers.kilted.repos'
       - '**.xml'
-  schedule:
-    # Run every day to detect flakiness and broken dependencies
-    - cron: '03 1 * * MON-FRI'
+  push: *event
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on given branches

@@ -411,10 +411,48 @@ controller_interface::CallbackReturn PidController::on_activate(
     measured_state_.try_set(current_state_);
   }
 
-  reference_interfaces_.assign(
-    reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
+
+  // Initialize reference interfaces from current state so initial reference equals current state
+  reference_interfaces_.assign(
+    reference_interfaces_.size(), std::numeric_limits<double>::quiet_NaN());
+
+  if (params_.set_current_state_as_first_setpoint)
+  {
+    if (params_.use_external_measured_states)
+    {
+      auto measured_state_opt = measured_state_.try_get();
+      if (measured_state_opt.has_value())
+      {
+        const auto & state = measured_state_opt.value();
+        for (size_t i = 0; i < dof_; ++i)
+        {
+          if (i < state.values.size() && !std::isnan(state.values[i]))
+          {
+            reference_interfaces_[i] = state.values[i];
+          }
+          if (
+            reference_interfaces_.size() == 2 * dof_ && i < state.values_dot.size() &&
+            !std::isnan(state.values_dot[i]))
+          {
+            reference_interfaces_[dof_ + i] = state.values_dot[i];
+          }
+        }
+      }
+    }
+    else
+    {
+      for (size_t i = 0; i < measured_state_values_.size(); ++i)
+      {
+        const auto state_interface_value_op = state_interfaces_[i].get_optional();
+        if (state_interface_value_op.has_value())
+        {
+          reference_interfaces_[i] = state_interface_value_op.value();
+        }
+      }
+    }
+  }
 
   // prefixed save_i_term parameter is read from ROS parameters
   for (auto & pid : pids_)

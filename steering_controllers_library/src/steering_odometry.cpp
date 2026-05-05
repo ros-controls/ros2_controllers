@@ -108,6 +108,4 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_comma
     v_bx, omega_bz, open_loop, reduce_wheel_speed_until_steering_reached);
 }
 
-void SteeringOdometry::reset_odometry() { sk_impl_.reset_odometry(); }
-
 }  // namespace steering_odometry

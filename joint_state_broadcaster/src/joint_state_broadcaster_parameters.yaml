@@ -28,7 +28,11 @@ joint_state_broadcaster:
     description: "Parameter to support broadcasting of only specific joints and interfaces.
     It has to be used in combination with the ``joints`` parameter.
     If either ``joints`` or ``interfaces`` is left empty, all available state interfaces will be
-    published."
+    published.
+    If this parameter contains ``position``, ``velocity``, or ``effort``, the corresponding
+    ``map_interface_to_joint_state.<field>`` setting is ignored because the standard interface is
+    already requested directly. A warning is printed only when such an ignored mapping is set to a
+    different custom interface name."
   }
   map_interface_to_joint_state:
     position: {
@@ -62,7 +66,7 @@ joint_state_broadcaster:
   }
   publish_dynamic_joint_states: {
     type: bool,
-    default_value: true,
+    default_value: false,
     read_only: true,
-    description: "Whether to publish dynamic joint states."
+    description: "[Deprecated] Whether to publish dynamic joint states. This parameter is deprecated and will be removed in future releases."
   }
