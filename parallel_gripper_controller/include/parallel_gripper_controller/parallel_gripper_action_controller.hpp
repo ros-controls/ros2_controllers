@@ -62,8 +62,8 @@ public:
   struct Commands
   {
     double position_cmd_;  // Commanded position
-    double max_velocity_;  // Desired max gripper velocity
-    double max_effort_;    // Desired max allowed effort
+    double velocity_cmd_;  // Commanded velocity
+    double effort_cmd_;    // Commanded effort
   };
   GripperActionController();
 
@@ -112,11 +112,11 @@ protected:
 
   std::string name_;  ///< Controller name.
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    joint_command_interface_;
+    joint_position_command_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    effort_interface_;
+    joint_effort_command_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-    speed_interface_;
+    joint_speed_command_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
     joint_position_state_interface_;
   std::optional<std::reference_wrapper<hardware_interface::LoanedStateInterface>>

@@ -18,6 +18,7 @@ diff_drive_controller
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Set odometry service added to be used at runtime. (`#2096 <https://github.com/ros-controls/ros2_controllers/pull/2096>`_).
+* Removed deprecated parameter ``publish_rate`` and associated rate-limiting logic. (`#2259 <https://github.com/ros-controls/ros2_controllers/pull/2259>`_).
 
 mecanum_drive_controller
 *****************************
@@ -44,6 +45,7 @@ joint_trajectory_controller
   don't contain velocity / acceleration information, but the trajectory does. This way, the segment
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
+* Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
 
 pid_controller
 **************
@@ -52,3 +54,4 @@ pid_controller
 steering_controllers_library
 *****************************
 * Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
+* Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
