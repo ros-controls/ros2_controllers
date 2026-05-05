@@ -55,7 +55,7 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
 };
 
 // Minimal 3-joint URDF covering the joint_names_ used in tests
-constexpr char * kThreeJointURDF = R"(
+constexpr const char * kThreeJointURDF = R"(
 <?xml version="1.0" encoding="utf-8"?>
 <robot name="MinimalRobot">
   <link name="world"/>
