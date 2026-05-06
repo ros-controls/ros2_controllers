@@ -35,7 +35,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rclcpp/version.h"
-#if defined(RCLCPP_VERSION_GTE) && RCLCPP_VERSION_GTE(29, 0, 0)
+#if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "urdf/model.hpp"
 #else
 #include "urdf/model.h"

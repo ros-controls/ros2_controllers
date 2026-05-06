@@ -36,7 +36,7 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/version.h"
-#if defined(RCLCPP_VERSION_GTE) && RCLCPP_VERSION_GTE(18, 0, 0)
+#if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -229,7 +229,7 @@ protected:
 
   void broadcast_tfs()
   {
-#if defined(RCLCPP_VERSION_GTE) && RCLCPP_VERSION_GTE(18, 0, 0)
+#if RCLCPP_VERSION_GTE(18, 0, 0)
     static tf2_ros::TransformBroadcaster br(
       rclcpp::node_interfaces::NodeInterfaces(
         test_broadcaster_node_->get_node_parameters_interface(),
