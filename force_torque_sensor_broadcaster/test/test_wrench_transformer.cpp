@@ -32,7 +32,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/version.h"
-#if RCLCPP_VERSION_GTE(18, 0, 0)
+#if defined(RCLCPP_VERSION_GTE) && RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
 #include "tf2/exceptions.hpp"
@@ -60,7 +60,7 @@ protected:
   {
     auto tf_node = std::make_shared<rclcpp::Node>("static_tf_broadcaster");
     executor_->add_node(tf_node);
-#if RCLCPP_VERSION_GTE(18, 0, 0)
+#if defined(RCLCPP_VERSION_GTE) && RCLCPP_VERSION_GTE(18, 0, 0)
     tf2_ros::StaticTransformBroadcaster tf_broadcaster(
       rclcpp::node_interfaces::NodeInterfaces(
         tf_node->get_node_parameters_interface(), tf_node->get_node_topics_interface()));
