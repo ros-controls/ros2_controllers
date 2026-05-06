@@ -3,8 +3,18 @@ gpio_command_controller_parameters:
     type: string_array,
     description: "List of gpios",
     read_only: true,
+    default_value: [],
     validation: {
-      size_gt<>: [0],
+      unique<>: null
+    }
+  }
+
+  joints: {
+    type: string_array,
+    description: "List of joints",
+    read_only: true,
+    default_value: [],
+    validation: {
       unique<>: null
     }
   }
@@ -14,6 +24,16 @@ gpio_command_controller_parameters:
       interfaces: {
         type: string_array,
         description: "List of command interfaces for each gpio.",
+        read_only: true,
+        default_value: [],
+        validation: {
+          unique<>: null
+        }
+      }
+    __map_joints:
+      interfaces: {
+        type: string_array,
+        description: "List of command interfaces for each joint.",
         read_only: true,
         default_value: [],
         validation: {
@@ -32,3 +52,22 @@ gpio_command_controller_parameters:
           unique<>: null
         }
       }
+    __map_joints:
+      interfaces: {
+        type: string_array,
+        description: "List of state interfaces for each joint.",
+        read_only: true,
+        default_value: [],
+        validation: {
+          unique<>: null
+        }
+      }
+
+  action_timeout: {
+    type: double,
+    description: "Default timeout in seconds for action goals. 0.0 means no timeout.",
+    default_value: 30.0,
+    validation: {
+      gt_eq<>: [0.0]
+    }
+  }
