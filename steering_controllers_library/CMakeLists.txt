@@ -42,7 +42,6 @@ add_library(
   src/steering_kinematics.cpp
   src/steering_odometry.cpp
 )
-target_compile_features(steering_controllers_library PUBLIC cxx_std_17)
 target_include_directories(steering_controllers_library PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/steering_controllers_library>")
