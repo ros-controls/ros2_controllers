@@ -1317,6 +1317,130 @@ TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buff
        "should be ramping up from zero again.";
 }
 
+// This test verifies that parameters can be updated at runtime.
+TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
+{
+  // If you set a linear velocity reference without acceleration limits,
+  // then the wheel velocity command (rotations/s) will be:
+  // ideal_wheel_velocity_command (rotations/s) = linear_velocity_command (m/s) / wheel_radius (m).
+  // (The velocity command looks like a step function).
+  // However, if there are acceleration limits, then the actual wheel velocity command
+  // should always be less than the ideal velocity, and should only become
+  // equal at time = linear_velocity_command (m/s) / acceleration_limit (m/s^2).
+  const double max_acceleration_1 = 2.0;
+  const double max_acceleration_2 = 5.0;
+  const double max_deceleration = -4.0;
+
+  SetUpController("test_mecanum_drive_controller_with_limits");
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  const double dt = 0.001;
+  const double wheels_radius = 0.5;
+
+  auto wait_for_limiter = [&](double linear_ref, double expected_vel)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      controller_->reference_interfaces_[0] = linear_ref;
+      controller_->reference_interfaces_[1] = 0.0;
+      controller_->reference_interfaces_[2] = 0.0;
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      EXPECT_NEAR(expected_vel, joint_command_values_[0], 1e-3);
+    }
+  };
+
+  // wait for the speed limiter to fill the queue
+  controller_->reference_interfaces_[0] = 0.0;
+  controller_->reference_interfaces_[1] = 0.0;
+  controller_->reference_interfaces_[2] = 0.0;
+  wait_for_limiter(0.0, 0.0);
+
+  // Phase 1: accelerate with max_acceleration = 2.0
+  {
+    const double linear = 1.0;
+    const double time_acc = linear / max_acceleration_1;
+    for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
+    {
+      controller_->reference_interfaces_[0] = linear;
+      controller_->reference_interfaces_[1] = 0.0;
+      controller_->reference_interfaces_[2] = 0.0;
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    controller_->reference_interfaces_[0] = linear;
+    controller_->reference_interfaces_[1] = 0.0;
+    controller_->reference_interfaces_[2] = 0.0;
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(linear, linear / wheels_radius);
+  }
+  // Stop the robot
+  {
+    const double linear = 0.0;
+    const double time_dec = 1.0 / std::abs(max_deceleration);
+    for (int i = 0; i < static_cast<int>(std::floor(time_dec / dt)) - 1; ++i)
+    {
+      controller_->reference_interfaces_[0] = linear;
+      controller_->reference_interfaces_[1] = 0.0;
+      controller_->reference_interfaces_[2] = 0.0;
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    controller_->reference_interfaces_[0] = linear;
+    controller_->reference_interfaces_[1] = 0.0;
+    controller_->reference_interfaces_[2] = 0.0;
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(linear, 0.0);
+  }
+  // Phase 2: update parameter at runtime to max_acceleration = 5.0
+  {
+    auto result = controller_->get_node()->set_parameter(
+      rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration_2)));
+    ASSERT_TRUE(result.successful);
+  }
+  // Phase 3: accelerate with max_acceleration = 5.0
+  {
+    const double linear = 1.0;
+    const double time_acc_1 = linear / max_acceleration_1;
+    const double time_acc_2 = linear / max_acceleration_2;
+    // With higher acceleration, should reach target faster
+    ASSERT_LT(time_acc_2, time_acc_1);
+    for (int i = 0; i < static_cast<int>(std::floor(time_acc_2 / dt)) - 1; ++i)
+    {
+      controller_->reference_interfaces_[0] = linear;
+      controller_->reference_interfaces_[1] = 0.0;
+      controller_->reference_interfaces_[2] = 0.0;
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    controller_->reference_interfaces_[0] = linear;
+    controller_->reference_interfaces_[1] = 0.0;
+    controller_->reference_interfaces_[2] = 0.0;
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    // wait for the speed limiter to fill the queue
+    wait_for_limiter(linear, linear / wheels_radius);
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

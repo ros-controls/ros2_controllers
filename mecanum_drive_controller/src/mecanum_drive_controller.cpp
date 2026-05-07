@@ -510,6 +510,34 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
 controller_interface::return_type MecanumDriveController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  if (param_listener_->try_update_params(params_))
+  {
+    ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
+    try
+    {
+      limiter_linear_x_->set_params(
+        params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+        params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+        params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+        params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+      limiter_linear_y_->set_params(
+        params_.linear.y.min_velocity, params_.linear.y.max_velocity,
+        params_.linear.y.max_acceleration_reverse, params_.linear.y.max_acceleration,
+        params_.linear.y.max_deceleration, params_.linear.y.max_deceleration_reverse,
+        params_.linear.y.min_jerk, params_.linear.y.max_jerk);
+      limiter_angular_z_->set_params(
+        params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+        params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+        params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+        params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+    }
+    catch (const std::invalid_argument & e)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to update speed limiter parameters: %s", e.what());
+    }
+  }
+
   // FORWARD KINEMATICS (odometry).
   const auto wheel_front_left_state_vel_op = state_interfaces_[FRONT_LEFT].get_optional();
   const auto wheel_front_right_state_vel_op = state_interfaces_[FRONT_RIGHT].get_optional();
