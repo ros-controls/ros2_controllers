@@ -32,6 +32,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
@@ -60,6 +61,7 @@ protected:
   {
     auto tf_node = std::make_shared<rclcpp::Node>("static_tf_broadcaster");
     executor_->add_node(tf_node);
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
     tf2_ros::StaticTransformBroadcaster tf_broadcaster(
       rclcpp::node_interfaces::NodeInterfaces(
