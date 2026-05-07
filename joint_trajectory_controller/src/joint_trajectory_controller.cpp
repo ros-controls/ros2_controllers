@@ -35,6 +35,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "urdf/model.hpp"
 #else
