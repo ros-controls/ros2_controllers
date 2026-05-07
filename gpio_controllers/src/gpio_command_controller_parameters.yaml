@@ -71,3 +71,12 @@ gpio_command_controller_parameters:
       gt_eq<>: [0.0]
     }
   }
+
+  action_tolerance: {
+    type: double,
+    description: "Default tolerance for action goals. Used when goal tolerance is 0.0.",
+    default_value: 0.01,
+    validation: {
+      gt_eq<>: [0.0]
+    }
+  }
