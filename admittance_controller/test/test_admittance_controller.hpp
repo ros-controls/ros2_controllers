@@ -35,6 +35,14 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
+<<<<<<< HEAD
+=======
+#include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+#include "rclcpp/node_interfaces/node_interfaces.hpp"
+#endif
+>>>>>>> 4a25b8c (Suppress cppcheck errors from macros from version.h (#2346))
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "ros2_control_test_assets/test_asset_6d_robot_description.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
@@ -225,6 +233,16 @@ protected:
 
   void broadcast_tfs()
   {
+<<<<<<< HEAD
+=======
+// cppcheck-suppress syntaxError
+#if RCLCPP_VERSION_GTE(18, 0, 0)
+    static tf2_ros::TransformBroadcaster br(
+      rclcpp::node_interfaces::NodeInterfaces(
+        test_broadcaster_node_->get_node_parameters_interface(),
+        test_broadcaster_node_->get_node_topics_interface()));
+#else
+>>>>>>> 4a25b8c (Suppress cppcheck errors from macros from version.h (#2346))
     static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
     geometry_msgs::msg::TransformStamped transform_stamped;
 
