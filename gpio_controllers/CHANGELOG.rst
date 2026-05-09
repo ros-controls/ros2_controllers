@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.6.0 (2026-04-22)
+------------------
+* Update controller tests to use configure/activate instead of on_configure/on_activate  (`#1682 <https://github.com/ros-controls/ros2_controllers/issues/1682>`_)
+* Contributors: Junius Santoso
+
 6.5.0 (2026-04-02)
 ------------------
 
