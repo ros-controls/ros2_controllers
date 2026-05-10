@@ -563,6 +563,12 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 {
   auto logger = get_node()->get_logger();
 
+  // store current ref (for open loop odometry) and update odometry
+  const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+  const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+  const double ref_linear = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_angular = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
+
   // check if odometry set was requested by non-RT thread
   if (set_odom_requested_.load())
   {
@@ -576,12 +582,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   }
   else
   {
-    // store current ref (for open loop odometry) and update odometry
-    const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
-    const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
-    const double ref_linear = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
-    const double ref_angular = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
-
     // store current ref (for open loop odometry) and update odometry
     last_linear_velocity_ = ref_linear;
     last_angular_velocity_ = ref_angular;

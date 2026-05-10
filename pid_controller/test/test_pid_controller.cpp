@@ -146,10 +146,11 @@ TEST_F(PidControllerTest, activate_success)
   // With set_current_state_as_first_setpoint=true (default), reference interfaces are initialized
   // to the current state values on activation
   EXPECT_EQ(controller_->ordered_exported_reference_interfaces_.size(), dof_state_values_.size());
-  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
+  for (auto i = 0u; i < dof_state_values_.size(); i++)
   {
     EXPECT_EQ(
-      interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN()),
+      controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN()),
       dof_state_values_[i]);
   }
 }
