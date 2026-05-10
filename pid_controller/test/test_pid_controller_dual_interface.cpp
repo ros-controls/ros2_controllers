@@ -35,6 +35,7 @@ public:
     dof_state_values_ = {
       get_joint1_state_position(), get_joint2_state_position(), get_joint1_state_velocity(),
       get_joint2_state_velocity()};
+    dof_command_values_ = {0.0, 0.0};
   }
 
   double get_joint1_state_position() const { return 10.0; }
