@@ -36,7 +36,11 @@ setup(
     maintainer="Bence Magyar",
     maintainer_email="bence.magyar.robotics@gmail.com",
     license="Apache License, Version 2.0",
-    tests_require=["pytest"],
+    extras_require={
+        "test": [
+            "pytest",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "rqt_joint_trajectory_controller = \
