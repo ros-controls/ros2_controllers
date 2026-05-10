@@ -27,7 +27,7 @@ on:
 
 jobs:
   source:
-    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-source-build.yml@master
+    uses: ros-controls/ros2_control_ci/.github/workflows/reusable-ros-tooling-source-build.yml@fix-source-build-PR
     strategy:
       fail-fast: false
       matrix:
