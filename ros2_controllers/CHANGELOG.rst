@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.7.0 (2026-05-12)
+------------------
 * Remove deprecated controller specializations (`#2016 <https://github.com/ros-controls/ros2_controllers/issues/2016>`_)
 * Contributors: Christoph Fröhlich
 

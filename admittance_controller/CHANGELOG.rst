@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.7.0 (2026-05-12)
+------------------
 * Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
 * fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (`#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_)
 * Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
