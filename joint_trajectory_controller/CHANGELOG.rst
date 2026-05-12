@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.40.1 (2026-05-12)
+-------------------
 * Suppress cppcheck errors from macros from version.h (backport `#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_) (`#2347 <https://github.com/ros-controls/ros2_controllers/issues/2347>`_)
 * fix JTC userdoc YAML indentation and stray quote (backport `#2327 <https://github.com/ros-controls/ros2_controllers/issues/2327>`_) (`#2329 <https://github.com/ros-controls/ros2_controllers/issues/2329>`_)
 * Contributors: mergify[bot]

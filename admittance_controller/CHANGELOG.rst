@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.40.1 (2026-05-12)
+-------------------
 * fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (backport `#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_) (`#2338 <https://github.com/ros-controls/ros2_controllers/issues/2338>`_)
 * Contributors: mergify[bot]
 
