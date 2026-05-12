@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Suppress cppcheck errors from macros from version.h (backport `#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_) (`#2347 <https://github.com/ros-controls/ros2_controllers/issues/2347>`_)
+* fix(joint_state_broadcaster): suppress confusing warning for standard interfaces (backport `#2276 <https://github.com/ros-controls/ros2_controllers/issues/2276>`_) (`#2333 <https://github.com/ros-controls/ros2_controllers/issues/2333>`_)
+* Contributors: mergify[bot]
+
 4.40.0 (2026-04-22)
 -------------------
 

@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (backport `#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_) (`#2338 <https://github.com/ros-controls/ros2_controllers/issues/2338>`_)
+* Contributors: mergify[bot]
+
 4.40.0 (2026-04-22)
 -------------------
 * Update admittance_controller to use shared 6D robot description (backport `#2173 <https://github.com/ros-controls/ros2_controllers/issues/2173>`_) (`#2310 <https://github.com/ros-controls/ros2_controllers/issues/2310>`_)
