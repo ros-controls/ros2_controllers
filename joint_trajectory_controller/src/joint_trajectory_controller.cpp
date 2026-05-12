@@ -44,14 +44,14 @@
 namespace joint_trajectory_controller
 {
 
-auto interface_has_values = [](const auto & joint_interface)
+auto interface_has_values = [](const auto & joint_interface) -> bool
 {
   return std::find_if(
            joint_interface.begin(), joint_interface.end(),
            [](const auto & interface)
            {
              auto interface_op = interface.get().get_optional();
-             return !interface_op.has_value() || std::isnan(interface_op.value());
+             return !interface_op.has_value() || !std::isfinite(interface_op.value());
            }) == joint_interface.end();
 };
 
