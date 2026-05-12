@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add lyrical workflows, update README, and fix gcc-15 issues (backport `#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_) (`#2353 <https://github.com/ros-controls/ros2_controllers/issues/2353>`_)
+* Contributors: mergify[bot]
+
 5.15.0 (2026-04-22)
 -------------------
 
