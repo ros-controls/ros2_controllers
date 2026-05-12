@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* fix JTC userdoc YAML indentation and stray quote (`#2327 <https://github.com/ros-controls/ros2_controllers/issues/2327>`_)
+* Contributors: Christoph Fröhlich, ahmedbilal9
+
 6.6.0 (2026-04-22)
 ------------------
 * Fix segfault in jtc if joint name not in urdf (`#2321 <https://github.com/ros-controls/ros2_controllers/issues/2321>`_)

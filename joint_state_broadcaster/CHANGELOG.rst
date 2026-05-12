@@ -2,6 +2,14 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* added warning messages when unable to remap the interface properly in Joint State Broadcaster.  (`#2082 <https://github.com/ros-controls/ros2_controllers/issues/2082>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* fix(joint_state_broadcaster): suppress confusing warning for standard interfaces (`#2276 <https://github.com/ros-controls/ros2_controllers/issues/2276>`_)
+* Contributors: Christoph Fröhlich, Maksim Sviridov, Mithun Chakladar
+
 6.6.0 (2026-04-22)
 ------------------
 

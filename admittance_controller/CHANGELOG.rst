@@ -2,6 +2,13 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (`#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich, Souri Rishik
+
 6.6.0 (2026-04-22)
 ------------------
 * Update admittance_controller to use shared 6D robot description (`#2173 <https://github.com/ros-controls/ros2_controllers/issues/2173>`_)

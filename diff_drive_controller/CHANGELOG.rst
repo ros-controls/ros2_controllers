@@ -2,6 +2,14 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove deprecated publish_rate from diff_drive_controller (`#2259 <https://github.com/ros-controls/ros2_controllers/issues/2259>`_)
+* Remove deprecated odometry reset methods (`#2252 <https://github.com/ros-controls/ros2_controllers/issues/2252>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* diff_drive: set parameters as read_only or dynamically update them (`#2293 <https://github.com/ros-controls/ros2_controllers/issues/2293>`_)
+* Contributors: Bhavin Umatiya, Christoph Fröhlich, Ege Kural, kamal2730
+
 6.6.0 (2026-04-22)
 ------------------
 * Update controller tests to use configure/activate instead of on_configure/on_activate  (`#1682 <https://github.com/ros-controls/ros2_controllers/issues/1682>`_)

@@ -2,6 +2,12 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
+* [rqt_jtc] Use urdf_parser_py (`#2254 <https://github.com/ros-controls/ros2_controllers/issues/2254>`_)
+* Contributors: Christoph Fröhlich, Sahil Lakhmani
+
 6.6.0 (2026-04-22)
 ------------------
 * [RQT_JTC] add unit tests for parse_joint_limits (`#2281 <https://github.com/ros-controls/ros2_controllers/issues/2281>`_)
