@@ -28,12 +28,18 @@ joint_state_broadcaster
 * Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 
 joint_trajectory_controller
+<<<<<<< HEAD
 *******************************
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
 * Scaling support was added in `#1191
   <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
   "stretches the time" with which it progresses in the trajectory. Scaling can either be set
   manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
+=======
+***************************
+* When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
+  <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
+>>>>>>> f6ee8cb (More general initialization of state from command (#2294))
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
   don't contain velocity / acceleration information, but the trajectory does. This way, the segment
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
