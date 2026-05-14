@@ -81,6 +81,8 @@ joint_trajectory_controller
   "stretches the time" with which it progresses in the trajectory. Scaling can either be set
   manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
 * Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+* When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
+  <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 
 mecanum_drive_controller
 ************************
