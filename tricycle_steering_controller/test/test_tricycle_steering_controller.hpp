@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/executor.hpp"
@@ -45,6 +46,11 @@ using tricycle_steering_controller::STATE_TRACTION_RIGHT_WHEEL;
 using tricycle_steering_controller::CMD_STEER_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_LEFT_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
+
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
