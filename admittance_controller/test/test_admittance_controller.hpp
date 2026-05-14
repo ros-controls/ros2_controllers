@@ -37,6 +37,7 @@
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
@@ -235,6 +236,7 @@ protected:
 
   void broadcast_tfs()
   {
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
     static tf2_ros::TransformBroadcaster br(
       rclcpp::node_interfaces::NodeInterfaces(
