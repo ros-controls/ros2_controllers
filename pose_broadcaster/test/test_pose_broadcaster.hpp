@@ -20,11 +20,17 @@
 #include <memory>
 #include <string>
 
+#include "controller_interface/test_utils.hpp"
 #include "rclcpp/executors.hpp"
 
 #include "pose_broadcaster/pose_broadcaster.hpp"
 
 using pose_broadcaster::PoseBroadcaster;
+
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 class PoseBroadcasterTest : public ::testing::Test
 {
