@@ -406,11 +406,10 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
   rclcpp::Time test_time = controller_->get_node()->now();
 
-  auto move_robot = [&](double vx, double vy, double wz)
+  auto move_robot = [&](double vx, double wz)
   {
-    controller_->reference_interfaces_[0] = vx;  // linear x
-    controller_->reference_interfaces_[1] = vy;  // linear y
-    controller_->reference_interfaces_[2] = wz;  // angular z
+    controller_->reference_interfaces_[0] = vx;  // linear velocity
+    controller_->reference_interfaces_[1] = wz;  // angular velocity
 
     ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 
@@ -423,7 +422,7 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   };
 
   // 1. Test robot movement initially
-  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);
   ASSERT_GT(controller_->odometry_.get_x(), 0.0);
 
   // 2. Call the odometry set service
@@ -444,7 +443,7 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
 
   // 3. Move forward again to verify
   double start_y = controller_->odometry_.get_y();
-  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);  // we are facing +Y now
   EXPECT_GT(controller_->odometry_.get_y(), start_y);
 }
 

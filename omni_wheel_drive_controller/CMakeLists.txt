@@ -35,7 +35,6 @@ add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}.cpp
   src/odometry.cpp
 )
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
@@ -81,8 +80,6 @@ if(BUILD_TESTING)
 
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_${PROJECT_NAME} test/test_load_${PROJECT_NAME}.cpp)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
   target_link_libraries(test_load_${PROJECT_NAME}
     controller_manager::controller_manager
     ros2_control_test_assets::ros2_control_test_assets
