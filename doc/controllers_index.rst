@@ -41,11 +41,11 @@ Controllers for Manipulators and Other Robots
 
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
+   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
+   Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
    Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
-   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
-   Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
 
 Broadcasters
 **********************
