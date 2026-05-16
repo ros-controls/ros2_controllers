@@ -169,6 +169,9 @@ protected:
 
   // Timeout to consider commands old
   double cmd_timeout_;
+  // Timeout for reaching the goal from trajectory start
+  double goal_timeout_;
+
   // True if holding position or repeating last trajectory point in case of success
   std::atomic<bool> rt_is_holding_{false};
   // TODO(karsten1987): eventually activate and deactivate subscriber directly when its supported

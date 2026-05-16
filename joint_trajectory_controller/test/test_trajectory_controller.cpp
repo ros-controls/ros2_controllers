@@ -1392,6 +1392,48 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
 }
 
 /**
+ * @brief check if goal_timeout is triggered from trajectory start
+ */
+TEST_P(TrajectoryControllerTestParameterized, goal_timeout)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double goal_timeout = 0.5;
+  rclcpp::Parameter goal_timeout_parameter("goal_timeout", goal_timeout);
+  SetUpAndActivateTrajectoryController(executor, {goal_timeout_parameter}, false);
+
+  // send msg
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{
+    {{3.3, 4.4, 6.6}}, {{7.7, 8.8, 9.9}}, {{10.10, 11.11, 12.12}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.01, 0.01, 0.01}}, {{0.05, 0.05, 0.05}}, {{0.06, 0.06, 0.06}}};
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // update until end of trajectory (3 * 100ms = 300ms) -> no timeout yet
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  // update past goal_timeout (500ms from start)
+  updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
+
+  // after timeout, set_hold_position adds a new trajectory
+  EXPECT_TRUE(traj_controller_->has_active_traj());
+  EXPECT_FALSE(traj_controller_->has_nontrivial_traj());
+  if (traj_controller_->has_position_command_interface())
+  {
+    expectCommandPoint(points.at(2));
+  }
+  else
+  {
+    expectCommandPoint(INITIAL_POS_JOINTS);
+  }
+  executor.cancel();
+}
+
+/**
  * @brief check if use_closed_loop_pid is active
  */
 TEST_P(TrajectoryControllerTestParameterized, use_closed_loop_pid)

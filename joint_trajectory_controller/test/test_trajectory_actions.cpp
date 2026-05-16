@@ -795,6 +795,47 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_goal_tolerances_fail)
   expectCommandPoint(INITIAL_POS_JOINTS);
 }
 
+TEST_P(TestTrajectoryActionsTestParameterized, test_goal_timeout)
+{
+  // Set goal_timeout to a short value
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("goal_timeout", 0.5), rclcpp::Parameter("constraints.joint1.goal", 0.1),
+    rclcpp::Parameter("constraints.joint2.goal", 0.1),
+    rclcpp::Parameter("constraints.joint3.goal", 0.1)};
+
+  // separate command from states -> goal won't never be reached
+  // goal_time defaults to 0.0
+  bool separate_cmd_and_state_values = true;
+  SetUpExecutor(params, separate_cmd_and_state_values);
+  SetUpControllerHardware();
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+
+  // send goal with goal_time_tolerance = 0.0
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point.positions.resize(joint_names_.size());
+    point.positions[0] = 4.0;
+    point.positions[1] = 5.0;
+    point.positions[2] = 6.0;
+    points.push_back(point);
+    gh_future = sendActionGoal(points, 0.0, goal_options_);
+  }
+  controller_hw_thread_.join();
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::GOAL_TOLERANCE_VIOLATED,
+    common_action_result_code_);
+
+  // run an update so the hold position takes effect
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
+
+  // it should be holding the initial position
+  expectCommandPoint(INITIAL_POS_JOINTS);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tolerance_fail)
 {
   // set joint tolerance parameters

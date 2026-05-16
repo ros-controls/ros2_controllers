@@ -133,6 +133,16 @@ joint_trajectory_controller:
      ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
      If zero, timeout is deactivated",
   }
+  goal_timeout: {
+    type: double,
+    default_value: 0.0,
+    description: "Maximum time allowed to reach the goal from trajectory start.
+      If set to zero, no timeout is applied (wait indefinitely).
+      When exceeded, the goal is aborted with GOAL_TOLERANCE_VIOLATED.",
+    validation: {
+      gt_eq: [0.0],
+    }
+  }
   gains:
     __map_joints:
       p: {

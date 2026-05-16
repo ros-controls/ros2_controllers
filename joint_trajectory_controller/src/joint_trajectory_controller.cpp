@@ -571,6 +571,32 @@ controller_interface::return_type JointTrajectoryController::update(
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
       // or outside_goal_tolerance violated within the goal_time_tolerance
+      // Check if goal_timeout is exceeded (from trajectory start)
+      if (
+        !before_last_point && !rt_is_holding_ && goal_timeout_ > 0.0 &&
+        (traj_time_ - current_trajectory_->time_from_start()).seconds() > goal_timeout_)
+      {
+        RCLCPP_WARN(logger, "Aborted due to goal_timeout exceeded");
+        new_trajectory_msg_.reset();
+        if (should_decelerate_on_cancel_)
+        {
+          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+        }
+        else
+        {
+          new_trajectory_msg_.initRT(set_hold_position());
+        }
+
+        if (active_goal)
+        {
+          auto result = std::make_shared<FollowJTrajAction::Result>();
+          result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+          result->set__error_string("Aborted due to goal_timeout exceeded");
+          active_goal->setAborted(result);
+          rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          rt_has_pending_goal_ = false;
+        }
+      }
     }
   }
 
@@ -1331,6 +1357,21 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     cmd_timeout_ = 0.0;
+  }
+
+  if (params_.goal_timeout > 0.0)
+  {
+    goal_timeout_ = params_.goal_timeout;
+    if (params_.goal_timeout < default_tolerances_.goal_time_tolerance)
+    {
+      RCLCPP_WARN(
+        logger, "goal_timeout (%f) is less than goal_time tolerance (%f)...", params_.goal_timeout,
+        default_tolerances_.goal_time_tolerance);
+    }
+  }
+  else
+  {
+    goal_timeout_ = 0.0;
   }
 
   return CallbackReturn::SUCCESS;
