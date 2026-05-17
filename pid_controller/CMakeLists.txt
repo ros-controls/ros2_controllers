@@ -42,7 +42,6 @@ generate_parameter_library(pid_controller_parameters
 add_library(pid_controller SHARED
   src/pid_controller.cpp
 )
-target_compile_features(pid_controller PUBLIC cxx_std_17)
 target_include_directories(pid_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/pid_controller>
