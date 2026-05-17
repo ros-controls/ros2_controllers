@@ -7,7 +7,6 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   builtin_interfaces
-  control_msgs
   controller_interface
   generate_parameter_library
   pluginlib
@@ -43,7 +42,6 @@ target_link_libraries(joint_state_broadcaster PUBLIC
                       realtime_tools::realtime_tools
                       urdf::urdf
                       ${sensor_msgs_TARGETS}
-                      ${control_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
 pluginlib_export_plugin_description_file(controller_interface joint_state_plugin.xml)
 
