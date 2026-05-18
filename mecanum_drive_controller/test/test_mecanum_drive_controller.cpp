@@ -375,8 +375,12 @@ TEST_F(
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
+  //  command_interfaces_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    3.0);
 
   subscribe_to_controller_status_execute_update_and_get_messages(msg);
 
@@ -533,7 +537,11 @@ TEST_F(
       controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
         std::numeric_limits<double>::quiet_NaN())));
 
-  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 0);
+  EXPECT_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
   for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
     EXPECT_TRUE(
@@ -564,15 +572,23 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
+  EXPECT_NE(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    command_lin_x);
   // BACK Left vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[controller_->get_rear_left_wheel_index()] = 1.0 / 0.5 * (1.5 - 0.0 - 1 *
+  //  command_interfaces_[controller_->get_rear_left_wheel_index()] = 1.0 / 0.5 * (1.5 - 0.0 - 1 *
   //  0.0)
-  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
+  EXPECT_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    3.0);
   ASSERT_EQ(reference.twist.linear.x, TEST_LINEAR_VELOCITY_X);
   for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
@@ -628,7 +644,11 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
+  EXPECT_NE(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    command_lin_x);
 
   // REAR LEFT vel =
   // 1.0 / params_.kinematics.wheels_radius *
@@ -636,8 +656,12 @@ TEST_F(
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
 
-  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 6.0);
+  //  command_interfaces_[REAR_LEFT] = 1.0 / 0.5 * (3.0 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    6.0);
   for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
     EXPECT_TRUE(
@@ -686,15 +710,25 @@ TEST_F(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_FALSE(std::isnan(joint_command_values_[1]));
-  EXPECT_NE(joint_command_values_[controller_->get_rear_left_wheel_index()], command_lin_x);
+  EXPECT_FALSE(
+    std::isnan(controller_->command_interfaces_[1].get_optional().value_or(
+      std::numeric_limits<double>::quiet_NaN())));
+  EXPECT_NE(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    command_lin_x);
   // REAR LEFT vel =
   // 1.0 / params_.kinematics.wheels_radius *
   // (velocity_in_center_frame_linear_x_ + velocity_in_center_frame_linear_y_ -
   // params_.kinematics.sum_of_robot_center_projection_on_X_Y_axis *
   // velocity_in_center_frame_angular_z_);
-  //  joint_command_values_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
-  EXPECT_EQ(joint_command_values_[controller_->get_rear_left_wheel_index()], 3.0);
+  //  command_interfaces_[REAR_LEFT] = 1.0 / 0.5 * (1.5 - 0.0 - 1 * 0.0)
+  EXPECT_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    3.0);
   reference = controller_->input_ref_.get();
   ASSERT_TRUE(std::isnan(reference.twist.linear.x));
 }
@@ -804,12 +838,16 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
     size_t rr_index = controller_->get_rear_right_wheel_index();
     joint_state_values_[fl_index] =
       controller_->command_interfaces_[fl_index].get_optional().value();
+    (void)state_itfs_[fl_index]->set_value(joint_state_values_[fl_index]);
     joint_state_values_[fr_index] =
       controller_->command_interfaces_[fr_index].get_optional().value();
+    (void)state_itfs_[fr_index]->set_value(joint_state_values_[fr_index]);
     joint_state_values_[rl_index] =
       controller_->command_interfaces_[rl_index].get_optional().value();
+    (void)state_itfs_[rl_index]->set_value(joint_state_values_[rl_index]);
     joint_state_values_[rr_index] =
       controller_->command_interfaces_[rr_index].get_optional().value();
+    (void)state_itfs_[rr_index]->set_value(joint_state_values_[rr_index]);
   }
 
   RCLCPP_INFO(
@@ -844,9 +882,9 @@ TEST_F(MecanumDriveControllerTest, odometry_set_service)
 
   auto move_robot = [&](double vx, double vy, double wz)
   {
-    controller_->reference_interfaces_[0] = vx;  // linear x
-    controller_->reference_interfaces_[1] = vy;  // linear y
-    controller_->reference_interfaces_[2] = wz;  // angular z
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(vx);  // linear x
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(vy);  // linear y
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(wz);  // angular z
 
     ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
     test_time += period;
@@ -858,9 +896,13 @@ TEST_F(MecanumDriveControllerTest, odometry_set_service)
     size_t rr = controller_->get_rear_right_wheel_index();
 
     joint_state_values_[fl] = controller_->command_interfaces_[fl].get_optional().value();
+    (void)state_itfs_[fl]->set_value(joint_state_values_[fl]);
     joint_state_values_[fr] = controller_->command_interfaces_[fr].get_optional().value();
+    (void)state_itfs_[fr]->set_value(joint_state_values_[fr]);
     joint_state_values_[rl] = controller_->command_interfaces_[rl].get_optional().value();
+    (void)state_itfs_[rl]->set_value(joint_state_values_[rl]);
     joint_state_values_[rr] = controller_->command_interfaces_[rr].get_optional().value();
+    (void)state_itfs_[rr]->set_value(joint_state_values_[rr]);
   };
 
   // 1. Move the robot forward
