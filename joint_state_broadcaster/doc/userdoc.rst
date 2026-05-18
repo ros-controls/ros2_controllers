@@ -5,7 +5,7 @@
 joint_state_broadcaster
 =======================
 
-The broadcaster reads all state interfaces and reports them on ``/joint_states`` and ``/dynamic_joint_states``.
+The broadcaster reads all state interfaces and reports them on ``/joint_states``.
 
 Commands
 --------
@@ -29,31 +29,11 @@ Published topics
   and ``effort`` — for joints that provide them. If a joint does not expose a given
   movement interface, that field is omitted/left empty for that joint in the message.
 
-* ``/dynamic_joint_states`` (``control_msgs/msg/DynamicJointState``):
-
-  Publishes **all available state interfaces** for each joint. This includes the
-  movement interfaces (position/velocity/effort) *and* any additional or custom
-  interfaces provided by the hardware (e.g., temperature, voltage, torque sensor
-  readings, calibration flags).
-
-  The message maps ``joint_names`` to per-joint interface name lists and values.
-  Example payload::
-
-    joint_names: [joint1, joint2]
-    interface_values:
-      - interface_names: [position, velocity, effort]
-        values: [1.5708, 0.0, 0.20]
-      - interface_names: [position, temperature]
-        values: [0.7854, 42.1]
-
-  Use this topic if you need *every* reported interface, not just movement.
-
 .. note::
 
-   If ``use_local_topics`` is set to ``true``, both topics are published in the
-   controller’s namespace (e.g., ``/my_state_broadcaster/joint_states`` and
-   ``/my_state_broadcaster/dynamic_joint_states``). If ``false`` (default),
-   they are published at the root (e.g., ``/joint_states``).
+   If ``use_local_topics`` is set to ``true``, the topic is published in the
+   controller’s namespace (e.g., ``/my_state_broadcaster/joint_states``). If ``false`` (default),
+   it is published at the root (e.g., ``/joint_states``).
 
 
 Parameters
