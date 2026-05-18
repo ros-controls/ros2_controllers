@@ -399,6 +399,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
 
   controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
   controller_->get_node()->trigger_transition(
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
@@ -412,8 +414,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
 
   auto move_robot = [&](double vx, double wz)
   {
-    controller_->reference_interfaces_[0] = vx;  // linear velocity
-    controller_->reference_interfaces_[1] = wz;  // angular velocity
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(wz));
 
     ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 
