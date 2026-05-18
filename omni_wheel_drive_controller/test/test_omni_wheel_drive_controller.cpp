@@ -861,6 +861,8 @@ TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
 
   auto state = controller_->get_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   assignResourcesPosFeedback();
 
   state = controller_->get_node()->activate();
@@ -873,9 +875,9 @@ TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
   // simulate movement
   auto move_robot = [&](double vx, double vy, double wz)
   {
-    controller_->reference_interfaces_[0] = vx;  // linear x
-    controller_->reference_interfaces_[1] = vy;  // linear y
-    controller_->reference_interfaces_[2] = wz;  // angular z
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(vy));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[2]->set_value(wz));
 
     ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 
