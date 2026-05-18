@@ -431,13 +431,13 @@ controller_interface::CallbackReturn PidController::on_activate(
         {
           if (i < state.values.size() && !std::isnan(state.values[i]))
           {
-            reference_interfaces_[i] = state.values[i];
+            ordered_exported_reference_interfaces_[i]->set_value(state.values[i]);
           }
           if (
-            reference_interfaces_.size() == 2 * dof_ && i < state.values_dot.size() &&
-            !std::isnan(state.values_dot[i]))
+            ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
+            i < state.values_dot.size() && !std::isnan(state.values_dot[i]))
           {
-            reference_interfaces_[dof_ + i] = state.values_dot[i];
+            ordered_exported_reference_interfaces_[dof_ + i]->set_value(state.values_dot[i]);
           }
         }
       }
@@ -449,7 +449,7 @@ controller_interface::CallbackReturn PidController::on_activate(
         const auto state_interface_value_op = state_interfaces_[i].get_optional();
         if (state_interface_value_op.has_value())
         {
-          reference_interfaces_[i] = state_interface_value_op.value();
+          ordered_exported_reference_interfaces_[i]->set_value(state_interface_value_op.value());
         }
       }
     }

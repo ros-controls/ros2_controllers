@@ -738,10 +738,12 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_true
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // reference interfaces must be initialized to the current state values (dof_state_values_)
-  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (size_t i = 0; i < controller_->reference_interfaces_.size(); ++i)
+  ASSERT_EQ(controller_->ordered_exported_reference_interfaces_.size(), dof_state_values_.size());
+  for (size_t i = 0; i < controller_->ordered_exported_reference_interfaces_.size(); ++i)
   {
-    EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
+    const auto val = controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>();
+    ASSERT_TRUE(val.has_value());
+    EXPECT_EQ(val.value(), dof_state_values_[i]);
   }
 }
 
@@ -759,10 +761,11 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_fals
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   // reference interfaces must remain NaN since set_current_state_as_first_setpoint is false
-  ASSERT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  ASSERT_EQ(controller_->ordered_exported_reference_interfaces_.size(), dof_state_values_.size());
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    const auto val = interface->get_optional<double>();
+    EXPECT_TRUE(!val.has_value() || std::isnan(val.value()));
   }
 }
 
