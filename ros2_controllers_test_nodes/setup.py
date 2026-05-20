@@ -36,14 +36,13 @@ setup(
     keywords=["ROS"],
     classifiers=[
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
         "Topic :: Software Development",
     ],
     description="Demo nodes for showing and testing functionalities of ros2_control framework.",
     long_description="""\
 Demo nodes for showing and testing functionalities of the ros2_control framework.""",
-    license="Apache License, Version 2.0",
+    license='Apache-2.0',
     extras_require={
         "test": [
             "pytest",
