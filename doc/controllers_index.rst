@@ -59,11 +59,6 @@ The controllers are using `common hardware interface definitions`_, and may use 
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
-<<<<<<< HEAD
-   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
-   Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
-=======
->>>>>>> 225de17 (Fix motion_primitive_controller TOC in docs (#2221))
 
 Broadcasters
 **********************
