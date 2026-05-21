@@ -225,8 +225,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_msg_.header.stamp = get_node()->now();
   controller_state_msg_.header.frame_id = odom_frame_id;
 
-<<<<<<< HEAD
-=======
   try
   {
     set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
@@ -293,7 +291,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
   reset_buffers();
 
->>>>>>> be5379a (Added velocity limiting to the mecanum controller. (#2313))
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -389,17 +386,9 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-<<<<<<< HEAD
-  // Try to set default value in command.
-  // If this fails, then another command will be received soon anyways.
-  ControllerReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set(emtpy_msg);
-=======
   // Reset limiter history and reference buffers so a previous activation cannot
   // influence the behavior of the controller after a deactivate->activate cycle.
   reset_buffers();
->>>>>>> be5379a (Added velocity limiting to the mecanum controller. (#2313))
 
   return controller_interface::CallbackReturn::SUCCESS;
 }

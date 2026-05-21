@@ -7,11 +7,8 @@ export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
-<<<<<<< HEAD
-=======
   control_msgs
   control_toolbox
->>>>>>> be5379a (Added velocity limiting to the mecanum controller. (#2313))
   controller_interface
   hardware_interface
   generate_parameter_library
