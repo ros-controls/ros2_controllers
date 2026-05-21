@@ -24,11 +24,8 @@
 #include <vector>
 
 #include "control_msgs/msg/mecanum_drive_controller_state.hpp"
-<<<<<<< HEAD
-=======
 #include "control_msgs/srv/set_odometry.hpp"
 #include "control_toolbox/rate_limiter.hpp"
->>>>>>> be5379a (Added velocity limiting to the mecanum controller. (#2313))
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"

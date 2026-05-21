@@ -841,8 +841,6 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
-<<<<<<< HEAD
-=======
 TEST_F(MecanumDriveControllerTest, odometry_set_service)
 {
   // 0. Initialize and activate
@@ -1475,7 +1473,6 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
   }
 }
 
->>>>>>> be5379a (Added velocity limiting to the mecanum controller. (#2313))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
