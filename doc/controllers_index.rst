@@ -52,22 +52,14 @@ The controllers are using `common hardware interface definitions`_, and may use 
    Admittance Controller <../admittance_controller/doc/userdoc.rst>
    Effort Controllers <../effort_controllers/doc/userdoc.rst>
    Forward Command Controller <../forward_command_controller/doc/userdoc.rst>
-<<<<<<< HEAD
    Gripper Controller <../gripper_controllers/doc/userdoc.rst>
-=======
    Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
->>>>>>> 225de17 (Fix motion_primitive_controller TOC in docs (#2221))
    Joint Trajectory Controller <../joint_trajectory_controller/doc/userdoc.rst>
    Motion Primitive Controller <../motion_primitives_controllers/doc/userdoc.rst>
    Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
    Position Controllers <../position_controllers/doc/userdoc.rst>
    Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
-<<<<<<< HEAD
-   Gpio Command Controller <../gpio_controllers/doc/userdoc.rst>
-   Motion Primitive Controller <../motion_primitives_controllers/userdoc.rst>
-=======
->>>>>>> 225de17 (Fix motion_primitive_controller TOC in docs (#2221))
 
 Broadcasters
 **********************
