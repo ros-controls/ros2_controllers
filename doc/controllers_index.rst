@@ -46,8 +46,6 @@ Controllers for Manipulators and Other Robots
    Motion Primitive Controller <../motion_primitives_controllers/doc/userdoc.rst>
    Parallel Gripper Controller <../parallel_gripper_controller/doc/userdoc.rst>
    PID Controller <../pid_controller/doc/userdoc.rst>
-   Position Controllers <../position_controllers/doc/userdoc.rst>
-   Velocity Controllers <../velocity_controllers/doc/userdoc.rst>
 
 Broadcasters
 **********************
