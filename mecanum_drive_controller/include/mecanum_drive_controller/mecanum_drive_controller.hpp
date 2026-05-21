@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "control_msgs/msg/mecanum_drive_controller_state.hpp"
-#include "control_msgs/srv/set_odometry.hpp"
 #include "control_toolbox/rate_limiter.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
