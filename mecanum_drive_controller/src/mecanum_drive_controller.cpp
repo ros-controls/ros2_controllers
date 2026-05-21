@@ -225,24 +225,6 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   controller_state_msg_.header.stamp = get_node()->now();
   controller_state_msg_.header.frame_id = odom_frame_id;
 
-  try
-  {
-    set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
-      DEFAULT_SET_ODOM_SERVICE,
-      std::bind(
-        &MecanumDriveController::set_odometry, this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3));
-  }
-  catch (const std::exception & e)
-  {
-    fprintf(
-      stderr,
-      "Exception thrown during service creation at configure stage "
-      "with message : %s \n",
-      e.what());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
   // Configure speed limiters
   try
   {
