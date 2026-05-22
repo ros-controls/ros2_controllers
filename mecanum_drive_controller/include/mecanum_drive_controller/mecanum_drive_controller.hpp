@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "control_msgs/msg/mecanum_drive_controller_state.hpp"
+#include "control_toolbox/rate_limiter.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -66,6 +67,8 @@ public:
 
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
+
+  void reset_buffers();
 
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
@@ -148,6 +151,15 @@ private:
   double velocity_in_center_frame_linear_x_;   // [m/s]
   double velocity_in_center_frame_linear_y_;   // [m/s]
   double velocity_in_center_frame_angular_z_;  // [rad/s]
+
+  // Speed limiters
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_x_;
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_y_;
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_angular_z_;
+
+protected:
+  // Previous two commands for jerk limiting: queue of [linear_x, linear_y, angular_z]
+  std::queue<std::array<double, 3>> previous_two_commands_;
 };
 
 }  // namespace mecanum_drive_controller

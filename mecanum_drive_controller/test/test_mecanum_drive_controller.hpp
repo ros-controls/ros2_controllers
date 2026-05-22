@@ -91,6 +91,14 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
 
+  FRIEND_TEST(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_x);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_y);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_angular_z);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_runtime_update);
+  FRIEND_TEST(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state);
+  FRIEND_TEST(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buffers);
+
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
