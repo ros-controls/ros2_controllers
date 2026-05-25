@@ -61,38 +61,38 @@ public:
 protected:
   const std::string sensor_name_ = "imu_sensor";
   const std::string frame_id_ = "imu_sensor_frame";
-  std::array<double, 10> sensor_values_ = {
+  const std::array<double, 10> sensor_values_ = {
     {0.1826, 0.3651, 0.5477, 0.7303, 5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
   hardware_interface::StateInterface::SharedPtr imu_orientation_x_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "orientation.x", &sensor_values_[0]);
+      sensor_name_, "orientation.x", "double", "0.1826");
   hardware_interface::StateInterface::SharedPtr imu_orientation_y_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "orientation.y", &sensor_values_[1]);
+      sensor_name_, "orientation.y", "double", "0.3651");
   hardware_interface::StateInterface::SharedPtr imu_orientation_z_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "orientation.z", &sensor_values_[2]);
+      sensor_name_, "orientation.z", "double", "0.5477");
   hardware_interface::StateInterface::SharedPtr imu_orientation_w_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "orientation.w", &sensor_values_[3]);
+      sensor_name_, "orientation.w", "double", "0.7303");
   hardware_interface::StateInterface::SharedPtr imu_angular_velocity_x_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "angular_velocity.x", &sensor_values_[4]);
+      sensor_name_, "angular_velocity.x", "double", "5.5");
   hardware_interface::StateInterface::SharedPtr imu_angular_velocity_y_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "angular_velocity.y", &sensor_values_[5]);
+      sensor_name_, "angular_velocity.y", "double", "6.6");
   hardware_interface::StateInterface::SharedPtr imu_angular_velocity_z_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "angular_velocity.z", &sensor_values_[6]);
+      sensor_name_, "angular_velocity.z", "double", "7.7");
   hardware_interface::StateInterface::SharedPtr imu_linear_acceleration_x_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "linear_acceleration.x", &sensor_values_[7]);
+      sensor_name_, "linear_acceleration.x", "double", "8.8");
   hardware_interface::StateInterface::SharedPtr imu_linear_acceleration_y_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "linear_acceleration.y", &sensor_values_[8]);
+      sensor_name_, "linear_acceleration.y", "double", "9.9");
   hardware_interface::StateInterface::SharedPtr imu_linear_acceleration_z_ =
     std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "linear_acceleration.z", &sensor_values_[9]);
+      sensor_name_, "linear_acceleration.z", "double", "10.1");
 
   std::unique_ptr<FriendIMUSensorBroadcaster> imu_broadcaster_;
 
