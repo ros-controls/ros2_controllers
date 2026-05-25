@@ -4,7 +4,7 @@
 ?>
 <package format="3">
   <name>magnetometer_broadcaster</name>
-  <version>6.4.0</version>
+  <version>6.7.0</version>
   <description>Controller to publish readings of a magnetometer.</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
