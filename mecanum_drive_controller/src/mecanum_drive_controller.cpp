@@ -412,16 +412,12 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   // influence the behavior of the controller after a deactivate->activate cycle.
   reset_buffers();
 
-<<<<<<< HEAD
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
   ControllerReferenceMsg emtpy_msg;
   reset_controller_reference_msg(emtpy_msg);
   input_ref_.try_set(emtpy_msg);
-  
 
-=======
->>>>>>> origin/master
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
