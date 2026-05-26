@@ -133,20 +133,16 @@ protected:
   const rclcpp::Parameter frame_id_ = rclcpp::Parameter("frame_id", "gps_sensor_frame");
   const std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
   hardware_interface::StateInterface::SharedPtr gps_status_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "status", "double", "1.0");
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "status", "double", "1.0");
   hardware_interface::StateInterface::SharedPtr gps_service_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "service", "double", "1.0");
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "service", "double", "1.0");
   hardware_interface::StateInterface::SharedPtr gps_latitude_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "latitude", "double", "1.1");
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "latitude", "double", "1.1");
   hardware_interface::StateInterface::SharedPtr gps_longitude_ =
     std::make_shared<hardware_interface::StateInterface>(
       sensor_name_, "longitude", "double", "2.2");
   hardware_interface::StateInterface::SharedPtr gps_altitude_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "altitude", "double", "3.3");
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "altitude", "double", "3.3");
   hardware_interface::StateInterface::SharedPtr latitude_covariance_ =
     std::make_shared<hardware_interface::StateInterface>(
       sensor_name_, "latitude_covariance", "double", "0.5");

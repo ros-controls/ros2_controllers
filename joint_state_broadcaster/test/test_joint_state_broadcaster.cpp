@@ -844,8 +844,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 
     // non standard
     test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "mode", "double", "12.34"));
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "mode", "double", "12.34"));
     test_interfaces_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
         joint_name, "absolute_position", "double", "12.34"));
@@ -859,8 +858,7 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
       std::make_shared<hardware_interface::StateInterface>(
         joint_name, "torque", "double", "12.34"));
     test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "force", "double", "12.34"));
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "force", "double", "12.34"));
     test_interfaces_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
         joint_name, "temperature_board", "double", "12.34"));

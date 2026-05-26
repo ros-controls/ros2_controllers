@@ -49,14 +49,11 @@ protected:
     {1.1, 2.2, 3.3, 0.39190382, 0.20056212, 0.53197575, 0.72331744}};
 
   hardware_interface::StateInterface::SharedPtr pose_position_x_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      pose_name_, "position.x", "double", "1.1");
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.x", "double", "1.1");
   hardware_interface::StateInterface::SharedPtr pose_position_y_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      pose_name_, "position.y", "double", "2.2");
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.y", "double", "2.2");
   hardware_interface::StateInterface::SharedPtr pose_position_z_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      pose_name_, "position.z", "double", "3.3");
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.z", "double", "3.3");
   hardware_interface::StateInterface::SharedPtr pose_orientation_x_ =
     std::make_shared<hardware_interface::StateInterface>(
       pose_name_, "orientation.x", "double", "0.39190382");
