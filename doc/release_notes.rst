@@ -108,6 +108,7 @@ pid_controller
 * Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
 
 steering_controllers_library
+<<<<<<< HEAD
 ********************************
 * Changing default int values to double in steering controller's yaml file. The controllers should now initialize successfully without specifying these parameters (`#927 <https://github.com/ros-controls/ros2_controllers/pull/927>`_).
 * A fix for Ackermann steering odometry was added (`#921 <https://github.com/ros-controls/ros2_controllers/pull/921>`_).
@@ -133,3 +134,12 @@ force_torque_sensor_broadcaster
 motion_primitives_forward_controller
 *******************************************
 * 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
+=======
+*****************************
+* Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
+* Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+
+magnetometer_broadcaster
+************************
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
+>>>>>>> 3fcea2b (Add broadcaster for magnetic field values from a magnetometer (#2214))
