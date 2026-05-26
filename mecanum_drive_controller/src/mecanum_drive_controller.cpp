@@ -408,11 +408,11 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-
   // Reset limiter history and reference buffers so a previous activation cannot
   // influence the behavior of the controller after a deactivate->activate cycle.
   reset_buffers();
 
+<<<<<<< HEAD
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
   ControllerReferenceMsg emtpy_msg;
@@ -420,6 +420,8 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
   input_ref_.try_set(emtpy_msg);
   
 
+=======
+>>>>>>> origin/master
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
