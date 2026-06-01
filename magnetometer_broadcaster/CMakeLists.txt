@@ -30,6 +30,10 @@ add_library(magnetometer_broadcaster SHARED
   src/magnetometer_broadcaster.cpp
 )
 target_compile_features(magnetometer_broadcaster PUBLIC cxx_std_20)
+target_include_directories(magnetometer_broadcaster PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 target_link_libraries(magnetometer_broadcaster PUBLIC
                       magnetometer_broadcaster_parameters
                       controller_interface::controller_interface
@@ -65,6 +69,11 @@ if(BUILD_TESTING)
     ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
+
+install(
+  DIRECTORY include/
+  DESTINATION include/magnetometer_broadcaster
+)
 
 install(
   TARGETS
