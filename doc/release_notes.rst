@@ -58,3 +58,7 @@ pid_controller
 motion_primitives_forward_controller
 *******************************************
 * 🚀 The motion_primitives_forward_controller was added 🎉 (`#1636 <https://github.com/ros-controls/ros2_controllers/pull/1636>`_).
+
+magnetometer_broadcaster
+************************
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
