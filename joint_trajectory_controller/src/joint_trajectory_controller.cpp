@@ -576,7 +576,7 @@ controller_interface::return_type JointTrajectoryController::update(
         !before_last_point && !rt_is_holding_ && goal_timeout_ > 0.0 &&
         (traj_time_ - current_trajectory_->time_from_start()).seconds() > goal_timeout_)
       {
-        RCLCPP_WARN(logger, "Aborted due to goal_timeout exceeded");
+        RCLCPP_ERROR(logger, "Aborted due to goal_timeout exceeded");
         new_trajectory_msg_.reset();
         if (should_decelerate_on_cancel_)
         {
@@ -1372,6 +1372,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   else
   {
     goal_timeout_ = 0.0;
+    RCLCPP_INFO_ONCE(logger, "goal_timeout is disabled (set to 0.0)");
   }
 
   return CallbackReturn::SUCCESS;

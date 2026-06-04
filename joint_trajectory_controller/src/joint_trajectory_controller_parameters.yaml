@@ -136,9 +136,11 @@ joint_trajectory_controller:
   goal_timeout: {
     type: double,
     default_value: 0.0,
-    description: "Maximum time allowed to reach the goal from trajectory start.
-      If set to zero, no timeout is applied (wait indefinitely).
-      When exceeded, the goal is aborted with GOAL_TOLERANCE_VIOLATED.",
+    description: "Absolute wall-clock timeout from trajectory start.
+     When exceeded, the goal is aborted with GOAL_TOLERANCE_VIOLATED.
+     If zero, timeout is disabled.
+     This is a controller-level parameter (not per-goal).
+     Distinct from ``constraints.goal_time``, a per-goal grace period after the last trajectory point.",
     validation: {
       gt_eq: [0.0],
     }
@@ -219,8 +221,11 @@ joint_trajectory_controller:
     goal_time: {
       type: double,
       default_value: 0.0,
-      description: "Time tolerance for achieving trajectory goal before or after commanded time.
-        If set to zero, the controller will wait a potentially infinite amount of time.",
+      description: "Grace period after the last trajectory point's ``time_from_start``.
+        If the robot is outside goal tolerances past this deadline, the goal aborts.
+        If zero, no timeout is applied (waits indefinitely).
+        This can be overridden per-goal via the action's ``goal_time_tolerance`` field.
+        Distinct from ``goal_timeout``, an absolute wall-clock timeout from trajectory start.",
       validation: {
         gt_eq: [0.0],
       }
