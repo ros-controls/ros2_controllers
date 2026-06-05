@@ -1398,7 +1398,8 @@ TEST_P(TrajectoryControllerTestParameterized, action_execution_timeout)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double action_execution_timeout = 0.5;
-  rclcpp::Parameter action_execution_timeout_parameter("action_execution_timeout", action_execution_timeout);
+  rclcpp::Parameter action_execution_timeout_parameter(
+    "action_execution_timeout", action_execution_timeout);
   SetUpAndActivateTrajectoryController(executor, {action_execution_timeout_parameter}, false);
 
   // send msg

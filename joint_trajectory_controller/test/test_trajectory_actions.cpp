@@ -799,7 +799,8 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_action_execution_timeout)
 {
   // Set action_execution_timeout to a short value
   std::vector<rclcpp::Parameter> params = {
-    rclcpp::Parameter("action_execution_timeout", 0.5), rclcpp::Parameter("constraints.joint1.goal", 0.1),
+    rclcpp::Parameter("action_execution_timeout", 0.5),
+    rclcpp::Parameter("constraints.joint1.goal", 0.1),
     rclcpp::Parameter("constraints.joint2.goal", 0.1),
     rclcpp::Parameter("constraints.joint3.goal", 0.1)};
 
