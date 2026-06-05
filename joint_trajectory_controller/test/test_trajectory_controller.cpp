@@ -1392,14 +1392,14 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
 }
 
 /**
- * @brief check if goal_timeout is triggered from trajectory start
+ * @brief check if action_execution_timeout is triggered from trajectory start
  */
-TEST_P(TrajectoryControllerTestParameterized, goal_timeout)
+TEST_P(TrajectoryControllerTestParameterized, action_execution_timeout)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
-  constexpr double goal_timeout = 0.5;
-  rclcpp::Parameter goal_timeout_parameter("goal_timeout", goal_timeout);
-  SetUpAndActivateTrajectoryController(executor, {goal_timeout_parameter}, false);
+  constexpr double action_execution_timeout = 0.5;
+  rclcpp::Parameter action_execution_timeout_parameter("action_execution_timeout", action_execution_timeout);
+  SetUpAndActivateTrajectoryController(executor, {action_execution_timeout_parameter}, false);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(100);
@@ -1416,7 +1416,7 @@ TEST_P(TrajectoryControllerTestParameterized, goal_timeout)
   EXPECT_TRUE(traj_controller_->has_active_traj());
   EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
 
-  // update past goal_timeout (500ms from start)
+  // update past action_execution_timeout (500ms from start)
   updateController(rclcpp::Duration(FIRST_POINT_TIME) * 3);
 
   // after timeout, set_hold_position adds a new trajectory

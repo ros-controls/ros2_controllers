@@ -571,12 +571,13 @@ controller_interface::return_type JointTrajectoryController::update(
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
       // or outside_goal_tolerance violated within the goal_time_tolerance
-      // Check if goal_timeout is exceeded (from trajectory start)
+      // Check if action_execution_timeout is exceeded (from trajectory start)
       if (
-        !before_last_point && !rt_is_holding_ && goal_timeout_ > 0.0 &&
-        (traj_time_ - current_trajectory_->time_from_start()).seconds() > goal_timeout_)
+        !before_last_point && !rt_is_holding_ && action_execution_timeout_ > 0.0 &&
+        (traj_time_ - current_trajectory_->time_from_start()).seconds() > action_execution_timeout_)
       {
-        RCLCPP_ERROR(logger, "Aborted due to goal_timeout exceeded");
+        RCLCPP_ERROR(logger, "Aborted due to action_execution_timeout [%f] exceeded [%f]",
+          action_execution_timeout_, (traj_time_ - current_trajectory_->time_from_start()).seconds());
         new_trajectory_msg_.reset();
         if (should_decelerate_on_cancel_)
         {
@@ -591,7 +592,10 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
-          result->set__error_string("Aborted due to goal_timeout exceeded");
+          result->set__error_string(
+            "Aborted due to action_execution_timeout [timeout: " + std::to_string(action_execution_timeout_) +
+            ", elapsed: " + std::to_string((traj_time_ - current_trajectory_->time_from_start()).seconds()) +
+            "]");
           active_goal->setAborted(result);
           rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
           rt_has_pending_goal_ = false;
@@ -1359,20 +1363,22 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     cmd_timeout_ = 0.0;
   }
 
-  if (params_.goal_timeout > 0.0)
+  if (params_.action_execution_timeout > 0.0)
   {
-    goal_timeout_ = params_.goal_timeout;
-    if (params_.goal_timeout < default_tolerances_.goal_time_tolerance)
+    action_execution_timeout_ = params_.action_execution_timeout;
+    if (params_.action_execution_timeout < default_tolerances_.goal_time_tolerance)
     {
       RCLCPP_WARN(
-        logger, "goal_timeout (%f) is less than goal_time tolerance (%f)...", params_.goal_timeout,
+        logger, "action_execution_timeout (%f) must be greater than goal_time tolerance (%f), disabling",
+        params_.action_execution_timeout,
         default_tolerances_.goal_time_tolerance);
+      action_execution_timeout_ = 0.0;
     }
   }
   else
   {
-    goal_timeout_ = 0.0;
-    RCLCPP_INFO_ONCE(logger, "goal_timeout is disabled (set to 0.0)");
+    action_execution_timeout_ = 0.0;
+    RCLCPP_INFO_ONCE(logger, "action_execution_timeout is disabled (set to 0.0)");
   }
 
   return CallbackReturn::SUCCESS;
