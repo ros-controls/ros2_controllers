@@ -2,6 +2,30 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich
+
+6.6.0 (2026-04-22)
+------------------
+
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+
+6.3.0 (2026-02-03)
+------------------
+
+6.2.0 (2025-12-31)
+------------------
+* Remove export of wrench_transformer_node (`#2069 <https://github.com/ros-controls/ros2_controllers/issues/2069>`_)
+* Add support for positional target frame arguments for transform wrench node (`#2040 <https://github.com/ros-controls/ros2_controllers/issues/2040>`_)
+* Contributors: Sai Kishor Kothakota, Vedh
+
 6.1.0 (2025-12-01)
 ------------------
 * Add utility node to transform wrench messages for a list of frames (`#2021 <https://github.com/ros-controls/ros2_controllers/issues/2021>`_)

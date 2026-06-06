@@ -15,6 +15,7 @@
 #ifndef MECANUM_DRIVE_CONTROLLER__MECANUM_DRIVE_CONTROLLER_HPP_
 #define MECANUM_DRIVE_CONTROLLER__MECANUM_DRIVE_CONTROLLER_HPP_
 
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -24,6 +25,8 @@
 #include <vector>
 
 #include "control_msgs/msg/mecanum_drive_controller_state.hpp"
+#include "control_msgs/srv/set_odometry.hpp"
+#include "control_toolbox/rate_limiter.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -31,7 +34,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_thread_safe_box.hpp"
-#include "std_srvs/srv/set_bool.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
 
 #include "mecanum_drive_controller/mecanum_drive_controller_parameters.hpp"
@@ -67,11 +69,18 @@ public:
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  void reset_buffers();
+
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   controller_interface::return_type update_and_write_commands(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
 
   using ControllerReferenceMsg = geometry_msgs::msg::TwistStamped;
   using OdomStateMsg = nav_msgs::msg::Odometry;
@@ -140,6 +149,10 @@ protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
   Odometry odometry_;
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
 private:
   // callback for topic interface
@@ -148,6 +161,15 @@ private:
   double velocity_in_center_frame_linear_x_;   // [m/s]
   double velocity_in_center_frame_linear_y_;   // [m/s]
   double velocity_in_center_frame_angular_z_;  // [rad/s]
+
+  // Speed limiters
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_x_;
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_y_;
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_angular_z_;
+
+protected:
+  // Previous two commands for jerk limiting: queue of [linear_x, linear_y, angular_z]
+  std::queue<std::array<double, 3>> previous_two_commands_;
 };
 
 }  // namespace mecanum_drive_controller

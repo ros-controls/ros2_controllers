@@ -7,6 +7,8 @@ export_windows_symbols()
 
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  control_msgs
+  control_toolbox
   controller_interface
   hardware_interface
   generate_parameter_library
@@ -15,7 +17,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
-  std_srvs
   tf2
   tf2_geometry_msgs
   tf2_msgs
@@ -27,8 +28,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(mecanum_drive_controller_parameters
   src/mecanum_drive_controller.yaml
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(
@@ -37,12 +41,13 @@ add_library(
   src/mecanum_drive_controller.cpp
   src/odometry.cpp
 )
-target_compile_features(mecanum_drive_controller PUBLIC cxx_std_17)
 target_include_directories(mecanum_drive_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mecanum_drive_controller PUBLIC
                       mecanum_drive_controller_parameters
+                      control_toolbox::rate_limiter_parameters
+                      control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib
@@ -53,7 +58,7 @@ target_link_libraries(mecanum_drive_controller PUBLIC
                       ${tf2_geometry_msgs_TARGETS}
                       ${tf2_msgs_TARGETS}
                       ${nav_msgs_TARGETS}
-                      ${std_srvs_TARGETS})
+                      ${control_msgs_TARGETS})
 
 pluginlib_export_plugin_description_file(
   controller_interface mecanum_drive_controller.xml)
