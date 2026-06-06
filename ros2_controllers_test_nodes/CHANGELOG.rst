@@ -2,6 +2,26 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
+* Contributors: Christoph Fröhlich
+
+6.6.0 (2026-04-22)
+------------------
+
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+
+6.3.0 (2026-02-03)
+------------------
+
+6.2.0 (2025-12-31)
+------------------
+
 6.1.0 (2025-12-01)
 ------------------
 

@@ -122,11 +122,11 @@ bool Odometry::updateOpenLoop(
   return true;
 }
 
-void Odometry::resetOdometry()
+void Odometry::setOdometry(const double & x, const double & y, const double & heading)
 {
-  x_ = 0.0;
-  y_ = 0.0;
-  heading_ = 0.0;
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
 }
 
 void Odometry::setParams(

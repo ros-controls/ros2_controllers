@@ -120,5 +120,11 @@ void Odometry::setWheelsParams(
   sum_of_robot_center_projection_on_X_Y_axis_ = sum_of_robot_center_projection_on_X_Y_axis;
   wheels_radius_ = wheels_radius;
 }
+void Odometry::setOdometry(double x, double y, double heading)
+{
+  position_x_in_base_frame_ = x;
+  position_y_in_base_frame_ = y;
+  orientation_z_in_base_frame_ = heading;
+}
 
 }  // namespace mecanum_drive_controller

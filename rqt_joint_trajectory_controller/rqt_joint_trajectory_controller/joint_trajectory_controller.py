@@ -465,8 +465,10 @@ def _jtc_joint_names(jtc_info):
     joint_names = []
     for interface in jtc_info.required_state_interfaces:
         name = "/".join(interface.split("/")[:-1])
+        interface_type = interface.split("/")[-1]
         if name not in joint_names:
-            joint_names.append(name)
+            if interface_type == "position":
+                joint_names.append(name)
 
     return joint_names
 

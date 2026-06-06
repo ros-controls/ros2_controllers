@@ -64,6 +64,10 @@ Publishers
 /tf [tf2_msgs::msg::TFMessage]
   tf tree. Published only if ``enable_odom_tf=true``
 
+Services
+,,,,,,,,,,,
+~/set_odometry [control_msgs::srv::SetOdometry]
+  This service can be used to set the current odometry of the robot to desired values.
 
 Parameters
 ,,,,,,,,,,

@@ -100,7 +100,7 @@ joint_trajectory_controller:
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
     default_value: true,
-    description: "When set to true, the last command interface value is used as both the current state and the last commanded state upon activation. When set to false, the current state is used for both.",
+    description: "When set to true, the last command interface value is used as both the current state and the last commanded state upon activation. If an interface (e.g. velocity) is available only as state and not command, the state is used. Use this to prevent sagging/jumps on activation when using soft or compliant hardware. When set to false, the current state is used for both.",
   }
   action_monitor_rate: {
     type: double,
@@ -215,6 +215,14 @@ joint_trajectory_controller:
         gt_eq: [0.0],
       }
     }
+    decelerate_on_cancel: {
+      type: bool,
+      default_value: false,
+      description: "If true and each joints max_deceleration_on_cancel is greater than 0,
+        decelerate to a stop when the request is canceled or the goal constraints are violated.
+        Requires velocity state interface from all joints in the controller.",
+      read_only: true,
+    }
     __map_joints:
       trajectory: {
         type: double,
@@ -225,4 +233,13 @@ joint_trajectory_controller:
         type: double,
         default_value: 0.0,
         description: "Per-joint trajectory offset tolerance at the goal position.",
+      }
+      max_deceleration_on_cancel: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint max acceleration used to calculate the stopping position when a request is canceled or preempted.",
+        read_only: true,
+        validation: {
+          gt_eq: [0.0]
+        }
       }

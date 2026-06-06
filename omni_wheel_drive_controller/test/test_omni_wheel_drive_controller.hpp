@@ -62,6 +62,7 @@ class TestableOmniWheelDriveController
   FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_rot_test);
   FRIEND_TEST(OmniWheelDriveControllerTest, 4_wheel_rot_test);
   FRIEND_TEST(OmniWheelDriveControllerTest, 5_wheel_test);
+  FRIEND_TEST(OmniWheelDriveControllerTest, odometry_set_service);
 
   /**
    * @brief wait_for_twist block until a new twist is received.
@@ -95,6 +96,15 @@ public:
     cmd_vel_publisher_ =
       cmd_vel_publisher_node_->create_publisher<geometry_msgs::msg::TwistStamped>(
         "/test_omni_wheel_drive_controller/cmd_vel", rclcpp::SystemDefaultsQoS());
+  }
+
+  void TearDown() override
+  {
+    // Reset the controller before the fixture is destroyed to ensure the controller's
+    // shutdown transition (which clears loaned interfaces) runs while the underlying
+    // StateInterface/CommandInterface objects are still alive. LoanedStateInterface stores
+    // a const reference (not a shared_ptr), so destruction order matters.
+    controller_.reset();
   }
 
   static void TearDownTestCase() { rclcpp::shutdown(); }
