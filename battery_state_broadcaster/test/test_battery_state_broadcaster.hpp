@@ -54,9 +54,9 @@ constexpr auto NODE_FAILURE = controller_interface::CallbackReturn::FAILURE;
 class FriendBatteryStateBroadcaster : public battery_state_broadcaster::BatteryStateBroadcaster
 {
   // Re-expose the private members of the base class that the tests need.
+  using BatteryStateBroadcaster::batteries_;
   using BatteryStateBroadcaster::counts_;
   using BatteryStateBroadcaster::params_;
-  using BatteryStateBroadcaster::state_joints_;
   using BatteryStateBroadcaster::sums_;
 
   FRIEND_TEST(BatteryStateBroadcasterTest, init_success);
@@ -116,7 +116,7 @@ public:
 
 protected:
   // Controller-related parameters
-  std::vector<std::string> state_joint_names_ = {"left_wheel", "right_wheel"};
+  std::vector<std::string> battery_names_ = {"left_wheel", "right_wheel"};
   std::array<double, 12> itfs_values_ = {{
     5.0,     // 0 left_voltage
     60.0,    // 1 left_temperature

@@ -6,12 +6,12 @@ Battery State Broadcaster
 --------------------------------
 The *Battery State Broadcaster* publishes battery status information as ``sensor_msgs/msg/BatteryState`` messages.
 
-It reads battery-related state interfaces from one or more joints and exposes them in a standard ROS 2 message format. This allows easy integration with monitoring tools, logging systems, and higher-level decision-making nodes.
+It reads battery-related state interfaces from one or more batteries and exposes them in a standard ROS 2 message format. This allows easy integration with monitoring tools, logging systems, and higher-level decision-making nodes.
 
 Interfaces
 ^^^^^^^^^^^
 
-The broadcaster can read the following state interfaces from each configured joint:
+The broadcaster can read the following state interfaces from each configured battery:
 
 - ``battery_voltage`` *(mandatory)* (double)
 - ``battery_temperature`` *(optional)* (double)
@@ -28,46 +28,46 @@ Published Topics
 The broadcaster publishes two topics:
 
 - ``~/raw_battery_states`` (``control_msgs/msg/BatteryStateArray``)
-  Publishes **per-joint battery state messages**, containing the raw values for each configured joint.
+  Publishes **per-battery state messages**, containing the raw values for each configured battery.
 
 - ``~/battery_state`` (``sensor_msgs/msg/BatteryState``)
-  Publishes a **single aggregated battery message** representing the combined status across all joints.
+  Publishes a **single aggregated battery message** representing the combined status across all batteries.
 
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| Field                       | ``battery_state``                                                    | ``raw_battery_states``                                                                                                                      |
-+=============================+======================================================================+=============================================================================================================================================+
-| ``header.frame_id``         | Empty                                                                | Joint name                                                                                                                                  |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``voltage``                 | Mean across all joints                                               | From joint's ``battery_voltage`` interface if enabled, otherwise nan                                                                        |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``temperature``             | Mean across joints reporting temperature                             | From joint's ``battery_temperature`` interface if enabled, otherwise nan.                                                                   |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``current``                 | Mean across joints reporting current                                 | From joint's ``battery_current`` interface if enabled, otherwise nan.                                                                       |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``charge``                  | Sum across all joints                                                | From joint's ``battery_charge`` interface if enabled, otherwise nan.                                                                        |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``capacity``                | Sum across all joints                                                | From joint's ``capacity`` parameter if provided, otherwise nan.                                                                             |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``design_capacity``         | Sum across all joints                                                | From joint's ``design_capacity`` parameter if provided, otherwise nan.                                                                      |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``percentage``              | Mean across joints reporting/calculating percentage                  | From joint's ``battery_percentage`` interface if enabled, otherwise calculated from joint's ``min_voltage`` and ``max_voltage`` parameters. |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_status``     | Highest reported enum value                                          | From joint's ``battery_power_supply_status`` interface if enabled, otherwise 0 (unknown).                                                   |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_health``     | Highest reported enum value                                          | From joint's ``battery_power_supply_health`` interface if enabled, otherwise 0 (unknown).                                                   |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_technology`` | Reported as-is if same across all joints, otherwise set to *Unknown* | From joint's ``power_supply_technology`` parameter if provided, otherwise 0 (unknown).                                                      |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``present``                 | True                                                                 | From joint's ``battery_present`` interface if enabled, otherwise true if joint's voltage values is valid.                                   |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``cell_voltage``            | Empty                                                                | Empty                                                                                                                                       |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``cell_temperature``        | Empty                                                                | Empty                                                                                                                                       |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``location``                | All joint locations appended                                         | From joint's ``location`` parameter if provided, otherwise empty.                                                                           |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
-| ``serial_number``           | All joint serial numbers appended                                    | From joint's ``serial_number`` parameter if provided, otherwise empty.                                                                      |
-+-----------------------------+----------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| Field                       | ``battery_state``                                                       | ``raw_battery_states``                                                                                                                          |
++=============================+=========================================================================+=================================================================================================================================================+
+| ``header.frame_id``         | Empty                                                                   | Battery name                                                                                                                                    |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``voltage``                 | Mean across all batteries                                               | From battery's ``battery_voltage`` interface if enabled, otherwise nan                                                                          |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``temperature``             | Mean across batteries reporting temperature                             | From battery's ``battery_temperature`` interface if enabled, otherwise nan.                                                                     |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``current``                 | Mean across batteries reporting current                                 | From battery's ``battery_current`` interface if enabled, otherwise nan.                                                                         |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``charge``                  | Sum across all batteries                                                | From battery's ``battery_charge`` interface if enabled, otherwise nan.                                                                          |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``capacity``                | Sum across all batteries                                                | From battery's ``capacity`` parameter if provided, otherwise nan.                                                                               |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``design_capacity``         | Sum across all batteries                                                | From battery's ``design_capacity`` parameter if provided, otherwise nan.                                                                        |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``percentage``              | Mean across batteries reporting/calculating percentage                  | From battery's ``battery_percentage`` interface if enabled, otherwise calculated from battery's ``min_voltage`` and ``max_voltage`` parameters. |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``power_supply_status``     | Highest reported enum value                                             | From battery's ``battery_power_supply_status`` interface if enabled, otherwise 0 (unknown).                                                     |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``power_supply_health``     | Highest reported enum value                                             | From battery's ``battery_power_supply_health`` interface if enabled, otherwise 0 (unknown).                                                     |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``power_supply_technology`` | Reported as-is if same across all batteries, otherwise set to *Unknown* | From battery's ``power_supply_technology`` parameter if provided, otherwise 0 (unknown).                                                        |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``present``                 | True                                                                    | From battery's ``battery_present`` interface if enabled, otherwise true if battery's voltage values is valid.                                   |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``cell_voltage``            | Empty                                                                   | Empty                                                                                                                                           |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``cell_temperature``        | Empty                                                                   | Empty                                                                                                                                           |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``location``                | All battery locations appended                                          | From battery's ``location`` parameter if provided, otherwise empty.                                                                             |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``serial_number``           | All battery serial numbers appended                                     | From battery's ``serial_number`` parameter if provided, otherwise empty.                                                                        |
++-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 Parameters
@@ -113,13 +113,13 @@ To adapt your setup to the new ``battery_state_broadcaster`` configuration:
 
     battery_state_broadcaster:
       ros__parameters:
-        state_joints: ["battery_state"]
+        batteries: ["battery_state"]
         battery_state:
           design_capacity: 100.0
           power_supply_technology: 2
 
 **Notes**:
 
-- Parameters must provide **either** sensor_name **or** state_joints.
+- Parameters must provide **either** sensor_name **or** batteries.
 - If both are empty → the broadcaster will fail to configure.
 - If both are set → the broadcaster will throw an error.

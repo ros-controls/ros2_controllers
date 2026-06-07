@@ -31,15 +31,14 @@ TEST_F(BatteryStateBroadcasterTest, all_parameters_set_configure_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_TRUE(battery_state_broadcaster_->params_.state_joints.empty());
+  ASSERT_TRUE(battery_state_broadcaster_->params_.batteries.empty());
 
   ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_THAT(
-    battery_state_broadcaster_->state_joints_, testing::ElementsAreArray(state_joint_names_));
+  ASSERT_THAT(battery_state_broadcaster_->batteries_, testing::ElementsAreArray(battery_names_));
 
-  auto interface_params = battery_state_broadcaster_->params_.interfaces.state_joints_map;
-  auto properties = battery_state_broadcaster_->params_.state_joints_map;
+  auto interface_params = battery_state_broadcaster_->params_.interfaces.batteries_map;
+  auto properties = battery_state_broadcaster_->params_.batteries_map;
   EXPECT_EQ(interface_params.at("left_wheel").battery_temperature, true);
   EXPECT_EQ(interface_params.at("left_wheel").battery_current, false);
   EXPECT_EQ(interface_params.at("left_wheel").battery_charge, true);

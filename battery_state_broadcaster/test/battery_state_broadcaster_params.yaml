@@ -1,6 +1,6 @@
 test_battery_state_broadcaster:
   ros__parameters:
-    state_joints:
+    batteries:
       - "left_wheel"
       - "right_wheel"
     interfaces:

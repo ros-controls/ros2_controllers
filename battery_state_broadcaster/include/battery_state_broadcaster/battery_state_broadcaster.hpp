@@ -41,16 +41,16 @@ namespace battery_state_broadcaster
  *
  * BatteryStateBroadcaster publishes state interfaces from ros2_control as ROS messages.
  * The following state interfaces can be published:
- *    <state_joint>/battery_voltage (Mandatory)
- *    <state_joint>/battery_temperature
- *    <state_joint>/battery_current
- *    <state_joint>/battery_charge
- *    <state_joint>/battery_percentage
- *    <state_joint>/battery_power_supply_status
- *    <state_joint>/battery_power_supply_health
- *    <state_joint>/battery_present
+ *    <battery_name>/battery_voltage (Mandatory)
+ *    <battery_name>/battery_temperature
+ *    <battery_name>/battery_current
+ *    <battery_name>/battery_charge
+ *    <battery_name>/battery_percentage
+ *    <battery_name>/battery_power_supply_status
+ *    <battery_name>/battery_power_supply_health
+ *    <battery_name>/battery_present
  *
- * \param state_joints of the batteries to publish.
+ * \param batteries names to publish.
  * \param capacity of the batteries to publish.
  * \param design_capacity of the batteries to publish.
  * \param power_supply_technology of the batteries to publish.
@@ -59,10 +59,10 @@ namespace battery_state_broadcaster
  *
  * Publishes to:
  *
- * - \b battery_state (sensor_msgs::msg::BatteryState): battery state of the combined battery
- * joints.
+ * - \b battery_state (sensor_msgs::msg::BatteryState): combined battery state across all
+ * configured batteries.
  * - \b raw_battery_states (control_msgs::msg::BatteryStateArray): battery states of
- * the individual battery joints.
+ * the individual batteries.
  *
  */
 class BatteryStateBroadcaster : public controller_interface::ControllerInterface
@@ -112,7 +112,7 @@ private:
 
   battery_state_broadcaster::Params params_;
 
-  std::vector<std::string> state_joints_;
+  std::vector<std::string> batteries_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
     battery_state_realtime_publisher_;
