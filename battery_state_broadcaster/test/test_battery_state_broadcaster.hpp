@@ -53,6 +53,12 @@ constexpr auto NODE_FAILURE = controller_interface::CallbackReturn::FAILURE;
 // subclassing and friending so we can access member variables
 class FriendBatteryStateBroadcaster : public battery_state_broadcaster::BatteryStateBroadcaster
 {
+  // Re-expose the private members of the base class that the tests need.
+  using BatteryStateBroadcaster::counts_;
+  using BatteryStateBroadcaster::params_;
+  using BatteryStateBroadcaster::state_joints_;
+  using BatteryStateBroadcaster::sums_;
+
   FRIEND_TEST(BatteryStateBroadcasterTest, init_success);
   FRIEND_TEST(BatteryStateBroadcasterTest, all_parameters_set_configure_success);
   FRIEND_TEST(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail);

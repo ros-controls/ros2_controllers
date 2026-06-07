@@ -32,6 +32,8 @@
 #include "control_msgs/msg/battery_state_array.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 
+class FriendBatteryStateBroadcaster;
+
 namespace battery_state_broadcaster
 {
 /**
@@ -87,14 +89,6 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  battery_state_broadcaster::Params params_;
-
-  std::vector<std::string> state_joints_;
-
-  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
-    battery_state_realtime_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::BatteryStateArray>>
-    raw_battery_states_realtime_publisher_;
   struct BatteryInterfaceSums
   {
     float voltage_sum = 0.0f;
@@ -113,10 +107,21 @@ protected:
     float percentage_cnt = 0.0f;
   };
 
+private:
+  friend class ::FriendBatteryStateBroadcaster;
+
+  battery_state_broadcaster::Params params_;
+
+  std::vector<std::string> state_joints_;
+
+  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
+    battery_state_realtime_publisher_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::BatteryStateArray>>
+    raw_battery_states_realtime_publisher_;
+
   BatteryInterfaceSums sums_;
   BatteryInterfaceCounts counts_;
 
-private:
   std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::BatteryStateArray>>

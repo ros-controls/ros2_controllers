@@ -69,6 +69,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_load_battery_state_broadcaster
     battery_state_broadcaster
     controller_manager::controller_manager
+    hardware_interface::hardware_interface
+    rclcpp::rclcpp
     ros2_control_test_assets::ros2_control_test_assets
   )
 
@@ -78,23 +80,6 @@ if(BUILD_TESTING)
   target_include_directories(test_battery_state_broadcaster PRIVATE include)
   target_link_libraries(test_battery_state_broadcaster
     battery_state_broadcaster
-  )
-endif()
-
-if(BUILD_TESTING)
-  find_package(ament_cmake_gmock REQUIRED)
-  find_package(controller_manager REQUIRED)
-  find_package(hardware_interface REQUIRED)
-  find_package(rclcpp REQUIRED)
-  find_package(ros2_control_test_assets REQUIRED)
-
-  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
-  ament_add_gmock(test_load_battery_state_broadcaster test/test_load_battery_state_broadcaster.cpp)
-  target_link_libraries(test_load_battery_state_broadcaster
-    controller_manager::controller_manager
-    hardware_interface::hardware_interface
-    rclcpp::rclcpp
-    ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
 
