@@ -180,39 +180,39 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
   ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
 
   // battery0
-  const auto & left = raw_battery_states_msg.battery_states[0];
-  EXPECT_EQ(left.header.frame_id, "battery0");
-  EXPECT_DOUBLE_EQ(left.voltage, 5.0);
-  EXPECT_DOUBLE_EQ(left.temperature, 60.0);
-  EXPECT_TRUE(std::isnan(left.current));  // disabled in params
-  EXPECT_DOUBLE_EQ(left.charge, 6000.0);
-  EXPECT_DOUBLE_EQ(left.capacity, 12000.0);
-  EXPECT_DOUBLE_EQ(left.design_capacity, 13000.0);
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_EQ(battery0.header.frame_id, "battery0");
+  EXPECT_DOUBLE_EQ(battery0.voltage, 5.0);
+  EXPECT_DOUBLE_EQ(battery0.temperature, 60.0);
+  EXPECT_TRUE(std::isnan(battery0.current));  // disabled in params
+  EXPECT_DOUBLE_EQ(battery0.charge, 6000.0);
+  EXPECT_DOUBLE_EQ(battery0.capacity, 12000.0);
+  EXPECT_DOUBLE_EQ(battery0.design_capacity, 13000.0);
   // percentage calculated (no interface) = (5.0 - 0.0) * 100 / (10.0 - 0.0) = 50
-  EXPECT_DOUBLE_EQ(left.percentage, 50.0);
-  EXPECT_EQ(left.power_supply_status, 3);  // from itfs_values_[3]
-  EXPECT_EQ(left.power_supply_health, 0);  // from itfs_values_[4]
-  EXPECT_EQ(left.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
-  EXPECT_TRUE(left.present);  // voltage > 0.0
-  EXPECT_EQ(left.location, "slot0");
-  EXPECT_EQ(left.serial_number, "serial_device_0");
+  EXPECT_DOUBLE_EQ(battery0.percentage, 50.0);
+  EXPECT_EQ(battery0.power_supply_status, 3);  // from itfs_values_[3]
+  EXPECT_EQ(battery0.power_supply_health, 0);  // from itfs_values_[4]
+  EXPECT_EQ(battery0.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
+  EXPECT_TRUE(battery0.present);  // voltage > 0.0
+  EXPECT_EQ(battery0.location, "slot0");
+  EXPECT_EQ(battery0.serial_number, "serial_device_0");
 
   // battery1
-  const auto & right = raw_battery_states_msg.battery_states[1];
-  EXPECT_EQ(right.header.frame_id, "battery1");
-  EXPECT_DOUBLE_EQ(right.voltage, 10.0);
-  EXPECT_DOUBLE_EQ(right.temperature, 80.0);
-  EXPECT_DOUBLE_EQ(right.current, 2000.0);
-  EXPECT_DOUBLE_EQ(right.charge, 5000.0);
-  EXPECT_DOUBLE_EQ(right.capacity, 17000.0);
-  EXPECT_DOUBLE_EQ(right.design_capacity, 18000.0);
-  EXPECT_DOUBLE_EQ(right.percentage, 66.0);  // directly from itfs_values_[9]
-  EXPECT_EQ(right.power_supply_status, 2);   // from itfs_values_[10]
-  EXPECT_EQ(right.power_supply_health, 4);   // from itfs_values_[11]
-  EXPECT_EQ(right.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
-  EXPECT_TRUE(right.present);  // voltage > 0.0
-  EXPECT_EQ(right.location, "slot1");
-  EXPECT_EQ(right.serial_number, "serial_device_1");
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_EQ(battery1.header.frame_id, "battery1");
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.temperature, 80.0);
+  EXPECT_DOUBLE_EQ(battery1.current, 2000.0);
+  EXPECT_DOUBLE_EQ(battery1.charge, 5000.0);
+  EXPECT_DOUBLE_EQ(battery1.capacity, 17000.0);
+  EXPECT_DOUBLE_EQ(battery1.design_capacity, 18000.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_EQ(battery1.power_supply_status, 2);   // from itfs_values_[10]
+  EXPECT_EQ(battery1.power_supply_health, 4);   // from itfs_values_[11]
+  EXPECT_EQ(battery1.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
+  EXPECT_TRUE(battery1.present);  // voltage > 0.0
+  EXPECT_EQ(battery1.location, "slot1");
+  EXPECT_EQ(battery1.serial_number, "serial_device_1");
 
   // Combined battery state message
   EXPECT_EQ(battery_state_msg.header.frame_id, "");
@@ -247,17 +247,17 @@ TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
   ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
 
   // battery0
-  const auto & left = raw_battery_states_msg.battery_states[0];
-  EXPECT_DOUBLE_EQ(left.voltage, 10.0);
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_DOUBLE_EQ(battery0.voltage, 10.0);
   // percentage calculated (no interface) = (10.0 - 0.0) * 100 / (10.0 - 0.0) = 50
-  EXPECT_DOUBLE_EQ(left.percentage, 100.0);
-  EXPECT_TRUE(left.present);  // voltage > 0.0
+  EXPECT_DOUBLE_EQ(battery0.percentage, 100.0);
+  EXPECT_TRUE(battery0.present);  // voltage > 0.0
 
   // battery1
-  const auto & right = raw_battery_states_msg.battery_states[1];
-  EXPECT_DOUBLE_EQ(right.voltage, 10.0);
-  EXPECT_DOUBLE_EQ(right.percentage, 66.0);  // directly from itfs_values_[9]
-  EXPECT_TRUE(right.present);                // voltage > 0.0
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_TRUE(battery1.present);                // voltage > 0.0
 
   // Combined battery state message
   EXPECT_DOUBLE_EQ(battery_state_msg.voltage, 10.0);     // average of 10 + 10
@@ -281,16 +281,16 @@ TEST_F(BatteryStateBroadcasterTest, publish_nan_voltage)
   ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
 
   // battery0
-  const auto & left = raw_battery_states_msg.battery_states[0];
-  EXPECT_TRUE(std::isnan(left.voltage));
-  EXPECT_TRUE(std::isnan(left.percentage));
-  EXPECT_FALSE(left.present);  // voltage nan
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_TRUE(std::isnan(battery0.voltage));
+  EXPECT_TRUE(std::isnan(battery0.percentage));
+  EXPECT_FALSE(battery0.present);  // voltage nan
 
   // battery1
-  const auto & right = raw_battery_states_msg.battery_states[1];
-  EXPECT_DOUBLE_EQ(right.voltage, 10.0);
-  EXPECT_DOUBLE_EQ(right.percentage, 66.0);  // directly from itfs_values_[9]
-  EXPECT_TRUE(right.present);                // voltage > 0.0
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_TRUE(battery1.present);                // voltage > 0.0
 
   // Combined battery state message
   EXPECT_TRUE(std::isnan(battery_state_msg.voltage));     // average of nan + 10
