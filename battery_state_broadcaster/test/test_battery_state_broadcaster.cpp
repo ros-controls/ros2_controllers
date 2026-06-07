@@ -104,8 +104,6 @@ TEST_F(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail)
   ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_FAILURE);
 }
 
-// check all msgs initial values
-// check logic for combined strings for local & serial number and same or none for power supply
 TEST_F(BatteryStateBroadcasterTest, activate_success)
 {
   SetUpBatteryStateBroadcaster();
