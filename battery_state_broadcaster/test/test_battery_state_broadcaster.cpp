@@ -249,7 +249,7 @@ TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
   // battery0
   const auto & battery0 = raw_battery_states_msg.battery_states[0];
   EXPECT_DOUBLE_EQ(battery0.voltage, 10.0);
-  // percentage calculated (no interface) = (10.0 - 0.0) * 100 / (10.0 - 0.0) = 50
+  // percentage calculated (no interface) = (10.0 - 0.0) * 100 / (10.0 - 0.0) = 100
   EXPECT_DOUBLE_EQ(battery0.percentage, 100.0);
   EXPECT_TRUE(battery0.present);  // voltage > 0.0
 
