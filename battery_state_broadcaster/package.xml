@@ -17,6 +17,7 @@
   <url type="repository">https://github.com/ros-controls/ros2_controllers/</url>
 
   <author email="yara.shahin@b-robotized.com">Yara Shahin</author>
+  <author email="jonas.otto@ipa.fraunhofer.de">Jonas Otto</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
