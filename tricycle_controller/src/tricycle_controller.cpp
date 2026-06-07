@@ -189,7 +189,7 @@ controller_interface::return_type TricycleController::update(
   {
     scale = 1;
   }
-  else if (alpha_delta > M_PI_2)
+  else if (alpha_delta >= M_PI_2)
   {
     scale = 0.01;
   }
