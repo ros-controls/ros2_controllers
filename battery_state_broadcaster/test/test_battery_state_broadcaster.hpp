@@ -97,77 +97,77 @@ public:
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
 
-    state_ifs.emplace_back(left_voltage_itf_);
-    state_ifs.emplace_back(left_temperature_itf_);
-    state_ifs.emplace_back(left_charge_itf_);
-    state_ifs.emplace_back(left_status_itf_);
-    state_ifs.emplace_back(left_health_itf_);
+    state_ifs.emplace_back(battery0_voltage_itf_);
+    state_ifs.emplace_back(battery0_temperature_itf_);
+    state_ifs.emplace_back(battery0_charge_itf_);
+    state_ifs.emplace_back(battery0_status_itf_);
+    state_ifs.emplace_back(battery0_health_itf_);
 
-    state_ifs.emplace_back(right_voltage_itf_);
-    state_ifs.emplace_back(right_temperature_itf_);
-    state_ifs.emplace_back(right_current_itf_);
-    state_ifs.emplace_back(right_charge_itf_);
-    state_ifs.emplace_back(right_percentage_itf_);
-    state_ifs.emplace_back(right_status_itf_);
-    state_ifs.emplace_back(right_health_itf_);
+    state_ifs.emplace_back(battery1_voltage_itf_);
+    state_ifs.emplace_back(battery1_temperature_itf_);
+    state_ifs.emplace_back(battery1_current_itf_);
+    state_ifs.emplace_back(battery1_charge_itf_);
+    state_ifs.emplace_back(battery1_percentage_itf_);
+    state_ifs.emplace_back(battery1_status_itf_);
+    state_ifs.emplace_back(battery1_health_itf_);
 
     battery_state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
   }
 
 protected:
   // Controller-related parameters
-  std::vector<std::string> battery_names_ = {"left_wheel", "right_wheel"};
+  std::vector<std::string> battery_names_ = {"battery0", "battery1"};
   std::array<double, 12> itfs_values_ = {{
-    5.0,     // 0 left_voltage
-    60.0,    // 1 left_temperature
-    6000.0,  // 2 left_charge
-    3.0,     // 3 left_status
-    0.0,     // 4 left_health
-    10.0,    // 5 right_voltage
-    80.0,    // 6 right_temperature
-    2000.0,  // 7 right_current
-    5000.0,  // 8 right_charge
-    66.0,    // 9 right_percentage
-    2.0,     // 10 right_status
-    4.0      // 11 right_health
+    5.0,     // 0 battery0_voltage
+    60.0,    // 1 battery0_temperature
+    6000.0,  // 2 battery0_charge
+    3.0,     // 3 battery0_status
+    0.0,     // 4 battery0_health
+    10.0,    // 5 battery1_voltage
+    80.0,    // 6 battery1_temperature
+    2000.0,  // 7 battery1_current
+    5000.0,  // 8 battery1_charge
+    66.0,    // 9 battery1_percentage
+    2.0,     // 10 battery1_status
+    4.0      // 11 battery1_health
   }};
 
-  hardware_interface::StateInterface::SharedPtr left_voltage_itf_ =
+  hardware_interface::StateInterface::SharedPtr battery0_voltage_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "left_wheel", "battery_voltage", &itfs_values_[0]);
-  hardware_interface::StateInterface::SharedPtr left_temperature_itf_ =
+      "battery0", "battery_voltage", &itfs_values_[0]);
+  hardware_interface::StateInterface::SharedPtr battery0_temperature_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "left_wheel", "battery_temperature", &itfs_values_[1]);
-  hardware_interface::StateInterface::SharedPtr left_charge_itf_ =
+      "battery0", "battery_temperature", &itfs_values_[1]);
+  hardware_interface::StateInterface::SharedPtr battery0_charge_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "left_wheel", "battery_charge", &itfs_values_[2]);
-  hardware_interface::StateInterface::SharedPtr left_status_itf_ =
+      "battery0", "battery_charge", &itfs_values_[2]);
+  hardware_interface::StateInterface::SharedPtr battery0_status_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "left_wheel", "battery_power_supply_status", &itfs_values_[3]);
-  hardware_interface::StateInterface::SharedPtr left_health_itf_ =
+      "battery0", "battery_power_supply_status", &itfs_values_[3]);
+  hardware_interface::StateInterface::SharedPtr battery0_health_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "left_wheel", "battery_power_supply_health", &itfs_values_[4]);
-  hardware_interface::StateInterface::SharedPtr right_voltage_itf_ =
+      "battery0", "battery_power_supply_health", &itfs_values_[4]);
+  hardware_interface::StateInterface::SharedPtr battery1_voltage_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_voltage", &itfs_values_[5]);
-  hardware_interface::StateInterface::SharedPtr right_temperature_itf_ =
+      "battery1", "battery_voltage", &itfs_values_[5]);
+  hardware_interface::StateInterface::SharedPtr battery1_temperature_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_temperature", &itfs_values_[6]);
-  hardware_interface::StateInterface::SharedPtr right_current_itf_ =
+      "battery1", "battery_temperature", &itfs_values_[6]);
+  hardware_interface::StateInterface::SharedPtr battery1_current_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_current", &itfs_values_[7]);
-  hardware_interface::StateInterface::SharedPtr right_charge_itf_ =
+      "battery1", "battery_current", &itfs_values_[7]);
+  hardware_interface::StateInterface::SharedPtr battery1_charge_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_charge", &itfs_values_[8]);
-  hardware_interface::StateInterface::SharedPtr right_percentage_itf_ =
+      "battery1", "battery_charge", &itfs_values_[8]);
+  hardware_interface::StateInterface::SharedPtr battery1_percentage_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_percentage", &itfs_values_[9]);
-  hardware_interface::StateInterface::SharedPtr right_status_itf_ =
+      "battery1", "battery_percentage", &itfs_values_[9]);
+  hardware_interface::StateInterface::SharedPtr battery1_status_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_power_supply_status", &itfs_values_[10]);
-  hardware_interface::StateInterface::SharedPtr right_health_itf_ =
+      "battery1", "battery_power_supply_status", &itfs_values_[10]);
+  hardware_interface::StateInterface::SharedPtr battery1_health_itf_ =
     std::make_shared<hardware_interface::StateInterface>(
-      "right_wheel", "battery_power_supply_health", &itfs_values_[11]);
+      "battery1", "battery_power_supply_health", &itfs_values_[11]);
 
   // Test related parameters
   std::unique_ptr<FriendBatteryStateBroadcaster> battery_state_broadcaster_;
