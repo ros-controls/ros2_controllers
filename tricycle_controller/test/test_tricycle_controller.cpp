@@ -442,3 +442,48 @@ TEST_F(TestTricycleController, odometry_reset_service)
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   executor.cancel();
 }
+
+TEST_F(TestTricycleController, velocity_attenuation_at_pi_2_boundary)
+{
+  ASSERT_EQ(
+    InitController(
+      traction_joint_name, steering_joint_name,
+      {rclcpp::Parameter("wheelbase", 1.0), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto state = controller_->configure();
+  assignResources();
+
+  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+
+  state = controller_->get_node()->activate();
+  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+
+  // Set current steering angle to 0.0
+  position_ = 0.0;
+
+  // Publish a spin cmd to set target steering angle to M_PI_2
+  // Vx = 0.0, theta_dot = 1.0 -> Ws_write = 1.0, alpha_write = M_PI_2
+  publish(0.0, 1.0);
+  controller_->wait_for_twist(executor);
+
+  // Trigger one update cycle
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // The speed scale should be limited to 0.01 (due to alpha_delta == M_PI_2)
+  // Ws_write * scale = 1.0 * 0.01 = 0.01
+  EXPECT_NEAR(0.01, traction_joint_vel_cmd_->get_optional().value(), 1e-6);
+  EXPECT_NEAR(M_PI_2, steering_joint_pos_cmd_->get_optional().value(), 1e-6);
+
+  state = controller_->get_node()->deactivate();
+  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  state = controller_->get_node()->cleanup();
+  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  executor.cancel();
+}
+
