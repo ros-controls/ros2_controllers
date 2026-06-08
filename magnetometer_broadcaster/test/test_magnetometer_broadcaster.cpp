@@ -19,11 +19,11 @@
 #include <gmock/gmock.h>
 #include <utility>
 
-#include <class_loader/class_loader.hpp>
 #include <controller_interface/controller_interface.hpp>
 #include <hardware_interface/loaned_state_interface.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
+#include <magnetometer_broadcaster/magnetometer_broadcaster.hpp>
 #include <magnetometer_broadcaster/magnetometer_broadcaster_parameters.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/wait_result_kind.hpp>
@@ -58,8 +58,7 @@ class MagnetometerBroadcasterTest : public ::testing::Test
 public:
   void SetUp()
   {
-    broadcaster = loader->createInstance<controller_interface::ControllerInterface>(
-      "magnetometer_broadcaster::MagnetometerBroadcaster");
+    broadcaster = std::make_shared<magnetometer_broadcaster::MagnetometerBroadcaster>();
   }
 
   void TearDown() { broadcaster.reset(); }
@@ -117,9 +116,6 @@ protected:
   hardware_interface::StateInterface::SharedPtr magnetic_field_z =
     std::make_shared<hardware_interface::StateInterface>(
       sensor_name_, "magnetic_field.z", &sensor_values_[2]);
-
-  std::unique_ptr<class_loader::ClassLoader> loader =
-    std::make_unique<class_loader::ClassLoader>(std::string{});
 
   controller_interface::ControllerInterfaceSharedPtr broadcaster = nullptr;
 };
