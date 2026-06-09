@@ -282,6 +282,18 @@ def test_missing_limit_tag_for_required_joint_raises():
         parse_joint_limits(urdf, ["j"])
 
 
+def test_missing_limit_tag_allow_incomplete_false_still_raises():
+    """Explicit strict mode keeps raising on missing <limit> tags."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    with pytest.raises(Exception, match="Missing limits tag"):
+        parse_joint_limits(urdf, ["j"], allow_incomplete_joints=False)
+
+
 def test_missing_limit_tag_for_unrequired_joint_skipped_silently():
     """Joint NOT in joints_names with no <limit> is silently ignored.
 
@@ -313,6 +325,19 @@ def test_revolute_joint_missing_lower_upper_raises():
     )
     with pytest.raises(Exception, match="Missing lower/upper position limits"):
         parse_joint_limits(urdf, ["j"])
+
+
+def test_missing_lower_upper_allow_incomplete_false_still_raises():
+    """Explicit strict mode keeps raising on missing lower/upper limits."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    with pytest.raises(Exception, match="Missing lower/upper position limits"):
+        parse_joint_limits(urdf, ["j"], allow_incomplete_joints=False)
 
 
 def test_missing_velocity_raises():
