@@ -608,12 +608,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
-<<<<<<< HEAD
-  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-=======
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 9f162e1 (Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (#2399))
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
@@ -672,19 +667,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_off_with_gain)
   const double expected_command_value = 1.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
-<<<<<<< HEAD
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-=======
-
-  for (const auto & dof_name : dof_names_)
-  {
-    ASSERT_TRUE(controller_->get_node()
-                  ->set_parameter(rclcpp::Parameter("gains." + dof_name + ".feedforward_gain", 0.0))
-                  .successful);
-  }
-
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 9f162e1 (Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (#2399))
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
