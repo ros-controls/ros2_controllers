@@ -93,9 +93,7 @@ TEST_F(GripperControllerTest, ConfigureParamsSuccess)
   executor.spin_some();
 
   // configure successful
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check interface configuration
   auto cmd_if_conf = this->controller_->command_interface_configuration();
@@ -117,12 +115,8 @@ TEST_F(GripperControllerTest, ActivateSuccess)
   this->controller_->get_node()->set_parameter({"joint", "joint1"});
 
   // activate successful
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    this->controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
@@ -131,15 +125,9 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
 
   this->controller_->get_node()->set_parameter({"joint", "joint1"});
 
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    this->controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    this->controller_->on_deactivate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   this->controller_->release_interfaces();
 
   // re-assign interfaces
@@ -150,12 +138,8 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
   state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
   this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
 
-  ASSERT_EQ(
-    this->controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    this->controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 int main(int argc, char ** argv)

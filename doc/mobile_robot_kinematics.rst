@@ -200,7 +200,7 @@ Nonholonomic Wheeled Mobile Robots
 Unicycle model
 ,,,,,,,,,,,,,,,,
 
-To define the coordinate systems (`ROS coordinate frame conventions <https://reps.openrobotics.org/rep-0103/#id19>`__, the coordinate systems follow the right-hand rule), consider the following simple unicycle model
+To define the coordinate systems (`ROS coordinate frame conventions <https://reps.openrobotics.org/rep-0103/#coordinate-frame-conventions>`__, the coordinate systems follow the right-hand rule), consider the following simple unicycle model
 
 .. image:: images/unicycle.svg
    :width: 550

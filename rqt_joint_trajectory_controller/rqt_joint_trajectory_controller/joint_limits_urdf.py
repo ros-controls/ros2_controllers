@@ -18,23 +18,27 @@
 # https://github.com/ros/robot_model/blob/indigo-devel/
 # joint_state_publisher/joint_state_publisher/joint_state_publisher
 
-# TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
-#  Exception: Required attribute not set in XML: upper
-# upper is an optional attribute, so I don't understand what's going on
-# See comments in https://github.com/ros/urdfdom/issues/36
-
-import xml.dom.minidom
+import xml.etree.ElementTree as ET
 from math import pi
 
 import rclpy
 import rclpy.subscription
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
+from urdf_parser_py.urdf import Robot
 
 description = ""
 robot_description_subscriber_created = False
 subscription = None
 _robot_description_topic = ""
 _spin_count = 0
+
+
+# Tags defined as direct children of <robot> in the URDF specification.
+# Any other tag is a vendor extension (ros2_control, gazebo, xacro
+# remnants, etc.) that urdf_parser_py warns about on stderr during
+# parsing. We strip non-standard tags to keep logs clean.
+_URDF_STANDARD_TAGS = frozenset({"link", "joint", "transmission", "material"})
 
 
 def callback(msg):
@@ -46,9 +50,9 @@ def subscribe_to_robot_description(
     node, key="robot_description"
 ) -> rclpy.subscription.Subscription:
     global robot_description_subscriber_created, subscription, _robot_description_topic, _spin_count
-    qos_profile = rclpy.qos.QoSProfile(depth=1)
-    qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
-    qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
+    qos_profile = QoSProfile(depth=1)
+    qos_profile.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    qos_profile.reliability = ReliabilityPolicy.RELIABLE
 
     _robot_description_topic = key
     _spin_count = 0
@@ -57,17 +61,197 @@ def subscribe_to_robot_description(
     return subscription
 
 
-def unsubscribe_to_robot_description(node) -> rclpy.subscription.Subscription:
+def unsubscribe_to_robot_description(node) -> None:
+    global robot_description_subscriber_created, subscription
     if subscription is not None:
         node.destroy_subscription(subscription)
+        subscription = None
+        robot_description_subscriber_created = False
+
+
+def _strip_non_urdf_tags(urdf_string):
+    """
+    Remove non-URDF extension tags from a robot description string.
+
+    Robot descriptions published to /robot_description commonly carry
+    vendor-specific extensions like <ros2_control> and <gazebo> alongside
+    the standard URDF elements. urdf_parser_py prints warnings to stderr
+    for unrecognised tags (e.g. <ros2_control>). We strip them to keep
+    production logs clean.
+    """
+    root = ET.fromstring(urdf_string)
+    # Iterate over a list copy because we are mutating root during the loop
+    for child in list(root):
+        if child.tag not in _URDF_STANDARD_TAGS:
+            root.remove(child)
+    return ET.tostring(root, encoding="unicode")
+
+
+def parse_joint_limits(
+    urdf_string,
+    joints_names,
+    use_smallest_joint_limits=True,
+    allow_incomplete_joints=False,
+    logger=None,
+):
+    """
+    Parse joint position and velocity limits from a URDF XML string.
+
+    This function contains all the real parsing logic and has no dependency
+    on ROS, global variables, or any running infrastructure. It accepts the
+    URDF as a plain Python string, which makes it directly unit-testable
+    without needing a ROS node or a robot_description topic.
+
+    Parameters
+    ----------
+    urdf_string : str
+        A complete URDF XML document as a string.
+    joints_names : list[str]
+        The joints that the active controller manages.
+    use_smallest_joint_limits : bool
+        When True, safety_controller soft limits narrow the reported range.
+    allow_incomplete_joints : bool
+        When True, managed joints with incomplete limits are added with
+        conservative defaults and marked as not position-limited.
+    logger : rclpy.impl.rcutils_logger.RcutilsLogger | None
+        Optional logger used to emit warnings when incomplete joints are
+        tolerated.
+
+    Returns
+    -------
+    dict
+        Maps joint name to a dict with keys:
+        min_position, max_position, has_position_limits, max_velocity.
+
+    """
+    use_small = use_smallest_joint_limits
+    use_mimic = True
+
+    free_joints = {}
+    dependent_joints = {}
+
+    # Strip vendor extensions to suppress urdf_parser_py stderr warnings
+    # for unrecognised tags like <ros2_control>
+    cleaned = _strip_non_urdf_tags(urdf_string)
+    robot = Robot.from_xml_string(cleaned)
+
+    for joint in robot.joints:
+        if joint.type == "fixed":
+            # Fixed joints have no DOF, so no slider is needed in the GUI
+            continue
+
+        name = joint.name
+
+        # No <limit> element at all means urdf_parser_py sets joint.limit to None
+        if joint.limit is None:
+            if name in joints_names and allow_incomplete_joints:
+                if logger is not None:
+                    logger.warn(
+                        f"Joint '{name}' has no <limit> tag in the robot_description. "
+                        "Slider will be displayed but disabled."
+                    )
+                free_joints[name] = {
+                    "min_position": -2 * pi,
+                    "max_position": 2 * pi,
+                    "has_position_limits": False,
+                    "max_velocity": 1.0,
+                }
+                continue
+            if name in joints_names:
+                raise Exception(
+                    f"Missing limits tag for the joint : {name} in the robot_description!"
+                )
+            # Joint is not managed by this controller, so we skip silently
+            continue
+
+        # urdf_parser_py defaults lower/upper to 0.0 when the attributes are
+        # absent in the URDF. We treat min >= max as "limits missing" and
+        # either fall back to -pi..pi for continuous joints or raise for
+        # revolute joints where valid bounds are required.
+        minval = joint.limit.lower
+        maxval = joint.limit.upper
+
+        if minval >= maxval:
+            if joint.type == "continuous":
+                minval = -pi
+                maxval = pi
+            elif name in joints_names and allow_incomplete_joints:
+                if logger is not None:
+                    logger.warn(
+                        f"Joint '{name}' of type '{joint.type}' has missing/empty "
+                        "lower/upper position limits in the robot_description. "
+                        "Slider will be displayed but disabled."
+                    )
+                free_joints[name] = {
+                    "min_position": -2 * pi,
+                    "max_position": 2 * pi,
+                    "has_position_limits": False,
+                    "max_velocity": 1.0,
+                }
+                continue
+            else:
+                raise Exception(
+                    f"Missing lower/upper position limits for the joint"
+                    f" : {name} of type : {joint.type} in the robot_description!"
+                )
+
+        if joint.limit.velocity is None:
+            if name in joints_names and allow_incomplete_joints:
+                if logger is not None:
+                    logger.warn(
+                        f"Joint '{name}' of type '{joint.type}' has missing/empty velocity "
+                        "limit in the robot_description. Slider will be displayed but disabled."
+                    )
+                free_joints[name] = {
+                    "min_position": -2 * pi,
+                    "max_position": 2 * pi,
+                    "has_position_limits": False,
+                    "max_velocity": 1.0,
+                }
+                continue
+            raise Exception(
+                f"Missing velocity limits for the joint"
+                f" : {name} of type : {joint.type} in the robot_description!"
+            )
+        maxvel = joint.limit.velocity
+
+        # Optionally narrow the range with safety_controller soft limits
+        if use_small and joint.safety_controller is not None:
+            if joint.safety_controller.soft_lower_limit is not None:
+                minval = max(minval, joint.safety_controller.soft_lower_limit)
+            if joint.safety_controller.soft_upper_limit is not None:
+                maxval = min(maxval, joint.safety_controller.soft_upper_limit)
+
+        # Mimic joints follow another joint and go into dependent_joints
+        if use_mimic and joint.mimic is not None:
+            entry = {"parent": joint.mimic.joint}
+            if joint.mimic.multiplier is not None:
+                entry["factor"] = joint.mimic.multiplier
+            if joint.mimic.offset is not None:
+                entry["offset"] = joint.mimic.offset
+            dependent_joints[name] = entry
+            continue
+
+        free_joints[name] = {
+            "min_position": minval,
+            "max_position": maxval,
+            "has_position_limits": joint.type != "continuous",
+            "max_velocity": maxvel,
+        }
+
+    return free_joints
 
 
 def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+    """
+    ROS-aware wrapper around parse_joint_limits.
+
+    Waits for the robot_description topic to publish, then delegates all
+    real parsing work to parse_joint_limits(). This separation means
+    parse_joint_limits() can be tested without any ROS infrastructure.
+    """
     if not robot_description_subscriber_created:
         return {}
-
-    use_small = use_smallest_joint_limits
-    use_mimic = True
 
     global _spin_count
 
@@ -81,89 +265,13 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
                 f'Waiting for robot description on topic "{_robot_description_topic}" ...'
             )
 
-    free_joints = {}
-    dependent_joints = {}
+    if description == "":
+        return {}
 
-    if description != "":
-        robot = xml.dom.minidom.parseString(description).getElementsByTagName("robot")[0]
-
-        # Find all non-fixed joints
-        for child in robot.childNodes:
-            if child.nodeType is child.TEXT_NODE:
-                continue
-            if child.localName == "joint":
-                jtype = child.getAttribute("type")
-                if jtype == "fixed":
-                    continue
-                name = child.getAttribute("name")
-
-                try:
-                    limit = child.getElementsByTagName("limit")[0]
-                    try:
-                        minval = float(limit.getAttribute("lower"))
-                        maxval = float(limit.getAttribute("upper"))
-                    except ValueError:
-                        if jtype == "continuous":
-                            minval = -pi
-                            maxval = pi
-                        else:
-                            if name in joints_names:
-                                node.get_logger().warn(
-                                    f"Joint '{name}' of type '{jtype}' has missing/empty "
-                                    f"lower/upper position limits in the robot_description. "
-                                    f"Slider will be displayed but disabled."
-                                )
-                            free_joints[name] = {
-                                "min_position": -2 * pi,
-                                "max_position": 2 * pi,
-                                "has_position_limits": False,
-                                "max_velocity": 1.0,
-                            }
-                            continue
-                    try:
-                        maxvel = float(limit.getAttribute("velocity"))
-                    except ValueError:
-                        raise Exception(
-                            f"Missing velocity limits for the joint : {name} of type : {jtype} in the robot_description!"
-                        )
-                except IndexError:
-                    if name in joints_names:
-                        print(
-                            f"Warning: joint '{name}' has no <limit> tag in the "
-                            f"robot_description. Slider will be displayed but disabled."
-                        )
-                        free_joints[name] = {
-                            "min_position": -2 * pi,
-                            "max_position": 2 * pi,
-                            "has_position_limits": False,
-                            "max_velocity": 1.0,
-                        }
-                    continue
-                safety_tags = child.getElementsByTagName("safety_controller")
-                if use_small and len(safety_tags) == 1:
-                    tag = safety_tags[0]
-                    if tag.hasAttribute("soft_lower_limit"):
-                        minval = max(minval, float(tag.getAttribute("soft_lower_limit")))
-                    if tag.hasAttribute("soft_upper_limit"):
-                        maxval = min(maxval, float(tag.getAttribute("soft_upper_limit")))
-
-                mimic_tags = child.getElementsByTagName("mimic")
-                if use_mimic and len(mimic_tags) == 1:
-                    tag = mimic_tags[0]
-                    entry = {"parent": tag.getAttribute("joint")}
-                    if tag.hasAttribute("multiplier"):
-                        entry["factor"] = float(tag.getAttribute("multiplier"))
-                    if tag.hasAttribute("offset"):
-                        entry["offset"] = float(tag.getAttribute("offset"))
-
-                    dependent_joints[name] = entry
-                    continue
-
-                if name in dependent_joints:
-                    continue
-
-                joint = {"min_position": minval, "max_position": maxval}
-                joint["has_position_limits"] = jtype != "continuous"
-                joint["max_velocity"] = maxvel
-                free_joints[name] = joint
-    return free_joints
+    return parse_joint_limits(
+        description,
+        joints_names,
+        use_smallest_joint_limits,
+        allow_incomplete_joints=True,
+        logger=node.get_logger(),
+    )

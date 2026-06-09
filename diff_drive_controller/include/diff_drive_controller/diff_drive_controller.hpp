@@ -141,18 +141,12 @@ protected:
   std::unique_ptr<SpeedLimiter> limiter_linear_;
   std::unique_ptr<SpeedLimiter> limiter_angular_;
 
-  bool publish_limited_velocity_ = false;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> limited_velocity_publisher_ = nullptr;
   std::shared_ptr<realtime_tools::RealtimePublisher<TwistStamped>>
     realtime_limited_velocity_publisher_ = nullptr;
   TwistStamped limited_velocity_message_;
 
   rclcpp::Time previous_update_timestamp_{0};
-
-  // publish rate limiter
-  double publish_rate_ = 50.0;
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   std::atomic<bool> set_odom_requested_{false};
