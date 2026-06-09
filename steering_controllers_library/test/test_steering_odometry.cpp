@@ -302,9 +302,9 @@ TEST(TestSteeringOdometry, tricycle_IK_linear)
 
 TEST(TestSteeringOdometry, tricycle_single_IK_linear)
 {
-  steering_odometry::SteeringOdometry odom(1);
+  steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
-  odom.set_odometry_type(steering_odometry::TRICYCLE_CONFIG);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
   odom.set_tricycle_config(1);
 
   odom.update_open_loop(1., 0., 1.);
