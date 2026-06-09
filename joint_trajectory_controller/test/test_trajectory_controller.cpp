@@ -2064,15 +2064,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_blending", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
-
-  RCLCPP_WARN(
-    traj_controller_->get_node()->get_logger(),
-    "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
-  // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/
-  // joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
-  return;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
@@ -2082,24 +2076,24 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   // *INDENT-ON*
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
-  // Send full trajectory
+
+  // Use node clock so future-stamped publish and controller update() share the same time base.
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
   publish(points_delay, full_traj, rclcpp::Time(), {}, full_traj_velocities);
-  // Sleep until first waypoint of full trajectory
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {full_traj[0].begin(), full_traj[0].end()};
   expected_desired = expected_actual;
-  //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
-  auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time = waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, start_time);
 
-  // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   publish(
-    points_delay, partial_traj, rclcpp::Clock(RCL_STEADY_TIME).now() + delay * 2, {},
+    points_delay, partial_traj, end_time + rclcpp::Duration(delay * 2), {},
     partial_traj_velocities);
-  // Wait until the end start and end of partial traj
 
+  // joints 0 and 1 follow partial_traj; joint 2 holds at full_traj's last position
   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
   expected_desired = expected_actual;
 

@@ -97,6 +97,16 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
   }
+  allow_trajectory_blending: {
+    type: bool,
+    default_value: true,
+    description: "Port of the ROS 1 'update existing trajectory' behavior.
+      \n\n
+      If true (default), a trajectory whose ``header.stamp`` lies in the future is deferred: the
+      active trajectory keeps executing until that start time, then the new one is installed.
+      \n\n
+      If false, every incoming trajectory replaces the active one immediately (legacy behavior).",
+  }
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
     default_value: true,
