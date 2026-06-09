@@ -30,7 +30,7 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
@@ -93,7 +93,7 @@ TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_no_namespace
 
   SetUpController("test_steering_controllers_library", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -116,7 +116,7 @@ TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_blank_prefix_no_nam
 
   SetUpController("test_steering_controllers_library", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -145,7 +145,7 @@ TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_set_namespac
 
   SetUpController("test_steering_controllers_library", node_options, test_namespace);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -173,7 +173,7 @@ TEST_F(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_na
 
   SetUpController("test_steering_controllers_library", node_options, test_namespace);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -196,9 +196,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
@@ -301,9 +301,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
@@ -390,12 +390,12 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
 {
   // 0. Initialize and Activate
   SetUpController();
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->get_node()->trigger_transition(
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
 
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   controller_->get_node()->trigger_transition(
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
   ASSERT_EQ(
