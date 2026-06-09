@@ -30,7 +30,7 @@ TEST_F(SteeringControllersLibraryTest, check_exported_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_command_values_.size());
@@ -90,9 +90,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
@@ -195,9 +195,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
