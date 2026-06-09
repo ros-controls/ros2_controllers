@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "pid_controller/pid_controller.hpp"
@@ -35,6 +36,10 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
