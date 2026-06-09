@@ -52,12 +52,6 @@ using controller_interface::deactivate_succeeds;
 using MotionPrimitive = control_msgs::msg::MotionPrimitive;
 using ExecuteMotion = control_msgs::action::ExecuteMotionPrimitiveSequence;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 // subclassing and friending so we can access member variables
 class TestableMotionPrimitivesForwardController
 : public motion_primitives_controllers::MotionPrimitivesForwardController

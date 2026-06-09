@@ -45,13 +45,6 @@ using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 using ControllerModeSrvType = pid_controller::PidController::ControllerModeSrvType;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
-
 // subclassing and friending so we can access member variables
 class TestablePidController : public pid_controller::PidController
 {

@@ -55,8 +55,6 @@ using ackermann_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
 
 namespace
 {
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 const double COMMON_THRESHOLD = 1e-6;
 }  // namespace
 

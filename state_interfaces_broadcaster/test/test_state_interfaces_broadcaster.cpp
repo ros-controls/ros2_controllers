@@ -41,12 +41,6 @@ using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 void StateInterfacesBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
 void StateInterfacesBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
