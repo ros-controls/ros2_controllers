@@ -319,6 +319,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
   if (traj_msg_to_install)
   {
+    // TODO(denis): Add here integration of position and velocity
     current_trajectory_->update(traj_msg_to_install);
   }
 
@@ -1520,8 +1521,7 @@ void JointTrajectoryController::goal_accepted_callback(
     add_new_trajectory_msg(traj_msg);
     rt_is_holding_ = false;
 
-    // If blending is on and this goal starts in the future, its trajectory will be deferred by
-    // update(); mark it so the result/feedback block does not judge the goal before it starts.
+    // If blending is on, trajectory will be deferred by update(). Mark it so the result/feedback block does not judge the goal before it starts.
     const auto now = get_node()->now();
     rt_active_goal_deferred_ = params_.allow_trajectory_blending && has_active_trajectory() &&
                                rclcpp::Time(traj_msg->header.stamp, now.get_clock_type()) > now;
