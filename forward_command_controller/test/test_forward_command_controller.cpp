@@ -198,15 +198,9 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
   SetUpController();
 
   // configure controller
-<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-=======
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // update successful though no command has been send yet
   ASSERT_EQ(
@@ -239,16 +233,9 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
   SetUpController();
 
   // configure controller
-<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
-
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-=======
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // send command with wrong number of joints
   forward_command_controller::CmdType command_msg;
@@ -271,15 +258,9 @@ TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
   SetUpController();
 
   // configure controller
-<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
-=======
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // update successful, no command received yet
   ASSERT_EQ(

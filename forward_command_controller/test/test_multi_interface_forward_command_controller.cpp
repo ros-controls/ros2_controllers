@@ -71,12 +71,7 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(bool set_params
 
   if (set_params_and_activate)
   {
-<<<<<<< HEAD
     SetParametersAndActivateController();
-=======
-    ASSERT_TRUE(configure_succeeds(controller_));
-    ASSERT_TRUE(activate_succeeds(controller_));
->>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
   }
 }
 
@@ -86,10 +81,8 @@ void MultiInterfaceForwardCommandControllerTest::SetParametersAndActivateControl
   controller_->get_node()->set_parameter(
     {"interface_names", std::vector<std::string>{"position", "velocity", "effort"}});
 
-  auto node_state = controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(MultiInterfaceForwardCommandControllerTest, JointsParameterNotSet)
