@@ -91,8 +91,6 @@ def parse_joint_limits(
     urdf_string,
     joints_names,
     use_smallest_joint_limits=True,
-    allow_incomplete_joints=False,
-    logger=None,
 ):
     """
     Parse joint position and velocity limits from a URDF XML string.
@@ -107,15 +105,11 @@ def parse_joint_limits(
     urdf_string : str
         A complete URDF XML document as a string.
     joints_names : list[str]
-        The joints that the active controller manages.
+        The joints that the active controller manages. A joint in this list
+        that is missing its <limit> element will raise an Exception. Joints
+        NOT in this list that are missing limits are silently skipped.
     use_smallest_joint_limits : bool
         When True, safety_controller soft limits narrow the reported range.
-    allow_incomplete_joints : bool
-        When True, managed joints with incomplete limits are added with
-        conservative defaults and marked as not position-limited.
-    logger : rclpy.impl.rcutils_logger.RcutilsLogger | None
-        Optional logger used to emit warnings when incomplete joints are
-        tolerated.
 
     Returns
     -------
@@ -144,19 +138,6 @@ def parse_joint_limits(
 
         # No <limit> element at all means urdf_parser_py sets joint.limit to None
         if joint.limit is None:
-            if name in joints_names and allow_incomplete_joints:
-                if logger is not None:
-                    logger.warn(
-                        f"Joint '{name}' has no <limit> tag in the robot_description. "
-                        "Slider will be displayed but disabled."
-                    )
-                free_joints[name] = {
-                    "min_position": -2 * pi,
-                    "max_position": 2 * pi,
-                    "has_position_limits": False,
-                    "max_velocity": 1.0,
-                }
-                continue
             if name in joints_names:
                 raise Exception(
                     f"Missing limits tag for the joint : {name} in the robot_description!"
@@ -175,20 +156,6 @@ def parse_joint_limits(
             if joint.type == "continuous":
                 minval = -pi
                 maxval = pi
-            elif name in joints_names and allow_incomplete_joints:
-                if logger is not None:
-                    logger.warn(
-                        f"Joint '{name}' of type '{joint.type}' has missing/empty "
-                        "lower/upper position limits in the robot_description. "
-                        "Slider will be displayed but disabled."
-                    )
-                free_joints[name] = {
-                    "min_position": -2 * pi,
-                    "max_position": 2 * pi,
-                    "has_position_limits": False,
-                    "max_velocity": 1.0,
-                }
-                continue
             else:
                 raise Exception(
                     f"Missing lower/upper position limits for the joint"
@@ -196,19 +163,6 @@ def parse_joint_limits(
                 )
 
         if joint.limit.velocity is None:
-            if name in joints_names and allow_incomplete_joints:
-                if logger is not None:
-                    logger.warn(
-                        f"Joint '{name}' of type '{joint.type}' has missing/empty velocity "
-                        "limit in the robot_description. Slider will be displayed but disabled."
-                    )
-                free_joints[name] = {
-                    "min_position": -2 * pi,
-                    "max_position": 2 * pi,
-                    "has_position_limits": False,
-                    "max_velocity": 1.0,
-                }
-                continue
             raise Exception(
                 f"Missing velocity limits for the joint"
                 f" : {name} of type : {joint.type} in the robot_description!"
@@ -272,6 +226,4 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
         description,
         joints_names,
         use_smallest_joint_limits,
-        allow_incomplete_joints=True,
-        logger=node.get_logger(),
     )
