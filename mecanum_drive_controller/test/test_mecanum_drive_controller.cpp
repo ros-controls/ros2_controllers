@@ -233,7 +233,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_n
 
   SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
