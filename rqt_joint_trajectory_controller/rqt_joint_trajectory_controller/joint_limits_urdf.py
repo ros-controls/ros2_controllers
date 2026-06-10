@@ -175,19 +175,8 @@ def parse_joint_limits(
                 )
 
         if joint.limit.velocity is None:
-            if name in joints_names and allow_incomplete_joints:
-                if logger is not None:
-                    logger.warn(
-                        f"Joint '{name}' of type '{joint.type}' has missing/empty velocity "
-                        "limit in the robot_description. Slider will be displayed but disabled."
-                    )
-                free_joints[name] = {
-                    "min_position": -2 * pi,
-                    "max_position": 2 * pi,
-                    "has_position_limits": False,
-                    "max_velocity": 1.0,
-                }
-                continue
+            # urdf_parser_py already rejects a <limit> without velocity while
+            # constructing the Robot model, so this path is defensive only.
             raise Exception(
                 f"Missing velocity limits for the joint"
                 f" : {name} of type : {joint.type} in the robot_description!"

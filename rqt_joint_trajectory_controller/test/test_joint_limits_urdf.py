@@ -23,6 +23,7 @@ Run with:
 """
 
 import math
+
 import pytest
 
 from rqt_joint_trajectory_controller.joint_limits_urdf import parse_joint_limits
@@ -338,6 +339,37 @@ def test_missing_lower_upper_allow_incomplete_false_still_raises():
     )
     with pytest.raises(Exception, match="Missing lower/upper position limits"):
         parse_joint_limits(urdf, ["j"], allow_incomplete_joints=False)
+
+
+def test_missing_limit_tag_allow_incomplete_true_returns_disabled_joint():
+    """Tolerant mode keeps required joints but marks them non-position-limited."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    result = parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True)
+    assert result["j"]["has_position_limits"] is False
+    assert result["j"]["min_position"] == pytest.approx(-2.0 * math.pi)
+    assert result["j"]["max_position"] == pytest.approx(2.0 * math.pi)
+    assert result["j"]["max_velocity"] == pytest.approx(1.0)
+
+
+def test_missing_lower_upper_allow_incomplete_true_returns_disabled_joint():
+    """Tolerant mode handles missing lower/upper by creating a disabled slider joint."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    result = parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True)
+    assert result["j"]["has_position_limits"] is False
+    assert result["j"]["min_position"] == pytest.approx(-2.0 * math.pi)
+    assert result["j"]["max_position"] == pytest.approx(2.0 * math.pi)
+    assert result["j"]["max_velocity"] == pytest.approx(1.0)
 
 
 def test_missing_velocity_raises():
