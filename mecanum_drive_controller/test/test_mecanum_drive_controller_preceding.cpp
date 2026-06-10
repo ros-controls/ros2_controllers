@@ -44,7 +44,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_TRUE(controller_->params_.rear_right_wheel_state_joint_name.empty());
   ASSERT_TRUE(controller_->params_.rear_left_wheel_state_joint_name.empty());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.1);
 
@@ -72,7 +72,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto command_intefaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), joint_command_values_.size());
