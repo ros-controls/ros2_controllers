@@ -75,6 +75,26 @@ def _fixed(name):
     )
 
 
+class _TestLogger:
+    def __init__(self):
+        self.info_messages = []
+        self.warn_messages = []
+
+    def info(self, msg):
+        self.info_messages.append(msg)
+
+    def warn(self, msg):
+        self.warn_messages.append(msg)
+
+
+class _TestNode:
+    def __init__(self, logger):
+        self._logger = logger
+
+    def get_logger(self):
+        return self._logger
+
+
 # ---------------------------------------------------------------------------
 # Group 1: Revolute joint — the most common joint type in a robot arm.
 # The function must return exactly the values written in the URDF.
@@ -356,6 +376,20 @@ def test_missing_limit_tag_allow_incomplete_true_returns_disabled_joint():
     assert result["j"]["max_velocity"] == pytest.approx(1.0)
 
 
+def test_missing_limit_tag_allow_incomplete_true_logs_warning():
+    """Tolerant mode emits a warning through the provided logger."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    logger = _TestLogger()
+    parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
+    assert len(logger.warn_messages) == 1
+    assert "has no <limit> tag" in logger.warn_messages[0]
+
+
 def test_missing_lower_upper_allow_incomplete_true_returns_disabled_joint():
     """Tolerant mode handles missing lower/upper by creating a disabled slider joint."""
     urdf = _robot(
@@ -370,6 +404,21 @@ def test_missing_lower_upper_allow_incomplete_true_returns_disabled_joint():
     assert result["j"]["min_position"] == pytest.approx(-2.0 * math.pi)
     assert result["j"]["max_position"] == pytest.approx(2.0 * math.pi)
     assert result["j"]["max_velocity"] == pytest.approx(1.0)
+
+
+def test_missing_lower_upper_allow_incomplete_true_logs_warning():
+    """Tolerant mode logs when position bounds are incomplete."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    logger = _TestLogger()
+    parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
+    assert len(logger.warn_messages) == 1
+    assert "missing/empty lower/upper position limits" in logger.warn_messages[0]
 
 
 def test_missing_velocity_raises():
