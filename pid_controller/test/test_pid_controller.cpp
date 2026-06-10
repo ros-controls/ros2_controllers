@@ -608,6 +608,7 @@ TEST_F(PidControllerTest, test_update_chained_feedforward_with_gain)
   const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
+  controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
   ASSERT_TRUE(configure_succeeds(controller_));
 
   // check on interfaces & pid gain parameters
