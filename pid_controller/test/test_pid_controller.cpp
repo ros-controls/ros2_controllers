@@ -209,8 +209,8 @@ TEST_F(PidControllerTest, test_feedforward_mode_service)
   // initially set to OFF
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // should stay false
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
@@ -232,24 +232,24 @@ TEST_F(PidControllerTest, test_feedforward_mode_parameter)
 
   // initially set to OFF
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
   // Reconfigure after setting parameter to true
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", true}).successful);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-  ASSERT_EQ(controller_->on_cleanup(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   EXPECT_TRUE(controller_->get_node()->set_parameter({"enable_feedforward", false}).successful);
 
   // initially set to ON
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), true);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
   // Check updating mode during update_and_write_commands
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
 
   // Switch to ON
@@ -340,9 +340,9 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   executor.add_node(controller_->get_node()->get_node_base_interface());
   executor.add_node(service_caller_node_->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
   EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
