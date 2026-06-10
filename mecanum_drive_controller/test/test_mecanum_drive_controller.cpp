@@ -56,7 +56,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_configured_expect_all_para
   ASSERT_TRUE(controller_->params_.rear_right_wheel_state_joint_name.empty());
   ASSERT_TRUE(controller_->params_.rear_left_wheel_state_joint_name.empty());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   ASSERT_EQ(controller_->params_.reference_timeout, 0.9);
   ASSERT_EQ(controller_->params_.kinematics.wheels_radius, 0.5);
@@ -94,7 +94,7 @@ TEST_F(MecanumDriveControllerTest, when_controller_configured_expect_properly_ex
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check command itfs configuration
   auto command_intefaces = controller_->command_interface_configuration();
@@ -143,7 +143,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_na
 
   SetUpController("test_mecanum_drive_controller", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -178,7 +178,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_nam
 
   SetUpController("test_mecanum_drive_controller", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -205,7 +205,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_na
 
   SetUpController("test_mecanum_drive_controller", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -259,7 +259,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_na
 
   SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -287,7 +287,7 @@ TEST_F(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_n
 
   SetUpController("test_mecanum_drive_controller", node_options, test_namespace);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto odometry_message = controller_->odom_state_msg_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -304,8 +304,8 @@ TEST_F(MecanumDriveControllerTest, when_controller_is_activated_expect_reference
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // check that the message is reset
   auto msg = controller_->input_ref_.get();
@@ -317,8 +317,8 @@ TEST_F(MecanumDriveControllerTest, when_controller_active_and_update_called_expe
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -329,9 +329,9 @@ TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
 TEST_F(
@@ -340,12 +340,12 @@ TEST_F(
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 101.101);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
 
   ASSERT_EQ(
@@ -359,8 +359,8 @@ TEST_F(MecanumDriveControllerTest, when_update_is_called_expect_status_message)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   controller_->reference_interfaces_[0] = 1.5;
 
@@ -381,8 +381,8 @@ TEST_F(
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   // no reference_msg sent
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
@@ -425,8 +425,8 @@ TEST_F(MecanumDriveControllerTest, when_reference_msg_is_too_old_expect_unset_re
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   auto reference = controller_->input_ref_.get();
   auto old_timestamp = reference.header.stamp;
@@ -456,8 +456,8 @@ TEST_F(
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   auto reference = controller_->input_ref_.get();
   auto old_timestamp = reference.header.stamp;
@@ -491,8 +491,8 @@ TEST_F(MecanumDriveControllerTest, when_message_has_valid_timestamp_expect_refer
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   auto reference = controller_->input_ref_.get();
   EXPECT_TRUE(std::isnan(reference.twist.linear.x));
@@ -525,9 +525,9 @@ TEST_F(
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
@@ -623,9 +623,9 @@ TEST_F(
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   for (const auto & interface : controller_->reference_interfaces_)
@@ -679,8 +679,8 @@ TEST_F(
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // set command statically
   joint_command_values_[controller_->get_rear_left_wheel_index()] = command_lin_x;
@@ -726,8 +726,8 @@ TEST_F(
   SetUpController();
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   auto reference = controller_->input_ref_.get();
   EXPECT_TRUE(std::isnan(reference.twist.linear.x));
@@ -757,7 +757,7 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   SetUpController("test_mecanum_drive_controller_with_rotation");
 
   // Configure
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // Check on the base frame offset is set by the params
   EXPECT_EQ(controller_->odometry_.getBaseFrameOffset()[0], 1.0);
@@ -766,7 +766,7 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
 
   // Activate in chained mode
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(controller_->is_in_chained_mode(), true);
 
   // Setup reference interfaces for side to side motion
@@ -841,6 +841,76 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
   EXPECT_LT(std::abs(controller_->odometry_.getRz()), M_PI);
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(MecanumDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
+
+  controller_->set_chained_mode(true);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  const double dt = 0.02;  // 50Hz
+  rclcpp::Time test_time = controller_->get_node()->now();
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    controller_->reference_interfaces_[0] = vx;  // linear x
+    controller_->reference_interfaces_[1] = vy;  // linear y
+    controller_->reference_interfaces_[2] = wz;  // angular z
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+    test_time += period;
+
+    // Update wheel positions based on commands to simulate feedback
+    size_t fl = controller_->get_front_left_wheel_index();
+    size_t fr = controller_->get_front_right_wheel_index();
+    size_t rl = controller_->get_rear_left_wheel_index();
+    size_t rr = controller_->get_rear_right_wheel_index();
+
+    joint_state_values_[fl] = controller_->command_interfaces_[fl].get_optional().value();
+    joint_state_values_[fr] = controller_->command_interfaces_[fr].get_optional().value();
+    joint_state_values_[rl] = controller_->command_interfaces_[rl].get_optional().value();
+    joint_state_values_[rr] = controller_->command_interfaces_[rr].get_optional().value();
+  };
+
+  // 1. Move the robot forward
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;
+
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getRz(), 1.57079632679, 1e-5);
+
+  // 3. Move forward again to verify
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
+}
+
+>>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 // Test that when no velocity limits are configured (all NaN defaults),
 // commands pass through immediately without rate limiting.
 TEST_F(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured)
@@ -848,9 +918,9 @@ TEST_F(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured)
   // Use the default config which has no velocity limits set
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // Fill the queue with zero velocity
@@ -896,9 +966,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // Fill the speed limiter queue with zero velocity
@@ -1082,9 +1152,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_y)
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // Fill the speed limiter queue with zero velocity
@@ -1138,9 +1208,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_angular_z)
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // Fill the speed limiter queue with zero velocity
@@ -1193,9 +1263,9 @@ TEST_F(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state)
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // Dirty all buffers that reset_buffers() is responsible for clearing.
   controller_->reference_interfaces_[0] = 1.0;
@@ -1236,9 +1306,9 @@ TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buff
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   const double dt = 0.001;
   const double wheels_radius = 0.5;
@@ -1261,11 +1331,11 @@ TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buff
   EXPECT_NEAR(linear, controller_->previous_two_commands_.back()[0], 1e-3);
 
   // Deactivate then re-activate: limiter history must be reset to zero.
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
   EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
 
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
   EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
 
@@ -1298,9 +1368,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
 
   SetUpController("test_mecanum_drive_controller_with_limits");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   const double dt = 0.001;

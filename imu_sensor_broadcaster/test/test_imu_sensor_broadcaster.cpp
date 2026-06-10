@@ -35,11 +35,6 @@ using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-}  // namespace
-
 void IMUSensorBroadcasterTest::SetUpTestCase() {}
 
 void IMUSensorBroadcasterTest::TearDownTestCase() {}
@@ -127,7 +122,7 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Configure_Success)
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure passed
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -147,8 +142,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure and activate success
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -159,7 +154,7 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // deactivate passed
-  ASSERT_EQ(imu_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(imu_broadcaster_));
 
   // check interface configuration
   cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -178,8 +173,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Update_Success)
   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   ASSERT_EQ(
     imu_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -194,8 +189,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   sensor_msgs::msg::Imu imu_msg;
   subscribe_and_get_message(imu_msg);
@@ -220,6 +215,114 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   }
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset)
+{
+  SetUpIMUBroadcaster(
+    {// set the params 'sensor_name' and 'frame_id'
+     rclcpp::Parameter("sensor_name", sensor_name_), rclcpp::Parameter("frame_id", frame_id_),
+     // use Q = ENU->NED transform, same as in test_imu_transform.cpp
+     rclcpp::Parameter("rotation_offset.roll", M_PI),
+     rclcpp::Parameter("rotation_offset.pitch", 0.),
+     rclcpp::Parameter("rotation_offset.yaw", M_PI_2)});
+
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
+
+  sensor_msgs::msg::Imu imu_msg;
+  subscribe_and_get_message(imu_msg);
+
+  EXPECT_EQ(imu_msg.header.frame_id, frame_id_);
+
+  // Transforming orientation means expressing the attitude of the new frame in the same world frame
+  // (i.e. you have data in imu frame and want to ask what is the world-referenced orientation of
+  // the base_link frame that is attached to this IMU). This is why the orientation change goes the
+  // other way than the transform.
+  tf2::Quaternion init(sensor_values_[0], sensor_values_[1], sensor_values_[2], sensor_values_[3]);
+  tf2::Quaternion tf_quat;
+  tf_quat.setRPY(M_PI, 0., M_PI_2);
+  tf2::Quaternion rot;
+  tf2::convert(imu_msg.orientation, rot);
+  EXPECT_NEAR(0, rot.angleShortestPath(init * tf_quat.inverse()), 1e-6);
+  EXPECT_NEAR(imu_msg.angular_velocity.x, sensor_values_[5], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.y, sensor_values_[4], 1e-5);
+  EXPECT_NEAR(imu_msg.angular_velocity.z, -sensor_values_[6], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.x, sensor_values_[8], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.y, sensor_values_[7], 1e-5);
+  EXPECT_NEAR(imu_msg.linear_acceleration.z, -sensor_values_[9], 1e-5);
+
+  for (size_t i = 0; i < 9; ++i)
+  {
+    EXPECT_EQ(imu_msg.orientation_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.angular_velocity_covariance[i], 0.0);
+    EXPECT_EQ(imu_msg.linear_acceleration_covariance[i], 0.0);
+  }
+
+  // Check the exported state interfaces
+  const auto exported_state_interfaces = imu_broadcaster_->export_state_interfaces();
+  ASSERT_EQ(exported_state_interfaces.size(), 10u);
+  const std::string controller_name = imu_broadcaster_->get_node()->get_name();
+  ASSERT_EQ(
+    exported_state_interfaces[0]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.x");
+  ASSERT_EQ(
+    exported_state_interfaces[1]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.y");
+  ASSERT_EQ(
+    exported_state_interfaces[2]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.z");
+  ASSERT_EQ(
+    exported_state_interfaces[3]->get_name(),
+    controller_name + "/" + sensor_name_ + "/orientation.w");
+  ASSERT_EQ(
+    exported_state_interfaces[4]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.x");
+  ASSERT_EQ(
+    exported_state_interfaces[5]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.y");
+  ASSERT_EQ(
+    exported_state_interfaces[6]->get_name(),
+    controller_name + "/" + sensor_name_ + "/angular_velocity.z");
+  ASSERT_EQ(
+    exported_state_interfaces[7]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.x");
+  ASSERT_EQ(
+    exported_state_interfaces[8]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.y");
+  ASSERT_EQ(
+    exported_state_interfaces[9]->get_name(),
+    controller_name + "/" + sensor_name_ + "/linear_acceleration.z");
+  ASSERT_EQ(exported_state_interfaces[0]->get_interface_name(), "orientation.x");
+  ASSERT_EQ(exported_state_interfaces[1]->get_interface_name(), "orientation.y");
+  ASSERT_EQ(exported_state_interfaces[2]->get_interface_name(), "orientation.z");
+  ASSERT_EQ(exported_state_interfaces[3]->get_interface_name(), "orientation.w");
+  ASSERT_EQ(exported_state_interfaces[4]->get_interface_name(), "angular_velocity.x");
+  ASSERT_EQ(exported_state_interfaces[5]->get_interface_name(), "angular_velocity.y");
+  ASSERT_EQ(exported_state_interfaces[6]->get_interface_name(), "angular_velocity.z");
+  ASSERT_EQ(exported_state_interfaces[7]->get_interface_name(), "linear_acceleration.x");
+  ASSERT_EQ(exported_state_interfaces[8]->get_interface_name(), "linear_acceleration.y");
+  ASSERT_EQ(exported_state_interfaces[9]->get_interface_name(), "linear_acceleration.z");
+
+  EXPECT_NEAR(imu_msg.orientation.x, exported_state_interfaces[0]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.y, exported_state_interfaces[1]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.z, exported_state_interfaces[2]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(imu_msg.orientation.w, exported_state_interfaces[3]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.x, exported_state_interfaces[4]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.y, exported_state_interfaces[5]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.angular_velocity.z, exported_state_interfaces[6]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.x, exported_state_interfaces[7]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.y, exported_state_interfaces[8]->get_optional().value(), 1e-5);
+  EXPECT_NEAR(
+    imu_msg.linear_acceleration.z, exported_state_interfaces[9]->get_optional().value(), 1e-5);
+}
+
+>>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleMock(&argc, argv);

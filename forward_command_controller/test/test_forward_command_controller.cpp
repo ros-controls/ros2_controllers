@@ -122,10 +122,7 @@ TEST_F(ForwardCommandControllerTest, ConfigureParamsSuccess)
   controller_->get_node()->set_parameter({"joints", std::vector<std::string>{"joint1", "joint2"}});
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
-  // configure successful
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
@@ -175,10 +172,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
-  // activate successful
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
@@ -188,9 +182,7 @@ TEST_F(ForwardCommandControllerTest, ActivateSuccess)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
@@ -206,11 +198,15 @@ TEST_F(ForwardCommandControllerTest, CommandSuccessTest)
   SetUpController();
 
   // configure controller
+<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+=======
+  ASSERT_TRUE(configure_succeeds(controller_));
+>>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // update successful though no command has been send yet
   ASSERT_EQ(
@@ -243,12 +239,16 @@ TEST_F(ForwardCommandControllerTest, WrongCommandCheckTest)
   SetUpController();
 
   // configure controller
+<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
 
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+=======
+  ASSERT_TRUE(configure_succeeds(controller_));
+>>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // send command with wrong number of joints
   forward_command_controller::CmdType command_msg;
@@ -271,11 +271,15 @@ TEST_F(ForwardCommandControllerTest, NoCommandCheckTest)
   SetUpController();
 
   // configure controller
+<<<<<<< HEAD
   controller_->get_node()->set_parameter({"joints", joint_names_});
   controller_->get_node()->set_parameter({"interface_name", "position"});
   ASSERT_EQ(
     controller_->on_configure(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);
+=======
+  ASSERT_TRUE(configure_succeeds(controller_));
+>>>>>>> 3f51816 (Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (#2406))
 
   // update successful, no command received yet
   ASSERT_EQ(
@@ -300,11 +304,9 @@ TEST_F(ForwardCommandControllerTest, CommandCallbackTest)
   ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
   ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
-  auto node_state = controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // send a new command
   rclcpp::Node test_node("test_node");
@@ -346,11 +348,9 @@ TEST_F(ForwardCommandControllerTest, DropInfiniteCommandCallbackTest)
   ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
   ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
-  auto node_state = controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // send a new command
   rclcpp::Node test_node("test_node");
@@ -392,8 +392,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 2.1);
   ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 3.1);
 
-  auto node_state = controller_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
@@ -403,8 +402,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   ASSERT_THAT(state_if_conf.names, IsEmpty());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::NONE);
 
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
@@ -429,8 +427,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
   ASSERT_EQ(joint_2_pos_cmd_.get_optional().value(), 20);
   ASSERT_EQ(joint_3_pos_cmd_.get_optional().value(), 30);
 
-  node_state = controller_->get_node()->deactivate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
@@ -458,8 +455,7 @@ TEST_F(ForwardCommandControllerTest, ActivateDeactivateCommandsResetSuccess)
       ::testing::Not(::testing::NanSensitiveDoubleEq(std::numeric_limits<double>::quiet_NaN()))));
 
   // Now activate again
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // command ptr should be reset after activation - same check as in `update`
   cmd = controller_->rt_command_.get();
