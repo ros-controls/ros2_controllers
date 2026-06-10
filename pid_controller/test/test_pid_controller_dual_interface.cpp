@@ -57,12 +57,8 @@ public:
 TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface)
 {
   SetUpController("test_pid_controller_with_feedforward_gain_dual_interface");
-<<<<<<< HEAD
   controller_->get_node()->set_parameter(rclcpp::Parameter("enable_feedforward", true));
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-=======
   ASSERT_TRUE(configure_succeeds(controller_));
->>>>>>> 9f162e1 (Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (#2399))
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
