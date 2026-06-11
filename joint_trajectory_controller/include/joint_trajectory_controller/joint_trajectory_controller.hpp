@@ -273,12 +273,11 @@ protected:
   void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
-   * This is only possible if command AND state interfaces exist for the same type,
-   *  therefore needs check for both.
+   * state values (e.g. velocity, acceleration, or effort) which do not have command interfaces will
+   * NOT be updated.
    * @param[out] state to be filled with values from command interfaces.
-   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
-  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  void update_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
   void query_state_service(
@@ -296,6 +295,10 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
+  void assign_point_from_command_interface(
+    std::vector<double> & trajectory_point_interface,
+    const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> &
+      joint_interface);
 
   /**
    * @brief Set scaling factor used for speed scaling trajectory execution

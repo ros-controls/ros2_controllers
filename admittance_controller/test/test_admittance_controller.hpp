@@ -31,11 +31,13 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
@@ -49,6 +51,11 @@ using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
 using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
+
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
@@ -229,6 +236,7 @@ protected:
 
   void broadcast_tfs()
   {
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
     static tf2_ros::TransformBroadcaster br(
       rclcpp::node_interfaces::NodeInterfaces(

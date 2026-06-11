@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -44,14 +45,12 @@
 #include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "control_msgs/msg/motion_primitive.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using MotionPrimitive = control_msgs::msg::MotionPrimitive;
 using ExecuteMotion = control_msgs::action::ExecuteMotionPrimitiveSequence;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
 
 // subclassing and friending so we can access member variables
 class TestableMotionPrimitivesForwardController
