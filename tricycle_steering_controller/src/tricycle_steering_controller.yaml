@@ -3,11 +3,8 @@ tricycle_steering_controller:
     {
       type: double,
       default_value: 0.0,
-      description: "Axle track",
+      description: "Axle track, only for dual-traction configuration. Distance between the two traction wheels.",
       read_only: false,
-      validation: {
-        gt<>: [0.0]
-      }
     }
 
   wheelbase:

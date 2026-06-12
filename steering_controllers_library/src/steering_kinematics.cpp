@@ -312,6 +312,11 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
     else
     {
       // double-traction axle
+      if (is_close_to_zero(wheel_track_traction_))
+      {
+        throw std::runtime_error(
+          "Tricycle configuration with double-traction axle requires non-zero wheel track");
+      }
       if (is_close_to_zero(phi_IK))
       {
         // avoid division by zero
