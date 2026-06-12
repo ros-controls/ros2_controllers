@@ -63,7 +63,7 @@ static constexpr double WHEELS_TRACK_ = 2.12321;
 static constexpr double WHEELS_RADIUS_ = 0.45;
 
 // subclassing and friending so we can access member variables
-class TestableSteeringControllersLibrary
+class TestableAckermannSteeringController
 : public steering_controllers_library::SteeringControllersLibrary
 {
   FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);

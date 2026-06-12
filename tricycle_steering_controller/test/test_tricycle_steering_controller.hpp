@@ -38,12 +38,12 @@ using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // name constants for state interfaces
-using tricycle_steering_controller::STATE_STEER_AXIS;
+using tricycle_steering_controller::STATE_DUAL_TRACTION_STEER_AXIS;
 using tricycle_steering_controller::STATE_TRACTION_LEFT_WHEEL;
 using tricycle_steering_controller::STATE_TRACTION_RIGHT_WHEEL;
 
 // name constants for command interfaces
-using tricycle_steering_controller::CMD_STEER_WHEEL;
+using tricycle_steering_controller::CMD_DUAL_TRACTION_STEER_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_LEFT_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
 
@@ -174,7 +174,7 @@ protected:
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
         steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_WHEEL]));
+        &joint_command_values_[CMD_DUAL_TRACTION_STEER_WHEEL]));
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
@@ -196,7 +196,7 @@ protected:
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
         steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_AXIS]));
+        &joint_state_values_[STATE_DUAL_TRACTION_STEER_AXIS]));
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));

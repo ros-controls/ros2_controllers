@@ -103,10 +103,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     {
       case 1:
         odometry_.set_tricycle_nr_traction_wheels(1);
-        set_interface_numbers(2, 2, nr_ref_itfs_);
+        set_interface_numbers(2, 2);
         break;
       case 2:
         odometry_.set_tricycle_nr_traction_wheels(2);
+        set_interface_numbers(3, 3);
         break;
       default:
         RCLCPP_ERROR(

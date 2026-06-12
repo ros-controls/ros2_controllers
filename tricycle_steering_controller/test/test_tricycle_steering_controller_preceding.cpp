@@ -58,7 +58,7 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
     cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
     preceding_prefix_ + "/" + traction_joints_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_STEER_WHEEL],
+    cmd_if_conf.names[CMD_DUAL_TRACTION_STEER_WHEEL],
     preceding_prefix_ + "/" + steering_joints_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
@@ -71,7 +71,7 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
     state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
     controller_->traction_joints_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_if_conf.names[STATE_STEER_AXIS],
+    state_if_conf.names[STATE_DUAL_TRACTION_STEER_AXIS],
     controller_->steering_joints_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
