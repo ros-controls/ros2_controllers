@@ -126,6 +126,10 @@ bool SteeringKinematics::update_from_velocity(
 {
   steer_pos_ = steer_pos;
   double linear_velocity = traction_wheel_vel * wheel_radius_;
+  if (config_type_ == TRICYCLE_CONFIG && get_tricycle_nr_traction_wheels() == 1)
+  {
+    linear_velocity *= std::cos(steer_pos);
+  }
   const double angular_velocity = std::tan(steer_pos) * linear_velocity / wheel_base_;
 
   return update_odometry(linear_velocity, angular_velocity, dt);

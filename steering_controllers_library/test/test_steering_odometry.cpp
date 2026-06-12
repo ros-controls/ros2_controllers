@@ -283,7 +283,7 @@ TEST(TestSteeringOdometry, bicycle_odometry)
 
 // ----------------- tricycle -----------------
 
-TEST(TestSteeringOdometry, tricycle_IK_linear)
+TEST(TestSteeringOdometry, tricycle_dual_IK_linear)
 {
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
@@ -317,7 +317,7 @@ TEST(TestSteeringOdometry, tricycle_single_IK_linear)
   EXPECT_EQ(cmd1[0], 0.0);  // no steering
 }
 
-TEST(TestSteeringOdometry, tricycle_IK_left)
+TEST(TestSteeringOdometry, tricycle_dual_IK_left)
 {
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
@@ -326,13 +326,15 @@ TEST(TestSteeringOdometry, tricycle_IK_left)
   odom.update_from_position(0., 0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., 0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
-  EXPECT_GT(cmd0[0], cmd0[1]);   // right (outer) > left (inner)
+  ASSERT_THAT(cmd0.size(), 2);
+  EXPECT_GT(cmd0[0], cmd0[1]);  // right (outer) > left (inner)
   EXPECT_GT(cmd0[0], 0);
   auto cmd1 = std::get<1>(cmd);  // steer
-  EXPECT_GT(cmd1[0], 0);         // left steering
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_GT(cmd1[0], 0);  // left steering
 }
 
-TEST(TestSteeringOdometry, tricycle_IK_right)
+TEST(TestSteeringOdometry, tricycle_dual_IK_right)
 {
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
@@ -341,45 +343,87 @@ TEST(TestSteeringOdometry, tricycle_IK_right)
   odom.update_from_position(0., -0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., -0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
-  EXPECT_LT(cmd0[0], cmd0[1]);   // right (inner) < left (outer)
+  ASSERT_THAT(cmd0.size(), 2);
+  EXPECT_LT(cmd0[0], cmd0[1]);  // right (inner) < left (outer)
   EXPECT_GT(cmd0[0], 0);
   auto cmd1 = std::get<1>(cmd);  // steer
-  EXPECT_LT(cmd1[0], 0);         // right steering
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_LT(cmd1[0], 0);  // right steering
 }
 
-TEST(TestSteeringOdometry, tricycle_IK_right_steering_limited)
+TEST(TestSteeringOdometry, tricycle_single_IK_left)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+  odom.set_tricycle_nr_traction_wheels(1);
+  odom.update_from_position(0., 0.2, 1.);  // assume already turn
+  auto cmd = odom.get_commands(1., 0.1, false);
+  auto cmd0 = std::get<0>(cmd);  // vel
+  ASSERT_THAT(cmd0.size(), 1);
+  EXPECT_GT(cmd0[0], 0);
+  auto cmd1 = std::get<1>(cmd);  // steer
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_GT(cmd1[0], 0);  // left steering
+}
+
+TEST(TestSteeringOdometry, tricycle_single_IK_right)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+  odom.set_tricycle_nr_traction_wheels(1);
+  odom.update_from_position(0., -0.2, 1.);  // assume already turn
+  auto cmd = odom.get_commands(1., -0.1, false);
+  auto cmd0 = std::get<0>(cmd);  // vel
+  ASSERT_THAT(cmd0.size(), 1);
+  EXPECT_GT(cmd0[0], 0);
+  auto cmd1 = std::get<1>(cmd);  // steer
+  ASSERT_THAT(cmd1.size(), 1);
+  EXPECT_LT(cmd1[0], 0);  // right steering
+}
+
+TEST(TestSteeringOdometry, tricycle_dual_IK_right_steering_limited)
 {
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
   odom.set_tricycle_nr_traction_wheels(2);
 
+  // already steered, reduce_wheel_speed_until_steering_reached = true
   {
     odom.update_from_position(0., -0.785, 1.);  // already steered
     auto cmd = odom.get_commands(1., -0.5, false, true);
-    auto vel_cmd_steered = std::get<0>(cmd);            // vel
+    auto vel_cmd_steered = std::get<0>(cmd);  // vel
+    ASSERT_THAT(vel_cmd_steered.size(), 2);
     EXPECT_LT(vel_cmd_steered[0], vel_cmd_steered[1]);  // right (inner) < left (outer)
     EXPECT_GT(vel_cmd_steered[0], 0);
     auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
     EXPECT_LT(cmd1[0], 0);
   }
 
+  // not fully steered, reduce_wheel_speed_until_steering_reached = false
   std::vector<double> vel_cmd_not_steered;
   {
     odom.update_from_position(0., -0.1, 1.);  // not fully steered
     auto cmd = odom.get_commands(1., -0.5, false, false);
-    vel_cmd_not_steered = std::get<0>(cmd);                     // vel
+    vel_cmd_not_steered = std::get<0>(cmd);  // vel
+    ASSERT_THAT(vel_cmd_not_steered.size(), 2);
     EXPECT_LT(vel_cmd_not_steered[0], vel_cmd_not_steered[1]);  // right (inner) < left (outer)
     EXPECT_GT(vel_cmd_not_steered[0], 0);
     auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
     EXPECT_LT(cmd1[0], 0);
   }
 
+  // not fully steered, reduce_wheel_speed_until_steering_reached = true
   {
     odom.update_from_position(0., -0.1, 1.);  // not fully steered
     auto cmd = odom.get_commands(1., -0.5, false, true);
     auto cmd0 = std::get<0>(cmd);  // vel
-    EXPECT_LT(cmd0[0], cmd0[1]);   // right (inner) < left (outer)
+    ASSERT_THAT(cmd0.size(), 2);
+    EXPECT_LT(cmd0[0], cmd0[1]);  // right (inner) < left (outer)
     EXPECT_GT(cmd0[0], 0);
     // vel should be less than vel_cmd_not_steered now
     for (size_t i = 0; i < cmd0.size(); ++i)
@@ -387,11 +431,59 @@ TEST(TestSteeringOdometry, tricycle_IK_right_steering_limited)
       EXPECT_LT(cmd0[i], vel_cmd_not_steered[i]);
     }
     auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
     EXPECT_LT(cmd1[0], 0);
   }
 }
 
-TEST(TestSteeringOdometry, tricycle_odometry)
+TEST(TestSteeringOdometry, tricycle_single_IK_right_steering_limited)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  odom.set_wheel_params(1., 2., 1.);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+  odom.set_tricycle_nr_traction_wheels(1);
+
+  // already steered, reduce_wheel_speed_until_steering_reached = true
+  {
+    odom.update_from_position(0., -0.785, 1.);  // already steered
+    auto cmd = odom.get_commands(1., -0.5, false, true);
+    auto vel_cmd_steered = std::get<0>(cmd);  // vel
+    ASSERT_THAT(vel_cmd_steered.size(), 1);
+    EXPECT_GT(vel_cmd_steered[0], 0);
+    auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
+    EXPECT_LT(cmd1[0], 0);
+  }
+
+  // not fully steered, reduce_wheel_speed_until_steering_reached = false
+  std::vector<double> vel_cmd_not_steered;
+  {
+    odom.update_from_position(0., -0.1, 1.);  // not fully steered
+    auto cmd = odom.get_commands(1., -0.5, false, false);
+    vel_cmd_not_steered = std::get<0>(cmd);  // vel
+    ASSERT_THAT(vel_cmd_not_steered.size(), 1);
+    EXPECT_GT(vel_cmd_not_steered[0], 0);
+    auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
+    EXPECT_LT(cmd1[0], 0);
+  }
+
+  // not fully steered, reduce_wheel_speed_until_steering_reached = true
+  {
+    odom.update_from_position(0., -0.1, 1.);  // not fully steered
+    auto cmd = odom.get_commands(1., -0.5, false, true);
+    auto cmd0 = std::get<0>(cmd);  // vel
+    ASSERT_THAT(cmd0.size(), 1);
+    EXPECT_GT(cmd0[0], 0);
+    // vel should be less than vel_cmd_not_steered now
+    EXPECT_LT(cmd0[0], vel_cmd_not_steered[0]);
+    auto cmd1 = std::get<1>(cmd);  // steer
+    ASSERT_THAT(cmd1.size(), 1);
+    EXPECT_LT(cmd1[0], 0);
+  }
+}
+
+TEST(TestSteeringOdometry, tricycle_dual_odometry)
 {
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 1., 1.);
@@ -399,6 +491,19 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   odom.set_tricycle_nr_traction_wheels(2);
   ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1));
   EXPECT_NEAR(odom.get_linear(), 1.002, 1e-3);
+  EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_x(), .1, 1e-3);
+  EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
+}
+
+TEST(TestSteeringOdometry, tricycle_single_odometry)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  odom.set_wheel_params(1., 1., 1.);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+  odom.set_tricycle_nr_traction_wheels(1);
+  ASSERT_TRUE(odom.update_from_velocity(1., .1, .1));
+  EXPECT_NEAR(odom.get_linear(), 0.995, 1e-3);
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);

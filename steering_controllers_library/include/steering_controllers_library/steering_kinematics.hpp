@@ -98,6 +98,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for bicycle or tricycle config with single traction
+   *
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
@@ -108,6 +111,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for tricycle config with dual traction
+   *
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
@@ -120,6 +126,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for ackermann config
+   *
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param right_steer_pos Right steer wheel position [rad]
