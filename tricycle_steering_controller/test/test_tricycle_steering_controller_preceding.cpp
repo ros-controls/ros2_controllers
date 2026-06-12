@@ -17,15 +17,16 @@
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "test_tricycle_steering_controller.hpp"
-class TricycleSteeringControllerTest
-: public TricycleSteeringControllerFixture<TestableTricycleSteeringController>
+#include "test_tricycle_steering_controller_dual_traction.hpp"
+class TricycleSteeringControllerDualTractionTest
+: public TricycleSteeringControllerDualTractionFixture<
+    TestableTricycleSteeringControllerDualTraction>
 {
 };
 
-TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
+TEST_F(TricycleSteeringControllerDualTractionTest, all_parameters_set_configure_success)
 {
-  SetUpController();
+  SetUpController("test_tricycle_steering_controller_dual_traction_preceding");
 
   ASSERT_TRUE(configure_succeeds(controller_));
 
@@ -43,9 +44,9 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->tricycle_params_.traction_track_width, traction_track_width_);
 }
 
-TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
+TEST_F(TricycleSteeringControllerDualTractionTest, check_exported_interfaces)
 {
-  SetUpController();
+  SetUpController("test_tricycle_steering_controller_dual_traction_preceding");
 
   ASSERT_TRUE(configure_succeeds(controller_));
 

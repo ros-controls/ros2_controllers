@@ -1,4 +1,4 @@
-test_tricycle_steering_controller:
+test_tricycle_steering_controller_dual_traction:
   ros__parameters:
 
     reference_timeout: 2.0
@@ -6,6 +6,20 @@ test_tricycle_steering_controller:
     velocity_rolling_window_size: 10
     position_feedback: false
     traction_joints_names: [rear_right_wheel_joint, rear_left_wheel_joint]
+    steering_joints_names: [steering_axis_joint]
+
+    wheelbase: 3.24644
+    traction_track_width: 1.212121
+    traction_wheels_radius: 0.45
+
+test_tricycle_steering_controller_single_traction:
+  ros__parameters:
+
+    reference_timeout: 2.0
+    open_loop: false
+    velocity_rolling_window_size: 10
+    position_feedback: false
+    traction_joints_names: [traction_wheel_joint]
     steering_joints_names: [steering_axis_joint]
 
     wheelbase: 3.24644
