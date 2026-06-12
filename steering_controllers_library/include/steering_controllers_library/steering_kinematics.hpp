@@ -224,13 +224,17 @@ public:
    * \brief Set tricycle config
    * \param nr_traction_wheels number of traction wheels
    */
-  void set_tricycle_config(const size_t nr_traction_wheels);
+  void set_tricycle_nr_traction_wheels(const size_t nr_traction_wheels)
+  {
+    tricycle_nr_traction_wheels_ = nr_traction_wheels;
+  }
 
   /**
    * \brief Get tricycle config
    * \return number of traction wheels
    */
-  size_t get_tricycle_config() const { return tricycle_nr_traction_wheels_; }
+  size_t get_tricycle_nr_traction_wheels() const { return tricycle_nr_traction_wheels_; }
+
 private:
   /**
    * \brief Uses precomputed linear and angular velocities to compute odometry

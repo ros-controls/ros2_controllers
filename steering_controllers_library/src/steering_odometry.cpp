@@ -100,13 +100,15 @@ void SteeringOdometry::set_odometry_type(const unsigned int type)
   sk_impl_.set_odometry_type(type);
 }
 
-void SteeringOdometry::set_tricycle_config(const size_t nr_traction_wheels)
+void SteeringOdometry::set_tricycle_nr_traction_wheels(const size_t nr_traction_wheels)
 {
-  sk_impl_.set_tricycle_config(nr_traction_wheels);
+  sk_impl_.set_tricycle_nr_traction_wheels(nr_traction_wheels);
 }
 
-size_t SteeringOdometry::get_tricycle_config() const { return sk_impl_.get_tricycle_config(); }
-
+size_t SteeringOdometry::get_tricycle_nr_traction_wheels() const
+{
+  return sk_impl_.get_tricycle_nr_traction_wheels();
+}
 
 std::tuple<std::vector<double>, std::vector<double>> SteeringOdometry::get_commands(
   const double v_bx, const double omega_bz, const bool open_loop,

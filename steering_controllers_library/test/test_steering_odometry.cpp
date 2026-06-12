@@ -288,7 +288,7 @@ TEST(TestSteeringOdometry, tricycle_IK_linear)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(2);
+  odom.set_tricycle_nr_traction_wheels(2);
   odom.update_open_loop(1., 0., 1.);
   auto cmd = odom.get_commands(1., 0., true);
   auto cmd0 = std::get<0>(cmd);  // vel
@@ -305,7 +305,7 @@ TEST(TestSteeringOdometry, tricycle_single_IK_linear)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(1);
+  odom.set_tricycle_nr_traction_wheels(1);
 
   odom.update_open_loop(1., 0., 1.);
   auto cmd = odom.get_commands(1., 0., true);
@@ -322,7 +322,7 @@ TEST(TestSteeringOdometry, tricycle_IK_left)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(2);
+  odom.set_tricycle_nr_traction_wheels(2);
   odom.update_from_position(0., 0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., 0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
@@ -337,7 +337,7 @@ TEST(TestSteeringOdometry, tricycle_IK_right)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(2);
+  odom.set_tricycle_nr_traction_wheels(2);
   odom.update_from_position(0., -0.2, 1.);  // assume already turn
   auto cmd = odom.get_commands(1., -0.1, false);
   auto cmd0 = std::get<0>(cmd);  // vel
@@ -352,7 +352,7 @@ TEST(TestSteeringOdometry, tricycle_IK_right_steering_limited)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 2., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(2);
+  odom.set_tricycle_nr_traction_wheels(2);
 
   {
     odom.update_from_position(0., -0.785, 1.);  // already steered
@@ -396,7 +396,7 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   steering_kinematics::SteeringKinematics odom(1);
   odom.set_wheel_params(1., 1., 1.);
   odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
-  odom.set_tricycle_config(2);
+  odom.set_tricycle_nr_traction_wheels(2);
   ASSERT_TRUE(odom.update_from_velocity(1., 1., .1, .1));
   EXPECT_NEAR(odom.get_linear(), 1.002, 1e-3);
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);

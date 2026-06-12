@@ -225,11 +225,6 @@ void SteeringKinematics::set_odometry_type(const unsigned int type)
   config_type_ = static_cast<int>(type);
 }
 
-void SteeringKinematics::set_tricycle_config(const size_t nr_traction_wheels)
-{
-  tricycle_nr_traction_wheels_ = nr_traction_wheels;
-}
-
 double SteeringKinematics::convert_twist_to_steering_angle(double v_bx, double omega_bz)
 {
   // phi can be nan if both v_bx and omega_bz are zero
@@ -246,8 +241,8 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
 
   // calculate steering angle
   if (
-    config_type_ == TRICYCLE_CONFIG && get_tricycle_config() == 1 && is_close_to_zero(v_bx) &&
-    !is_close_to_zero(omega_bz))
+    config_type_ == TRICYCLE_CONFIG && get_tricycle_nr_traction_wheels() == 1 &&
+    is_close_to_zero(v_bx) && !is_close_to_zero(omega_bz))
   {
     // turning on the spot
     phi = omega_bz > 0 ? M_PI_2 : -M_PI_2;
@@ -297,7 +292,7 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
     std::vector<double> traction_commands;
     std::vector<double> steering_commands;
 
-    if (get_tricycle_config() == 1)
+    if (get_tricycle_nr_traction_wheels() == 1)
     {
       // if traction is on the steering axis
       if (is_close_to_zero(v_bx) && !is_close_to_zero(omega_bz))
