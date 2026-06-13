@@ -74,6 +74,9 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, applies_velocity_limits_to_references);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_speed_limiter_runtime_update);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_reset_buffers_clears_limiter_state);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_buffers);
   FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
 
 public:
