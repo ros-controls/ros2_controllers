@@ -14,6 +14,7 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <deque>
 #include <limits>
 #include <memory>
 #include <string>
@@ -81,6 +82,26 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
+
+  try
+  {
+    limiter_linear_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+      params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+      params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+      params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+    limiter_angular_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+      params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+      params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+      params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure speed limiter parameters: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   // call method from implementations, sets odometry type
   configure_odometry();
@@ -263,8 +284,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
 
-  reset_controller_reference_msg(current_ref_, get_node());
-  input_ref_.set(current_ref_);
+  reset_buffers();
 
   try
   {
@@ -468,17 +488,30 @@ bool SteeringControllersLibrary::on_set_chained_mode(bool /*chained_mode*/) { re
 controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Try to set default value in command.
-  // If this fails, then another command will be received soon anyways.
-  reset_controller_reference_msg(current_ref_, get_node());
-  input_ref_.try_set(current_ref_);
+  // Reset history and references to avoid stale values after a deactivate->activate cycle.
+  reset_buffers();
 
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void SteeringControllersLibrary::reset_buffers()
+{
+  std::fill(
+    reference_interfaces_.begin(), reference_interfaces_.end(),
+    std::numeric_limits<double>::quiet_NaN());
+
+  previous_two_commands_ = std::queue<std::array<double, 2>>(
+    std::deque<std::array<double, 2>>{{{0.0, 0.0}}, {{0.0, 0.0}}});
+
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 }
 
 controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  reset_buffers();
+
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
     if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
@@ -563,6 +596,29 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 {
   auto logger = get_node()->get_logger();
 
+  if (param_listener_->try_update_params(params_))
+  {
+    ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
+    try
+    {
+      limiter_linear_->set_params(
+        params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+        params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+        params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+        params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+      limiter_angular_->set_params(
+        params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+        params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+        params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+        params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+    }
+    catch (const std::invalid_argument & e)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to update speed limiter parameters: %s", e.what());
+    }
+  }
+
   // check if odometry set was requested by non-RT thread
   if (set_odom_requested_.load())
   {
@@ -584,13 +640,28 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
 
   // MOVE ROBOT
 
-  // Limit velocities and accelerations:
-  // TODO(destogl): add limiter for the velocities
-
   if (!std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]))
   {
+    double linear_command = reference_interfaces_[0];
+    double angular_command = reference_interfaces_[1];
+
+    double & last_linear = previous_two_commands_.back()[0];
+    double & second_to_last_linear = previous_two_commands_.front()[0];
+    double & last_angular = previous_two_commands_.back()[1];
+    double & second_to_last_angular = previous_two_commands_.front()[1];
+
+    limiter_linear_->limit(linear_command, last_linear, second_to_last_linear, period.seconds());
+    limiter_angular_->limit(
+      angular_command, last_angular, second_to_last_angular, period.seconds());
+
+    previous_two_commands_.pop();
+    previous_two_commands_.push({{linear_command, angular_command}});
+
+    last_linear_velocity_ = linear_command;
+    last_angular_velocity_ = angular_command;
+
     auto [traction_commands, steering_commands] = odometry_.get_commands(
-      reference_interfaces_[0], reference_interfaces_[1], params_.open_loop,
+      linear_command, angular_command, params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
 
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
@@ -763,15 +834,10 @@ bool SteeringControllersLibrary::reset()
 {
   odometry_.set_odometry(0.0, 0.0, 0.0);
 
-  reset_controller_reference_msg(current_ref_, get_node());
-  input_ref_.set(current_ref_);
+  reset_buffers();
 
   last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
   last_angular_velocity_ = std::numeric_limits<double>::quiet_NaN();
-  for (auto & interface : reference_interfaces_)
-  {
-    interface = std::numeric_limits<double>::quiet_NaN();
-  }
 
   ref_subscriber_twist_.reset();
   set_odom_service_.reset();

@@ -386,6 +386,49 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
+TEST_F(SteeringControllersLibraryTest, applies_velocity_limits_to_references)
+{
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("linear.x.max_velocity", rclcpp::ParameterValue(0.1));
+  node_options.append_parameter_override("angular.z.max_velocity", rclcpp::ParameterValue(0.1));
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(false);
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 1.5;
+  msg.twist.linear.y = 0.0;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = 0.3;
+  controller_->input_ref_.set(msg);
+
+  const auto expected_commands = controller_->odometry_.get_commands(
+    0.1, 0.1, controller_->params_.open_loop,
+    controller_->params_.reduce_wheel_speed_until_steering_reached);
+
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    std::get<0>(expected_commands)[CMD_TRACTION_RIGHT_WHEEL], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    std::get<0>(expected_commands)[CMD_TRACTION_LEFT_WHEEL], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    std::get<1>(expected_commands)[0], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    std::get<1>(expected_commands)[1], 1e-6);
+}
+
 TEST_F(SteeringControllersLibraryTest, odometry_set_service)
 {
   // 0. Initialize and Activate

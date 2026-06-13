@@ -15,11 +15,14 @@
 #ifndef STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
 #define STEERING_CONTROLLERS_LIBRARY__STEERING_CONTROLLERS_LIBRARY_HPP_
 
+#include <array>
 #include <cmath>
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
+#include "control_toolbox/rate_limiter.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/handle.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -67,6 +70,8 @@ public:
 
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
+
+  void reset_buffers();
 
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
@@ -143,6 +148,13 @@ protected:
   // last velocity commands for open loop odometry
   double last_linear_velocity_ = 0.0;
   double last_angular_velocity_ = 0.0;
+
+  // Speed limiters
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_linear_;
+  std::unique_ptr<control_toolbox::RateLimiter<double>> limiter_angular_;
+
+  // Previous two commands for jerk limiting: queue of [linear, angular]
+  std::queue<std::array<double, 2>> previous_two_commands_;
 
   std::vector<std::string> traction_joints_state_names_;
   std::vector<std::string> steering_joints_state_names_;

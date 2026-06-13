@@ -73,6 +73,7 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, applies_velocity_limits_to_references);
   FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
 
 public:
