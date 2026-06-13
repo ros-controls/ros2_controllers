@@ -138,6 +138,12 @@ protected:
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
   SteeringControllerStateMsg controller_state_msg_;
 
+  std::shared_ptr<rclcpp::Publisher<ControllerTwistReferenceMsg>> limited_velocity_publisher_ =
+    nullptr;
+  std::shared_ptr<realtime_tools::RealtimePublisher<ControllerTwistReferenceMsg>>
+    rt_limited_velocity_publisher_ = nullptr;
+  ControllerTwistReferenceMsg limited_velocity_message_;
+
   // name constants for state interfaces
   size_t nr_state_itfs_;
   // name constants for command interfaces

@@ -92,6 +92,12 @@ steering_controllers_library:
     description: "Publishing to tf is enabled or disabled?",
     read_only: false,
   }
+  publish_limited_velocity: {
+    type: bool,
+    default_value: false,
+    description: "Publish limited velocity value.",
+    read_only: true,
+  }
 
   tf_frame_prefix:
     {

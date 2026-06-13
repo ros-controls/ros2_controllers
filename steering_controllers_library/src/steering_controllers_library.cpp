@@ -44,6 +44,7 @@ void reset_controller_reference_msg(
   msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
+constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "~/cmd_vel_out";
 }  // namespace
 
 namespace steering_controllers_library
@@ -299,6 +300,26 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
       stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
       e.what());
     return controller_interface::CallbackReturn::ERROR;
+  }
+
+  if (params_.publish_limited_velocity)
+  {
+    try
+    {
+      limited_velocity_publisher_ = get_node()->create_publisher<ControllerTwistReferenceMsg>(
+        DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+      rt_limited_velocity_publisher_ =
+        std::make_shared<realtime_tools::RealtimePublisher<ControllerTwistReferenceMsg>>(
+          limited_velocity_publisher_);
+    }
+    catch (const std::exception & e)
+    {
+      fprintf(
+        stderr,
+        "Exception thrown during publisher creation at configure stage with message : %s \n",
+        e.what());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
@@ -800,6 +821,19 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     }
 
     controller_state_publisher_->try_publish(controller_state_msg_);
+  }
+
+  // Publish limited velocity
+  if (params_.publish_limited_velocity && rt_limited_velocity_publisher_)
+  {
+    limited_velocity_message_.header.stamp = time;
+    limited_velocity_message_.twist.linear.x = last_linear_velocity_;
+    limited_velocity_message_.twist.linear.y = 0.0;
+    limited_velocity_message_.twist.linear.z = 0.0;
+    limited_velocity_message_.twist.angular.x = 0.0;
+    limited_velocity_message_.twist.angular.y = 0.0;
+    limited_velocity_message_.twist.angular.z = last_angular_velocity_;
+    rt_limited_velocity_publisher_->try_publish(limited_velocity_message_);
   }
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
