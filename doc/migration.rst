@@ -51,7 +51,7 @@ tricycle_steering_controller
 
   .. code:: yaml
 
-    # changes from tricycle_controller
+    # parameters to be changed from tricycle_controller
     traction_joint_name: traction_joint
     steering_joint_name: steering_joint
     wheel_radius: 0.3
@@ -62,14 +62,14 @@ tricycle_steering_controller
     steering_joints_names: ["steering_joint"]
     traction_wheels_radius: 0.3
     reference_timeout: 0.5 # In seconds.
-    reduce_wheel_speed_until_steering_reached: true
+    reduce_wheel_speed_until_steering_reached: true # is default false
 
-    # removed parameters
+    # remove parameters
     odom_only_twist: false
     publish_ackermann_command: true
 
   * ROS command topic changed from ``/tricycle_controller/cmd_vel`` to ``/tricycle_controller/reference``.
-
+  * Limiters: While tricycle_controller had limiters of the command interfaces does tricycle_steering_controller instead have limiters for the reference velocity. Update the URDF to enforce command limits from the ressource_manager, and add ``limits.angular.z`` and ``limits.linear.x`` if necessary.
 
 tricycle_controller
 *****************************
