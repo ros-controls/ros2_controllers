@@ -1131,7 +1131,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
         std::placeholders::_2),
       std::bind(&GpioToolController::handle_engaging_cancel, this, std::placeholders::_1),
       std::bind(
-        &GpioToolController::handle_action_accepted<EngagingActionType>, this,
+        &GpioToolController::handle_state_action_accepted, this,
         std::placeholders::_1));
 
     if (configuration_control_enabled_)
@@ -1144,7 +1144,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
           std::placeholders::_2),
         std::bind(&GpioToolController::handle_config_cancel, this, std::placeholders::_1),
         std::bind(
-          &GpioToolController::handle_action_accepted<ConfigActionType>, this,
+          &GpioToolController::handle_config_action_accepted, this,
           std::placeholders::_1));
     }
   }
@@ -1337,12 +1337,11 @@ rclcpp_action::CancelResponse GpioToolController::handle_config_cancel(
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-template <typename ActionT>
-void GpioToolController::handle_action_accepted(
-  std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> goal_handle)
+void GpioToolController::handle_state_action_accepted(
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<EngagingActionType>> goal_handle)
 {
-  auto result = std::make_shared<typename ActionT::Result>();
-  auto feedback = std::make_shared<typename ActionT::Feedback>();
+  auto result = std::make_shared<EngagingActionType::Result>();
+  auto feedback = std::make_shared<EngagingActionType::Feedback>();
 
   while (true)
   {
@@ -1358,6 +1357,42 @@ void GpioToolController::handle_action_accepted(
     {
       result->success = false;
       result->resulting_state_name = current_state_.get();
+      result->message =
+        "Tool action canceled or halted! Check the error, reset the tool using '~/reset_halted' "
+        "service and set to sensible state.";
+      goal_handle->abort(result);
+      break;
+    }
+    else
+    {
+      feedback->transition.state = current_tool_transition_.load();
+      goal_handle->publish_feedback(feedback);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+
+void GpioToolController::handle_config_action_accepted(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ConfigActionType>> goal_handle)
+{
+  auto result = std::make_shared<ConfigActionType::Result>();
+  auto feedback = std::make_shared<ConfigActionType::Feedback>();
+
+  while (true)
+  {
+    if (current_tool_action_.load() == ToolAction::IDLE)
+    {
+      result->success = true;
+      result->resulting_config_name = current_configuration_.get();
+      result->message = "Tool action successfully executed!";
+      goal_handle->succeed(result);
+      break;
+    }
+    else if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
+    {
+      result->success = false;
+      result->resulting_config_name = current_configuration_.get();
       result->message =
         "Tool action canceled or halted! Check the error, reset the tool using '~/reset_halted' "
         "service and set to sensible state.";

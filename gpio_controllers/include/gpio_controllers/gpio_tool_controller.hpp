@@ -330,12 +330,18 @@ private:
     std::shared_ptr<rclcpp_action::ServerGoalHandle<ConfigActionType>> goal_handle);
 
   /**
-   * @brief Handles the accepted goal for the tool state and configuration changes.
+   * @brief Handles the accepted goal for the tool state changes.
    * @param goal_handle The handle of the accepted goal.
    */
-  template <typename ActionT>
-  void handle_action_accepted(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> goal_handle);
+  void handle_state_action_accepted(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<EngagingActionType>> goal_handle);
+
+  /**
+   * @brief Handles the accepted goal for the configuration changes.
+   * @param goal_handle The handle of the accepted goal.
+   */
+  void handle_config_action_accepted(
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ConfigActionType>> goal_handle);
 };
 
 }  // namespace gpio_tool_controller
