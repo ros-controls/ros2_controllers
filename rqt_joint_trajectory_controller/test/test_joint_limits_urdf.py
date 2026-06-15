@@ -25,7 +25,11 @@ Run with:
 import math
 import pytest
 
-from rqt_joint_trajectory_controller.joint_limits_urdf import parse_joint_limits
+from rqt_joint_trajectory_controller import joint_limits_urdf
+from rqt_joint_trajectory_controller.joint_limits_urdf import (
+    get_joint_limits,
+    parse_joint_limits,
+)
 
 # ---------------------------------------------------------------------------
 # Small URDF builder helpers
@@ -72,6 +76,26 @@ def _fixed(name):
         f'<parent link="base"/><child link="{name}_link"/>'
         f"</joint>"
     )
+
+
+class _TestLogger:
+    def __init__(self):
+        self.info_messages = []
+        self.warn_messages = []
+
+    def info(self, msg):
+        self.info_messages.append(msg)
+
+    def warn(self, msg):
+        self.warn_messages.append(msg)
+
+
+class _TestNode:
+    def __init__(self, logger):
+        self._logger = logger
+
+    def get_logger(self):
+        return self._logger
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +337,27 @@ def test_revolute_joint_missing_lower_upper_raises():
     )
     with pytest.raises(Exception, match="Missing lower/upper position limits"):
         parse_joint_limits(urdf, ["j"])
+
+
+def test_get_joint_limits_empty_description_returns_empty_dict(monkeypatch):
+    """Without a robot description, get_joint_limits times out and returns {}."""
+    logger = _TestLogger()
+    node = _TestNode(logger)
+
+    monkeypatch.setattr(joint_limits_urdf, "robot_description_subscriber_created", True)
+    monkeypatch.setattr(joint_limits_urdf, "_robot_description_topic", "/robot_description")
+    monkeypatch.setattr(joint_limits_urdf, "_spin_count", 0)
+    monkeypatch.setattr(joint_limits_urdf, "description", "")
+    monkeypatch.setattr(joint_limits_urdf.rclpy, "spin_once", lambda *_args, **_kwargs: None)
+
+    result = get_joint_limits(node, ["j"])
+
+    assert result == {}
+    assert len(logger.info_messages) == 2
+    assert all(
+        msg == 'Waiting for robot description on topic "/robot_description" ...'
+        for msg in logger.info_messages
+    )
 
 
 def test_missing_velocity_raises():

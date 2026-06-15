@@ -22,10 +22,16 @@ import xml.etree.ElementTree as ET
 from math import pi
 
 import rclpy
+import rclpy.subscription
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 from urdf_parser_py.urdf import Robot
 
 description = ""
+robot_description_subscriber_created = False
+subscription = None
+_robot_description_topic = ""
+_spin_count = 0
 
 
 # Tags defined as direct children of <robot> in the URDF specification.
@@ -40,12 +46,27 @@ def callback(msg):
     description = msg.data
 
 
-def subscribe_to_robot_description(node, key="robot_description"):
-    qos_profile = rclpy.qos.QoSProfile(depth=1)
-    qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
-    qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
+def subscribe_to_robot_description(
+    node, key="robot_description"
+) -> rclpy.subscription.Subscription:
+    global robot_description_subscriber_created, subscription, _robot_description_topic, _spin_count
+    qos_profile = QoSProfile(depth=1)
+    qos_profile.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    qos_profile.reliability = ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    _robot_description_topic = key
+    _spin_count = 0
+    subscription = node.create_subscription(String, key, callback, qos_profile)
+    robot_description_subscriber_created = True
+    return subscription
+
+
+def unsubscribe_to_robot_description(node) -> None:
+    global robot_description_subscriber_created, subscription
+    if subscription is not None:
+        node.destroy_subscription(subscription)
+        subscription = None
+        robot_description_subscriber_created = False
 
 
 def _strip_non_urdf_tags(urdf_string):
@@ -66,7 +87,11 @@ def _strip_non_urdf_tags(urdf_string):
     return ET.tostring(root, encoding="unicode")
 
 
-def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True):
+def parse_joint_limits(
+    urdf_string,
+    joints_names,
+    use_smallest_joint_limits=True,
+):
     """
     Parse joint position and velocity limits from a URDF XML string.
 
@@ -179,13 +204,26 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     real parsing work to parse_joint_limits(). This separation means
     parse_joint_limits() can be tested without any ROS infrastructure.
     """
+    if not robot_description_subscriber_created:
+        return {}
+
+    global _spin_count
+
     count = 0
     while description == "" and count < 10:
-        print("Waiting for the robot_description!")
         count += 1
+        _spin_count += 1
         rclpy.spin_once(node, timeout_sec=1.0)
+        if _spin_count % 5 == 0:
+            node.get_logger().info(
+                f'Waiting for robot description on topic "{_robot_description_topic}" ...'
+            )
 
     if description == "":
         return {}
 
-    return parse_joint_limits(description, joints_names, use_smallest_joint_limits)
+    return parse_joint_limits(
+        description,
+        joints_names,
+        use_smallest_joint_limits,
+    )
