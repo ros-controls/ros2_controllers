@@ -562,11 +562,22 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing)
   ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   // is none of requested interfaces do not exist, the controller will not be activated
-  EXPECT_THAT(
-    [this]() { activate_succeeds(state_broadcaster_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(state_broadcaster_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)

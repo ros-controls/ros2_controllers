@@ -2753,11 +2753,22 @@ TEST_F(
   ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   AssignInterfaces();
-  EXPECT_THAT(
-    [this]() { activate_succeeds(traj_controller_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(traj_controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(
@@ -2774,11 +2785,22 @@ TEST_F(
   ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   AssignInterfaces();
-  EXPECT_THAT(
-    [this]() { activate_succeeds(traj_controller_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(traj_controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)

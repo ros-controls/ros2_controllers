@@ -202,11 +202,22 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_without_resources_assigned)
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
   EXPECT_TRUE(configure_succeeds(controller_));
-  EXPECT_THAT(
-    [this]() { activate_succeeds(controller_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_pos_resources_assigned)
@@ -239,11 +250,22 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigne
 
   EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
-  EXPECT_THAT(
-    [this]() { activate_succeeds(controller_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_2)
@@ -255,11 +277,22 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigne
 
   EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
-  EXPECT_THAT(
-    [this]() { activate_succeeds(controller_); },
-    testing::ThrowsMessage<std::runtime_error>(testing::StrEq(
-      "Unexpected controller state in activate_succeeds: 1")));  // State goes to ErrorProcessing
-                                                                 // then Unconfigured(1)
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 // When not in chained mode, we want to test that
