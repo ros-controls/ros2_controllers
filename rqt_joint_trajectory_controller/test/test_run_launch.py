@@ -55,3 +55,11 @@ class TestFixture(unittest.TestCase):
     def test_node_start(self, proc_output):
         time.sleep(2)
         assert node_name in self.node.get_node_names()
+
+
+@launch_testing.post_shutdown_test()
+class TestShutdown(unittest.TestCase):
+
+    def test_exit_codes(self, proc_info):
+        """Check if the process exited normally."""
+        launch_testing.asserts.assertExitCodes(proc_info)
