@@ -23,7 +23,6 @@ Run with:
 """
 
 import math
-
 import pytest
 
 from rqt_joint_trajectory_controller.joint_limits_urdf import parse_joint_limits
