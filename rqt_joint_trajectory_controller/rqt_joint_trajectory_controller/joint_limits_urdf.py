@@ -129,6 +129,9 @@ def parse_joint_limits(
                         f"Joint '{name}' has no <limit> tag in the robot_description. "
                         "Slider will be displayed but disabled."
                     )
+                # slider will be disabled but shows current position:
+                # * position limits are only used for rendering the slider
+                # * max_velocity has no effect in this case
                 free_joints[name] = {
                     "min_position": -2 * pi,
                     "max_position": 2 * pi,
@@ -161,6 +164,9 @@ def parse_joint_limits(
                         "lower/upper position limits in the robot_description. "
                         "Slider will be displayed but disabled."
                     )
+                # slider will be disabled but shows current position:
+                # * position limits are only used for rendering the slider
+                # * max_velocity has no effect in this case
                 free_joints[name] = {
                     "min_position": -2 * pi,
                     "max_position": 2 * pi,
