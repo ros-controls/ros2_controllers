@@ -176,8 +176,8 @@ class JointTrajectoryController(Plugin):
         # Signal connections
         w = self._widget
         w.enable_button.toggled.connect(self._on_jtc_enabled)
-        w.jtc_combo.currentIndexChanged[str].connect(self._on_jtc_change)
-        w.cm_combo.currentIndexChanged[str].connect(self._on_cm_change)
+        w.jtc_combo.currentTextChanged.connect(self._on_jtc_change)
+        w.cm_combo.currentTextChanged.connect(self._on_cm_change)
 
         self._cmd_pub = None  # Controller command publisher
         self._state_sub = None  # Controller state subscriber
@@ -456,7 +456,7 @@ class JointTrajectoryController(Plugin):
         widgets = []
         layout = self._widget.joint_group.layout()
         for row_id in range(layout.rowCount()):
-            widgets.append(layout.itemAt(row_id, QFormLayout.FieldRole).widget())
+            widgets.append(layout.itemAt(row_id, QFormLayout.ItemRole.FieldRole).widget())
         return widgets
 
 
