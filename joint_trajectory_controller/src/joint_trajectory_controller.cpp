@@ -1487,7 +1487,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
 
     // Mark the current goal as canceled
     rt_has_pending_goal_ = false;
-    rt_clear_pending_ = true;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
@@ -1502,6 +1501,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       // hold current position
       add_new_trajectory_msg(set_hold_position());
     }
+    // Written after add_new_trajectory_msg so the hold is visible before RT clears pending.
+    rt_clear_pending_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
