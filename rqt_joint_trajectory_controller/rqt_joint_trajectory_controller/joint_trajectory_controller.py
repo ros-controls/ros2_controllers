@@ -21,7 +21,9 @@ from ament_index_python.packages import get_package_share_directory
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
-from python_qt_binding.QtCore import QTimer, Signal
+from python_qt_binding.QtCore import QTimer, Signal, Qt
+from python_qt_binding.QtGui import QIcon, QPainter, QPixmap
+from python_qt_binding.QtSvg import QSvgRenderer
 from python_qt_binding.QtWidgets import QWidget, QFormLayout
 
 from control_msgs.msg import JointTrajectoryControllerState
@@ -114,6 +116,15 @@ class JointTrajectoryController(Plugin):
         )
         loadUi(ui_file, self._widget)
         self._widget.setObjectName("JointTrajectoryControllerUi")
+
+        # Use the original icon assets from package resources.
+        icon_path = get_package_share_directory("rqt_joint_trajectory_controller") + "/resource"
+        enable_icon = self._load_enable_icon(
+            f"{icon_path}/off.svg",
+            f"{icon_path}/on.svg",
+        )
+        self._widget.enable_button.setIcon(enable_icon)
+
         ns = self._node.get_namespace()[1:-1]
         self._widget.controller_group.setTitle("ns: " + ns)
 
@@ -303,6 +314,32 @@ class JointTrajectoryController(Plugin):
         self._jtc_name = jtc_name
         if self._jtc_name:
             self._load_jtc()
+
+    def _load_enable_icon(self, off_path, on_path):
+        icon = QIcon()
+        icon.addFile(off_path, mode=QIcon.Mode.Normal, state=QIcon.State.Off)
+        icon.addFile(on_path, mode=QIcon.Mode.Normal, state=QIcon.State.On)
+
+        # Some Qt setups do not decode SVGs through QIcon; render them via QSvgRenderer.
+        if icon.isNull():
+            off_pixmap = self._render_svg(off_path)
+            on_pixmap = self._render_svg(on_path)
+            if off_pixmap is not None:
+                icon.addPixmap(off_pixmap, mode=QIcon.Mode.Normal, state=QIcon.State.Off)
+            if on_pixmap is not None:
+                icon.addPixmap(on_pixmap, mode=QIcon.Mode.Normal, state=QIcon.State.On)
+        return icon
+
+    def _render_svg(self, path, size=48):
+        renderer = QSvgRenderer(path)
+        if not renderer.isValid():
+            return None
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        return pixmap
 
     def _on_jtc_enabled(self, val):
         # Don't allow enabling if there are no controllers selected
