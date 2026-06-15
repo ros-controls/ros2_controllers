@@ -71,15 +71,20 @@ def get_controller_managers(namespace="/", initial_guess=None):
 
     # Get list of (potential) currently running controller managers
     node = rclpy.node.Node("get_controller_managers_node")
-    ns_list_curr = _sloppy_get_controller_managers(node, namespace)
+    try:
+        ns_list_curr = _sloppy_get_controller_managers(node, namespace)
 
-    # Update initial guess:
-    # 1. Remove entries not found in current list
-    # 2. Add new untracked controller managers
-    ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
-    ns_list += [ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)]
+        # Update initial guess:
+        # 1. Remove entries not found in current list
+        # 2. Add new untracked controller managers
+        ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
+        ns_list += [
+            ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)
+        ]
 
-    return sorted(ns_list)
+        return sorted(ns_list)
+    finally:
+        node.destroy_node()
 
 
 def is_controller_manager(node, namespace):
