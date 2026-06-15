@@ -223,9 +223,17 @@ class ControllerLister:
     """
 
     def __call__(self):
-        controller_list = self._srv_client.call_async(ListControllers.Request())
-        rclpy.spin_until_future_complete(self._node, controller_list)
-        return controller_list.result().controller
+        try:
+            controller_list = self._srv_client.call_async(ListControllers.Request())
+            rclpy.spin_until_future_complete(self._node, controller_list)
+            result = controller_list.result()
+            return result.controller if result else []
+        except rclpy.executors.ExternalShutdownException:
+            return []
+        except Exception as e:
+            if "context is not valid" in str(e) or "destruction was requested" in str(e):
+                return []
+            raise
 
     def _create_client(self):
         return self._node.create_client(ListControllers, self._srv_name)

@@ -226,7 +226,16 @@ class JointTrajectoryController(Plugin):
     # Usually used to open a modal configuration dialog
 
     def _update_cm_list(self):
-        update_combo(self._widget.cm_combo, self._list_cm())
+        try:
+            update_combo(self._widget.cm_combo, self._list_cm())
+        except rclpy.exceptions.NotInitializedException:
+            # Can happen during shutdown if the timer fires after rclpy teardown.
+            self._update_cm_list_timer.stop()
+        except Exception as e:
+            if "context is not valid" in str(e):
+                self._update_cm_list_timer.stop()
+            else:
+                raise
 
     def _update_jtc_list(self):
         # Clear controller list if no controller information is available
@@ -234,9 +243,22 @@ class JointTrajectoryController(Plugin):
             self._widget.jtc_combo.clear()
             return
 
+        try:
+            running_jtc = self._running_jtc_info()
+        except rclpy.exceptions.NotInitializedException:
+            self._update_jtc_list_timer.stop()
+            return
+        except rclpy.executors.ExternalShutdownException:
+            self._update_jtc_list_timer.stop()
+            return
+        except Exception as e:
+            if "context is not valid" in str(e):
+                self._update_jtc_list_timer.stop()
+                return
+            raise
+
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
-        running_jtc = self._running_jtc_info()
         if running_jtc and not self._robot_joint_limits:
             self._robot_joint_limits = {}
             for jtc_info in running_jtc:
@@ -350,8 +372,18 @@ class JointTrajectoryController(Plugin):
 
         self._executor = rclpy.executors.SingleThreadedExecutor()
         self._executor.add_node(self._node)
-        self._executor_thread = threading.Thread(target=self._executor.spin, daemon=True)
+        self._executor_thread = threading.Thread(target=self._spin_executor, daemon=True)
         self._executor_thread.start()
+
+    def _spin_executor(self):
+        try:
+            self._executor.spin()
+        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+            pass
+        except Exception as e:
+            # During SIGINT shutdown, the ROS context can become invalid before spin exits.
+            if "context is not valid" not in str(e):
+                print(f"Executor thread failed: {e}")
 
     def _unload_jtc(self):
         # Stop updating the joint positions
@@ -409,6 +441,7 @@ class JointTrajectoryController(Plugin):
             self._executor.shutdown()
             self._executor_thread.join()
             self._executor = None
+            self._executor_thread = None
 
     def _state_cb(self, msg):
         current_pos = {}
