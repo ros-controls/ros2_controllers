@@ -2064,7 +2064,7 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
-  rclcpp::Parameter blending_parameters("allow_trajectory_blending", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
 
@@ -3232,7 +3232,7 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
 }
 
 // ===========================================================================
-// Trajectory deferral tests (allow_trajectory_blending)
+// Trajectory deferral tests (allow_trajectory_replacement)
 // ===========================================================================
 
 /**
@@ -3243,7 +3243,7 @@ TEST_F(TrajectoryControllerTest, blend_stamp0_preempts_pending)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
-    executor, {rclcpp::Parameter("allow_trajectory_blending", true)});
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
   const builtin_interfaces::msg::Duration step{rclcpp::Duration::from_seconds(0.5)};
@@ -3269,7 +3269,7 @@ TEST_F(TrajectoryControllerTest, blend_partial_goal_fill_uses_fire_time_state)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
-    executor, {rclcpp::Parameter("allow_trajectory_blending", true),
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
                rclcpp::Parameter("allow_partial_joints_goal", true)});
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();

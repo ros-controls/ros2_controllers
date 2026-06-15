@@ -1470,7 +1470,7 @@ INSTANTIATE_TEST_SUITE_P(
  */
 TEST_F(TestTrajectoryActions, blend_cancel_deferred_action_goal)
 {
-  SetUpExecutor({rclcpp::Parameter("allow_trajectory_blending", true)});
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
 
   setup_controller_hw_ = true;
   controller_hw_thread_ = std::thread(
@@ -1536,7 +1536,7 @@ TEST_F(TestTrajectoryActions, blend_cancel_deferred_action_goal)
  */
 TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
 {
-  SetUpExecutor({rclcpp::Parameter("allow_trajectory_blending", true)});
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
 
   setup_controller_hw_ = true;
   controller_hw_thread_ = std::thread(
@@ -1602,7 +1602,7 @@ TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
  */
 TEST_F(TestTrajectoryActions, blend_topic_preempts_deferred_action_goal)
 {
-  SetUpExecutor({rclcpp::Parameter("allow_trajectory_blending", true)});
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
 
   setup_controller_hw_ = true;
   controller_hw_thread_ = std::thread(
@@ -1670,7 +1670,7 @@ TEST_F(TestTrajectoryActions, blend_topic_preempts_deferred_action_goal)
  */
 TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
 {
-  SetUpExecutor({rclcpp::Parameter("allow_trajectory_blending", true)});
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
 
   setup_controller_hw_ = true;
   controller_hw_thread_ = std::thread(

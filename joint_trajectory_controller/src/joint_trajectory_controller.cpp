@@ -289,7 +289,7 @@ controller_interface::return_type JointTrajectoryController::update(
       traj_msg_to_install = *new_external_msg;
     }
     else if (
-      params_.allow_trajectory_blending && has_active_trajectory() &&
+      params_.allow_trajectory_replacement && has_active_trajectory() &&
       rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type()) > time)
     {
       // Future-stamped: defer until its start time, keep old trajectory running.
@@ -1525,7 +1525,7 @@ void JointTrajectoryController::goal_accepted_callback(
     // If blending is on, trajectory will be deferred by update(). Mark it so the result/feedback
     // block does not judge the goal before it starts.
     const auto now = get_node()->now();
-    rt_active_goal_deferred_ = params_.allow_trajectory_blending && has_active_trajectory() &&
+    rt_active_goal_deferred_ = params_.allow_trajectory_replacement && has_active_trajectory() &&
                                rclcpp::Time(traj_msg->header.stamp, now.get_clock_type()) > now;
   }
 
