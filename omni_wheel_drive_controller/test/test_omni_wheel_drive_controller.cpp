@@ -43,14 +43,14 @@ TEST_F(OmniWheelDriveControllerTest, configure_fails_with_less_than_three_wheels
     InitController({"first_wheel_joint", "second_wheel_joint"}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  EXPECT_FALSE(configure_succeeds(controller_));
 }
 
 TEST_F(OmniWheelDriveControllerTest, when_controller_configured_expect_properly_exported_interfaces)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   // Check command interfaces configuration
   auto command_interfaces = controller_->command_interface_configuration();
@@ -102,7 +102,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -127,7 +127,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_n
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -154,7 +154,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -183,7 +183,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_false_set
       test_namespace),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -211,7 +211,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_
       test_namespace),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -240,7 +240,7 @@ TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set
       test_namespace),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
   nav_msgs::msg::Odometry odometry_message = controller_->odometry_message_;
   std::string test_odom_frame_id = odometry_message.header.frame_id;
@@ -256,17 +256,32 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_without_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+  EXPECT_TRUE(configure_succeeds(controller_));
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_pos_resources_assigned)
 {
   ASSERT_EQ(InitController(), controller_interface::return_type::OK);
   // We implicitly test that by default position feedback is required
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_assigned)
@@ -276,9 +291,9 @@ TEST_F(OmniWheelDriveControllerTest, activate_succeeds_with_vel_resources_assign
       wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_1)
@@ -288,9 +303,24 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigne
       wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigned_2)
@@ -300,9 +330,24 @@ TEST_F(OmniWheelDriveControllerTest, activate_fails_with_wrong_resources_assigne
       wheel_names_, 0.0, {rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+  try
+  {
+    activate_succeeds(controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 // When not in chained mode, we want to test that
@@ -321,12 +366,10 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(false));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -374,23 +417,20 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 
@@ -409,12 +449,10 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_TRUE(controller_->set_chained_mode(true));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -445,23 +483,20 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 
@@ -477,12 +512,10 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -515,8 +548,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   // Now check that the command interfaces are set to 0.0 on deactivation
   // (despite calls to update())
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -526,8 +558,7 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   }
 
   // Activate again
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -555,10 +586,8 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
 
   // Deactivate again and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 
@@ -571,12 +600,10 @@ TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_wit
 
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -596,10 +623,8 @@ TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_wit
 
   // Deactivate and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 
@@ -611,15 +636,13 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   wheels_pos_states_ = {1, 1, 1};
   wheels_vel_states_ = {1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3};
   assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3"});
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -650,23 +673,20 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < 3; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < 3; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 
@@ -679,15 +699,13 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   wheels_pos_states_ = {1, 1, 1};
   wheels_vel_states_ = {1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3};
   assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3"});
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -718,23 +736,20 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < 3; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < 3; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 
@@ -747,15 +762,13 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   wheels_pos_states_ = {1, 1, 1, 1};
   wheels_vel_states_ = {1, 1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
   assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3", "wheel_4"});
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -786,23 +799,20 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < 4; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < 4; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 
@@ -815,15 +825,13 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   wheels_pos_states_ = {1, 1, 1, 1, 1};
   wheels_vel_states_ = {1, 1, 1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4, 0.5};
   assignResourcesPosFeedback({"wheel_1", "wheel_2", "wheel_3", "wheel_4", "wheel_5"});
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -854,23 +862,20 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
 
   // Now check that the command interfaces are set to 0.0 on deactivation
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_TRUE(deactivate_succeeds(controller_));
   for (size_t i = 0; i < 5; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   // cleanup
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  EXPECT_TRUE(cleanup_succeeds(controller_));
   for (size_t i = 0; i < 5; i++)
   {
     EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
-  state = controller_->get_node()->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
 }
 

@@ -41,12 +41,6 @@ using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 void JointStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
 void JointStateBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
@@ -169,9 +163,9 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 
   SetUpStateBroadcaster();
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -220,9 +214,9 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyWithoutDynamicJointStatesPublishe
 
   SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("publish_dynamic_joint_states", false)});
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -256,9 +250,9 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
 
   SetUpStateBroadcaster();
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -300,11 +294,11 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
 
   // Now deactivate and activate with only 2 set of joints and interfaces (to create as in one of
   // the interface is unavailable)
-  ASSERT_EQ(state_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
   const std::vector<std::string> JOINT_NAMES = {"joint1", "joint2"};
   assign_state_interfaces(JOINT_NAMES, interface_names_);
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS_WITH_ONE_DEACTIVATED = JOINT_NAMES.size();
 
@@ -353,9 +347,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -404,9 +398,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -458,9 +452,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDes
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_in_urdf.size();
 
@@ -511,9 +505,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces)
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_in_urdf.size();
 
@@ -563,9 +557,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces)
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -605,9 +599,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -655,9 +649,9 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -701,7 +695,8 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
     dynamic_joint_state_msg.interface_values[1].interface_names, ElementsAreArray(IF_NAMES));
 
   // deactivate
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // check interface configuration
   cmd_if_conf = state_broadcaster_->command_interface_configuration();
@@ -720,9 +715,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -772,10 +767,25 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing)
   // assign_state_interfaces(JOINT_NAMES, {interface_names_[2]});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   // is none of requested interfaces do not exist, the controller will not be activated
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+  try
+  {
+    activate_succeeds(state_broadcaster_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
@@ -796,10 +806,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   // here a warning output is expected!
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -849,9 +859,9 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -895,9 +905,9 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
       std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -951,7 +961,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityI
       std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, custom_velocity_interface)});
 
   // configure ok; a warning is expected because the custom velocity mapping is ignored
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   const auto velocity_mapping =
     state_broadcaster_->map_interface_to_joint_state_.find(HW_IF_VELOCITY);
@@ -959,7 +969,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityI
   EXPECT_EQ(velocity_mapping->second, HW_IF_VELOCITY);
   EXPECT_EQ(state_broadcaster_->map_interface_to_joint_state_.count(custom_velocity_interface), 0u);
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -1035,9 +1045,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();
 
-  auto node_state = state_broadcaster_->configure();
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
   ASSERT_EQ(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -1141,9 +1150,8 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 
   state_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
 
-  auto node_state = state_broadcaster_->configure();
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   if (!realtime_tools::configure_sched_fifo(50))
   {
@@ -1184,11 +1192,8 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
-  auto node_state = state_broadcaster_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   sensor_msgs::msg::JointState::SharedPtr received_msg;
   rclcpp::Node test_node("test_node");
@@ -1349,9 +1354,9 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("extra_joints", extra_joint_names)});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   std::vector<std::string> all_joint_names = joint_names_;
   all_joint_names.insert(all_joint_names.end(), extra_joint_names.begin(), extra_joint_names.end());
@@ -1384,8 +1389,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure and activate ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // update should not throw
   ASSERT_NO_THROW(
@@ -1412,8 +1417,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure and activate ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // update should not throw
   ASSERT_NO_THROW(
