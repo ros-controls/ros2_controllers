@@ -77,13 +77,13 @@ def _fixed(name):
 class _TestLogger:
     def __init__(self):
         self.info_messages = []
-        self.warn_messages = []
+        self.warning_messages = []
 
     def info(self, msg):
         self.info_messages.append(msg)
 
-    def warn(self, msg):
-        self.warn_messages.append(msg)
+    def warning(self, msg):
+        self.warning_messages.append(msg)
 
 
 class _TestNode:
@@ -385,8 +385,8 @@ def test_missing_limit_tag_allow_incomplete_true_logs_warning():
     )
     logger = _TestLogger()
     parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
-    assert len(logger.warn_messages) == 1
-    assert "has no <limit> tag" in logger.warn_messages[0]
+    assert len(logger.warning_messages) == 1
+    assert "has no <limit> tag" in logger.warning_messages[0]
 
 
 def test_missing_lower_upper_allow_incomplete_true_returns_disabled_joint():
@@ -416,8 +416,8 @@ def test_missing_lower_upper_allow_incomplete_true_logs_warning():
     )
     logger = _TestLogger()
     parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
-    assert len(logger.warn_messages) == 1
-    assert "missing/empty lower/upper position limits" in logger.warn_messages[0]
+    assert len(logger.warning_messages) == 1
+    assert "missing/empty lower/upper position limits" in logger.warning_messages[0]
 
 
 def test_missing_velocity_raises():

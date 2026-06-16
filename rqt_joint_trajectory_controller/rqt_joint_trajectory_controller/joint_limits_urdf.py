@@ -125,7 +125,7 @@ def parse_joint_limits(
         if joint.limit is None:
             if name in joints_names and allow_incomplete_joints:
                 if logger is not None:
-                    logger.warn(
+                    logger.warning(
                         f"Joint '{name}' has no <limit> tag in the robot_description. "
                         "Slider will be displayed but disabled."
                     )
@@ -159,7 +159,7 @@ def parse_joint_limits(
                 maxval = pi
             elif name in joints_names and allow_incomplete_joints:
                 if logger is not None:
-                    logger.warn(
+                    logger.warning(
                         f"Joint '{name}' of type '{joint.type}' has missing/empty "
                         "lower/upper position limits in the robot_description. "
                         "Slider will be displayed but disabled."
