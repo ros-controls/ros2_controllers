@@ -1123,7 +1123,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
       RCLCPP_INFO(node_->get_logger(), "Controller hardware thread finished");
-      traj_controller_->get_node()->deactivate();
+      EXPECT_TRUE(deactivate_succeeds(traj_controller_));
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     });
 
