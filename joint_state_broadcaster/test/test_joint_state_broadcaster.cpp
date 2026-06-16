@@ -216,10 +216,11 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyWithoutDynamicJointStatesPublishe
   ASSERT_FALSE(state_broadcaster_->dynamic_joint_state_publisher_);
 
   SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("publish_dynamic_joint_states", false)});
-  // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  // configure ok
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -400,11 +401,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   init_broadcaster_and_set_parameters("<invalid_urdf></invalid_urdf>", JOINT_NAMES, IF_NAMES);
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
-<<<<<<< HEAD
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -441,10 +441,6 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   ASSERT_THAT(
     dynamic_joint_state_msg.interface_values[2].interface_names,
     ElementsAreArray(interface_names_));
-=======
-  // URDF mode (joints empty) with an unparsable robot description must fail at configure
-  ASSERT_FALSE(configure_succeeds(state_broadcaster_));
->>>>>>> 1d8aa69 (Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (#2410))
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription)

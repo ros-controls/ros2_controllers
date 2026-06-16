@@ -439,12 +439,7 @@ public:
         "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
     cmd_interfaces.emplace_back(gpio_command_interfaces_.back());
 
-<<<<<<< HEAD
     traj_controller_->assign_interfaces(std::move(cmd_interfaces), std::move(state_interfaces));
-    return traj_controller_->get_node()->activate();
-=======
-    traj_controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
->>>>>>> 1d8aa69 (Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (#2410))
   }
 
   void DeactivateTrajectoryController()
