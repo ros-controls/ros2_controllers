@@ -59,8 +59,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
 
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   compare_joints(joint_names_, joint_names_);
 }
@@ -72,8 +71,7 @@ TEST_P(TrajectoryControllerTestParameterized, check_interface_names_with_command
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names_);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   compare_joints(joint_names_, command_joint_names_);
 }
@@ -90,8 +88,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   compare_joints(joint_names_, command_joint_names);
 }
@@ -106,8 +103,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
 }
 
 TEST_P(
@@ -120,8 +116,7 @@ TEST_P(
   const rclcpp::Parameter command_joint_names_param("command_joints", command_joint_names);
   SetUpTrajectoryController(executor, {command_joint_names_param});
 
-  const auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
 }
 
 TEST_P(TrajectoryControllerTestParameterized, activate)
@@ -129,8 +124,7 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpTrajectoryController(executor);
 
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   auto cmd_if_conf = traj_controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_names_.size() * command_interface_types_.size());
@@ -140,8 +134,8 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  state = ActivateTrajectoryController();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
 
   executor.cancel();
 }
@@ -169,8 +163,7 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup)
 
   DeactivateTrajectoryController();
 
-  auto state = traj_controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(cleanup_succeeds(traj_controller_));
 
   executor.cancel();
 }
@@ -181,12 +174,10 @@ TEST_P(TrajectoryControllerTestParameterized, cleanup_after_configure)
   SetUpTrajectoryController(executor);
 
   // configure controller
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   // cleanup controller
-  state = traj_controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(cleanup_succeeds(traj_controller_));
 
   executor.cancel();
 }
@@ -201,11 +192,10 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   traj_controller_->get_node()->set_parameter(rclcpp::Parameter("update_rate", 10));
 
   // This call is replacing the way parameters are set via launch
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
-  state = ActivateTrajectoryController();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
   EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
   EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
   EXPECT_EQ(INITIAL_POS_JOINT3, joint_pos_[2]);
@@ -250,8 +240,8 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   // wait so controller would have processed the third point when reactivated -> but it shouldn't
   std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
-  state = ActivateTrajectoryController(false, deactivated_positions);
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
+  AssignInterfaces(false, deactivated_positions);
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
 
   // it should still be holding the position at time of deactivation
   // i.e., active but trivial trajectory (one point only)
@@ -2668,8 +2658,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"velocity"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  auto state = traj_controller_->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 
@@ -2677,8 +2666,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 
@@ -2686,8 +2674,7 @@ TEST_F(TrajectoryControllerTest, incorrect_initialization_using_interface_parame
   command_interface_types_ = {"effort", "position"};
   state_interface_types_ = {"position"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
-  state = traj_controller_->configure();
-  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
   state_interface_types_ = {"velocity"};
   EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::ERROR);
 }
@@ -2762,11 +2749,25 @@ TEST_F(
   };
   SetUpTrajectoryController(executor, params);
 
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
-  state = ActivateTrajectoryController();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  AssignInterfaces();
+  try
+  {
+    activate_succeeds(traj_controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(
@@ -2780,11 +2781,25 @@ TEST_F(
   };
   SetUpTrajectoryController(executor, params);
 
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
-  state = ActivateTrajectoryController();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  AssignInterfaces();
+  try
+  {
+    activate_succeeds(traj_controller_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(TrajectoryControllerTest, scaling_state_interface_sets_value)
@@ -2866,8 +2881,7 @@ TEST_F(TrajectoryControllerTest, activate_with_scaling_interfaces)
   };
   SetUpTrajectoryController(executor, params);
 
-  auto state = traj_controller_->configure();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 
   auto cmd_if_conf = traj_controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), joint_names_.size() * command_interface_types_.size() + 1);
@@ -2877,8 +2891,8 @@ TEST_F(TrajectoryControllerTest, activate_with_scaling_interfaces)
   ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size() + 1);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  state = ActivateTrajectoryController();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_ACTIVE);
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
 
   executor.cancel();
 }
@@ -3166,7 +3180,7 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
 
   // separate_cmd_and_state_values=true: position/velocity commands write to joint_pos_/
   // joint_vel_; state interfaces read from joint_state_pos_/joint_state_vel_.
-  // ActivateTrajectoryController initialises joint_state_vel_ to INITIAL_VEL_JOINTS (0.0),
+  // AssignInterfaces initialises joint_state_vel_ to INITIAL_VEL_JOINTS (0.0),
   // so we set it manually to initial_vel after activation.
   SetUpAndActivateTrajectoryController(
     executor, params, true, 0.0, 1.0, INITIAL_POS_JOINTS, initial_vel);
