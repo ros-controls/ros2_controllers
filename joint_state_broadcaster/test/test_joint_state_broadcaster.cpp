@@ -397,11 +397,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   init_broadcaster_and_set_parameters("<invalid_urdf></invalid_urdf>", JOINT_NAMES, IF_NAMES);
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
-<<<<<<< HEAD
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -438,10 +437,6 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   ASSERT_THAT(
     dynamic_joint_state_msg.interface_values[2].interface_names,
     ElementsAreArray(interface_names_));
-=======
-  // URDF mode (joints empty) with an unparsable robot description must fail at configure
-  ASSERT_FALSE(configure_succeeds(state_broadcaster_));
->>>>>>> 1d8aa69 (Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (#2410))
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription)
@@ -1445,92 +1440,3 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.velocity, SizeIs(1));
   ASSERT_THAT(state_broadcaster_->joint_state_msg_.effort, SizeIs(1));
 }
-<<<<<<< HEAD
-=======
-
-// Regression test: when a double interface temporarily fails to be read
-// (get_optional returns nullopt as it is unable to lock), map_index must still advance so that
-// subsequent interfaces are written to the correct mapped_values_ indexes.
-//
-// Without the fix, if state_interfaces_[i] returns nullopt, the next interface's value is
-// written into index i instead of index i+1, corrupting all subsequent joint state values.
-TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
-{
-  const std::string JOINT_NAMES[] = {"joint1", "joint2", "joint3"};
-  const double INIT_POS[] = {1.1, 2.2, 3.3};
-
-  auto j1 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[0], HW_IF_POSITION, "double", std::to_string(INIT_POS[0]));
-  auto j2 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[1], HW_IF_POSITION, "double", std::to_string(INIT_POS[1]));
-  auto j3 = std::make_shared<hardware_interface::StateInterface>(
-    JOINT_NAMES[2], HW_IF_POSITION, "double", std::to_string(INIT_POS[2]));
-
-  init_broadcaster_and_set_parameters(
-    "", {JOINT_NAMES[0], JOINT_NAMES[1], JOINT_NAMES[2]}, {HW_IF_POSITION});
-
-  std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(j1);
-  state_ifs.emplace_back(j2);
-  state_ifs.emplace_back(j3);
-  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
-
-  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
-  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
-
-  ASSERT_THAT(
-    state_broadcaster_->joint_state_msg_.name,
-    ElementsAreArray({JOINT_NAMES[0], JOINT_NAMES[1], JOINT_NAMES[2]}));
-
-  /// Simulate a temporarily-unavailable first interface
-  // Hold an exclusive lock on state_interfaces_[0]'s mutex from a helper thread.
-  // While the lock is held, get_optional(0) on state_interfaces_[0] cannot acquire the
-  // shared lock and returns nullopt.
-  std::atomic<bool> lock_held{false};
-  std::atomic<bool> release_lock{false};
-
-  std::thread locker(
-    [&]()
-    {
-      // Acquire exclusive lock on the first interface's handle mutex
-      std::unique_lock<std::shared_mutex> lk(j1->get_mutex());
-      lock_held.store(true, std::memory_order_release);
-      // Hold it until the main thread finishes its update() call
-      while (!release_lock.load(std::memory_order_acquire))
-      {
-        std::this_thread::yield();
-      }
-    });
-
-  // Wait until the locker thread actually owns the mutex
-  while (!lock_held.load(std::memory_order_acquire))
-  {
-    std::this_thread::yield();
-  }
-
-  // Call update(): joint1/position read will return nullopt (lock held by locker thread).
-  ASSERT_NO_THROW(
-    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)));
-
-  release_lock.store(true, std::memory_order_release);
-  locker.join();
-
-  const auto & names = state_broadcaster_->joint_state_msg_.name;
-  const auto & pos = state_broadcaster_->joint_state_msg_.position;
-  ASSERT_EQ(pos.size(), 3u);
-
-  // joint1 was not readable, its index must NOT contain joint2's value (2.2).
-  // (It will hold the initial NaN or any prior value, not 2.2.)
-  EXPECT_EQ(names[0], JOINT_NAMES[0]);
-  EXPECT_NE(pos[0], INIT_POS[1])
-    << "joint1's position slot was overwritten with joint2's value — map_index bug is present";
-
-  EXPECT_EQ(names[1], JOINT_NAMES[1]);
-  EXPECT_DOUBLE_EQ(pos[1], INIT_POS[1])
-    << "joint2's position slot has wrong value — map_index was shifted by the nullopt";
-
-  EXPECT_EQ(names[2], JOINT_NAMES[2]);
-  EXPECT_DOUBLE_EQ(pos[2], INIT_POS[2])
-    << "joint3's position slot has wrong value — map_index was shifted by the nullopt";
-}
->>>>>>> 1d8aa69 (Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (#2410))
