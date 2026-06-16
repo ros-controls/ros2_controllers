@@ -149,10 +149,10 @@ def test_continuous_joint_max_defaults_to_plus_pi():
     assert result["wheel"]["max_position"] == pytest.approx(math.pi)
 
 
-def test_continuous_joint_has_position_limits_false():
-    # Continuous joints are unbounded — the GUI should not enforce limits
+def test_continuous_joint_has_position_limits_true():
+    # Continuous joints are unbounded — it still gets position limits to activate the slider
     result = parse_joint_limits(_robot(_continuous("wheel", 5.0)), ["wheel"])
-    assert result["wheel"]["has_position_limits"] is False
+    assert result["wheel"]["has_position_limits"] is True
 
 
 def test_continuous_joint_velocity_is_preserved():

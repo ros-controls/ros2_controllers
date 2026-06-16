@@ -209,7 +209,7 @@ def parse_joint_limits(
         free_joints[name] = {
             "min_position": minval,
             "max_position": maxval,
-            "has_position_limits": joint.type != "continuous",
+            "has_position_limits": True,
             "max_velocity": maxvel,
         }
 
