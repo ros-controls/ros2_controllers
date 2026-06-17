@@ -36,7 +36,7 @@ namespace
 // State interface values default to 0.0 so CHECK_BEFORE_COMMAND (Break_Engaged==0.0)
 // passes immediately on the first check.
 void prepare_for_disengaging(
-  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  GpioToolControllerFixture<TestableGpioToolController> & fx,
   const std::vector<std::string> & possible_states)
 {
   fx.SetUpController(

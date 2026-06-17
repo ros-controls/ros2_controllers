@@ -52,14 +52,14 @@
 // Executor-test fixture
 // ============================================================================
 
-class GpioToolControllerExecutorTest : public IOGripperControllerFixture<TestableGpioToolController>
+class GpioToolControllerExecutorTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 public:
   void TearDown() override
   {
     StopController();
     ShutdownExecutor();
-    IOGripperControllerFixture::TearDown();
+    GpioToolControllerFixture::TearDown();
   }
 
   // Create the executor, add the controller node and a separate client node,
@@ -141,7 +141,7 @@ namespace
 // Returns a hardware simulator lambda for the standard setup_parameters() fixture.
 // capture-by-reference: state_values_ and cmd_name_to_index_ / state_name_to_index_
 // are owned by the fixture and outlive the lambda.
-auto make_hw_sim(IOGripperControllerFixture<TestableGpioToolController> & fx)
+auto make_hw_sim(GpioToolControllerFixture<TestableGpioToolController> & fx)
 {
   return [&fx]()
   {
@@ -220,7 +220,7 @@ void prepare_for_executor_test_with_config(
 }
 
 // Hardware simulator that also responds to configuration command interfaces.
-auto make_config_hw_sim(IOGripperControllerFixture<TestableGpioToolController> & fx)
+auto make_config_hw_sim(GpioToolControllerFixture<TestableGpioToolController> & fx)
 {
   return [&fx]()
   {

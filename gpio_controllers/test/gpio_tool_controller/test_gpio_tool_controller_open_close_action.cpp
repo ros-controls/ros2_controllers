@@ -35,7 +35,7 @@ namespace
 // Configure and activate, returning with the controller in IDLE state
 // and the tool in the given hardware state.
 void prepare_for_request(
-  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  GpioToolControllerFixture<TestableGpioToolController> & fx,
   const std::vector<std::string> & possible_states, const std::string & initial_hw_state)
 {
   fx.SetUpController(

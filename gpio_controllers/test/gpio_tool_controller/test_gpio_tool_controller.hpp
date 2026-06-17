@@ -130,7 +130,7 @@ public:
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class IOGripperControllerFixture : public ::testing::Test
+class GpioToolControllerFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase() {}
@@ -419,39 +419,39 @@ public:
   std::vector<hardware_interface::StateInterface::SharedPtr> state_iface_ptrs_;
 };
 
-class GpioToolControllerTest : public IOGripperControllerFixture<TestableGpioToolController>
+class GpioToolControllerTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
-class GpioToolControllerOpenTest : public IOGripperControllerFixture<TestableGpioToolController>
+class GpioToolControllerOpenTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
-class GpioToolControllerCloseTest : public IOGripperControllerFixture<TestableGpioToolController>
+class GpioToolControllerCloseTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
-class GpioToolControllerRequestTest : public IOGripperControllerFixture<TestableGpioToolController>
+class GpioToolControllerRequestTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
 class GpioToolControllerReconfigureTest
-: public IOGripperControllerFixture<TestableGpioToolController>
+: public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
 class GpioToolControllerLifecycleTest
-: public IOGripperControllerFixture<TestableGpioToolController>
+: public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
 class GpioToolControllerCancelingTest
-: public IOGripperControllerFixture<TestableGpioToolController>
+: public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
 class GpioToolControllerServiceModeTest
-: public IOGripperControllerFixture<TestableGpioToolController>
+: public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 

@@ -32,7 +32,7 @@ namespace
 // "open", "close_empty", "close_full") determines which state interface values
 // are pre-loaded so that on_activate() can recognise the current tool state.
 void prepare_for_lifecycle(
-  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  GpioToolControllerFixture<TestableGpioToolController> & fx,
   const std::vector<std::string> & possible_states, const std::string & initial_hw_state = "open")
 {
   fx.SetUpController(

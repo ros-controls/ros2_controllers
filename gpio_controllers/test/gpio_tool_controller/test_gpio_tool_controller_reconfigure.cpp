@@ -41,7 +41,7 @@ namespace
 // Configure, assign interfaces, and put controller in RECONFIGURING state targeting
 // the given configuration name (default: "narrow_objects").
 void prepare_for_reconfiguring(
-  IOGripperControllerFixture<TestableGpioToolController> & fx,
+  GpioToolControllerFixture<TestableGpioToolController> & fx,
   const std::vector<std::string> & possible_states,
   const std::string & target_config = "narrow_objects")
 {
