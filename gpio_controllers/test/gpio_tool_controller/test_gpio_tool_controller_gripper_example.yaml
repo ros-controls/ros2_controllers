@@ -65,13 +65,13 @@ test_gpio_tool_controller:
         joint_states: [0.1]
         command_interfaces: [Narrow_Configuration_Cmd, Wide_Configuration_Cmd]
         command_values: [1.0, 0.0]
-        state_interfaces: [Narrow_Configuraiton_Signal, Wide_Configuration_Signal]
+        state_interfaces: [Narrow_Configuration_Signal, Wide_Configuration_Signal]
         state_values: [1.0, 0.0]
       wide_objects:
         joint_states: [0.2]
         command_interfaces: [Narrow_Configuration_Cmd, Wide_Configuration_Cmd]
         command_values: [0.0, 1.0]
-        state_interfaces: [Narrow_Configuraiton_Signal, Wide_Configuration_Signal]
+        state_interfaces: [Narrow_Configuration_Signal, Wide_Configuration_Signal]
         state_values: [0.0, 1.0]
 
     tool_specific_sensors: ["part_sensor_top", "part_sensor"]

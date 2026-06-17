@@ -174,7 +174,7 @@ TEST_F(GpioToolControllerLifecycleTest, UpdateIdleWithKnownStateRemainsIdle)
 // known configuration → check_tool_state() stores CANCELING
 //
 // Tool state IS determinable ("open"), but with all configuration signals at 0.0
-// neither narrow_objects (needs Narrow_Configuraiton_Signal=1.0) nor wide_objects
+// neither narrow_objects (needs Narrow_Configuration_Signal=1.0) nor wide_objects
 // (needs Wide_Configuration_Signal=1.0) is confirmed.
 // Covers gpio_tool_controller.cpp lines 1408-1414.
 // ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ TEST_F(GpioToolControllerLifecycleTest, ConfigurationUndeterminedGoesToCanceling
   // Tool state is known ("open"): Opened_signal=1, Closed_signal=0
   SetInitialHardwareState("open");
   // Configuration signals stay at 0.0 (default):
-  //   Narrow_Configuraiton_Signal=0 → narrow_objects not matched
+  //   Narrow_Configuration_Signal=0 → narrow_objects not matched
   //   Wide_Configuration_Signal=0  → wide_objects  not matched
   // → configuration undetermined → CANCELING
 

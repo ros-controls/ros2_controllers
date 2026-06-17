@@ -52,8 +52,8 @@ void prepare_for_reconfigure_request(
   fx.SetupInterfaces();
   fx.SetInitialHardwareState(initial_hw_state);
   // Also set a known configuration so check_tool_state() can determine current_configuration_.
-  // Default to narrow_objects (Narrow_Configuraiton_Signal=1.0, Wide_Configuration_Signal=0.0).
-  fx.SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  // Default to narrow_objects (Narrow_Configuration_Signal=1.0, Wide_Configuration_Signal=0.0).
+  fx.SetStateValue("Narrow_Configuration_Signal", 1.0);
   ASSERT_EQ(
     fx.controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);

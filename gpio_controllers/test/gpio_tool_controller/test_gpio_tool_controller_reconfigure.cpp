@@ -19,12 +19,12 @@
 //     SET_BEFORE_COMMAND  : (none)
 //     CHECK_BEFORE_COMMAND: (none)
 //     SET_COMMAND         : Narrow_Configuration_Cmd=1.0, Wide_Configuration_Cmd=0.0
-//     CHECK_COMMAND(state): Narrow_Configuraiton_Signal=1.0, Wide_Configuration_Signal=0.0
+//     CHECK_COMMAND(state): Narrow_Configuration_Signal=1.0, Wide_Configuration_Signal=0.0
 //     SET_AFTER_COMMAND   : (none)
 //     CHECK_AFTER_COMMAND : (none)
 //   wide_objects:
 //     SET_COMMAND         : Narrow_Configuration_Cmd=0.0, Wide_Configuration_Cmd=1.0
-//     CHECK_COMMAND(state): Narrow_Configuraiton_Signal=0.0, Wide_Configuration_Signal=1.0
+//     CHECK_COMMAND(state): Narrow_Configuration_Signal=0.0, Wide_Configuration_Signal=1.0
 //
 // Because the before/after steps have no interfaces, each transitions immediately
 // in a single update() call without waiting.
@@ -118,7 +118,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringSetMainConfigurationComma
 }
 
 // ---------------------------------------------------------------------------
-// CHECK_COMMAND: keeps waiting while Narrow_Configuraiton_Signal is not yet 1.0
+// CHECK_COMMAND: keeps waiting while Narrow_Configuration_Signal is not yet 1.0
 // ---------------------------------------------------------------------------
 TEST_F(GpioToolControllerReconfigureTest, ReconfiguringWaitsUntilNarrowStateIsConfirmed)
 {
@@ -129,8 +129,8 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringWaitsUntilNarrowStateIsCo
   UpdateController(0.0);  // SET_COMMAND → CHECK_COMMAND
   ASSERT_EQ(controller_->get_current_transition(), GPIOToolTransition::CHECK_COMMAND);
 
-  // Narrow_Configuraiton_Signal is still 0.0 (hardware hasn't responded yet)
-  ASSERT_DOUBLE_EQ(GetStateValue("Narrow_Configuraiton_Signal"), 0.0);
+  // Narrow_Configuration_Signal is still 0.0 (hardware hasn't responded yet)
+  ASSERT_DOUBLE_EQ(GetStateValue("Narrow_Configuration_Signal"), 0.0);
 
   UpdateController(0.0);  // still in CHECK_COMMAND
   EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::CHECK_COMMAND);
@@ -148,7 +148,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringProceedsToAfterCommandsWh
   UpdateController(0.0);  // SET_COMMAND → CHECK_COMMAND
 
   // Simulate hardware confirming narrow configuration
-  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  SetStateValue("Narrow_Configuration_Signal", 1.0);
   // Wide_Configuration_Signal stays 0.0 (expected value)
 
   UpdateController(0.0);  // CHECK_COMMAND → SET_AFTER_COMMAND
@@ -168,7 +168,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringSetAfterCommandsTransitio
   UpdateController(0.0);  // CHECK_BEFORE_COMMAND → SET_COMMAND
   UpdateController(0.0);  // SET_COMMAND → CHECK_COMMAND
 
-  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  SetStateValue("Narrow_Configuration_Signal", 1.0);
 
   UpdateController(0.0);  // CHECK_COMMAND → SET_AFTER_COMMAND
   ASSERT_EQ(controller_->get_current_transition(), GPIOToolTransition::SET_AFTER_COMMAND);
@@ -188,7 +188,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringCheckAfterStateTransition
   UpdateController(0.0);  // CHECK_BEFORE_COMMAND → SET_COMMAND
   UpdateController(0.0);  // SET_COMMAND → CHECK_COMMAND
 
-  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  SetStateValue("Narrow_Configuration_Signal", 1.0);
 
   UpdateController(0.0);  // CHECK_COMMAND → SET_AFTER_COMMAND
   UpdateController(0.0);  // SET_AFTER_COMMAND → CHECK_AFTER_COMMAND
@@ -221,7 +221,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringToNarrowFullTransitionCom
   EXPECT_DOUBLE_EQ(GetCmdValue("Wide_Configuration_Cmd"), 0.0);
 
   // Simulate narrow configuration confirmed by hardware
-  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  SetStateValue("Narrow_Configuration_Signal", 1.0);
   // Wide_Configuration_Signal stays 0.0 (expected)
 
   // 4. CHECK_COMMAND
@@ -254,7 +254,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringToWideFullTransitionCompl
 
   // Simulate wide configuration confirmed by hardware
   SetStateValue("Wide_Configuration_Signal", 1.0);
-  // Narrow_Configuraiton_Signal stays 0.0 (expected)
+  // Narrow_Configuration_Signal stays 0.0 (expected)
 
   UpdateController(0.0);  // CHECK_COMMAND → SET_AFTER_COMMAND
   UpdateController(0.0);  // SET_AFTER_COMMAND → CHECK_AFTER_COMMAND
@@ -279,7 +279,7 @@ TEST_F(GpioToolControllerReconfigureTest, ReconfiguringGoesToHaltedOnCheckComman
   UpdateController(0.0);
   ASSERT_EQ(controller_->get_current_transition(), GPIOToolTransition::CHECK_COMMAND);
 
-  // Do NOT set Narrow_Configuraiton_Signal. Advance time past the 5 s timeout.
+  // Do NOT set Narrow_Configuration_Signal. Advance time past the 5 s timeout.
   UpdateController(6.0);  // (6.0 - 0.0) > 5.0 → HALTED
 
   EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::HALTED);

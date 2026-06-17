@@ -250,11 +250,11 @@ auto make_config_hw_sim(GpioToolControllerFixture<TestableGpioToolController> & 
     if (fx.GetCmdValue("Wide_Configuration_Cmd") > 0.5)
     {
       fx.SetStateValue("Wide_Configuration_Signal", 1.0);
-      fx.SetStateValue("Narrow_Configuraiton_Signal", 0.0);
+      fx.SetStateValue("Narrow_Configuration_Signal", 0.0);
     }
     else if (fx.GetCmdValue("Narrow_Configuration_Cmd") > 0.5)
     {
-      fx.SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+      fx.SetStateValue("Narrow_Configuration_Signal", 1.0);
       fx.SetStateValue("Wide_Configuration_Signal", 0.0);
     }
   };
@@ -591,7 +591,7 @@ TEST_F(GpioToolControllerExecutorTest, ConfigActionGoalRejectedWhenEngaged)
   SetupInterfaces();
   // Set close_empty tool state + narrow_objects configuration
   SetStateValue("Closed_signal", 1.0);
-  SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+  SetStateValue("Narrow_Configuration_Signal", 1.0);
   ASSERT_EQ(
     controller_->on_activate(rclcpp_lifecycle::State()),
     controller_interface::CallbackReturn::SUCCESS);

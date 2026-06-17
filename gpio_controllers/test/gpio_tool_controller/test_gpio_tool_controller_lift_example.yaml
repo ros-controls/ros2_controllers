@@ -24,14 +24,14 @@ test_io_gripper_controller:
       states:
         high_empty:
           joint_states: [1.5]
-          interfaces: [LiftState, PaylodDetected]
+          interfaces: [LiftState, PayloadDetected]
           values: [1.5, 0.0]
         high_payload:
           joint_states: [1.48]
-          interfaces: [LiftState, PaylodDetected]
+          interfaces: [LiftState, PayloadDetected]
           values: [1.5, 1.0]
 
     gripper_specific_sensors: ["payload_detected"]
     sensors_interfaces:
       payload_detected:
-        interface: "PaylodDetected"
+        interface: "PayloadDetected"

@@ -283,7 +283,7 @@ public:
       {"configuration_setup.narrow_objects.command_values", std::vector<double>{1.0, 0.0}});
     controller_->get_node()->set_parameter(
       {"configuration_setup.narrow_objects.state_interfaces",
-       std::vector<std::string>{"Narrow_Configuraiton_Signal", "Wide_Configuration_Signal"}});
+       std::vector<std::string>{"Narrow_Configuration_Signal", "Wide_Configuration_Signal"}});
     controller_->get_node()->set_parameter(
       {"configuration_setup.narrow_objects.state_values", std::vector<double>{1.0, 0.0}});
 
@@ -296,7 +296,7 @@ public:
       {"configuration_setup.wide_objects.command_values", std::vector<double>{0.0, 1.0}});
     controller_->get_node()->set_parameter(
       {"configuration_setup.wide_objects.state_interfaces",
-       std::vector<std::string>{"Narrow_Configuraiton_Signal", "Wide_Configuration_Signal"}});
+       std::vector<std::string>{"Narrow_Configuration_Signal", "Wide_Configuration_Signal"}});
     controller_->get_node()->set_parameter(
       {"configuration_setup.wide_objects.state_values", std::vector<double>{0.0, 1.0}});
   }
@@ -371,7 +371,7 @@ public:
     {
       // For config-enabled fixture
       SetStateValue("Opened_signal", 1.0);
-      SetStateValue("Narrow_Configuraiton_Signal", 1.0);
+      SetStateValue("Narrow_Configuration_Signal", 1.0);
     }
     else if (state_name == "wide_objects")
     {
