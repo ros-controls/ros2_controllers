@@ -77,6 +77,15 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow joint goals defining trajectory for only some joints.",
   }
+  allow_trajectory_replacement: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+    description: "When a new trajectory arrives while one is still executing, blend with the old one
+      instead of hard-replacing it: joints not commanded by the new trajectory keep following the old
+      trajectory (instead of holding at the current position), and the transition uses the existing
+      bridge so it stays smooth even under speed scaling. Opt-in; default keeps the legacy behavior.",
+  }
   interpolate_from_desired_state: {
     type: bool,
     default_value: false,
