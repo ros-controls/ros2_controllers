@@ -97,10 +97,10 @@ public:
 
   // --- Service / action request helpers (expose protected methods for testing) ---
 
-  EngagingSrvType::Response call_process_engaging_request(
+  EngagingSrvType::Response call_process_tool_action_request(
     const ToolAction & action, const std::string & name)
   {
-    return process_engaging_request(action, name);
+    return process_tool_action_request(action, name);
   }
 
   EngagingSrvType::Response call_process_reconfigure_request(const std::string & config_name)

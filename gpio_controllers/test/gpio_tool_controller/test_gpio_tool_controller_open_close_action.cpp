@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Tests for process_engaging_request() validation logic.
+// Tests for process_tool_action_request() validation logic.
 //
-// Uses call_process_engaging_request() to directly exercise the acceptance and
+// Uses call_process_tool_action_request() to directly exercise the acceptance and
 // rejection conditions without going through the service/action layer.
 // Relevant logic (from gpio_tool_controller.cpp):
 //   - RECONFIGURING → reject with success=false
@@ -61,7 +61,7 @@ TEST_F(GpioToolControllerRequestTest, RequestDisengageWhenAlreadyDisengaged)
   prepare_for_request(*this, possible_engaged_states, "open");
   ASSERT_EQ(controller_->get_current_state(), "open");
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::DISENGAGING, "open");
 
   EXPECT_TRUE(resp.success);
   // No action started – still IDLE
@@ -77,7 +77,7 @@ TEST_F(GpioToolControllerRequestTest, RequestEngageWhenAlreadyEngaged)
   prepare_for_request(*this, possible_engaged_states, "close_empty");
   ASSERT_EQ(controller_->get_current_state(), "close_empty");
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_TRUE(resp.success);
   // No action started – still IDLE
@@ -91,7 +91,7 @@ TEST_F(GpioToolControllerRequestTest, RequestEngageStartsActionWhenDisengaged)
 {
   prepare_for_request(*this, possible_engaged_states, "open");
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_TRUE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
@@ -105,7 +105,7 @@ TEST_F(GpioToolControllerRequestTest, RequestDisengageStartsActionWhenEngaged)
 {
   prepare_for_request(*this, possible_engaged_states, "close_empty");
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::DISENGAGING, "open");
 
   EXPECT_TRUE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
@@ -121,7 +121,7 @@ TEST_F(GpioToolControllerRequestTest, RejectsEngageWhenAlreadyEngaging)
   controller_->start_engaging();
   ASSERT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
@@ -136,7 +136,7 @@ TEST_F(GpioToolControllerRequestTest, RejectsDisengageWhenAlreadyDisengaging)
   controller_->start_disengaging();
   ASSERT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::DISENGAGING, "open");
 
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
@@ -151,7 +151,7 @@ TEST_F(GpioToolControllerRequestTest, AcceptsDisengageWhileEngaging)
   controller_->start_engaging();
   ASSERT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::DISENGAGING, "open");
 
   EXPECT_TRUE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
@@ -166,7 +166,7 @@ TEST_F(GpioToolControllerRequestTest, AcceptsEngageWhileDisengaging)
   controller_->start_disengaging();
   ASSERT_EQ(controller_->get_current_action(), ToolAction::DISENGAGING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_TRUE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::ENGAGING);
@@ -181,7 +181,7 @@ TEST_F(GpioToolControllerRequestTest, RejectsEngageWhenReconfiguring)
   controller_->start_reconfiguring("narrow_objects");
   ASSERT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
@@ -196,7 +196,7 @@ TEST_F(GpioToolControllerRequestTest, RejectsDisengageWhenReconfiguring)
   controller_->start_reconfiguring("narrow_objects");
   ASSERT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::DISENGAGING, "open");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::DISENGAGING, "open");
 
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
@@ -217,7 +217,7 @@ TEST_F(GpioToolControllerRequestTest, ProcessEngagingRequestDuringCancelingAccep
   controller_->force_canceling();
   ASSERT_EQ(controller_->get_current_action(), ToolAction::CANCELING);
 
-  auto resp = controller_->call_process_engaging_request(ToolAction::ENGAGING, "engaged");
+  auto resp = controller_->call_process_tool_action_request(ToolAction::ENGAGING, "engaged");
 
   EXPECT_TRUE(resp.success);
   // CANCELING is overridden by the new ENGAGING action
