@@ -98,7 +98,7 @@ if(BUILD_TESTING)
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(
     test_load_gpio_tool_controller
-    test/test_load_gpio_tool_controller.cpp
+    test/gpio_tool_controller/test_load_gpio_tool_controller.cpp
   )
   target_include_directories(test_load_gpio_tool_controller PRIVATE include)
   target_link_libraries(test_load_gpio_tool_controller
