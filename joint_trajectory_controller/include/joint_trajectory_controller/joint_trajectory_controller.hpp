@@ -94,13 +94,11 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint command_next_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
-  // scratch point for sampling the old trajectory while blending (allow_trajectory_replacement)
+  // Scratch point for sampling the old trajectory while blending
   trajectory_msgs::msg::JointTrajectoryPoint blend_sample_;
-  // which controller joints are commanded by a new message during a blend
-  // (allow_trajectory_replacement)
+  // Tracks which controller joints are commanded by a new blended trajectory
   std::vector<bool> blend_commanded_;
-  // number of points a blend prepended (old window + bridge); used to report the action feedback
-  // index relative to the trajectory the client actually sent
+  // Number of points prepended during a blend (prefix + bridge); used to offset action feedback
   size_t blend_prefix_size_ = 0;
 
   // Degrees of freedom
@@ -238,16 +236,13 @@ protected:
   // positions set to current position, velocities, accelerations and efforts to 0.0
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  // fill the joints missing from trajectory_msg by sampling the old trajectory at each point's
-  // time, so that joints not commanded by a new (partial) trajectory keep following the old one
-  // when allow_trajectory_replacement is set (instead of being held at the current position).
+  // Fills joints missing from trajectory_msg by sampling the active trajectory,
+  // allowing omitted joints to continue their original motion during a blend.
   void fill_omitted_joints_from_old(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & time);
-  // Blend a new trajectory with the one still executing (port of ros_control's
-  // "update existing trajectory"): omitted joints keep following the old trajectory for its full
-  // remaining duration, and commanded joints follow the old trajectory until the new one's start
-  // time and then bridge into it. Replaces trajectory_msg in place with the blended trajectory.
+  // Blends a new trajectory with the active one (Merge-at-Arrival).
+  // Replaces trajectory_msg in place with the blended trajectory (prefix + bridge + suffix).
   void blend_with_active_trajectory(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & time);
