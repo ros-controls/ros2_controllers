@@ -1828,8 +1828,10 @@ void JointTrajectoryController::preempt_active_goal()
   {
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
-    action_res->set__error_string("Current goal cancelled due to new incoming action.");
-    active_goal->setCanceled(action_res);
+    action_res->set__error_string("Current goal preempted by new incoming action.");
+    active_goal->setAborted(action_res);
+    // Deliver result now; the old goal_handle_timer_ is destroyed after this returns.
+    active_goal->runNonRealtime();
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 }

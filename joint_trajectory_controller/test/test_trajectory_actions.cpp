@@ -660,6 +660,42 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
   }
 }
 
+TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+  int error_code_a = -1;
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points[0].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a, &error_code_a](const GoalHandle::WrappedResult & r)
+    {
+      result_a = r.code;
+      error_code_a = r.result->error_code;
+    };
+    sendActionGoal(points, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // goal B preempts A
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
+    points[0].positions = {1.0, 2.0, 3.0};
+    sendActionGoal(points, 1.0, goal_options_);
+  }
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL, error_code_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 {
   // set joint tolerance parameters
