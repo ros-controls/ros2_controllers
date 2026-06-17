@@ -150,7 +150,7 @@ public:
     const std::string controller_name = "test_gpio_tool_controller",
     const std::vector<rclcpp::Parameter> & parameters = {})
   {
-    RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "initializing controller");
+    RCLCPP_INFO(rclcpp::get_logger("GpioToolControllerTest"), "initializing controller");
     auto node_options = controller_->define_custom_node_options();
     node_options.parameter_overrides(parameters);
 
@@ -159,7 +159,7 @@ public:
     params.node_options = node_options;
 
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
-    RCLCPP_INFO(rclcpp::get_logger("IOGripperControllerTest"), "initialized successfully");
+    RCLCPP_INFO(rclcpp::get_logger("GpioToolControllerTest"), "initialized successfully");
   }
 
   void setup_parameters()
@@ -440,13 +440,11 @@ class GpioToolControllerReconfigureTest
 {
 };
 
-class GpioToolControllerLifecycleTest
-: public GpioToolControllerFixture<TestableGpioToolController>
+class GpioToolControllerLifecycleTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
-class GpioToolControllerCancelingTest
-: public GpioToolControllerFixture<TestableGpioToolController>
+class GpioToolControllerCancelingTest : public GpioToolControllerFixture<TestableGpioToolController>
 {
 };
 
