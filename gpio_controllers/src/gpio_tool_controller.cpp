@@ -919,7 +919,7 @@ bool GpioToolController::prepare_command_and_state_ios()
   return ret;
 }
 
-GpioToolController::EngagingSrvType::Response GpioToolController::process_engaging_request(
+GpioToolController::EngagingSrvType::Response GpioToolController::process_tool_action_request(
   const ToolAction & requested_action, const std::string & requested_action_name)
 {
   EngagingSrvType::Response response;
@@ -1069,7 +1069,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
         const std::shared_ptr<EngagingSrvType::Request> /*request*/,
         std::shared_ptr<EngagingSrvType::Response> response)
     {
-      auto result = process_engaging_request(ToolAction::DISENGAGING, params_.disengaged.name);
+      auto result = process_tool_action_request(ToolAction::DISENGAGING, params_.disengaged.name);
       if (result.success)
       {
         result = service_wait_for_transition_end(params_.disengaged.name);
@@ -1086,7 +1086,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
                                       const std::shared_ptr<EngagingSrvType::Request> /*request*/,
                                       std::shared_ptr<EngagingSrvType::Response> response)
     {
-      auto result = process_engaging_request(ToolAction::ENGAGING, params_.engaged.name);
+      auto result = process_tool_action_request(ToolAction::ENGAGING, params_.engaged.name);
       if (result.success)
       {
         result = service_wait_for_transition_end(params_.engaged.name);
@@ -1280,7 +1280,7 @@ rclcpp_action::GoalResponse GpioToolController::handle_engaging_goal(
     action_name = params_.engaged.name;
   }
 
-  auto result = process_engaging_request(engaging_action, action_name);
+  auto result = process_tool_action_request(engaging_action, action_name);
 
   if (!result.success)
   {

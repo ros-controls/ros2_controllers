@@ -202,13 +202,13 @@ protected:
   ControllerStateMsg controller_state_msg_;
 
   /**
-   * @brief Processes Engaging/Disengaging request
+   * @brief Processes Engaging/Disengaging action request for tool.
    *
    * @param requested_action Enum of action being requested.
    * @param requested_action_name Name of the requested action.
    * \return EngagingSrvType::Response
    */
-  EngagingSrvType::Response process_engaging_request(
+  EngagingSrvType::Response process_tool_action_request(
     const ToolAction & requested_action, const std::string & requested_action_name);
 
   /**
