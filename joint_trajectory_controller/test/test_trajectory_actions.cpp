@@ -707,17 +707,13 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
     std::vector<JointTrajectoryPoint> points(1);
     points[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
     points[0].positions = {4.0, 5.0, 6.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_a;
-    goal_a.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_a.trajectory.joint_names = joint_names_;
-    goal_a.trajectory.points = points;
     GoalOptions opts_a;
     opts_a.result_callback = [&result_a, &error_code_a](const GoalHandle::WrappedResult & r)
     {
       result_a = r.code;
       error_code_a = r.result->error_code;
     };
-    action_client_->async_send_goal(goal_a, opts_a);
+    sendActionGoal(points, 1.0, opts_a);
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -726,11 +722,7 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
     std::vector<JointTrajectoryPoint> points(1);
     points[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
     points[0].positions = {1.0, 2.0, 3.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_b;
-    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_b.trajectory.joint_names = joint_names_;
-    goal_b.trajectory.points = points;
-    action_client_->async_send_goal(goal_b, goal_options_);
+    sendActionGoal(points, 1.0, goal_options_);
   }
 
   controller_hw_thread_.join();
