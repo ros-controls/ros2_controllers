@@ -276,9 +276,30 @@ private:
    */
   void check_tool_state(const rclcpp::Time & current_time, const bool warning_output = false);
 
+  /**
+   * @brief Iterates through a map of commands, applies them to the command interfaces,
+   * and updates the controller's lifecycle or state transition.
+   *
+   * @param commands [in] A map of commands.
+   * @param output_prefix [in] String prefix for logging messages to identify the context.
+   * @param next_transition [in] The next state transition ID to store if all commands succeed.
+   * \returns true If all commands were successfully applied else false
+   */
   bool set_commands(
     const std::unordered_map<std::string, std::pair<double, size_t>> & commands,
     const std::string & output_prefix, const uint8_t next_transition);
+  /**
+   * @brief Verifies the current states match the expected values within a defined tolerance.
+   * @param current_time [in] The current ROS timestamp used to evaluate the state transition
+   * timeout.
+   * @param states [in] A map of states.
+   * @param output_prefix [in] String prefix for logging messages to identify the context.
+   * @param next_transition [in] The next state transition ID to store if all states match the
+   * targets.
+   * @param warning_out [in] Flag to conditionally enable or disable standard ROS warning when
+   * states doesn't match
+   * \return true if all current states are within tolerance else false.
+   */
   bool check_states(
     const rclcpp::Time & current_time,
     const std::unordered_map<std::string, std::pair<double, size_t>> & states,
