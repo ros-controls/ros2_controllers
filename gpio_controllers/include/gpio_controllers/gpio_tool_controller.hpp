@@ -201,11 +201,31 @@ protected:
   std::unique_ptr<ControllerStatePublisher> controller_state_publisher_;
   ControllerStateMsg controller_state_msg_;
 
+  /**
+   * @brief Processes Engaging/Disengaging request
+   *
+   * @param requested_action Enum of action being requested.
+   * @param requested_action_name Name of the requested action.
+   * \return EngagingSrvType::Response
+   */
   EngagingSrvType::Response process_engaging_request(
     const ToolAction & requested_action, const std::string & requested_action_name);
 
+  /**
+   * @brief Processes Reconfigure request
+   *
+   * @param config_name Name of the requested config.
+   * \return EngagingSrvType::Response
+   */
   EngagingSrvType::Response process_reconfigure_request(const std::string & config_name);
 
+  /**
+   * @brief Synchronously blocks the calling thread until the active tool action or reconfiguration
+   * process completes or encounters a fault
+   *
+   * @param requested_action_name Name of the action being monitored.
+   * \return EngagingSrvType::Response
+   */
   EngagingSrvType::Response service_wait_for_transition_end(
     const std::string & requested_action_name);
 
@@ -215,14 +235,14 @@ private:
 
   /**
    * @brief Handles the state transition when enaging the tool.
-   * @param current_time [in] Current time for checking the transition time.
-   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the
+   * @param current_time Current time for checking the transition time.
+   * @param ios ToolTransitionIOs structure containing the IOs configurations for the
    * transition.
-   * @param target_state [in] State name to target when checking reached states.
-   * @param joint_states [in/out] Joint states vector to write the joint states to.
-   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint
+   * @param target_state State name to target when checking reached states.
+   * @param joint_states Joint states vector to write the joint states to.
+   * @param joint_states_start_index Start index in the joint_states vector to write the joint
    * states to.
-   * @param end_state [out] Currently determined state during transition. If empty, tool is
+   * @param end_state Currently determined state during transition. If empty, tool is
    * currently in transition and no known state has been reached.
    */
   void handle_tool_state_transition(
@@ -233,20 +253,20 @@ private:
   /**
    * @brief
    *
-   * @param current_time [in] Current time for checking the transition time.
-   * @param ios [in] ToolTransitionIOs structure containing the IOs configurations for the
+   * @param current_time Current time for checking the transition time.
+   * @param ios ToolTransitionIOs structure containing the IOs configurations for the
    * transition.
    * @param joint_states [in/out] Joint states vector to write the joint states to.
-   * @param joint_states_start_index [in] Start index in the joint_states vector to write the joint
+   * @param joint_states_start_index Start index in the joint_states vector to write the joint
    * states to.
-   * @param output_prefix [in] Prefix to add to the output messages.
-   * @param next_transition [in] Next transition to set if the current transition is completed.
+   * @param output_prefix Prefix to add to the output messages.
+   * @param next_transition Next transition to set if the current transition is completed.
    * @param target_and_found_state_name [in/out] State name to target when checking reached states,
    * and feedback on the found state. If the argument is not empty, the next transition will be
    * triggered only when that state is reached. If any state is acceptable, empty string shall be
    * passed. In that case the next transition will be triggered if any state if reached. In either
    * case the output is the found state name.
-   * @param warning_output [in] If true, warning messages will be printed.
+   * @param warning_output If true, warning messages will be printed.
    */
   void check_tool_state_and_switch(
     const rclcpp::Time & current_time, const ToolTransitionIOs & ios,
@@ -268,11 +288,16 @@ private:
 
   /**
    * @brief Publishes the the values from the RT loop.
+   *
+   * @param current_time The current ROS timestamp applied to published messages.
    */
   void publish_topics(const rclcpp::Time & current_time);
 
   /**
    * @brief Checks the tools state.
+   *
+   * @param current_time The current ROS timestamp.
+   * @param warning_output If true, warning messages will be printed.
    */
   void check_tool_state(const rclcpp::Time & current_time, const bool warning_output = false);
 
@@ -280,9 +305,9 @@ private:
    * @brief Iterates through a map of commands, applies them to the command interfaces,
    * and updates the controller's lifecycle or state transition.
    *
-   * @param commands [in] A map of commands.
-   * @param output_prefix [in] String prefix for logging messages to identify the context.
-   * @param next_transition [in] The next state transition ID to store if all commands succeed.
+   * @param commands A map of commands.
+   * @param output_prefix String prefix for logging messages to identify the context.
+   * @param next_transition The next state transition ID to store if all commands succeed.
    * \returns true If all commands were successfully applied else false
    */
   bool set_commands(
@@ -290,13 +315,13 @@ private:
     const std::string & output_prefix, const uint8_t next_transition);
   /**
    * @brief Verifies the current states match the expected values within a defined tolerance.
-   * @param current_time [in] The current ROS timestamp used to evaluate the state transition
+   * @param current_time The current ROS timestamp used to evaluate the state transition
    * timeout.
-   * @param states [in] A map of states.
-   * @param output_prefix [in] String prefix for logging messages to identify the context.
-   * @param next_transition [in] The next state transition ID to store if all states match the
+   * @param states A map of states.
+   * @param output_prefix String prefix for logging messages to identify the context.
+   * @param next_transition The next state transition ID to store if all states match the
    * targets.
-   * @param warning_out [in] Flag to conditionally enable or disable standard ROS warning when
+   * @param warning_out Flag to conditionally enable or disable standard ROS warning when
    * states doesn't match
    * \return true if all current states are within tolerance else false.
    */
