@@ -491,7 +491,7 @@ bool GpioToolController::check_states(
       const double current_state_value =
         state_interfaces_.at(index).get_optional<double>().value_or(
           std::numeric_limits<double>::quiet_NaN());
-      if (std::isnan(current_state_value) || abs(current_state_value - value) > params_.tolerance)
+      if (std::isnan(current_state_value) || fabs(current_state_value - value) > params_.tolerance)
       {
         RCLCPP_WARN_EXPRESSION(
           get_node()->get_logger(), warning_output,
@@ -1190,8 +1190,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "No joints defined, so no joint states will be published, althrough the publisher is "
-      "initialized.");
+      "Engaged or Disengaged states are empty.");
   }
 
   // if (joint_states_values_.size() == 0)
