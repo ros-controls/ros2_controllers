@@ -23,7 +23,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadIOGripperController, load_controller)
+TEST(TestLoadGpioToolController, load_controller)
 {
   rclcpp::init(0, nullptr);
 
@@ -33,14 +33,17 @@ TEST(TestLoadIOGripperController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
   const std::string test_file_path =
-    std::string(TEST_FILES_DIRECTORY) + "/test_io_gripper_controller.yaml";
+    std::string(TEST_FILES_DIRECTORY) +
+    "/gpio_tool_controller/test_gpio_tool_controller_gripper_example.yaml";
 
-  cm.set_parameter({"test_io_gripper_controller.params_file", test_file_path});
+  cm.set_parameter({"test_gpio_tool_controller.params_file", test_file_path});
 
   cm.set_parameter(
-    {"test_io_gripper_controller.type", "io_gripper_controller/IOGripperController"});
+    {"test_gpio_tool_controller.type", "gpio_tool_controller/GpioToolController"});
 
-  ASSERT_NE(cm.load_controller("test_io_gripper_controller"), nullptr);
+  ASSERT_NE(
+    cm.load_controller("test_gpio_tool_controller"),
+    nullptr);
 
   rclcpp::shutdown();
 }
