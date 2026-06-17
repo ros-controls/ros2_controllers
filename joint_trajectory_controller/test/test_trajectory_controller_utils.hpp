@@ -594,7 +594,7 @@ public:
     rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME),
     const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
   {
-    if (start_time == rclcpp::Time(0, 0, RCL_STEADY_TIME))
+    if (start_time.nanoseconds() == 0)
     {
       start_time = rclcpp::Clock(RCL_STEADY_TIME).now();
     }
