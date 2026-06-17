@@ -689,6 +689,90 @@ TEST_F(GpioToolControllerExecutorTest, ConfigActionCancelGoalResultsInAbort)
 }
 
 // ============================================================================
+// Reset service (~/reset_halted)
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Calling ~/reset_halted service from HALTED state recovers to IDLE.
+//
+// 1. Set up controller in IDLE with "open" state.
+// 2. Force CANCELING so the first controller update transitions to HALTED.
+// 3. Call ~/reset_halted service. The service sets reset_halted_ = true.
+// 4. The next controller update sees HALTED + reset_halted_ and recovers
+//    to IDLE.
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ResetServiceRecoversFromHalted)
+{
+  prepare_for_executor_test(*this, possible_engaged_states, "open", false);
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+  ASSERT_EQ(controller_->get_current_state(), "open");
+
+  // Force CANCELING before starting the controller thread.
+  controller_->force_canceling();
+
+  SetUpExecutor();
+  StartControllerThread();  // first update: CANCELING → HALTED
+
+  // Wait for the controller thread to process the CANCELING → HALTED transition.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT_EQ(controller_->get_current_transition(), GPIOToolTransition::HALTED);
+
+  // Call the ~/reset_halted service.
+  auto client =
+    client_node_->create_client<std_srvs::srv::Trigger>("/test_gpio_tool_controller/reset_halted");
+  ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(5)));
+
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto future = client->async_send_request(request);
+
+  auto status = future.wait_for(std::chrono::seconds(5));
+  ASSERT_EQ(status, std::future_status::ready);
+
+  auto response = future.get();
+  EXPECT_TRUE(response->success);
+
+  // Wait for the controller thread to process the reset and recover to IDLE.
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+  EXPECT_EQ(controller_->get_current_transition(), GPIOToolTransition::IDLE);
+  EXPECT_EQ(controller_->get_current_state(), "open");
+}
+
+// ---------------------------------------------------------------------------
+// Reset service returns success even when not in HALTED state (no-op).
+// The service simply sets reset_halted_ = true, which is a no-op when the
+// controller is in IDLE (the update loop ignores reset_halted_ outside
+// the HALTED transition).
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerExecutorTest, ResetServiceSucceedsWhenNotHalted)
+{
+  prepare_for_executor_test(*this, possible_engaged_states, "open", false);
+  ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+
+  SetUpExecutor();
+  StartControllerThread();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  auto client =
+    client_node_->create_client<std_srvs::srv::Trigger>("/test_gpio_tool_controller/reset_halted");
+  ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(5)));
+
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto future = client->async_send_request(request);
+
+  auto status = future.wait_for(std::chrono::seconds(5));
+  ASSERT_EQ(status, std::future_status::ready);
+
+  auto response = future.get();
+  EXPECT_TRUE(response->success);
+
+  // Controller remains IDLE since it was never in HALTED.
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
+
+// ============================================================================
 // service_wait_for_transition_end() HALTED path
 // ============================================================================
 
