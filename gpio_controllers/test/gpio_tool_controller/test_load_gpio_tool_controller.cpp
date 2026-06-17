@@ -38,12 +38,9 @@ TEST(TestLoadGpioToolController, load_controller)
 
   cm.set_parameter({"test_gpio_tool_controller.params_file", test_file_path});
 
-  cm.set_parameter(
-    {"test_gpio_tool_controller.type", "gpio_tool_controller/GpioToolController"});
+  cm.set_parameter({"test_gpio_tool_controller.type", "gpio_tool_controller/GpioToolController"});
 
-  ASSERT_NE(
-    cm.load_controller("test_gpio_tool_controller"),
-    nullptr);
+  ASSERT_NE(cm.load_controller("test_gpio_tool_controller"), nullptr);
 
   rclcpp::shutdown();
 }

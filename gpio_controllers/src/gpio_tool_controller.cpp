@@ -1130,9 +1130,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
         &GpioToolController::handle_engaging_goal, this, std::placeholders::_1,
         std::placeholders::_2),
       std::bind(&GpioToolController::handle_engaging_cancel, this, std::placeholders::_1),
-      std::bind(
-        &GpioToolController::handle_state_action_accepted, this,
-        std::placeholders::_1));
+      std::bind(&GpioToolController::handle_state_action_accepted, this, std::placeholders::_1));
 
     if (configuration_control_enabled_)
     {
@@ -1143,9 +1141,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
           &GpioToolController::handle_config_goal, this, std::placeholders::_1,
           std::placeholders::_2),
         std::bind(&GpioToolController::handle_config_cancel, this, std::placeholders::_1),
-        std::bind(
-          &GpioToolController::handle_config_action_accepted, this,
-          std::placeholders::_1));
+        std::bind(&GpioToolController::handle_config_action_accepted, this, std::placeholders::_1));
     }
   }
 
@@ -1188,9 +1184,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
 
   if (!params_.engaged.name.empty() || !params_.disengaged.name.empty())
   {
-    RCLCPP_INFO(
-      get_node()->get_logger(),
-      "Engaged or Disengaged states are empty.");
+    RCLCPP_INFO(get_node()->get_logger(), "Engaged or Disengaged states are empty.");
   }
 
   // if (joint_states_values_.size() == 0)
@@ -1373,7 +1367,7 @@ void GpioToolController::handle_state_action_accepted(
 }
 
 void GpioToolController::handle_config_action_accepted(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ConfigActionType>> goal_handle)
+  std::shared_ptr<rclcpp_action::ServerGoalHandle<ConfigActionType>> goal_handle)
 {
   auto result = std::make_shared<ConfigActionType::Result>();
   auto feedback = std::make_shared<ConfigActionType::Feedback>();
