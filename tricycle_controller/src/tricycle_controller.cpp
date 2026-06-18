@@ -18,6 +18,7 @@
 
 #define _USE_MATH_DEFINES
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <queue>
@@ -185,18 +186,16 @@ controller_interface::return_type TricycleController::update(
   // Reduce wheel speed until the target angle has been reached
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
-  if (alpha_delta < M_PI / 6)
+  const double min_alpha_delta = M_PI / 6.0;  // 30°
+  const double min_scale = 0.01;               // 1% creep floor
+  if (alpha_delta < min_alpha_delta)
   {
-    scale = 1;
-  }
-  else if (alpha_delta >= M_PI_2)
-  {
-    scale = 0.01;
+    scale = 1.0;
   }
   else
   {
     // TODO(anyone): find the best function, e.g convex power functions
-    scale = cos(alpha_delta);
+    scale = std::max(min_scale, cos(alpha_delta) / cos(min_alpha_delta));
   }
   Ws_write *= scale;
 

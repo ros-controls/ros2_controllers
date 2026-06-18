@@ -475,7 +475,7 @@ TEST_F(TestTricycleController, velocity_attenuation_at_pi_2_boundary)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // The speed scale should be limited to 0.01 (due to alpha_delta == M_PI_2)
+  // The speed scale should be limited to 0.01 (cos(M_PI_2) ≈ 0 → std::max clamps to min_scale)
   // Ws_write * scale = 1.0 * 0.01 = 0.01
   EXPECT_NEAR(0.01, traction_joint_vel_cmd_->get_optional().value(), 1e-6);
   EXPECT_NEAR(M_PI_2, steering_joint_pos_cmd_->get_optional().value(), 1e-6);
