@@ -119,16 +119,16 @@ Joint trajectory messages allow to specify the time at which a new trajectory sh
   Partial support for this functionality has been ported to ROS 2 via the ``allow_trajectory_replacement`` parameter (see `#84 <https://github.com/ros-controls/ros2_controllers/issues/84>`__).
   When enabled, a trajectory arriving with a future ``header.stamp`` is deferred. The controller
   continues executing the active trajectory until the requested start time is reached, at which
-  point the new trajectory is installed and execution begins.
+  point the new trajectory is handled, and the execution begins.
 
   The current ROS 2 implementation differs from the legacy behavior described below in the following ways:
 
   + The controller does not splice or stitch the current and new trajectories together. At the handoff time, the new trajectory fully replaces the old one.
   + Omitted joints in a partial goal are filled with their current position at the handoff time (hold-in-place), rather than continuing to follow the old trajectory.
   + Only a single deferred trajectory is stored. A newer deferred trajectory overwrites any previously deferred one.
-  + When a new action goal is accepted and deferred, the currently active goal is immediately aborted instead of continuing to emit feedback until the handoff time.
+  + When a new action goal is accepted, the currently active goal is immediately aborted instead of continuing to emit feedback until the handoff time.
   + While a deferred action goal is waiting for its start time, it does not publish action feedback and is not evaluated for path tolerances.
-  + The handoff trigger uses the controller's wall-clock time. If the controller is running with a ``speed_scaling`` other than 1.0, the handoff may occur out of sync with the active trajectory's execution state.
+  + The handoff trigger uses the controller's clock time. If the controller is running with a ``speed_scaling`` other than 1.0, the handoff may occur out of sync with the active trajectory's execution state.
 
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
 Rather, the controller will take the useful parts of both and combine them appropriately, yielding a smarter trajectory replacement strategy.
