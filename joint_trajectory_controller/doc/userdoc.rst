@@ -116,7 +116,7 @@ Preemption policy [#f1]_
 
 Only one action goal can be active at any moment, or none if the topic interface is used. Path and goal tolerances are checked only for the trajectory segments of the active goal.
 
-When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
+When an active action goal is preempted by another command coming from the action interface, the goal is aborted and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 
