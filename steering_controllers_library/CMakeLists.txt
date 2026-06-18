@@ -44,7 +44,6 @@ add_library(
   SHARED
   src/steering_controllers_library.cpp
   src/steering_kinematics.cpp
-  src/steering_odometry.cpp
 )
 target_include_directories(steering_controllers_library PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
