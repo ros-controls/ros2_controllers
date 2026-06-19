@@ -47,7 +47,6 @@ const auto minimal_robot_urdf_with_gpio = std::string(ros2_control_test_assets::
                                           std::string(ros2_control_test_assets::urdf_tail);
 }  // namespace
 
-using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::LoanedCommandInterface;
 using hardware_interface::LoanedStateInterface;
 using CmdType = control_msgs::msg::DynamicInterfaceGroupValues;

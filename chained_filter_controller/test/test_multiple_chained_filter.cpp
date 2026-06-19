@@ -25,7 +25,6 @@
 #include "chained_filter_controller/chained_filter.hpp"
 
 using chained_filter_controller::ChainedFilter;
-using controller_interface::CallbackReturn;
 using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
@@ -70,11 +69,9 @@ TEST_F(MultipleChainedFilterTest, ActivateReturnsSuccessWithoutError)
 {
   SetUpController();
 
-  auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
-  EXPECT_EQ(configure_result, CallbackReturn::SUCCESS);
+  EXPECT_TRUE(configure_succeeds(controller_));
 
-  auto activate_result = controller_->on_activate(rclcpp_lifecycle::State());
-  EXPECT_EQ(activate_result, CallbackReturn::SUCCESS);
+  EXPECT_TRUE(activate_succeeds(controller_));
 
   ASSERT_FALSE(controller_->is_in_chained_mode())
     << "No controller is claiming the reference interfaces (it has none).";
@@ -86,7 +83,7 @@ TEST_F(
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(2u));
@@ -117,8 +114,8 @@ TEST_F(
 TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
 {
   SetUpController();
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
@@ -154,8 +151,8 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
 TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_input)
 {
   SetUpController("test_chained_filter_multiple_interfaces_config_per_input");
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
