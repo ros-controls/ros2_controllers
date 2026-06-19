@@ -28,7 +28,6 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 
-using CallbackReturn = controller_interface::CallbackReturn;
 using controller_interface::activate_succeeds;
 using controller_interface::cleanup_succeeds;
 using controller_interface::configure_succeeds;
@@ -340,7 +339,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_names
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
@@ -411,7 +410,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_name
       test_namespace),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
@@ -514,9 +513,9 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_open_loop_assigned)
       {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesNoFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, test_speed_limiter)
@@ -764,9 +763,9 @@ TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resou
        rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_2)
@@ -778,9 +777,9 @@ TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resou
        rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, cleanup)
@@ -1241,13 +1240,11 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   assignResourcesNoFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -1289,10 +1286,8 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
 
   // Safely spin down the lifecycle
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 
@@ -1308,13 +1303,11 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   assignResourcesNoFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -1356,10 +1349,8 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
 
   // Safely spin down the lifecycle
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 
