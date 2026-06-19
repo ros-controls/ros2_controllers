@@ -165,7 +165,7 @@ bool Odometry::updateOpenLoop(
   return true;
 }
 
-bool Odometry::try_update_open_loop(
+bool Odometry::update_open_loop(
   const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel, double dt)
 {
   // Integrate odometry:

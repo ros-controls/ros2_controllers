@@ -112,8 +112,8 @@ TEST_F(OmniOdometryTest, TestSmallDtRejection)
 
 TEST_F(OmniOdometryTest, TestOpenLoopUpdate)
 {
-  // Directly feed vx=2.0, vy=0.5, w=1.0, dt=1.0 to bypass SVD math
-  bool result = odometry_.try_update_open_loop(2.0, 0.5, 1.0, 1.0);
+  // Directly feed vx=2.0, vy=0.5, w=1.0, dt=1.0
+  bool result = odometry_.update_open_loop(2.0, 0.5, 1.0, 1.0);
 
   EXPECT_TRUE(result);
 

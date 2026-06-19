@@ -36,7 +36,7 @@ public:
     "dt).")]]
   bool updateFromVel(const std::vector<double> & wheels_vel, const rclcpp::Time & time);
   [[deprecated(
-    "Replaced by bool try_update_open_loop(const double & linear_x_vel, const double "
+    "Replaced by bool update_open_loop(const double & linear_x_vel, const double "
     "& linear_y_vel, const double & angular_vel, double dt).")]]
   bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
@@ -44,7 +44,7 @@ public:
 
   bool update_from_pos(const std::vector<double> & wheels_pos, double dt);
   bool update_from_vel(const std::vector<double> & wheels_vel, double dt);
-  bool try_update_open_loop(
+  bool update_open_loop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     double dt);
   void setOdometry(const double & x, const double & y, const double & heading);
