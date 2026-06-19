@@ -37,8 +37,6 @@ using controller_interface::activate_succeeds;
 using controller_interface::configure_succeeds;
 using hardware_interface::LoanedStateInterface;
 using lifecycle_msgs::msg::State;
-using callback_return_type =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace
 {
