@@ -333,7 +333,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_names
        rclcpp::Parameter("base_frame_id", rclcpp::ParameterValue(base_link_id))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
@@ -404,7 +404,7 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_set_name
       test_namespace),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   /* tf_frame_prefix_enable is false so no modifications to the frame id's */
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, odom_id);
