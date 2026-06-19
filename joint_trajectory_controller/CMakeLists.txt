@@ -37,7 +37,6 @@ add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
 )
-target_compile_features(joint_trajectory_controller PUBLIC cxx_std_17)
 if(WIN32)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 endif()
@@ -83,7 +82,7 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
-  set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 220)
+  set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 240)
   target_link_libraries(test_trajectory_controller
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets

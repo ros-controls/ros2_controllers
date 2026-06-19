@@ -44,12 +44,6 @@ using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 void JointStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
 void JointStateBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
@@ -66,7 +60,8 @@ void JointStateBroadcasterTest::SetUpStateBroadcaster(
   const std::vector<std::string> & joint_names, const std::vector<std::string> & interfaces,
   const std::vector<rclcpp::Parameter> & parameter_overrides)
 {
-  init_broadcaster_and_set_parameters("", joint_names, interfaces, parameter_overrides);
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, joint_names, interfaces, parameter_overrides);
   assign_state_interfaces(joint_names, interfaces);
 }
 
@@ -171,9 +166,9 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 
   SetUpStateBroadcaster();
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -182,8 +177,10 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -204,9 +201,9 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
 
   SetUpStateBroadcaster();
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -215,8 +212,10 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -231,11 +230,11 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
 
   // Now deactivate and activate with only 2 set of joints and interfaces (to create as in one of
   // the interface is unavailable)
-  ASSERT_EQ(state_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
   const std::vector<std::string> JOINT_NAMES = {"joint1", "joint2"};
   assign_state_interfaces(JOINT_NAMES, interface_names_);
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS_WITH_ONE_DEACTIVATED = JOINT_NAMES.size();
 
@@ -244,8 +243,10 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // params are still cleared from configure (URDF mode), so still INDIVIDUAL_BEST_EFFORT
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -266,9 +267,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -277,8 +278,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -299,30 +302,8 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterInvalidURDF)
   init_broadcaster_and_set_parameters("<invalid_urdf></invalid_urdf>", JOINT_NAMES, IF_NAMES);
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
-  // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  const size_t NUM_JOINTS = joint_names_.size();
-
-  // check interface configuration
-  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
-  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
-  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
-  auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
-
-  // publisher initialized
-  ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
-
-  // joint state initialized
-  const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
-  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(joint_names_));
-  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
-  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+  // URDF mode (joints empty) with an unparsable robot description must fail at configure
+  ASSERT_FALSE(configure_succeeds(state_broadcaster_));
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDescription)
@@ -338,9 +319,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDes
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_in_urdf.size();
 
@@ -349,8 +330,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutJointsParameterWithRobotDes
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // URDF loaded: request specific joints with BEST_EFFORT (3 standard interfaces per joint)
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_in_urdf.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -375,9 +358,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces)
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_in_urdf.size();
 
@@ -386,8 +369,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndNoInterfaces)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // URDF loaded: request specific joints with BEST_EFFORT (3 standard interfaces per joint)
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_in_urdf.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -411,9 +396,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithJointsAndInterfaces)
   assign_state_interfaces(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -443,9 +428,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = joint_names_.size();
 
@@ -454,8 +439,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestWithoutInterfacesParameter)
   ASSERT_THAT(cmd_if_conf.names, IsEmpty());
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
   auto state_if_conf = state_broadcaster_->state_interface_configuration();
-  ASSERT_THAT(state_if_conf.names, IsEmpty());
-  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::ALL);
+  // 3 URDF joints (joint1, joint2, joint3) × 3 standard interfaces
+  ASSERT_THAT(state_if_conf.names, SizeIs(joint_names_.size() * 3));
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->realtime_joint_state_publisher_);
@@ -476,9 +463,9 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -510,7 +497,8 @@ TEST_F(JointStateBroadcasterTest, ActivateDeactivateTestTwoJointsOneInterface)
   }
 
   // deactivate
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // check interface configuration
   cmd_if_conf = state_broadcaster_->command_interface_configuration();
@@ -529,9 +517,9 @@ TEST_F(JointStateBroadcasterTest, ActivateTestOneJointTwoInterfaces)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -571,10 +559,25 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesAllMissing)
   // assign_state_interfaces(JOINT_NAMES, {interface_names_[2]});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   // is none of requested interfaces do not exist, the controller will not be activated
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_ERROR);
+  try
+  {
+    activate_succeeds(state_broadcaster_);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  }
+  catch (const std::runtime_error & e)
+  {
+    EXPECT_STREQ(
+      e.what(),
+      "Unexpected controller state in activate_succeeds: 1");  // State goes to ErrorProcessing then
+                                                               // Unconfigured(1)
+  }
+  catch (...)
+  {
+    FAIL() << "Expected std::runtime_error, but a different exception was thrown";
+  }
 }
 
 TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
@@ -595,10 +598,10 @@ TEST_F(JointStateBroadcasterTest, ActivateTestTwoJointTwoInterfacesOneMissing)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
   // here a warning output is expected!
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -635,9 +638,9 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceWithoutMapping)
   SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
@@ -669,9 +672,9 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
       std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   const size_t NUM_JOINTS = JOINT_NAMES.size();
 
@@ -698,6 +701,52 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   {
     ASSERT_TRUE(std::isnan(joint_state_msg.effort[i]));
   }
+
+  // publisher initialized
+  ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
+}
+
+TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityInterfaceIsRequested)
+{
+  constexpr auto custom_velocity_interface = "derived_velocity";
+  const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
+  const std::vector<std::string> IF_NAMES = {HW_IF_VELOCITY};
+  SetUpStateBroadcaster(
+    JOINT_NAMES, IF_NAMES,
+    {rclcpp::Parameter(
+      std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, custom_velocity_interface)});
+
+  // configure ok; a warning is expected because the custom velocity mapping is ignored
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+
+  const auto velocity_mapping =
+    state_broadcaster_->map_interface_to_joint_state_.find(HW_IF_VELOCITY);
+  ASSERT_NE(velocity_mapping, state_broadcaster_->map_interface_to_joint_state_.end());
+  EXPECT_EQ(velocity_mapping->second, HW_IF_VELOCITY);
+  EXPECT_EQ(state_broadcaster_->map_interface_to_joint_state_.count(custom_velocity_interface), 0u);
+
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  const size_t NUM_JOINTS = JOINT_NAMES.size();
+
+  // check interface configuration
+  auto cmd_if_conf = state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
+  auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(JOINT_NAMES.size() * IF_NAMES.size()));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+
+  // joint state initialized
+  const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_EQ(joint_state_msg.header.frame_id, frame_id_);
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray(JOINT_NAMES));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.position[0]));
+  ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.velocity[0]));
+  ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+  ASSERT_TRUE(std::isnan(joint_state_msg.effort[0]));
 
   // publisher initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
@@ -741,9 +790,8 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();
 
-  auto node_state = state_broadcaster_->configure();
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
   ASSERT_EQ(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -751,9 +799,25 @@ TEST_F(JointStateBroadcasterTest, UpdateTest)
 
 TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 {
+  // Generate a URDF with all 29 test joints (joint_1 ... joint_29)
+  std::string perf_urdf =
+    "<?xml version=\"1.0\" ?><robot name=\"PerfRobot\"><link name=\"base_link\"/>";
+  for (auto joint = 1u; joint < 30; ++joint)
+  {
+    const auto jname = "joint_" + std::to_string(joint);
+    const auto parent = joint == 1u ? "base_link" : "link_" + std::to_string(joint - 1);
+    const auto child = "link_" + std::to_string(joint);
+    perf_urdf += "<link name=\"" + child + "\"/>";
+    perf_urdf += "<joint name=\"" + jname + "\" type=\"revolute\">";
+    perf_urdf += "<parent link=\"" + parent + "\"/><child link=\"" + child + "\"/>";
+    perf_urdf += "<limit effort=\"1\" velocity=\"1\" lower=\"-3.14\" upper=\"3.14\"/>";
+    perf_urdf += "<axis xyz=\"0 0 1\"/></joint>";
+  }
+  perf_urdf += "</robot>";
+
   controller_interface::ControllerInterfaceParams params;
   params.controller_name = "joint_state_broadcaster";
-  params.robot_description = "";
+  params.robot_description = perf_urdf;
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = state_broadcaster_->define_custom_node_options();
@@ -847,9 +911,8 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 
   state_broadcaster_->assign_interfaces({}, std::move(state_interfaces));
 
-  auto node_state = state_broadcaster_->configure();
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   if (!realtime_tools::configure_sched_fifo(50))
   {
@@ -890,11 +953,8 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
 void JointStateBroadcasterTest::activate_and_get_joint_state_message(
   const std::string & topic, sensor_msgs::msg::JointState & joint_state_msg)
 {
-  auto node_state = state_broadcaster_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   sensor_msgs::msg::JointState::SharedPtr received_msg;
   rclcpp::Node test_node("test_node");
@@ -974,9 +1034,9 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("extra_joints", extra_joint_names)});
 
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   std::vector<std::string> all_joint_names = joint_names_;
   all_joint_names.insert(all_joint_names.end(), extra_joint_names.begin(), extra_joint_names.end());
@@ -1004,8 +1064,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure and activate ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // update should not throw
   ASSERT_NO_THROW(
@@ -1028,8 +1088,8 @@ TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest)
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
   // configure and activate ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   // update should not throw
   ASSERT_NO_THROW(
@@ -1069,8 +1129,8 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
   state_ifs.emplace_back(j3);
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   ASSERT_THAT(
     state_broadcaster_->joint_state_msg_.name,

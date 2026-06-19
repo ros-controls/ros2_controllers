@@ -2,6 +2,21 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Remove deprecated publish_rate from diff_drive_controller (`#2259 <https://github.com/ros-controls/ros2_controllers/issues/2259>`_)
+* Remove deprecated odometry reset methods (`#2252 <https://github.com/ros-controls/ros2_controllers/issues/2252>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* diff_drive: set parameters as read_only or dynamically update them (`#2293 <https://github.com/ros-controls/ros2_controllers/issues/2293>`_)
+* Contributors: Bhavin Umatiya, Christoph Fröhlich, Ege Kural, kamal2730
+
+6.6.0 (2026-04-22)
+------------------
+* Update controller tests to use configure/activate instead of on_configure/on_activate  (`#1682 <https://github.com/ros-controls/ros2_controllers/issues/1682>`_)
+* RateLimiter: Don't update parameters before input checks (`#2074 <https://github.com/ros-controls/ros2_controllers/issues/2074>`_)
+* Added test for open-loop odometry with clamped input (`#2280 <https://github.com/ros-controls/ros2_controllers/issues/2280>`_)
+* Contributors: Devdoot Chatterjee, JiaHui Huang, Junius Santoso
+
 6.5.0 (2026-04-02)
 ------------------
 * Fix open-loop odometry by applying SpeedLimiter first (`#2260 <https://github.com/ros-controls/ros2_controllers/issues/2260>`_)

@@ -41,7 +41,6 @@ public:
   bool updateOpenLoop(
     const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel,
     const rclcpp::Time & time);
-  [[deprecated("Use setOdometry(0.0, 0.0, 0.0) instead")]] void resetOdometry();
 
   bool update_from_pos(const std::vector<double> & wheels_pos, double dt);
   bool update_from_vel(const std::vector<double> & wheels_vel, double dt);
