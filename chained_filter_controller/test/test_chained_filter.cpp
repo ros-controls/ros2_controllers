@@ -25,7 +25,6 @@
 #include "chained_filter_controller/chained_filter.hpp"
 
 using chained_filter_controller::ChainedFilter;
-using controller_interface::CallbackReturn;
 using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
