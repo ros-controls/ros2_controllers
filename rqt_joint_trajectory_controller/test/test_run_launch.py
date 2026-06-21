@@ -68,6 +68,7 @@ class TestShutdown(unittest.TestCase):
 
         # On Python 3.14+, rqt_gui_py can intermittently abort during SIGINT teardown
         # when rclpy reports an invalid context from the spinner thread.
+        # TODO(anyone): remove when https://github.com/ros-visualization/rqt/issues/357 is resolved
         if sys.version_info >= (3, 14):
             allowable_exit_codes.append(-signal.SIGABRT)
 
