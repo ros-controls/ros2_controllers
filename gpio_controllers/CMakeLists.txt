@@ -76,6 +76,7 @@ if(BUILD_TESTING)
   target_link_libraries(test_gpio_command_controller
     gpio_controllers
     ros2_control_test_assets::ros2_control_test_assets
+    gpio_command_controller_parameters
   )
 endif()
 
