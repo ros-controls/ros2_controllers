@@ -25,7 +25,6 @@
 #include "chained_filter_controller/chained_filter.hpp"
 
 using chained_filter_controller::ChainedFilter;
-using controller_interface::CallbackReturn;
 using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
@@ -85,19 +84,16 @@ TEST_F(ChainedFilterTest, ConfigureFailureWithWrongInterfaceSizes)
      rclcpp::Parameter(
        "output_interfaces",
        std::vector<std::string>{"wheel_left/filtered_position", "extra_interface"})});
-  auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
-  EXPECT_EQ(configure_result, CallbackReturn::FAILURE);
+
+  ASSERT_FALSE(configure_succeeds(controller_));
 }
 
 TEST_F(ChainedFilterTest, ActivateReturnsSuccessWithoutError)
 {
   SetUpController();
 
-  auto configure_result = controller_->on_configure(rclcpp_lifecycle::State());
-  EXPECT_EQ(configure_result, CallbackReturn::SUCCESS);
-
-  auto activate_result = controller_->on_activate(rclcpp_lifecycle::State());
-  EXPECT_EQ(activate_result, CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_FALSE(controller_->is_in_chained_mode())
     << "No controller is claiming the reference interfaces (it has none).";
@@ -107,7 +103,7 @@ TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto state_if_conf = controller_->state_interface_configuration();
   ASSERT_THAT(state_if_conf.names, SizeIs(1u));
@@ -127,8 +123,8 @@ TEST_F(ChainedFilterTest, state_interface_configuration_succeeds_when_wheels_are
 TEST_F(ChainedFilterTest, UpdateFilter)
 {
   SetUpController();
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
@@ -154,19 +150,30 @@ TEST_F(ChainedFilterTest, UpdateFilter)
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 }
 
-TEST_F(ChainedFilterTest, DeactivateDoesNotCrash)
+TEST_F(ChainedFilterTest, DeactivateSucceeds)
 {
-  EXPECT_NO_THROW({ controller_->on_deactivate(rclcpp_lifecycle::State()); });
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
-TEST_F(ChainedFilterTest, CleanupDoesNotCrash)
+TEST_F(ChainedFilterTest, CleanupSucceeds)
 {
-  EXPECT_NO_THROW({ controller_->on_cleanup(rclcpp_lifecycle::State()); });
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
 }
 
-TEST_F(ChainedFilterTest, ShutdownDoesNotCrash)
+TEST_F(ChainedFilterTest, ShutdownSucceeds)
 {
-  EXPECT_NO_THROW({ controller_->on_shutdown(rclcpp_lifecycle::State()); });
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(shutdown_succeeds(controller_));
 }
 
 int main(int argc, char ** argv)

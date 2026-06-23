@@ -31,6 +31,7 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -51,16 +52,14 @@ using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 namespace
 {
 const double COMMON_THRESHOLD = 0.001;
-
-constexpr auto NODE_SUCCESS =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-constexpr auto NODE_FAILURE =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-constexpr auto NODE_ERROR =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
