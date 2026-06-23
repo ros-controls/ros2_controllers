@@ -260,6 +260,12 @@ gpio_tool_controller:
     }
   }
 
+  enable_config_engaged: {
+    type: bool,
+    default_value: false,
+    description: "If set, we can enable configuration while being in an angaged state."
+  }
+
   configuration_setup:
     __map_configurations:
       joint_states: {
