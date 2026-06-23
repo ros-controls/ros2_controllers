@@ -83,10 +83,8 @@ void MultiInterfaceForwardCommandControllerTest::SetUpController(
 
   if (set_default_params_and_activate)
   {
-    auto node_state = controller_->configure();
-    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-    node_state = controller_->get_node()->activate();
-    ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+    ASSERT_TRUE(configure_succeeds(controller_));
+    ASSERT_TRUE(activate_succeeds(controller_));
   }
 }
 
@@ -97,10 +95,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ConfigureParamsSuccess)
             rclcpp::Parameter(
               "interface_names", std::vector<std::string>{"position", "velocity", "effort"})});
 
-  // configure successful
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check interface configuration
   auto cmd_if_conf = controller_->command_interface_configuration();
@@ -234,8 +229,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
   ASSERT_EQ(joint_1_vel_cmd_->get_optional().value(), 20.0);
   ASSERT_EQ(joint_1_eff_cmd_->get_optional().value(), 30.0);
 
-  auto node_state = controller_->get_node()->deactivate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 
   // check interface configuration
   cmd_if_conf = controller_->command_interface_configuration();
@@ -263,8 +257,7 @@ TEST_F(MultiInterfaceForwardCommandControllerTest, ActivateDeactivateCommandsRes
       ::testing::Not(::testing::NanSensitiveDoubleEq(std::numeric_limits<double>::quiet_NaN()))));
 
   // Now activate again
-  node_state = controller_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // command ptr should be reset after activation - same check as in `update`
   cmd = controller_->rt_command_.get();
