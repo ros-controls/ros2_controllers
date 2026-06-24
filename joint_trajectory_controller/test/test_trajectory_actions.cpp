@@ -1493,11 +1493,7 @@ TEST_F(TestTrajectoryActions, blend_cancel_deferred_action_goal)
     std::vector<JointTrajectoryPoint> points_a(1);
     points_a[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
     points_a[0].positions = {4.0, 5.0, 6.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_a;
-    goal_a.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_a.trajectory.joint_names = joint_names_;
-    goal_a.trajectory.points = points_a;
-    action_client_->async_send_goal(goal_a, goal_options_);
+    sendActionGoal(points_a, 1.0, goal_options_);
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -1526,6 +1522,7 @@ TEST_F(TestTrajectoryActions, blend_cancel_deferred_action_goal)
 
   controller_hw_thread_.join();
 
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
   EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, resultcode_b);
 }
 
@@ -1560,14 +1557,10 @@ TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
     std::vector<JointTrajectoryPoint> points_a(1);
     points_a[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
     points_a[0].positions = {4.0, 5.0, 6.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_a;
-    goal_a.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_a.trajectory.joint_names = joint_names_;
-    goal_a.trajectory.points = points_a;
     GoalOptions opts_a;
     opts_a.result_callback = [&resultcode_a](const GoalHandle::WrappedResult & r)
     { resultcode_a = r.code; };
-    action_client_->async_send_goal(goal_a, opts_a);
+    sendActionGoal(points_a, 1.0, opts_a);
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -1621,15 +1614,12 @@ TEST_F(TestTrajectoryActions, blend_topic_preempts_deferred_action_goal)
     });
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
+  // goal_init establishes an active trajectory; deferral only triggers when has_active_trajectory()
   {
     std::vector<JointTrajectoryPoint> points_init(1);
     points_init[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
     points_init[0].positions = {4.0, 5.0, 6.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_init;
-    goal_init.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_init.trajectory.joint_names = joint_names_;
-    goal_init.trajectory.points = points_init;
-    action_client_->async_send_goal(goal_init, goal_options_);
+    sendActionGoal(points_init, 1.0, goal_options_);
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -1666,7 +1656,7 @@ TEST_F(TestTrajectoryActions, blend_topic_preempts_deferred_action_goal)
 /**
  * @brief Deactivating the controller while an action goal is deferred (future-stamped, not yet
  * fired) must report ABORTED — the goal never executed and the controller is going inactive.
- * Deactivation at 0.3 s fires before the deferred goal's start at 0.5 s.
+ * Deactivation at 0.5 s fires before the deferred goal's start at 0.8 s.
  */
 TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
 {
@@ -1679,7 +1669,7 @@ TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
       auto clock = rclcpp::Clock(RCL_ROS_TIME);
       auto now_time = clock.now();
       auto last_time = now_time;
-      const auto end_time = now_time + rclcpp::Duration::from_seconds(0.3);
+      const auto end_time = now_time + rclcpp::Duration::from_seconds(0.5);
       while (clock.now() < end_time)
       {
         now_time = clock.now();
@@ -1689,17 +1679,14 @@ TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
       traj_controller_->get_node()->deactivate();
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
     });
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+  // goal_a establishes an active trajectory; deferral only triggers when has_active_trajectory()
   {
     std::vector<JointTrajectoryPoint> points_a(1);
     points_a[0].time_from_start = rclcpp::Duration::from_seconds(1.0);
     points_a[0].positions = {4.0, 5.0, 6.0};
-    control_msgs::action::FollowJointTrajectory_Goal goal_a;
-    goal_a.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
-    goal_a.trajectory.joint_names = joint_names_;
-    goal_a.trajectory.points = points_a;
-    action_client_->async_send_goal(goal_a, goal_options_);
+    sendActionGoal(points_a, 1.0, goal_options_);
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -1712,7 +1699,7 @@ TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
     goal_b.trajectory.joint_names = joint_names_;
     goal_b.trajectory.points = points_b;
     goal_b.trajectory.header.stamp =
-      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(0.5);
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(0.8);
     action_client_->async_send_goal(goal_b, goal_options_);
   }
 

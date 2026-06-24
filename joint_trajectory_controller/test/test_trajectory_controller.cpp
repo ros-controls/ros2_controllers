@@ -3299,6 +3299,5 @@ TEST_F(TrajectoryControllerTest, blend_partial_goal_fill_uses_fire_time_state)
     EXPECT_NEAR(2.0, state.positions[0], 0.15);
     EXPECT_NEAR(2.5, state.positions[1], 0.15);
     EXPECT_NEAR(4.55, state.positions[2], 0.25);
-    EXPECT_GT(state.positions[2], 4.1);  // clearly above receive-time value ≈3.73
   }
 }
