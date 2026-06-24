@@ -115,7 +115,8 @@ protected:
 
   // Joint limits and limiter
   std::vector<joint_limits::JointLimits> joint_limits_;
-  using JointLimiter = joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>;
+  using JointLimiter =
+    joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>;
   std::unique_ptr<pluginlib::ClassLoader<JointLimiter>> joint_limiter_loader_;
   std::unique_ptr<JointLimiter> joint_limiter_;
 

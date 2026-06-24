@@ -81,12 +81,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     try
     {
       joint_limiter_loader_ = std::make_unique<pluginlib::ClassLoader<JointLimiter>>(
-        "joint_limits", "joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>");
+        "joint_limits",
+        "joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>");
     }
     catch (const std::exception & e)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Failed to create joint limiter loader: %s", e.what());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to create joint limiter loader: %s", e.what());
       return CallbackReturn::ERROR;
     }
   }
@@ -897,7 +897,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     if (!joint_limiter_loader_)
     {
       RCLCPP_ERROR(
-        logger, "Joint limiter loader is not initialized. Was the joint_limiter_type set in on_init?");
+        logger,
+        "Joint limiter loader is not initialized. Was the joint_limiter_type set in on_init?");
       return CallbackReturn::FAILURE;
     }
     try
@@ -909,14 +910,13 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
         RCLCPP_ERROR(logger, "Failed to initialize joint limiter.");
         return CallbackReturn::FAILURE;
       }
-      RCLCPP_INFO(
-        logger, "Using joint limiter: '%s'", params_.joint_limiter_type.c_str());
+      RCLCPP_INFO(logger, "Using joint limiter: '%s'", params_.joint_limiter_type.c_str());
     }
     catch (const std::exception & e)
     {
       RCLCPP_ERROR(
-        logger, "Failed to create joint limiter '%s': %s",
-        params_.joint_limiter_type.c_str(), e.what());
+        logger, "Failed to create joint limiter '%s': %s", params_.joint_limiter_type.c_str(),
+        e.what());
       return CallbackReturn::FAILURE;
     }
   }
