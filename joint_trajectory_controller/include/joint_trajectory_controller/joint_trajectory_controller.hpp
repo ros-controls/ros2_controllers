@@ -29,9 +29,12 @@
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "joint_limits/joint_limiter_interface.hpp"
+#include "joint_limits/joint_limits.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/subscription.hpp"
 #include "rclcpp/time.hpp"
@@ -109,6 +112,12 @@ protected:
   rclcpp::Duration update_period_{0, 0};
 
   rclcpp::Time traj_time_;
+
+  // Joint limits and limiter
+  std::vector<joint_limits::JointLimits> joint_limits_;
+  using JointLimiter = joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>;
+  std::unique_ptr<pluginlib::ClassLoader<JointLimiter>> joint_limiter_loader_;
+  std::unique_ptr<JointLimiter> joint_limiter_;
 
   // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;

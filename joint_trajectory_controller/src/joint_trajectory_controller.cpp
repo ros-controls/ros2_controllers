@@ -75,6 +75,22 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     return CallbackReturn::ERROR;
   }
 
+  // Initialize joint limiter plugin loader
+  if (!params_.joint_limiter_type.empty())
+  {
+    try
+    {
+      joint_limiter_loader_ = std::make_unique<pluginlib::ClassLoader<JointLimiter>>(
+        "joint_limits", "joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>");
+    }
+    catch (const std::exception & e)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to create joint limiter loader: %s", e.what());
+      return CallbackReturn::ERROR;
+    }
+  }
+
   const std::string & urdf = get_robot_description();
   std::vector<double> max_joint_vel(params_.joints.size(), 0.0);
   if (!urdf.empty())
@@ -328,6 +344,12 @@ controller_interface::return_type JointTrajectoryController::update(
 
     if (valid_point)
     {
+      // Apply joint limiter to the next commanded state
+      if (joint_limiter_)
+      {
+        joint_limiter_->enforce(state_current_, command_next_, update_period_);
+      }
+
       const rclcpp::Time traj_start = current_trajectory_->time_from_start();
       // this is the time instance
       // - started with the first segment: when the first point will be reached (in the future)
@@ -790,6 +812,11 @@ void JointTrajectoryController::query_state_service(
       RCLCPP_ERROR(
         logger, "Requested sample time is earlier than the current trajectory start time.");
     }
+    // Apply joint limiter to the requested state
+    if (joint_limiter_)
+    {
+      joint_limiter_->enforce(state_current_, state_requested, update_period_);
+    }
   }
   else
   {
@@ -862,6 +889,36 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     // create a map for the command joints, trivial if the size is the same
     map_cmd_to_joints_.resize(num_cmd_joints_);
     std::iota(map_cmd_to_joints_.begin(), map_cmd_to_joints_.end(), 0);
+  }
+
+  // Initialize joint limiter
+  if (!params_.joint_limiter_type.empty())
+  {
+    if (!joint_limiter_loader_)
+    {
+      RCLCPP_ERROR(
+        logger, "Joint limiter loader is not initialized. Was the joint_limiter_type set in on_init?");
+      return CallbackReturn::FAILURE;
+    }
+    try
+    {
+      joint_limiter_ = std::unique_ptr<JointLimiter>(
+        joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+      if (!joint_limiter_->init(command_joint_names_, get_node()))
+      {
+        RCLCPP_ERROR(logger, "Failed to initialize joint limiter.");
+        return CallbackReturn::FAILURE;
+      }
+      RCLCPP_INFO(
+        logger, "Using joint limiter: '%s'", params_.joint_limiter_type.c_str());
+    }
+    catch (const std::exception & e)
+    {
+      RCLCPP_ERROR(
+        logger, "Failed to create joint limiter '%s': %s",
+        params_.joint_limiter_type.c_str(), e.what());
+      return CallbackReturn::FAILURE;
+    }
   }
 
   if (params_.command_interfaces.empty())
@@ -1221,6 +1278,16 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   }
   last_commanded_time_ = rclcpp::Time();
 
+  // Configure joint limiter with current state
+  if (joint_limiter_)
+  {
+    if (!joint_limiter_->configure(last_commanded_state_))
+    {
+      RCLCPP_ERROR(logger, "Failed to configure joint limiter.");
+      return CallbackReturn::ERROR;
+    }
+  }
+
   // The controller should start by holding position at the beginning of active state
   add_new_trajectory_msg(set_hold_position());
   rt_is_holding_ = true;
@@ -1341,6 +1408,11 @@ bool JointTrajectoryController::reset()
   }
 
   current_trajectory_.reset();
+
+  if (joint_limiter_)
+  {
+    joint_limiter_->reset_internals();
+  }
 
   return true;
 }

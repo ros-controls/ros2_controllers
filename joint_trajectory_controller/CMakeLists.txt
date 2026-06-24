@@ -12,6 +12,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   controller_interface
   generate_parameter_library
   hardware_interface
+  joint_limits
   pluginlib
   rclcpp
   rclcpp_action
@@ -49,6 +50,7 @@ target_link_libraries(joint_trajectory_controller PUBLIC
                       control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
+                      joint_limits::joint_limits
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_action::rclcpp_action
