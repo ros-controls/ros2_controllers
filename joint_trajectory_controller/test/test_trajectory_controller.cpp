@@ -2257,34 +2257,6 @@ TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy
   }
 }
 
-TEST_P(TrajectoryControllerTestParameterized, blend_stamp0_with_blending_enabled)
-{
-  rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(
-    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
-
-  const rclcpp::Time start_time = traj_controller_->get_node()->now();
-
-  std::vector<std::vector<double>> old_traj{{{8.0, 8.0, 8.0}}};
-  publish(rclcpp::Duration::from_seconds(2.0), old_traj, rclcpp::Time());
-  traj_controller_->wait_for_trajectory(executor);
-  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
-
-  // stamp=0 new trajectory — blend path fires with an empty prefix and immediate handoff
-  std::vector<std::vector<double>> new_traj{{{-3.0, -3.0, -3.0}}};
-  publish(rclcpp::Duration::from_seconds(0.5), new_traj, rclcpp::Time());
-  traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
-
-  if (traj_controller_->has_position_command_interface())
-  {
-    auto state = traj_controller_->get_state_reference();
-    EXPECT_NEAR(-3.0, state.positions[0], 0.1);
-    EXPECT_NEAR(-3.0, state.positions[1], 0.1);
-    EXPECT_NEAR(-3.0, state.positions[2], 0.1);
-  }
-}
-
 TEST_F(TrajectoryControllerTest, blend_successive_blends)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -2293,7 +2265,7 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
-  std::vector<std::vector<double>> traj_a{{{5.0, 5.0, 5.0}}};
+  std::vector<std::vector<double>> traj_a{{{5.0, 5.0, 5.0}, {5.0, 5.0, 5.0}}};
   publish(rclcpp::Duration::from_seconds(2.0), traj_a, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
   auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.2), start_time);

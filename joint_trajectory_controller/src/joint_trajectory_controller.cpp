@@ -482,7 +482,9 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
-        feedback->index = static_cast<int32_t>(next_point_index);
+        // report the index relative to the trajectory the client sent (a blend prepends points)
+        feedback->index = std::max(
+          0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
         active_goal->setFeedback(feedback);
 
         // check abort
