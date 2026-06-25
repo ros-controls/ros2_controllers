@@ -2197,8 +2197,7 @@ TEST_P(TrajectoryControllerTestParameterized, blend_commanded_joint_follows_old_
     << "commanded joint shortcut toward the new trajectory instead of following the old path";
 }
 
-TEST_P(
-  TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_traj_follows_old)
+TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_traj_follows_old)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
@@ -2243,8 +2242,7 @@ TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy
   // has_nontrivial_msg() is false for the hold traj so blend must not trigger.
   std::vector<std::vector<double>> traj{{{4.0, 5.0, 6.0}}};
   publish(
-    rclcpp::Duration::from_seconds(0.3), traj,
-    start_time + rclcpp::Duration::from_seconds(0.5));
+    rclcpp::Duration::from_seconds(0.3), traj, start_time + rclcpp::Duration::from_seconds(0.5));
   traj_controller_->wait_for_trajectory(executor);
 
   // advance past stamp + duration (0.5 + 0.3 = 0.8 s)
@@ -2303,8 +2301,7 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
   // first blend: B is future-stamped, fires at 0.6 s
   std::vector<std::vector<double>> traj_b{{{-3.0, -3.0, -3.0}}};
   publish(
-    rclcpp::Duration::from_seconds(0.5), traj_b,
-    start_time + rclcpp::Duration::from_seconds(0.6));
+    rclcpp::Duration::from_seconds(0.5), traj_b, start_time + rclcpp::Duration::from_seconds(0.6));
   traj_controller_->wait_for_trajectory(executor);
   t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), t);
 
