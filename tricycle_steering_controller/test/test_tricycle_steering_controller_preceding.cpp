@@ -17,15 +17,16 @@
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "test_tricycle_steering_controller.hpp"
-class TricycleSteeringControllerTest
-: public TricycleSteeringControllerFixture<TestableTricycleSteeringController>
+#include "test_tricycle_steering_controller_dual_traction.hpp"
+class TricycleSteeringControllerDualTractionTest
+: public TricycleSteeringControllerDualTractionFixture<
+    TestableTricycleSteeringControllerDualTraction>
 {
 };
 
-TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
+TEST_F(TricycleSteeringControllerDualTractionTest, all_parameters_set_configure_success)
 {
-  SetUpController();
+  SetUpController("test_tricycle_steering_controller_dual_traction_preceding");
 
   ASSERT_TRUE(configure_succeeds(controller_));
 
@@ -43,9 +44,9 @@ TEST_F(TricycleSteeringControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->tricycle_params_.traction_track_width, traction_track_width_);
 }
 
-TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
+TEST_F(TricycleSteeringControllerDualTractionTest, check_exported_interfaces)
 {
-  SetUpController();
+  SetUpController("test_tricycle_steering_controller_dual_traction_preceding");
 
   ASSERT_TRUE(configure_succeeds(controller_));
 
@@ -58,7 +59,7 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
     cmd_if_conf.names[CMD_TRACTION_LEFT_WHEEL],
     preceding_prefix_ + "/" + traction_joints_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    cmd_if_conf.names[CMD_STEER_WHEEL],
+    cmd_if_conf.names[CMD_DUAL_TRACTION_STEER_WHEEL],
     preceding_prefix_ + "/" + steering_joints_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
@@ -71,7 +72,7 @@ TEST_F(TricycleSteeringControllerTest, check_exported_interfaces)
     state_if_conf.names[STATE_TRACTION_LEFT_WHEEL],
     controller_->traction_joints_state_names_[1] + "/" + traction_interface_name_);
   EXPECT_EQ(
-    state_if_conf.names[STATE_STEER_AXIS],
+    state_if_conf.names[STATE_DUAL_TRACTION_STEER_AXIS],
     controller_->steering_joints_state_names_[0] + "/" + steering_interface_name_);
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 

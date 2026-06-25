@@ -57,7 +57,16 @@ steering_controllers_library
 *****************************
 * Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
 * Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+* Kinematics for single-drive tricycle added. (`#1695 <https://github.com/ros-controls/ros2_controllers/pull/1695>`_).
 
 magnetometer_broadcaster
 ************************
 New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
+
+tricycle_controller
+*****************************
+* Deprecated in favor of the new tricycle_steering_controller. (`#1695 <https://github.com/ros-controls/ros2_controllers/pull/1695>`_).
+
+tricycle_steering_controller
+*****************************
+* Added drop-in replacement for tricycle_controller (single-drive tricycle). (`#1695 <https://github.com/ros-controls/ros2_controllers/pull/1695>`_).

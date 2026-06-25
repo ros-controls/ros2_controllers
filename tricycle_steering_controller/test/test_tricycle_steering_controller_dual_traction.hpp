@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
-#define TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#ifndef TEST_TRICYCLE_STEERING_CONTROLLER_DUAL_TRACTION_HPP_
+#define TEST_TRICYCLE_STEERING_CONTROLLER_DUAL_TRACTION_HPP_
 
 #include <gmock/gmock.h>
 
@@ -30,63 +30,61 @@
 #include "rclcpp/executors.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-#include "steering_controllers_library/steering_controllers_library.hpp"
-
-using controller_interface::activate_succeeds;
-using controller_interface::configure_succeeds;
+#include "tricycle_steering_controller/tricycle_steering_controller.hpp"
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
 using ControllerReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
-// NOTE: Testing steering_controllers_library for Ackermann vehicle configuration only
-
 // name constants for state interfaces
-static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
-static constexpr size_t STATE_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t STATE_STEER_RIGHT_WHEEL = 2;
-static constexpr size_t STATE_STEER_LEFT_WHEEL = 3;
+using tricycle_steering_controller::STATE_DUAL_TRACTION_STEER_AXIS;
+using tricycle_steering_controller::STATE_TRACTION_LEFT_WHEEL;
+using tricycle_steering_controller::STATE_TRACTION_RIGHT_WHEEL;
 
 // name constants for command interfaces
-static constexpr size_t CMD_TRACTION_RIGHT_WHEEL = 0;
-static constexpr size_t CMD_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t CMD_STEER_RIGHT_WHEEL = 2;
-static constexpr size_t CMD_STEER_LEFT_WHEEL = 3;
+using tricycle_steering_controller::CMD_DUAL_TRACTION_STEER_WHEEL;
+using tricycle_steering_controller::CMD_TRACTION_LEFT_WHEEL;
+using tricycle_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
 
-static constexpr size_t NR_STATE_ITFS = 4;
-static constexpr size_t NR_CMD_ITFS = 4;
-static constexpr size_t NR_REF_ITFS = 2;
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
-static constexpr double WHEELBASE_ = 3.24644;
-static constexpr double WHEELS_TRACK_ = 2.12321;
-static constexpr double WHEELS_RADIUS_ = 0.45;
+namespace
+{
+const double COMMON_THRESHOLD = 1e-6;
+}  // namespace
 
 // subclassing and friending so we can access member variables
-class TestableAckermannSteeringController
-: public steering_controllers_library::SteeringControllersLibrary
+class TestableTricycleSteeringControllerDualTraction
+: public tricycle_steering_controller::TricycleSteeringController
 {
-  FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
-  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_no_namespace);
-  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_blank_prefix_no_namespace);
-  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_prefix_set_namespace);
-  FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
-  FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
-  FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
-  FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, all_parameters_set_configure_success);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, check_exported_interfaces);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, activate_success);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, update_success);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, deactivate_success);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, reactivate_success);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, test_update_logic);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, test_update_logic_chained);
+  FRIEND_TEST(TricycleSteeringControllerDualTractionTest, publish_status_success);
+  FRIEND_TEST(
+    TricycleSteeringControllerDualTractionTest, receive_message_and_publish_updated_status);
 
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    return steering_controllers_library::SteeringControllersLibrary::on_configure(previous_state);
+    return tricycle_steering_controller::TricycleSteeringController::on_configure(previous_state);
   }
 
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
     auto ref_itfs = on_export_reference_interfaces();
-    return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
+    return tricycle_steering_controller::TricycleSteeringController::on_activate(previous_state);
   }
 
   /**
@@ -110,38 +108,13 @@ public:
     rclcpp::Executor & executor,
     const std::chrono::milliseconds & timeout = std::chrono::milliseconds{500})
   {
-    wait_for_command(executor, timeout);
-  }
-
-  // implementing methods which are declared virtual in the steering_controllers_library.hpp
-  void initialize_implementation_parameter_listener() override
-  {
-    param_listener_ = std::make_shared<steering_controllers_library::ParamListener>(get_node());
-  }
-
-  controller_interface::CallbackReturn configure_odometry() override
-  {
-    set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
-    odometry_.set_wheel_params(WHEELS_RADIUS_, WHEELBASE_, WHEELS_TRACK_);
-    odometry_.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
-
-    return controller_interface::CallbackReturn::SUCCESS;
-  }
-
-  // Manual integration of odometry based on wheel states
-  bool update_odometry(const rclcpp::Duration & period) override
-  {
-    return odometry_.update_from_velocity(
-      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
-      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
-      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
-      state_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(), period.seconds());
+    return wait_for_command(executor, timeout);
   }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
 template <typename CtrlType>
-class SteeringControllersLibraryFixture : public ::testing::Test
+class TricycleSteeringControllerDualTractionFixture : public ::testing::Test
 {
 public:
   static void SetUpTestCase() {}
@@ -153,7 +126,7 @@ public:
 
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     command_publisher_ = command_publisher_node_->create_publisher<ControllerReferenceMsg>(
-      "/test_steering_controllers_library/reference", rclcpp::SystemDefaultsQoS());
+      "/test_tricycle_steering_controller_dual_traction/reference", rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase() {}
@@ -162,15 +135,14 @@ public:
 
 protected:
   void SetUpController(
-    const std::string controller_name = "test_steering_controllers_library",
-    const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
+    const std::string controller_name = "test_tricycle_steering_controller_dual_traction")
   {
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
     params.robot_description = "";
     params.update_rate = 0;
-    params.node_namespace = ns;
-    params.node_options = node_options;
+    params.node_namespace = "";
+    params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
@@ -194,20 +166,14 @@ protected:
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[1], traction_interface_name_,
+        traction_joints_names_[1], steering_interface_name_,
         &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
         steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
-    loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
-
-    command_itfs_.emplace_back(
-      std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
+        &joint_command_values_[CMD_DUAL_TRACTION_STEER_WHEEL]));
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
@@ -229,13 +195,7 @@ protected:
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
         steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
-    loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
-
-    state_itfs_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[1], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
+        &joint_state_values_[STATE_DUAL_TRACTION_STEER_AXIS]));
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
@@ -248,7 +208,7 @@ protected:
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node.create_subscription<ControllerStateMsg>(
-      "/test_steering_controllers_library/controller_state", 10, subs_callback);
+      "/test_tricycle_steering_controller_dual_traction/controller_state", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node.get_node_base_interface());
 
@@ -318,21 +278,22 @@ protected:
   bool position_feedback_ = false;
   std::vector<std::string> traction_joints_names_ = {
     "rear_right_wheel_joint", "rear_left_wheel_joint"};
-  std::vector<std::string> steering_joints_names_ = {
-    "front_right_steering_joint", "front_left_steering_joint"};
+  std::vector<std::string> steering_joints_names_ = {"steering_axis_joint"};
   std::vector<std::string> joint_names_ = {
-    traction_joints_names_[0], traction_joints_names_[1], steering_joints_names_[0],
-    steering_joints_names_[1]};
+    traction_joints_names_[0], traction_joints_names_[1], steering_joints_names_[0]};
 
   std::vector<std::string> traction_joints_preceding_names_ = {
     "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
   std::vector<std::string> steering_joints_preceding_names_ = {
-    "pid_controller/front_right_steering_joint", "pid_controller/front_left_steering_joint"};
+    "pid_controller/steering_axis_joint"};
 
-  std::array<double, 4> joint_state_values_ = {{0.5, 0.5, 0.0, 0.0}};
-  std::array<double, 4> joint_command_values_ = {{1.1, 3.3, 2.2, 4.4}};
+  double wheelbase_ = 3.24644;
+  double traction_track_width_ = 1.212121;
+  double traction_wheels_radius_ = 0.45;
 
-  std::array<std::string, 2> reference_interface_names_ = {{"linear", "angular"}};
+  std::array<double, 3> joint_state_values_{{0.5, 0.5, 0.0}};
+  std::array<double, 3> joint_command_values_{{1.1, 3.3, 2.2}};
+  std::array<std::string, 2> reference_interface_names_{{"linear", "angular"}};
   std::string steering_interface_name_ = "position";
   // defined in setup
   std::string traction_interface_name_ = "";
@@ -342,9 +303,9 @@ protected:
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   // Test related parameters
-  std::unique_ptr<CtrlType> controller_;
+  std::unique_ptr<TestableTricycleSteeringControllerDualTraction> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerReferenceMsg>::SharedPtr command_publisher_;
 };
 
-#endif  // TEST_STEERING_CONTROLLERS_LIBRARY_HPP_
+#endif  // TEST_TRICYCLE_STEERING_CONTROLLER_DUAL_TRACTION_HPP_
