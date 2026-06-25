@@ -1,0 +1,38 @@
+test_swerve_drive_controller:
+  ros__parameters:
+    update_rate: 10 #Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    swerve_drive_controller:
+      type: swerve_drive_controller/SwerveController
+
+swerve_drive_controller:
+  ros__parameters:
+
+    front_left_wheel_joint: "joint_wheel_left_front"
+    front_right_wheel_joint: "joint_wheel_right_front"
+    rear_left_wheel_joint: "joint_wheel_left_rear"
+    rear_right_wheel_joint: "joint_wheel_right_rear"
+
+    front_left_axle_joint: "joint_steering_left_front"
+    front_right_axle_joint: "joint_steering_right_front"
+    rear_left_axle_joint: "joint_steering_left_rear"
+    rear_right_axle_joint: "joint_steering_right_rear"
+
+    chassis_length: 0.35
+    chassis_width: 0.2
+    wheel_radius: 0.04
+    center_of_rotation: 0.1
+    cmd_vel_timeout: 10.0
+    odom: odom
+    base_footprint: base_footprint
+    enable_odom_tf: true
+    open_loop: false
+    front_left_velocity_threshold: 2.0
+    front_right_velocity_threshold: 2.0
+    rear_left_velocity_threshold: 2.0
+    rear_right_velocity_threshold: 2.0
+    pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
