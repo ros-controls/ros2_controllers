@@ -826,6 +826,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // get degrees of freedom
   dof_ = params_.joints.size();
+  blend_commanded_.assign(dof_, false);
+  blend_sample_.positions.resize(dof_);
+  blend_sample_.velocities.resize(dof_);
+  blend_sample_.accelerations.resize(dof_);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
