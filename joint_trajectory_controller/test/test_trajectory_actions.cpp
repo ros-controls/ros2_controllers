@@ -732,10 +732,10 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
-// Verify that when blending is enabled and goal A has a multi-point trajectory,
-// a new goal B preempts A via the blend code path: A is ABORTED and B SUCCEEDS.
 TEST_F(TestTrajectoryActions, blend_action_preempt_aborts_old_goal)
 {
+  // Goal A has a multi-point trajectory (has_nontrivial_msg() == true) so goal B preempts via
+  // the blend code path: A is ABORTED and B SUCCEEDS.
   SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
   SetUpControllerHardware();
 
