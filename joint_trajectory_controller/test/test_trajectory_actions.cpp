@@ -732,6 +732,39 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
+TEST_F(TestTrajectoryActions, blend_action_preempt_aborts_old_goal)
+{
+  // Goal A has a multi-point trajectory (has_nontrivial_msg() == true) so goal B preempts via
+  // the blend code path: A is ABORTED and B SUCCEEDS.
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+  SetUpControllerHardware();
+
+  rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points(2);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(1.0);
+    points[0].positions = {2.0, 3.0, 4.0};
+    points[1].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points[1].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a](const GoalHandle::WrappedResult & r)
+    { result_a = r.code; };
+    sendActionGoal(points, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.4);
+    points[0].positions = {1.0, 2.0, 3.0};
+    sendActionGoal(points, 1.0, goal_options_);
+  }
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 {
   // set joint tolerance parameters

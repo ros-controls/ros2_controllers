@@ -2064,15 +2064,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
-
-  RCLCPP_WARN(
-    traj_controller_->get_node()->get_logger(),
-    "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
-  // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/
-  // joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
-  return;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
@@ -2082,29 +2076,214 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   // *INDENT-ON*
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
-  // Send full trajectory
+
+  // Use node clock so future-stamped publish and controller update() share the same time base.
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
   publish(points_delay, full_traj, rclcpp::Time(), {}, full_traj_velocities);
-  // Sleep until first waypoint of full trajectory
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {full_traj[0].begin(), full_traj[0].end()};
   expected_desired = expected_actual;
-  //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
-  auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time = waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, start_time);
 
-  // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   publish(
-    points_delay, partial_traj, rclcpp::Clock(RCL_STEADY_TIME).now() + delay * 2, {},
+    points_delay, partial_traj, end_time + rclcpp::Duration(delay * 2), {},
     partial_traj_velocities);
-  // Wait until the end start and end of partial traj
 
+  // joints 0 and 1 follow partial_traj; joint 2 holds at full_traj's last position
   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
   expected_desired = expected_actual;
 
   waitAndCompareState(
     expected_actual, expected_desired, executor, rclcpp::Duration(delay * (2 + 2)), 0.1, end_time);
+}
+
+TEST_F(TrajectoryControllerTest, blend_no_position_jump_under_speed_scaling)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("allow_trajectory_replacement", true),
+    rclcpp::Parameter("speed_scaling.initial_scaling_factor", 0.5)};
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> old_traj{{{11.1, 12.1, 13.1}, {21.1, 22.1, 23.1}}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  // after 1 s wall-clock at 0.5x the cursor is only ~0.5 s in
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(1.0), start_time);
+  const auto ref_before = traj_controller_->get_state_reference();
+
+  std::vector<std::vector<double>> new_traj{{{0., 0., 0.}, {-5., -5., -5.}}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.03), t);
+  const auto ref_after = traj_controller_->get_state_reference();
+
+  for (size_t i = 0; i < ref_before.positions.size(); ++i)
+  {
+    EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 2.0)
+      << "reference jumped forward on blend install under speed scaling, joint " << i;
+  }
+}
+
+TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_outlasts_shorter_new_trajectory)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint3 ramps to +23 over 1.5 s; new partial trajectory (joints 0,1 only) ends at 0.6 s
+  std::vector<std::vector<double>> old_traj{{{1.1, 2.1, 13.1}, {1.1, 2.1, 23.1}}};
+  publish(rclcpp::Duration::from_seconds(1.5), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  std::vector<std::vector<double>> new_traj{{{-3.9, -2.9}, {-8.9, -7.9}}};
+  publish(rclcpp::Duration::from_seconds(0.3), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+
+  // sample omitted joint at two points after the new trajectory ends — must still be moving
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
+  const double omitted_first = traj_controller_->get_state_reference().positions[2];
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.6), t);
+  const double omitted_second = traj_controller_->get_state_reference().positions[2];
+
+  EXPECT_GT(omitted_second, omitted_first + 0.5)
+    << "omitted joint froze at the new trajectory's end instead of continuing the old trajectory";
+}
+
+TEST_P(TrajectoryControllerTestParameterized, blend_commanded_joint_follows_old_path)
+{
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {blending_parameters});
+
+  const auto delay = std::chrono::milliseconds(500);
+  builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
+  // node clock domain so the future-stamped trajectory validates and is reached by update()
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // old: joint1 peaks at 10 at 0.5 s, then returns to 0 — peak is before the handoff
+  std::vector<std::vector<double>> old_traj{{{10., 2.1, 3.1}, {0., 2.1, 3.1}}};
+  publish(points_delay, old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.05), start_time);
+
+  std::vector<std::vector<double>> new_traj{{{-5., -5., -5.}, {-5., -5., -5.}}};
+  publish(points_delay, new_traj, start_time + rclcpp::Duration(delay * 3));
+  traj_controller_->wait_for_trajectory(executor);
+
+  double max_joint1 = -1e9;
+  for (int k = 0; k < 14; ++k)
+  {
+    t = updateControllerAsync(rclcpp::Duration::from_seconds(0.1), t);
+    max_joint1 = std::max(max_joint1, traj_controller_->get_state_reference().positions[0]);
+  }
+  EXPECT_GT(max_joint1, 8.0)
+    << "commanded joint shortcut toward the new trajectory instead of following the old path";
+}
+
+TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_traj_follows_old)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint2 ramps 3.1→13.1 over 0-1.5 s then 13.1→23.1 over 1.5-3.0 s
+  // Two waypoints required so has_nontrivial_msg() is true and blend fires
+  std::vector<std::vector<double>> old_traj{{{1.1, 2.1, 13.1}, {1.1, 2.1, 23.1}}};
+  publish(rclcpp::Duration::from_seconds(1.5), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  // partial traj (joints 0,1) fires at 0.7 s, runs to 1.2 s — omitted joint2 must keep moving
+  std::vector<std::vector<double>> new_traj{{{-3.0, -3.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), new_traj,
+    start_time + rclcpp::Duration::from_seconds(0.7));
+  traj_controller_->wait_for_trajectory(executor);
+
+  // sample at 0.2 s and 0.4 s inside the new-trajectory window
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.6), t);
+  const double omitted_first = traj_controller_->get_state_reference().positions[2];
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.2), t);
+  const double omitted_second = traj_controller_->get_state_reference().positions[2];
+
+  EXPECT_GT(omitted_second, omitted_first + 0.5)
+    << "omitted joint froze during the new trajectory's execution window";
+}
+
+TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // future-stamped traj arrives while controller is in hold (no active trajectory).
+  // has_nontrivial_msg() is false for the hold traj so blend must not trigger.
+  std::vector<std::vector<double>> traj{{{4.0, 5.0, 6.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.3), traj, start_time + rclcpp::Duration::from_seconds(0.5));
+  traj_controller_->wait_for_trajectory(executor);
+
+  // advance past stamp + duration (0.5 + 0.3 = 0.8 s)
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.2), start_time);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(4.0, state.positions[0], 0.1);
+    EXPECT_NEAR(5.0, state.positions[1], 0.1);
+    EXPECT_NEAR(6.0, state.positions[2], 0.1);
+  }
+}
+
+TEST_F(TrajectoryControllerTest, blend_successive_blends)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> traj_a{{{5.0, 5.0, 5.0}, {5.0, 5.0, 5.0}}};
+  publish(rclcpp::Duration::from_seconds(2.0), traj_a, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.2), start_time);
+
+  // first blend: B is future-stamped, fires at 0.6 s
+  std::vector<std::vector<double>> traj_b{{{-3.0, -3.0, -3.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), traj_b, start_time + rclcpp::Duration::from_seconds(0.6));
+  traj_controller_->wait_for_trajectory(executor);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), t);
+
+  // second blend: C arrives stamp=0 while B-blend is active
+  std::vector<std::vector<double>> traj_c{{{7.0, 7.0, 7.0}}};
+  publish(rclcpp::Duration::from_seconds(0.5), traj_c, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(7.0, state.positions[0], 0.2);
+    EXPECT_NEAR(7.0, state.positions[1], 0.2);
+    EXPECT_NEAR(7.0, state.positions[2], 0.2);
+  }
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)

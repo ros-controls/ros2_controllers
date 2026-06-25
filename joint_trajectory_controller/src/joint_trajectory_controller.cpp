@@ -271,8 +271,20 @@ controller_interface::return_type JointTrajectoryController::update(
   if (
     current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    if (
+      params_.allow_trajectory_replacement && has_active_trajectory() &&
+      current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
+    {
+      // keep the useful part of the old trajectory and blend the new one into it
+      blend_with_active_trajectory(*new_external_msg, time);
+    }
+    else
+    {
+      // legacy behavior: joints omitted from the new message hold at the current position
+      fill_partial_goal(*new_external_msg);
+      sort_to_local_joint_order(*new_external_msg);
+      blend_prefix_size_ = 0;
+    }
     // TODO(denis): Add here integration of position and velocity
     current_trajectory_->update(*new_external_msg);
   }
@@ -470,7 +482,9 @@ controller_interface::return_type JointTrajectoryController::update(
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
-        feedback->index = static_cast<int32_t>(next_point_index);
+        // report the index relative to the trajectory the client sent (a blend prepends points)
+        feedback->index = std::max(
+          0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
         active_goal->setFeedback(feedback);
 
         // check abort
@@ -814,6 +828,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // get degrees of freedom
   dof_ = params_.joints.size();
+  blend_commanded_.assign(dof_, false);
+  blend_sample_.positions.resize(dof_);
+  blend_sample_.velocities.resize(dof_);
+  blend_sample_.accelerations.resize(dof_);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
@@ -1592,6 +1610,168 @@ void JointTrajectoryController::fill_partial_goal(
       }
     }
   }
+}
+
+void JointTrajectoryController::fill_omitted_joints_from_old(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+  const rclcpp::Time & time)
+{
+  if (dof_ == trajectory_msg->joint_names.size() || !has_active_trajectory())
+  {
+    return;
+  }
+
+  rclcpp::Time new_start(trajectory_msg->header.stamp, time.get_clock_type());
+  if (new_start.seconds() == 0.0)
+  {
+    new_start = time;
+  }
+
+  TrajectoryPointConstIter start_it, end_it;
+  trajectory_msg->joint_names.reserve(dof_);
+
+  for (size_t index = 0; index < dof_; ++index)
+  {
+    if (
+      std::find(
+        trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+        params_.joints[index]) != trajectory_msg->joint_names.end())
+    {
+      continue;
+    }
+    trajectory_msg->joint_names.push_back(params_.joints[index]);
+
+    for (auto & point : trajectory_msg->points)
+    {
+      // search_monotonically_increasing=false: off-cursor sampling must not disturb the RT cursor
+      const bool sampled = current_trajectory_->sample(
+        new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
+        start_it, end_it, false);
+
+      if (!point.positions.empty())
+      {
+        point.positions.push_back(
+          (sampled && index < blend_sample_.positions.size()) ? blend_sample_.positions[index]
+                                                              : 0.0);
+      }
+      if (!point.velocities.empty())
+      {
+        point.velocities.push_back(
+          (sampled && index < blend_sample_.velocities.size()) ? blend_sample_.velocities[index]
+                                                               : 0.0);
+      }
+      if (!point.accelerations.empty())
+      {
+        point.accelerations.push_back(
+          (sampled && index < blend_sample_.accelerations.size())
+            ? blend_sample_.accelerations[index]
+            : 0.0);
+      }
+      if (!point.effort.empty())
+      {
+        point.effort.push_back(0.0);
+      }
+    }
+  }
+}
+
+void JointTrajectoryController::blend_with_active_trajectory(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+  const rclcpp::Time & time)
+{
+  const auto old_msg = current_trajectory_->get_trajectory_msg();
+  const rclcpp::Time old_start = current_trajectory_->time_from_start();
+  // clamp to old_start: traj_time_ may be unset if the old trajectory was never sampled
+  const rclcpp::Time cursor = std::max(traj_time_, old_start);
+
+  rclcpp::Time new_start(trajectory_msg->header.stamp, time.get_clock_type());
+  if (new_start.seconds() == 0.0)
+  {
+    new_start = time;
+  }
+  const rclcpp::Time handoff = std::max(new_start, cursor);
+
+  bool has_omitted = false;
+  for (size_t j = 0; j < dof_; ++j)
+  {
+    blend_commanded_[j] = std::find(
+                            trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+                            params_.joints[j]) != trajectory_msg->joint_names.end();
+    has_omitted = has_omitted || !blend_commanded_[j];
+  }
+
+  fill_omitted_joints_from_old(trajectory_msg, time);
+  sort_to_local_joint_order(trajectory_msg);
+  const auto new_last = trajectory_msg->points.back();
+  const rclcpp::Time new_end =
+    new_start + rclcpp::Duration(trajectory_msg->points.back().time_from_start);
+  for (auto & point : trajectory_msg->points)
+  {
+    point.time_from_start = new_start + rclcpp::Duration(point.time_from_start) - old_start;
+  }
+
+  // prefix: old waypoints in (cursor, handoff)
+  std::vector<JointTrajectoryPoint> prefix;
+  for (const auto & op : old_msg->points)
+  {
+    const rclcpp::Time t = old_start + rclcpp::Duration(op.time_from_start);
+    if (t > cursor && t < handoff)
+    {
+      prefix.push_back(op);
+    }
+  }
+  // bridge anchor: sample old trajectory at handoff for velocity-continuous entry into new
+  TrajectoryPointConstIter s_it, e_it;
+  if (current_trajectory_->sample(handoff, interpolation_method_, blend_sample_, s_it, e_it, false))
+  {
+    blend_sample_.time_from_start = handoff - old_start;
+    // drop if not strictly before first new point (would break monotonic time)
+    if (
+      trajectory_msg->points.empty() ||
+      rclcpp::Duration(blend_sample_.time_from_start) <
+        rclcpp::Duration(trajectory_msg->points.front().time_from_start))
+    {
+      prefix.push_back(blend_sample_);
+    }
+  }
+
+  // suffix: old waypoints after new_end; commanded joints held at new_last
+  std::vector<JointTrajectoryPoint> suffix;
+  if (has_omitted)
+  {
+    for (const auto & op : old_msg->points)
+    {
+      const rclcpp::Time t = old_start + rclcpp::Duration(op.time_from_start);
+      if (t > new_end)
+      {
+        auto p = op;
+        for (size_t j = 0; j < dof_; ++j)
+        {
+          if (blend_commanded_[j])
+          {
+            if (!p.positions.empty()) p.positions[j] = new_last.positions[j];
+            if (!p.velocities.empty()) p.velocities[j] = 0.0;
+            if (!p.accelerations.empty()) p.accelerations[j] = 0.0;
+          }
+        }
+        suffix.push_back(p);
+      }
+    }
+  }
+
+  trajectory_msg->points.insert(trajectory_msg->points.begin(), prefix.begin(), prefix.end());
+  trajectory_msg->points.insert(trajectory_msg->points.end(), suffix.begin(), suffix.end());
+  trajectory_msg->joint_names = params_.joints;
+  blend_prefix_size_ = prefix.size();  // action feedback index offset
+
+  // Re-anchor at the cursor so the first sample lands at the current state.
+  // Anchoring at old_start would jump forward under speed scaling on install.
+  const rclcpp::Duration cursor_offset = cursor - old_start;
+  for (auto & point : trajectory_msg->points)
+  {
+    point.time_from_start = rclcpp::Duration(point.time_from_start) - cursor_offset;
+  }
+  trajectory_msg->header.stamp = rclcpp::Time(0, 0, time.get_clock_type());
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(
