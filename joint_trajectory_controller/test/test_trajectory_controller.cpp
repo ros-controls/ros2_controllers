@@ -2197,6 +2197,132 @@ TEST_P(TrajectoryControllerTestParameterized, blend_commanded_joint_follows_old_
     << "commanded joint shortcut toward the new trajectory instead of following the old path";
 }
 
+TEST_P(
+  TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_traj_follows_old)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint2 ramps 3.1→13.1 over 0-1.5 s then 13.1→23.1 over 1.5-3.0 s
+  // Two waypoints required so has_nontrivial_msg() is true and blend fires
+  std::vector<std::vector<double>> old_traj{{{1.1, 2.1, 13.1}, {1.1, 2.1, 23.1}}};
+  publish(rclcpp::Duration::from_seconds(1.5), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  // partial traj (joints 0,1) fires at 0.7 s, runs to 1.2 s — omitted joint2 must keep moving
+  std::vector<std::vector<double>> new_traj{{{-3.0, -3.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), new_traj,
+    start_time + rclcpp::Duration::from_seconds(0.7));
+  traj_controller_->wait_for_trajectory(executor);
+
+  // sample at 0.2 s and 0.4 s inside the new-trajectory window
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.6), t);
+  const double omitted_first = traj_controller_->get_state_reference().positions[2];
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.2), t);
+  const double omitted_second = traj_controller_->get_state_reference().positions[2];
+
+  EXPECT_GT(omitted_second, omitted_first + 0.5)
+    << "omitted joint froze during the new trajectory's execution window";
+}
+
+TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // future-stamped traj arrives while controller is in hold (no active trajectory).
+  // has_nontrivial_msg() is false for the hold traj so blend must not trigger.
+  std::vector<std::vector<double>> traj{{{4.0, 5.0, 6.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.3), traj,
+    start_time + rclcpp::Duration::from_seconds(0.5));
+  traj_controller_->wait_for_trajectory(executor);
+
+  // advance past stamp + duration (0.5 + 0.3 = 0.8 s)
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.2), start_time);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(4.0, state.positions[0], 0.1);
+    EXPECT_NEAR(5.0, state.positions[1], 0.1);
+    EXPECT_NEAR(6.0, state.positions[2], 0.1);
+  }
+}
+
+TEST_P(TrajectoryControllerTestParameterized, blend_stamp0_with_blending_enabled)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> old_traj{{{8.0, 8.0, 8.0}}};
+  publish(rclcpp::Duration::from_seconds(2.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  // stamp=0 new trajectory — blend path fires with an empty prefix and immediate handoff
+  std::vector<std::vector<double>> new_traj{{{-3.0, -3.0, -3.0}}};
+  publish(rclcpp::Duration::from_seconds(0.5), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(-3.0, state.positions[0], 0.1);
+    EXPECT_NEAR(-3.0, state.positions[1], 0.1);
+    EXPECT_NEAR(-3.0, state.positions[2], 0.1);
+  }
+}
+
+TEST_F(TrajectoryControllerTest, blend_successive_blends)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> traj_a{{{5.0, 5.0, 5.0}}};
+  publish(rclcpp::Duration::from_seconds(2.0), traj_a, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.2), start_time);
+
+  // first blend: B is future-stamped, fires at 0.6 s
+  std::vector<std::vector<double>> traj_b{{{-3.0, -3.0, -3.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), traj_b,
+    start_time + rclcpp::Duration::from_seconds(0.6));
+  traj_controller_->wait_for_trajectory(executor);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), t);
+
+  // second blend: C arrives stamp=0 while B-blend is active
+  std::vector<std::vector<double>> traj_c{{{7.0, 7.0, 7.0}}};
+  publish(rclcpp::Duration::from_seconds(0.5), traj_c, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(7.0, state.positions[0], 0.2);
+    EXPECT_NEAR(7.0, state.positions[1], 0.2);
+    EXPECT_NEAR(7.0, state.positions[2], 0.2);
+  }
+}
+
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
