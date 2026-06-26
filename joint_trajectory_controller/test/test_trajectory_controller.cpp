@@ -3236,3 +3236,309 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
 
   executor.cancel();
 }
+
+/**
+ * @brief verify joint limiter enforces position limits
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_expect_clamped)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.min_position", -5.0),
+    rclcpp::Parameter("joint_limits.joint1.max_position", 5.0),
+    rclcpp::Parameter("joint_limits.joint2.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.min_position", -5.0),
+    rclcpp::Parameter("joint_limits.joint2.max_position", 5.0),
+    rclcpp::Parameter("joint_limits.joint3.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.min_position", -5.0),
+    rclcpp::Parameter("joint_limits.joint3.max_position", 5.0),
+  };
+
+  // Start joints at max_position so position clamping and stopping-distance
+  // checks both pass trivially (no velocity generated from position difference)
+  std::vector<double> initial_pos = {5.0, 5.0, 5.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // Publish a trajectory with position beyond limits
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{{10.0, 5.0, 2.0}}};
+  std::vector<std::vector<double>> points_velocities{{{0.0, 0.0, 0.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // First update samples command_next_ at t=0.01
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // Position should be clamped to max_position=5.0
+  auto cmd_next = traj_controller_->get_command_next();
+  ASSERT_FALSE(cmd_next.positions.empty());
+  EXPECT_NEAR(cmd_next.positions[0], 5.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.positions[1], 5.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.positions[2], 2.0, COMMON_THRESHOLD);
+
+  // Hardware command interfaces also reflect the clamped position
+  EXPECT_NEAR(joint_pos_[0], 5.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[1], 5.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[2], 2.0, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter is initialized and enforces velocity limits
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_velocity_expect_clamped)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint2.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint3.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_velocity", 0.5),
+  };
+
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // Point far away with vel=0 (vel computed from position diff triggers limit)
+  std::vector<std::vector<double>> points{{{100.0, 100.0, 100.0}}};
+  std::vector<std::vector<double>> points_velocities{{{0.0, 0.0, 0.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // First update samples command_next_ at t=0.01 (start + 10ms)
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // Limiter clamped velocity to max_velocity=0.5 and recomputed position
+  auto cmd_next = traj_controller_->get_command_next();
+  ASSERT_FALSE(cmd_next.velocities.empty());
+  EXPECT_NEAR(cmd_next.velocities[0], 0.5, COMMON_THRESHOLD);
+  ASSERT_FALSE(cmd_next.positions.empty());
+  EXPECT_NEAR(cmd_next.positions[0], INITIAL_POS_JOINT1 + 0.5 * 0.01, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.positions[1], INITIAL_POS_JOINT2 + 0.5 * 0.01, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.positions[2], INITIAL_POS_JOINT3 + 0.5 * 0.01, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.velocities[0], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.velocities[1], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.velocities[2], 0.5, COMMON_THRESHOLD);
+
+  // Hardware command interfaces also reflect the limited values
+  EXPECT_NEAR(joint_vel_[0], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[1], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[2], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[0], INITIAL_POS_JOINT1 + 0.5 * 0.01, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[1], INITIAL_POS_JOINT2 + 0.5 * 0.01, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[2], INITIAL_POS_JOINT3 + 0.5 * 0.01, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter enforces velocity limits with velocity-only command interface
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_velocity_only_interface)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint2.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint3.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_velocity", 0.5),
+  };
+
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // Positions required by publish() but unused with velocity-only command interface
+  std::vector<std::vector<double>> points{{{0.0, 0.0, 0.0}}};
+  // Velocity far above limit
+  std::vector<std::vector<double>> points_velocities{{{3.0, 3.0, -3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // Hardware command interface reflects the clamped velocity
+  EXPECT_NEAR(joint_vel_[0], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[1], 0.5, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[2], -0.5, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter enforces acceleration limits with velocity command interface
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_acceleration_expect_clamped)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint2.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint3.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_acceleration", 5.0),
+  };
+
+  // Start with non-zero velocity so the limiter computes a non-trivial acceleration
+  std::vector<double> initial_vel = {1.0, 1.0, 1.0};
+  SetUpAndActivateTrajectoryController(
+    executor, params, false, 0.0, 1.0, INITIAL_POS_JOINTS, initial_vel);
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{{0.0, 0.0, 0.0}}};
+  // Publish a velocity that requires a large acceleration delta
+  std::vector<std::vector<double>> points_velocities{{{3.0, 3.0, -3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // desired_acc = (3.0 - 1.0) / 0.01 = 200 rad/s^2, clamped to 5.0
+  // desired_vel = 1.0 + 5.0 * 0.01 = 1.05
+  EXPECT_NEAR(joint_vel_[0], 1.05, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[1], 1.05, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[2], 0.95, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter enforces both velocity and acceleration limits
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_velocity_and_acceleration)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint1.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint2.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint2.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint3.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint3.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_acceleration", 5.0),
+  };
+
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> points_velocities{{{3.0, 3.0, -3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  // Vel clamp: 3.0 -> 0.5. Acc clamp: (0.5 - 0.0)/0.01 = 50, clamped to 5.0, vel = 0.0 + 5.0*0.01 =
+  // 0.05
+  EXPECT_NEAR(joint_vel_[0], 0.05, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[1], 0.05, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_vel_[2], -0.05, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter enforces position, velocity, and acceleration limits together
+ */
+TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and_acceleration)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint1.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint1.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint2.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint2.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint2.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint3.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint3.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint3.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_acceleration", 5.0),
+  };
+
+  // Start below max_position so position clamping produces a non-trivial result
+  SetUpAndActivateTrajectoryController(executor, params);
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  // Publish a point beyond position limits with high velocity
+  std::vector<std::vector<double>> points{{{3.0, 1.5, 3.0}}};
+  std::vector<std::vector<double>> points_velocities{{{3.0, 1.0, 3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+  auto cmd_next = traj_controller_->get_command_next();
+
+  // Position was clamped from 3.0 to 1.5, then vel clamp recomputed to ~1.105,
+  // then acc clamp overrides: pos = 1.1 + 0.0*0.01 + 0.5*5.0*0.01^2 = 1.10025
+  ASSERT_FALSE(cmd_next.positions.empty());
+  EXPECT_NEAR(cmd_next.positions[0], 1.10025, COMMON_THRESHOLD);
+  EXPECT_NEAR(cmd_next.positions[1], 2.10025, COMMON_THRESHOLD);
+
+  EXPECT_NEAR(joint_pos_[0], 1.10025, COMMON_THRESHOLD);
+  EXPECT_NEAR(joint_pos_[1], 2.10025, COMMON_THRESHOLD);
+
+  executor.cancel();
+}
