@@ -29,7 +29,7 @@ from python_qt_binding.QtWidgets import QWidget, QFormLayout
 from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from .utils import ControllerLister, ControllerManagerLister
+from .utils import ControllerLister, ControllerManagerLister, is_shutdown_context_error
 from .double_editor import DoubleEditor
 from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
 from .update_combo import update_combo
@@ -237,13 +237,17 @@ class JointTrajectoryController(Plugin):
     # Usually used to open a modal configuration dialog
 
     def _update_cm_list(self):
+        if not rclpy.ok():
+            self._update_cm_list_timer.stop()
+            return
+
         try:
             update_combo(self._widget.cm_combo, self._list_cm())
         except rclpy.exceptions.NotInitializedException:
             # Can happen during shutdown if the timer fires after rclpy teardown.
             self._update_cm_list_timer.stop()
         except Exception as e:
-            if "context is not valid" in str(e):
+            if is_shutdown_context_error(e):
                 self._update_cm_list_timer.stop()
             else:
                 raise
@@ -263,7 +267,7 @@ class JointTrajectoryController(Plugin):
             self._update_jtc_list_timer.stop()
             return
         except Exception as e:
-            if "context is not valid" in str(e):
+            if is_shutdown_context_error(e):
                 self._update_jtc_list_timer.stop()
                 return
             raise
@@ -419,7 +423,7 @@ class JointTrajectoryController(Plugin):
             pass
         except Exception as e:
             # During SIGINT shutdown, the ROS context can become invalid before spin exits.
-            if "context is not valid" not in str(e):
+            if not is_shutdown_context_error(e):
                 print(f"Executor thread failed: {e}")
 
     def _unload_jtc(self):
