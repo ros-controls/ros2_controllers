@@ -118,7 +118,7 @@ protected:
   using JointLimiter =
     joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>;
   std::unique_ptr<pluginlib::ClassLoader<JointLimiter>> joint_limiter_loader_;
-  std::unique_ptr<JointLimiter> joint_limiter_;
+  pluginlib::UniquePtr<JointLimiter> joint_limiter_;
 
   // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;

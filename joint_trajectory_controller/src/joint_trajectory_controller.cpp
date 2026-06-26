@@ -83,6 +83,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       joint_limiter_loader_ = std::make_unique<pluginlib::ClassLoader<JointLimiter>>(
         "joint_limits",
         "joint_limits::JointLimiterInterface<trajectory_msgs::msg::JointTrajectoryPoint>");
+      RCLCPP_DEBUG(get_node()->get_logger(), "Available joint limiter classes:");
+      for (const auto & available_class : joint_limiter_loader_->getDeclaredClasses())
+      {
+        RCLCPP_DEBUG(get_node()->get_logger(), "  %s", available_class.c_str());
+      }
     }
     catch (const std::exception & e)
     {
@@ -903,8 +908,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     }
     try
     {
-      joint_limiter_ = std::unique_ptr<JointLimiter>(
-        joint_limiter_loader_->createUnmanagedInstance(params_.joint_limiter_type));
+      joint_limiter_ = joint_limiter_loader_->createUniqueInstance(params_.joint_limiter_type);
       if (!joint_limiter_->init(command_joint_names_, get_node()))
       {
         RCLCPP_ERROR(logger, "Failed to initialize joint limiter.");
