@@ -119,6 +119,62 @@ TEST_P(
   ASSERT_FALSE(configure_succeeds(traj_controller_));
 }
 
+TEST_P(TrajectoryControllerTestParameterized, check_joint_limiter_type_failed_to_configure)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // set joint_limiter_type parameter to wrong name
+  const rclcpp::Parameter joint_limiter_type_param("joint_limiter_type", "Falselimiter");
+  SetUpTrajectoryController(executor, {joint_limiter_type_param});
+
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
+}
+
+TEST_P(TrajectoryControllerTestParameterized, check_joint_limiter_type_configure_successfully)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // set joint_limiter_type parameter to correct name
+  const rclcpp::Parameter joint_limiter_type_param(
+    "joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter");
+  SetUpTrajectoryController(executor, {joint_limiter_type_param});
+
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+}
+
+TEST_P(TrajectoryControllerTestParameterized, check_joint_limiter_type_failed_to_activate)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // set joint_limiter_type parameter to non-existent name
+  const rclcpp::Parameter joint_limiter_type_param("joint_limiter_type", "Falselimiter");
+  SetUpTrajectoryController(executor, {joint_limiter_type_param});
+
+  ASSERT_FALSE(configure_succeeds(traj_controller_));
+
+  // After configure failure, controller remains in UNCONFIGURED state
+  // Activate is invalid from UNCONFIGURED, so the lifecycle rejects it
+  auto state = traj_controller_->get_node()->activate();
+  EXPECT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+
+  executor.cancel();
+}
+
+TEST_P(TrajectoryControllerTestParameterized, check_joint_limiter_type_activate_successfully)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  // set joint_limiter_type parameter to correct name
+  const rclcpp::Parameter joint_limiter_type_param(
+    "joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter");
+  SetUpTrajectoryController(executor, {joint_limiter_type_param});
+
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+
+  // After configure success, controller remains in CONFIGURED state
+  // Activate is valid from CONFIGURED, so the lifecycle accepts it
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
+
+  executor.cancel();
+}
+
 TEST_P(TrajectoryControllerTestParameterized, activate)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
