@@ -44,7 +44,7 @@ namespace inference_bridge_controller
  *
  * @note future scope:
  *  - Cross-chunk C2 continuity: stitch each new chunk onto the *live* robot
- *    velocity instead of starting from rest. 
+ *    velocity instead of starting from rest.
  *  - Multi-chunk buffer / lookahead: JTC installs through a single-slot
  *    RealtimeBuffer (newest wins). A queue of pending chunks would allow
  *    lookahead and avoid dropping bursts.
@@ -67,8 +67,7 @@ public:
 
 protected:
   /// Override of JTC's (now virtual) topic callback.
-  void topic_callback(
-    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) override;
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg) override;
 
   /// True if every point has positions but no velocities.
   bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;

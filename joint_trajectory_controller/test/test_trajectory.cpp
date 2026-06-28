@@ -1150,7 +1150,7 @@ TEST(TestTrajectory, sample_velocity_only_all_segments_skipped_returns_false)
 namespace
 {
 // Build a positions-only chunk; positions_per_point[i] holds one position per
-// joint for waypoint i, spaced dt apart. 
+// joint for waypoint i, spaced dt apart.
 trajectory_msgs::msg::JointTrajectory make_positions_chunk(
   const std::vector<std::vector<double>> & positions_per_point, double dt)
 {
@@ -1260,8 +1260,7 @@ TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
 
   // Sample densely across the chunk span and return the peak |second difference|
   // of the sampled position (the acceleration actually experienced).
-  auto peak_sampled_acceleration =
-    [&](std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+  auto peak_sampled_acceleration = [&](std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
   {
     trajectory_msgs::msg::JointTrajectoryPoint point_before;
     point_before.time_from_start = rclcpp::Duration::from_seconds(0.0);
@@ -1336,7 +1335,8 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
   // Varying sizes back-to-back: a small then a large chunk both fill correctly.
   {
     auto small = make_positions_chunk({{0.0}, {0.1}, {0.2}}, 0.1);
-    auto large = make_positions_chunk({{0.0}, {0.1}, {0.2}, {0.3}, {0.2}, {0.1}, {0.0}, {0.1}, {0.2}}, 0.1);
+    auto large =
+      make_positions_chunk({{0.0}, {0.1}, {0.2}, {0.3}, {0.2}, {0.1}, {0.0}, {0.1}, {0.2}}, 0.1);
     joint_trajectory_controller::fill_cubic_spline_velocities(small);
     joint_trajectory_controller::fill_cubic_spline_velocities(large);
     ASSERT_EQ(small.points.size(), 3u);
