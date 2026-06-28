@@ -4,4 +4,9 @@
     The joint trajectory controller executes joint-space trajectories on a set of joints
   </description>
   </class>
+  <class name="joint_trajectory_controller/InferenceBridgeController" type="inference_bridge_controller::InferenceBridgeController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    Upsamples sparse, positions-only action chunks into smooth global C2 cubic-spline joint trajectories
+  </description>
+  </class>
 </library>
