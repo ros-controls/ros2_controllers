@@ -92,8 +92,7 @@ struct SegmentTolerances
  * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-inline SegmentTolerances get_segment_tolerances(
-  rclcpp::Logger & jtc_logger, const Params & params)
+inline SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Params & params)
 {
   auto const & constraints = params.constraints;
   auto const n_joints = params.joints.size();

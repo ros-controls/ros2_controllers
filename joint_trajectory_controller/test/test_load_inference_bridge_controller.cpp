@@ -45,8 +45,7 @@ TEST(TestLoadInferenceBridgeController, load_controller)
 
   ASSERT_NE(
     cm.load_controller(
-      "test_inference_bridge_controller",
-      "joint_trajectory_controller/InferenceBridgeController"),
+      "test_inference_bridge_controller", "joint_trajectory_controller/InferenceBridgeController"),
     nullptr);
 
   rclcpp::shutdown();
@@ -74,8 +73,7 @@ TEST(TestLoadInferenceBridgeController, configure_succeeds)
 
   ASSERT_NE(
     cm.load_controller(
-      "test_inference_bridge_controller",
-      "joint_trajectory_controller/InferenceBridgeController"),
+      "test_inference_bridge_controller", "joint_trajectory_controller/InferenceBridgeController"),
     nullptr);
 
   EXPECT_EQ(

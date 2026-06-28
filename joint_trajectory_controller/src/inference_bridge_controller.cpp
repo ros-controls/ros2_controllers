@@ -63,8 +63,7 @@ controller_interface::CallbackReturn InferenceBridgeController::on_configure(
   bridge_params_ = bridge_param_listener_->get_params();
 
   RCLCPP_INFO(
-    get_node()->get_logger(),
-    "inference_bridge_controller configured: policy_frequency=%.2f Hz.",
+    get_node()->get_logger(), "inference_bridge_controller configured: policy_frequency=%.2f Hz.",
     bridge_params_.policy_frequency);
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -123,8 +122,7 @@ void InferenceBridgeController::synthesize_timing(
   const double dt = 1.0 / bridge_params_.policy_frequency;
   for (size_t i = 0; i < traj.points.size(); ++i)
   {
-    traj.points[i].time_from_start =
-      rclcpp::Duration::from_seconds(static_cast<double>(i) * dt);
+    traj.points[i].time_from_start = rclcpp::Duration::from_seconds(static_cast<double>(i) * dt);
   }
 }
 
