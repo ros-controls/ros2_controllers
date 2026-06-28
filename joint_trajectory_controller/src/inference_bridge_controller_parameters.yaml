@@ -1,0 +1,11 @@
+inference_bridge_controller:
+  policy_frequency: {
+    type: double,
+    default_value: 30.0,
+    description: "Frequency in Hz at which the AI policy emits action-chunk waypoints. Used to
+      synthesize ``time_from_start = i / policy_frequency`` for incoming positions-only chunks that
+      carry no timing.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
