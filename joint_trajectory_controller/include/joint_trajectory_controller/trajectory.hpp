@@ -209,6 +209,18 @@ void wraparound_joint(
   std::vector<double> & current_position, const std::vector<double> next_position,
   const std::vector<bool> & joints_angle_wraparound);
 
+/**
+ * Fill the knot velocities of a global cubic spline (C2) in place.
+ *
+ * For each joint, solves the knot velocities that make acceleration continuous
+ * across every interior knot (an O(n) tridiagonal Thomas solve) with rest
+ * boundary conditions v[0] = v[n-1] = 0, and writes them into
+ * points[i].velocities. once the velocities are present, JTC's
+ * per-segment cubic-Hermite sampling reproduces the global cubic spline.
+ * \param[in,out] traj Trajectory whose points carry positions; velocities are filled.
+ */
+void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj);
+
 }  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
