@@ -41,6 +41,7 @@
 
 namespace joint_trajectory_controller
 {
+
 double resolve_tolerance_source(const double default_value, const double goal_value)
 {
   constexpr double ERASE_VALUE = -1.0;
@@ -232,6 +233,193 @@ SegmentTolerances get_segment_tolerances(
   RCLCPP_DEBUG(logger, "---------------------------");
 
   return active_tolerances;
+}
+
+trajectory_msgs::msg::JointTrajectoryPoint compute_error_trajectory_point(
+  const trajectory_msgs::msg::JointTrajectoryPoint & desired_state,
+  const trajectory_msgs::msg::JointTrajectoryPoint & current_state,
+  const std::vector<bool> & is_wraparounds, bool show_errors)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint error_state;
+  const size_t n_joints = desired_state.positions.size();
+
+  // Check if vectors are same size before proceeding to prevent undefined behavior
+  if (current_state.positions.size() != n_joints)
+  {
+    if (show_errors)
+    {
+      const auto logger = rclcpp::get_logger("tolerances");
+      RCLCPP_ERROR(
+        logger,
+        "Current state positions size (%zu) does not match desired state positions size (%zu).",
+        current_state.positions.size(), n_joints);
+    }
+    return error_state;  // Return empty error state
+  }
+
+  // Check if wraparounds size matches before proceeding
+  if (is_wraparounds.size() != n_joints)
+  {
+    if (show_errors)
+    {
+      const auto logger = rclcpp::get_logger("tolerances");
+      RCLCPP_ERROR(
+        logger, "Wraparounds size (%zu) does not match desired state positions size (%zu).",
+        is_wraparounds.size(), n_joints);
+    }
+    return error_state;  // Return empty error state
+  }
+
+  // Position Error
+  error_state.positions.resize(n_joints);
+  for (size_t i = 0; i < n_joints; ++i)
+  {
+    if (is_wraparounds[i])
+    {
+      // Use shortest distance for wraparound joints (e.g., continuous joints)
+      // Normalized between: [-pi, pi]
+      error_state.positions[i] =
+        angles::shortest_angular_distance(current_state.positions[i], desired_state.positions[i]);
+    }
+    else
+    {
+      // Standard Euclidean distance
+      error_state.positions[i] = desired_state.positions[i] - current_state.positions[i];
+    }
+  }
+
+  // Helper lambda for element-wise subtraction (desired - actual)
+  auto subtract = [](double desired, double actual) { return desired - actual; };
+
+  // Velocity Error (Only if both are same size)
+  if (desired_state.velocities.size() == n_joints && current_state.velocities.size() == n_joints)
+  {
+    error_state.velocities.resize(n_joints);
+    std::transform(
+      desired_state.velocities.begin(), desired_state.velocities.end(),
+      current_state.velocities.begin(), error_state.velocities.begin(), subtract);
+  }
+
+  // Acceleration Error (Only if both are same size)
+  if (
+    desired_state.accelerations.size() == n_joints &&
+    current_state.accelerations.size() == n_joints)
+  {
+    error_state.accelerations.resize(n_joints);
+    std::transform(
+      desired_state.accelerations.begin(), desired_state.accelerations.end(),
+      current_state.accelerations.begin(), error_state.accelerations.begin(), subtract);
+  }
+
+  return error_state;
+}
+
+bool check_state_tolerance_per_joint(
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_error, size_t joint_idx,
+  const StateTolerances & state_tolerance, bool show_errors)
+{
+  using std::abs;
+
+  // Check joint index validity
+  if (joint_idx >= state_error.positions.size())
+  {
+    if (show_errors)
+    {
+      const auto logger = rclcpp::get_logger("tolerances");
+      RCLCPP_ERROR(
+        logger, "Joint index %zu is out of bounds for positions of size %zu.", joint_idx,
+        state_error.positions.size());
+    }
+    return false;  // Invalid joint index
+  }
+
+  // Helper lambda to check if an index is valid for a vector
+  auto check_index = [joint_idx](const std::vector<double> & vec)
+  { return joint_idx < vec.size(); };
+
+  // Extract joint state components from state_error
+  const double error_position = state_error.positions[joint_idx];
+  const double error_velocity =
+    check_index(state_error.velocities) ? state_error.velocities[joint_idx] : 0.0;
+  const double error_acceleration =
+    check_index(state_error.accelerations) ? state_error.accelerations[joint_idx] : 0.0;
+
+  // Check if the components are valid
+  const bool is_valid =
+    !(state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position) &&
+    !(state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity) &&
+    !(state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration);
+
+  // If valid, then return true
+  if (is_valid)
+  {
+    return true;
+  }
+
+  // Otherwise, if logging errors [NON REALTIME]
+  if (show_errors)
+  {
+    const auto logger = rclcpp::get_logger("tolerances");
+    RCLCPP_ERROR(logger, "State tolerances failed for joint %zu:", joint_idx);
+
+    // Position Error
+    if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position)
+    {
+      RCLCPP_ERROR(
+        logger, "Position Error: %f, Position Tolerance: %f", error_position,
+        state_tolerance.position);
+    }
+
+    // Velocity Error
+    if (state_tolerance.velocity > 0.0 && abs(error_velocity) > state_tolerance.velocity)
+    {
+      RCLCPP_ERROR(
+        logger, "Velocity Error: %f, Velocity Tolerance: %f", error_velocity,
+        state_tolerance.velocity);
+    }
+
+    // Acceleration Error
+    if (
+      state_tolerance.acceleration > 0.0 && abs(error_acceleration) > state_tolerance.acceleration)
+    {
+      RCLCPP_ERROR(
+        logger, "Acceleration Error: %f, Acceleration Tolerance: %f", error_acceleration,
+        state_tolerance.acceleration);
+    }
+  }
+
+  // Return false
+  return false;
+}
+
+bool check_trajectory_point_tolerance(
+  const trajectory_msgs::msg::JointTrajectoryPoint & state_error,
+  const std::vector<StateTolerances> & segment_tolerances, bool show_errors)
+{
+  // Check that the error vector size matches the tolerance vector size
+  if (state_error.positions.size() != segment_tolerances.size())
+  {
+    if (show_errors)
+    {
+      const auto logger = rclcpp::get_logger("tolerances");
+      RCLCPP_ERROR(
+        logger, "Error point joint size (%zu) does not match tolerance joint size (%zu).",
+        state_error.positions.size(), segment_tolerances.size());
+    }
+    return false;  // Cannot perform a valid check
+  }
+
+  for (size_t i = 0; i < segment_tolerances.size(); ++i)
+  {
+    // The check_state_tolerance_per_joint function handles checking for available
+    // interfaces (position, velocity, and acceleration).
+    if (!check_state_tolerance_per_joint(state_error, i, segment_tolerances[i], show_errors))
+    {
+      return false;  // Found a joint that failed its tolerance
+    }
+  }
+
+  return true;  // All joints passed the tolerance check
 }
 
 }  // namespace joint_trajectory_controller

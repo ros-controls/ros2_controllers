@@ -444,7 +444,7 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_goal_tolerance)
 }
 
 // Create Error Point Tests
-TEST_F(TestTolerancesFixture, test_create_error_trajectory_point)
+TEST_F(TestTolerancesFixture, test_compute_error_trajectory_point)
 {
   trajectory_msgs::msg::JointTrajectoryPoint desired;
   trajectory_msgs::msg::JointTrajectoryPoint actual;
@@ -465,7 +465,7 @@ TEST_F(TestTolerancesFixture, test_create_error_trajectory_point)
   actual.accelerations = {0.0, 0.03, 0.03};
 
   // Calculate error: Error = Desired - Actual
-  auto error_point = joint_trajectory_controller::create_error_trajectory_point(
+  auto error_point = joint_trajectory_controller::compute_error_trajectory_point(
     desired, actual, is_wraparounds_, false);
 
   // Verify Position Errors
@@ -488,7 +488,7 @@ TEST_F(TestTolerancesFixture, test_create_error_trajectory_point)
   EXPECT_NEAR(error_point.accelerations[2], 0.0, 1e-6);
 }
 
-TEST_F(TestTolerancesFixture, test_create_error_trajectory_point_mismatched_sizes)
+TEST_F(TestTolerancesFixture, test_compute_error_trajectory_point_mismatched_sizes)
 {
   {
     SCOPED_TRACE("mismatched positions size");
@@ -501,7 +501,7 @@ TEST_F(TestTolerancesFixture, test_create_error_trajectory_point_mismatched_size
 
     // Should return empty because positions size (3) != (2)
     auto error_point =
-      joint_trajectory_controller::create_error_trajectory_point(desired, actual, wraps, false);
+      joint_trajectory_controller::compute_error_trajectory_point(desired, actual, wraps, false);
 
     EXPECT_TRUE(error_point.positions.empty());
     EXPECT_TRUE(error_point.velocities.empty());
@@ -517,7 +517,7 @@ TEST_F(TestTolerancesFixture, test_create_error_trajectory_point_mismatched_size
     actual.positions = {1.0, 2.0};
 
     // Should return empty because mismatch_wraps size (1) != joints positions size (2)
-    auto error_point = joint_trajectory_controller::create_error_trajectory_point(
+    auto error_point = joint_trajectory_controller::compute_error_trajectory_point(
       desired, actual, mismatch_wraps, false);
 
     EXPECT_TRUE(error_point.positions.empty());
