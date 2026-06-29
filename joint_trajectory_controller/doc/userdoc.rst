@@ -111,6 +111,39 @@ A yaml file for using it could be:
               goal: 0.03
 
 
+Ingesting positions-only action chunks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``InferenceBridgeController`` is a variant of this controller for action policies, which emit
+*action chunks*: short trajectories of positions-only waypoints with no velocities and often no
+timing. Fed positions-only, the base controller interpolates linearly (C0), yielding discontinuous
+velocities at every waypoint (see :ref:`trajectory representation <joint_trajectory_controller_trajectory_representation>`).
+The bridge instead solves the knot velocities of a global cubic spline (rest boundary conditions,
+``v0 = v_{N-1} = 0``) and writes them into the trajectory, so the existing sampler reproduces a
+smooth C2 motion. Messages that already carry velocities are passed through unchanged.
+
+It adds a single parameter, ``policy_frequency`` (double, Hz, default ``30.0``), used to synthesize
+``time_from_start = i / policy_frequency`` for incoming chunks that carry no timing.
+
+   .. code-block:: yaml
+
+      controller_manager:
+        ros__parameters:
+          arm_bridge:
+            type: "joint_trajectory_controller/InferenceBridgeController"
+
+      arm_bridge:
+        ros__parameters:
+          joints:
+            - joint1
+            - joint2
+          command_interfaces:
+            - position
+          state_interfaces:
+            - position
+          policy_frequency: 30.0
+
+
 Preemption policy [#f1]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

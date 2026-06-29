@@ -47,6 +47,13 @@ The spline interpolator uses the following interpolation strategies depending on
   * Returns position, velocity, and acceleration.
   * Guarantees continuity at the acceleration level.
 
+.. note::
+  The linear case above is discouraged because positions-only waypoints yield discontinuous
+  velocities. The ``InferenceBridgeController`` variant avoids this for positions-only inputs: it
+  pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
+  writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
+  C2. See :ref:`Ingesting positions-only action chunks <joint_trajectory_controller_userdoc>`.
+
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
 Effort trajectories are allowed for controllers that claim the ``effort`` command interface and they are treated as feed-forward effort that is added to the position feedback. Effort is handled separately from position, velocity and acceleration. We use linear interpolation for effort when the ``spline`` interpolation method is selected.
