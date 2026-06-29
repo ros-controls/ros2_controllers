@@ -210,14 +210,24 @@ void wraparound_joint(
   const std::vector<bool> & joints_angle_wraparound);
 
 /**
- * Fill the knot velocities of a global cubic spline (C2) in place.
+ * \brief Fill the knot velocities of a global cubic spline (C2) in place.
  *
- * For each joint, solves the knot velocities that make acceleration continuous
- * across every interior knot (an O(n) tridiagonal Thomas solve) with rest
- * boundary conditions v[0] = v[n-1] = 0, and writes them into
- * points[i].velocities. once the velocities are present, JTC's
- * per-segment cubic-Hermite sampling reproduces the global cubic spline.
+ * For each joint independently, solves the knot velocities that make the
+ * acceleration continuous across every interior knot -- an O(n) tridiagonal
+ * (Thomas) solve over the waypoint positions and their ``time_from_start`` --
+ * using rest boundary conditions ``v[0] = v[n-1] = 0``, and writes the result
+ * into ``points[i].velocities``. Once velocities are present, the per-segment
+ * cubic-Hermite sampling in \ref Trajectory::sample reproduces the global cubic
+ * spline, so a positions-only trajectory is upgraded from linear (C0) to C2.
+ *
  * \param[in,out] traj Trajectory whose points carry positions; velocities are filled.
+ *
+ * \code
+ *   trajectory_msgs::msg::JointTrajectory msg;  // positions-only waypoints, with time_from_start
+ *   fill_cubic_spline_velocities(msg);          // msg now has C2 knot velocities
+ *   Trajectory traj(time_now, current_point, std::make_shared<...>(msg));
+ *   traj.sample(t, interpolation_methods::DEFAULT_INTERPOLATION, out, start, end);
+ * \endcode
  */
 void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj);
 
