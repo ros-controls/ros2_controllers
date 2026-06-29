@@ -40,7 +40,7 @@ namespace
 {
 const double COMMON_THRESHOLD = 0.001;
 
-std::vector<rclcpp::Parameter> DefaultJointLimiterParams()
+inline std::vector<rclcpp::Parameter> DefaultJointLimiterParams()
 {
   return {
     rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),

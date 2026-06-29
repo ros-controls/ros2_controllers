@@ -349,14 +349,14 @@ TEST_F(TrajectoryControllerTest, short_sample_trajectory_within_limits)
   EXPECT_LT(cmd_next.positions[2], 0.5);
 
   // All commands must be strictly within the configured limits
-  EXPECT_LE(std::abs(cmd_next.positions[0]), 1.5);
-  EXPECT_LE(std::abs(cmd_next.positions[1]), 1.5);
-  EXPECT_LE(std::abs(cmd_next.positions[2]), 1.5);
+  EXPECT_LE(std::fabs(cmd_next.positions[0]), 1.5);
+  EXPECT_LE(std::fabs(cmd_next.positions[1]), 1.5);
+  EXPECT_LE(std::fabs(cmd_next.positions[2]), 1.5);
   if (!cmd_next.velocities.empty())
   {
-    EXPECT_LE(std::abs(cmd_next.velocities[0]), 0.5);
-    EXPECT_LE(std::abs(cmd_next.velocities[1]), 0.5);
-    EXPECT_LE(std::abs(cmd_next.velocities[2]), 0.5);
+    EXPECT_LE(std::fabs(cmd_next.velocities[0]), 0.5);
+    EXPECT_LE(std::fabs(cmd_next.velocities[1]), 0.5);
+    EXPECT_LE(std::fabs(cmd_next.velocities[2]), 0.5);
   }
 
   // Step through the entire trajectory to completion
@@ -409,8 +409,177 @@ TEST_F(TrajectoryControllerTest, short_sample_trajectory_on_limits)
   }
 
   // All commands remain within configured limits
-  EXPECT_LE(std::abs(joint_pos_[0]), 1.5);
-  EXPECT_LE(std::abs(joint_pos_[1]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[0]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[1]), 1.5);
+
+  executor.cancel();
+}
+
+TEST_F(TrajectoryControllerTest, short_sample_trajectory_over_limits)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  auto params = DefaultJointLimiterParams();
+
+  // Start at origin
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // Single waypoint with positions and velocities far exceeding limits
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{{3.0, 3.0, 3.0}}};
+  std::vector<std::vector<double>> points_velocities{{{3.0, 3.0, 3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // First update at t=0 with period 0.01s
+  traj_controller_->update(
+    rclcpp::Time(0, 0, RCL_STEADY_TIME), rclcpp::Duration::from_seconds(0.01));
+
+  // Check command_next_ after limiter enforcement
+  auto cmd_next = traj_controller_->get_command_next();
+  ASSERT_FALSE(cmd_next.positions.empty());
+
+  // The key check is that values are within limits.
+  EXPECT_LE(std::fabs(cmd_next.positions[0]), 1.5);
+  EXPECT_LE(std::fabs(cmd_next.positions[1]), 1.5);
+  EXPECT_LE(std::fabs(cmd_next.positions[2]), 1.5);
+
+  if (!cmd_next.velocities.empty())
+  {
+    EXPECT_LE(std::fabs(cmd_next.velocities[0]), 0.5);
+    EXPECT_LE(std::fabs(cmd_next.velocities[1]), 0.5);
+    EXPECT_LE(std::fabs(cmd_next.velocities[2]), 0.5);
+  }
+
+  // Hardware commands also reflect the clamped values
+  EXPECT_LE(std::fabs(joint_pos_[0]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[1]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[2]), 1.5);
+  EXPECT_LE(std::fabs(joint_vel_[0]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[1]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[2]), 0.5);
+
+  executor.cancel();
+}
+
+TEST_F(TrajectoryControllerTest, long_sample_trajectory_within_limits)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  auto params = DefaultJointLimiterParams();
+
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // 8-point trajectory with positions and velocities well within limits
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration::from_seconds(1.6)};
+  std::vector<std::vector<double>> points{{{0.1, 0.1, 0.1}}, {{0.2, 0.2, 0.2}}, {{0.3, 0.3, 0.3}},
+                                          {{0.4, 0.4, 0.4}}, {{0.5, 0.5, 0.5}}, {{0.6, 0.6, 0.6}},
+                                          {{0.7, 0.7, 0.7}}, {{0.8, 0.8, 0.8}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}},
+    {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Run the full trajectory to completion
+  updateController(rclcpp::Duration::from_seconds(1.6) + rclcpp::Duration::from_seconds(0.5));
+
+  // With acceleration limits, the actual trajectory lags the ideal spline.
+  // Verify that ALL hardware commands stay within configured limits at the end.
+  EXPECT_LE(std::fabs(joint_pos_[0]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[1]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[2]), 1.5);
+  EXPECT_LE(std::fabs(joint_vel_[0]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[1]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[2]), 0.5);
+
+  executor.cancel();
+}
+
+TEST_F(TrajectoryControllerTest, long_sample_trajectory_on_limits)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  auto params = DefaultJointLimiterParams();
+
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // 8-point trajectory with values reaching limit boundaries at various points
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration::from_seconds(1.6)};
+  std::vector<std::vector<double>> points{
+    {{0.5, -0.5, 0.0}}, {{1.0, -1.0, 0.0}}, {{1.5, -1.5, 0.0}}, {{1.0, -1.0, 0.0}},
+    {{0.5, -0.5, 0.0}}, {{0.0, 0.0, 0.0}},  {{1.5, -1.5, 0.5}}, {{1.5, -1.5, 1.0}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.1, 0.1, 0.0}}, {{0.1, 0.1, 0.0}}, {{0.1, 0.1, 0.0}}, {{0.1, 0.1, 0.0}},
+    {{0.1, 0.1, 0.0}}, {{0.1, 0.1, 0.0}}, {{0.1, 0.1, 0.1}}, {{0.1, 0.1, 0.1}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Run the full trajectory to completion
+  updateController(rclcpp::Duration::from_seconds(1.6) + rclcpp::Duration::from_seconds(0.5));
+
+  // With acceleration limits the actual trajectory lags the ideal spline.
+  // Verify that all commands stay within configured limits.
+  EXPECT_LE(std::fabs(joint_pos_[0]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[1]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[2]), 1.5);
+  EXPECT_LE(std::fabs(joint_vel_[0]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[1]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[2]), 0.5);
+
+  executor.cancel();
+}
+
+TEST_F(TrajectoryControllerTest, long_sample_trajectory_over_limits)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  auto params = DefaultJointLimiterParams();
+
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // 8-point trajectory with positions and velocities exceeding limits
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration::from_seconds(1.6)};
+  std::vector<std::vector<double>> points{{{2.0, 2.0, 2.0}}, {{3.0, 3.0, 3.0}}, {{4.0, 4.0, 4.0}},
+                                          {{5.0, 5.0, 5.0}}, {{2.0, 2.0, 2.0}}, {{1.0, 1.0, 1.0}},
+                                          {{3.0, 3.0, 3.0}}, {{4.0, 4.0, 4.0}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}},
+    {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}}, {{3.0, 3.0, 3.0}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Run the full trajectory to completion
+  updateController(rclcpp::Duration::from_seconds(1.6) + rclcpp::Duration::from_seconds(0.5));
+
+  // All hardware commands must be within limits despite waypoints exceeding them
+  EXPECT_LE(std::fabs(joint_pos_[0]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[1]), 1.5);
+  EXPECT_LE(std::fabs(joint_pos_[2]), 1.5);
+  EXPECT_LE(std::fabs(joint_vel_[0]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[1]), 0.5);
+  EXPECT_LE(std::fabs(joint_vel_[2]), 0.5);
 
   executor.cancel();
 }
