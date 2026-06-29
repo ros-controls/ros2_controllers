@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
@@ -29,6 +30,11 @@
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
@@ -272,7 +278,7 @@ public:
     const std::vector<rclcpp::Parameter> & parameters = {},
     const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
-    traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
+    traj_controller_ = std::make_unique<TestableJointTrajectoryController>();
 
     auto node_options = rclcpp::NodeOptions();
     std::vector<rclcpp::Parameter> parameter_overrides;
@@ -335,14 +341,16 @@ public:
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff);
-    traj_controller_->configure();
+    ASSERT_TRUE(configure_succeeds(traj_controller_));
 
-    ActivateTrajectoryController(
+    AssignInterfaces(
       separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
       initial_eff_joints);
+
+    ASSERT_TRUE(activate_succeeds(traj_controller_));
   }
 
-  rclcpp_lifecycle::State ActivateTrajectoryController(
+  void AssignInterfaces(
     bool separate_cmd_and_state_values = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
@@ -420,7 +428,6 @@ public:
     loaned_command_ifs.emplace_back(gpio_command_interfaces_.back(), nullptr);
 
     traj_controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
-    return traj_controller_->get_node()->activate();
   }
 
   void DeactivateTrajectoryController()
@@ -429,9 +436,7 @@ public:
     {
       if (traj_controller_->get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
-        EXPECT_EQ(
-          traj_controller_->get_node()->deactivate().id(),
-          lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        ASSERT_TRUE(deactivate_succeeds(traj_controller_));
         traj_controller_->release_interfaces();
       }
     }
@@ -651,11 +656,11 @@ public:
 
   void expectCommandPoint(
     std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0},
-    std::vector<double> effort = {0.0, 0.0, 0.0})
+    std::vector<double> effort = {0.0, 0.0, 0.0}, bool expect_trivial_traj = true)
   {
-    // it should be holding the given point
-    // i.e., active but trivial trajectory (one point only)
-    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+    // Check if controllers trajectory matches the expected
+    // i.e. expect_trivial_traj=true has single point
+    ASSERT_EQ(traj_controller_->has_trivial_traj(), expect_trivial_traj);
 
     if (traj_controller_->use_closed_loop_pid_adapter() == false)
     {
@@ -802,7 +807,7 @@ public:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
-  std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
+  std::unique_ptr<TestableJointTrajectoryController> traj_controller_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
   mutable std::mutex state_mutex_;

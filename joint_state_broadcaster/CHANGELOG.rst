@@ -2,6 +2,26 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* added warning messages when unable to remap the interface properly in Joint State Broadcaster.  (`#2082 <https://github.com/ros-controls/ros2_controllers/issues/2082>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* fix(joint_state_broadcaster): suppress confusing warning for standard interfaces (`#2276 <https://github.com/ros-controls/ros2_controllers/issues/2276>`_)
+* Contributors: Christoph Fröhlich, Maksim Sviridov, Mithun Chakladar
+
+6.6.0 (2026-04-22)
+------------------
+
+6.5.0 (2026-04-02)
+------------------
+* [JSB] Fix joint_state message corruption issue (`#2217 <https://github.com/ros-controls/ros2_controllers/issues/2217>`_)
+* Deprecate publish_dynamic_joint_states parameter in joint_state_broadcaster (`#2107 <https://github.com/ros-controls/ros2_controllers/issues/2107>`_)
+* Contributors: Bence Magyar, Sai Kishor Kothakota
+
+6.4.0 (2026-03-12)
+------------------
+
 6.3.0 (2026-02-03)
 ------------------
 * Add test to check JSB is not throwing when there is a boolean interface (`#2115 <https://github.com/ros-controls/ros2_controllers/issues/2115>`_)

@@ -2,6 +2,26 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
+* Remove deprecated odometry reset methods (`#2252 <https://github.com/ros-controls/ros2_controllers/issues/2252>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
+6.6.0 (2026-04-22)
+------------------
+
+6.5.0 (2026-04-02)
+------------------
+* set odometry service addition - steering controllers library (`#2244 <https://github.com/ros-controls/ros2_controllers/issues/2244>`_)
+* Contributors: Ege Kural
+
+6.4.0 (2026-03-12)
+------------------
+* Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
+* Contributors: Christoph Fröhlich
+
 6.3.0 (2026-02-03)
 ------------------
 * Populate pose covariance correctly in steering controllers (`#2109 <https://github.com/ros-controls/ros2_controllers/issues/2109>`_)

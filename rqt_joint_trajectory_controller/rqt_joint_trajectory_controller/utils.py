@@ -47,6 +47,15 @@ cm_services = {
 }
 
 
+def is_shutdown_context_error(exc):
+    message = str(exc)
+    return (
+        "context is not valid" in message
+        or "context is invalid" in message
+        or "destruction was requested" in message
+    )
+
+
 def get_controller_managers(namespace="/", initial_guess=None):
     """
     Get list of active controller manager namespaces.
@@ -71,15 +80,20 @@ def get_controller_managers(namespace="/", initial_guess=None):
 
     # Get list of (potential) currently running controller managers
     node = rclpy.node.Node("get_controller_managers_node")
-    ns_list_curr = _sloppy_get_controller_managers(node, namespace)
+    try:
+        ns_list_curr = _sloppy_get_controller_managers(node, namespace)
 
-    # Update initial guess:
-    # 1. Remove entries not found in current list
-    # 2. Add new untracked controller managers
-    ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
-    ns_list += [ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)]
+        # Update initial guess:
+        # 1. Remove entries not found in current list
+        # 2. Add new untracked controller managers
+        ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
+        ns_list += [
+            ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)
+        ]
 
-    return sorted(ns_list)
+        return sorted(ns_list)
+    finally:
+        node.destroy_node()
 
 
 def is_controller_manager(node, namespace):
@@ -184,7 +198,17 @@ class ControllerManagerLister:
 
     def __call__(self):
         """Get list of running controller managers."""
-        self._cm_list = get_controller_managers(self._ns, self._cm_list)
+        if not rclpy.ok():
+            return self._cm_list
+
+        try:
+            self._cm_list = get_controller_managers(self._ns, self._cm_list)
+        except rclpy.executors.ExternalShutdownException:
+            return self._cm_list
+        except Exception as e:
+            if is_shutdown_context_error(e):
+                return self._cm_list
+            raise
         return self._cm_list
 
 
@@ -218,9 +242,17 @@ class ControllerLister:
     """
 
     def __call__(self):
-        controller_list = self._srv_client.call_async(ListControllers.Request())
-        rclpy.spin_until_future_complete(self._node, controller_list)
-        return controller_list.result().controller
+        try:
+            controller_list = self._srv_client.call_async(ListControllers.Request())
+            rclpy.spin_until_future_complete(self._node, controller_list)
+            result = controller_list.result()
+            return result.controller if result else []
+        except rclpy.executors.ExternalShutdownException:
+            return []
+        except Exception as e:
+            if is_shutdown_context_error(e):
+                return []
+            raise
 
     def _create_client(self):
         return self._node.create_client(ListControllers, self._srv_name)

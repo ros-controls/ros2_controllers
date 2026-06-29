@@ -21,7 +21,7 @@ package_name = "rqt_joint_trajectory_controller"
 
 setup(
     name=package_name,
-    version="6.3.0",
+    version="6.7.0",
     packages=[package_name],
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
@@ -36,7 +36,11 @@ setup(
     maintainer="Bence Magyar",
     maintainer_email="bence.magyar.robotics@gmail.com",
     license="Apache License, Version 2.0",
-    tests_require=["pytest"],
+    extras_require={
+        "test": [
+            "pytest",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "rqt_joint_trajectory_controller = \

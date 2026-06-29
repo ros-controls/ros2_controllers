@@ -21,13 +21,15 @@ from ament_index_python.packages import get_package_share_directory
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
-from python_qt_binding.QtCore import QTimer, Signal
+from python_qt_binding.QtCore import QTimer, Signal, Qt
+from python_qt_binding.QtGui import QIcon, QPainter, QPixmap
+from python_qt_binding.QtSvg import QSvgRenderer
 from python_qt_binding.QtWidgets import QWidget, QFormLayout
 
 from control_msgs.msg import JointTrajectoryControllerState
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from .utils import ControllerLister, ControllerManagerLister
+from .utils import ControllerLister, ControllerManagerLister, is_shutdown_context_error
 from .double_editor import DoubleEditor
 from .joint_limits_urdf import get_joint_limits, subscribe_to_robot_description
 from .update_combo import update_combo
@@ -114,6 +116,15 @@ class JointTrajectoryController(Plugin):
         )
         loadUi(ui_file, self._widget)
         self._widget.setObjectName("JointTrajectoryControllerUi")
+
+        # Use the original icon assets from package resources.
+        icon_path = get_package_share_directory("rqt_joint_trajectory_controller") + "/resource"
+        enable_icon = self._load_enable_icon(
+            f"{icon_path}/off.svg",
+            f"{icon_path}/on.svg",
+        )
+        self._widget.enable_button.setIcon(enable_icon)
+
         ns = self._node.get_namespace()[1:-1]
         self._widget.controller_group.setTitle("ns: " + ns)
 
@@ -176,8 +187,8 @@ class JointTrajectoryController(Plugin):
         # Signal connections
         w = self._widget
         w.enable_button.toggled.connect(self._on_jtc_enabled)
-        w.jtc_combo.currentIndexChanged[str].connect(self._on_jtc_change)
-        w.cm_combo.currentIndexChanged[str].connect(self._on_cm_change)
+        w.jtc_combo.currentTextChanged.connect(self._on_jtc_change)
+        w.cm_combo.currentTextChanged.connect(self._on_cm_change)
 
         self._cmd_pub = None  # Controller command publisher
         self._state_sub = None  # Controller state subscriber
@@ -226,7 +237,20 @@ class JointTrajectoryController(Plugin):
     # Usually used to open a modal configuration dialog
 
     def _update_cm_list(self):
-        update_combo(self._widget.cm_combo, self._list_cm())
+        if not rclpy.ok():
+            self._update_cm_list_timer.stop()
+            return
+
+        try:
+            update_combo(self._widget.cm_combo, self._list_cm())
+        except rclpy.exceptions.NotInitializedException:
+            # Can happen during shutdown if the timer fires after rclpy teardown.
+            self._update_cm_list_timer.stop()
+        except Exception as e:
+            if is_shutdown_context_error(e):
+                self._update_cm_list_timer.stop()
+            else:
+                raise
 
     def _update_jtc_list(self):
         # Clear controller list if no controller information is available
@@ -234,9 +258,22 @@ class JointTrajectoryController(Plugin):
             self._widget.jtc_combo.clear()
             return
 
+        try:
+            running_jtc = self._running_jtc_info()
+        except rclpy.exceptions.NotInitializedException:
+            self._update_jtc_list_timer.stop()
+            return
+        except rclpy.executors.ExternalShutdownException:
+            self._update_jtc_list_timer.stop()
+            return
+        except Exception as e:
+            if is_shutdown_context_error(e):
+                self._update_jtc_list_timer.stop()
+                return
+            raise
+
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
-        running_jtc = self._running_jtc_info()
         if running_jtc and not self._robot_joint_limits:
             self._robot_joint_limits = {}
             for jtc_info in running_jtc:
@@ -281,6 +318,32 @@ class JointTrajectoryController(Plugin):
         self._jtc_name = jtc_name
         if self._jtc_name:
             self._load_jtc()
+
+    def _load_enable_icon(self, off_path, on_path):
+        icon = QIcon()
+        icon.addFile(off_path, mode=QIcon.Mode.Normal, state=QIcon.State.Off)
+        icon.addFile(on_path, mode=QIcon.Mode.Normal, state=QIcon.State.On)
+
+        # Some Qt setups do not decode SVGs through QIcon; render them via QSvgRenderer.
+        if icon.isNull():
+            off_pixmap = self._render_svg(off_path)
+            on_pixmap = self._render_svg(on_path)
+            if off_pixmap is not None:
+                icon.addPixmap(off_pixmap, mode=QIcon.Mode.Normal, state=QIcon.State.Off)
+            if on_pixmap is not None:
+                icon.addPixmap(on_pixmap, mode=QIcon.Mode.Normal, state=QIcon.State.On)
+        return icon
+
+    def _render_svg(self, path, size=48):
+        renderer = QSvgRenderer(path)
+        if not renderer.isValid():
+            return None
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        return pixmap
 
     def _on_jtc_enabled(self, val):
         # Don't allow enabling if there are no controllers selected
@@ -350,8 +413,18 @@ class JointTrajectoryController(Plugin):
 
         self._executor = rclpy.executors.SingleThreadedExecutor()
         self._executor.add_node(self._node)
-        self._executor_thread = threading.Thread(target=self._executor.spin, daemon=True)
+        self._executor_thread = threading.Thread(target=self._spin_executor, daemon=True)
         self._executor_thread.start()
+
+    def _spin_executor(self):
+        try:
+            self._executor.spin()
+        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+            pass
+        except Exception as e:
+            # During SIGINT shutdown, the ROS context can become invalid before spin exits.
+            if not is_shutdown_context_error(e):
+                print(f"Executor thread failed: {e}")
 
     def _unload_jtc(self):
         # Stop updating the joint positions
@@ -409,6 +482,7 @@ class JointTrajectoryController(Plugin):
             self._executor.shutdown()
             self._executor_thread.join()
             self._executor = None
+            self._executor_thread = None
 
     def _state_cb(self, msg):
         current_pos = {}
@@ -456,7 +530,7 @@ class JointTrajectoryController(Plugin):
         widgets = []
         layout = self._widget.joint_group.layout()
         for row_id in range(layout.rowCount()):
-            widgets.append(layout.itemAt(row_id, QFormLayout.FieldRole).widget())
+            widgets.append(layout.itemAt(row_id, QFormLayout.ItemRole.FieldRole).widget())
         return widgets
 
 
@@ -465,8 +539,10 @@ def _jtc_joint_names(jtc_info):
     joint_names = []
     for interface in jtc_info.required_state_interfaces:
         name = "/".join(interface.split("/")[:-1])
+        interface_type = interface.split("/")[-1]
         if name not in joint_names:
-            joint_names.append(name)
+            if interface_type == "position":
+                joint_names.append(name)
 
     return joint_names
 

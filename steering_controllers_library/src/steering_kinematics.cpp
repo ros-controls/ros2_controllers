@@ -267,19 +267,15 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
     double phi_delta = abs(steer_pos_ - phi);
     double scale;
     const double min_phi_delta = M_PI / 6.;
+    const double max_phi_delta = 1.5608;
     if (phi_delta < min_phi_delta)
     {
       scale = 1;
     }
-    else if (phi_delta >= 1.5608)
-    {
-      // cos(1.5608) = 0.01
-      scale = 0.01 / cos(min_phi_delta);
-    }
     else
     {
       // TODO(anyone): find the best function, e.g convex power functions
-      scale = cos(phi_delta) / cos(min_phi_delta);
+      scale = cos(std::min(phi_delta, max_phi_delta)) / cos(min_phi_delta);
     }
     Ws *= scale;
   }
@@ -347,11 +343,11 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
   }
 }
 
-void SteeringKinematics::reset_odometry()
+void SteeringKinematics::set_odometry(const double & x, const double & y, const double & heading)
 {
-  x_ = 0.0;
-  y_ = 0.0;
-  heading_ = 0.0;
+  x_ = x;
+  y_ = y;
+  heading_ = heading;
   reset_accumulators();
 }
 

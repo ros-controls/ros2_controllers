@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>joint_state_broadcaster</name>
-  <version>6.3.0</version>
+  <version>6.7.0</version>
   <description>Broadcaster to publish joint state</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -24,7 +24,6 @@
 
   <depend>backward_ros</depend>
   <depend>builtin_interfaces</depend>
-  <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>generate_parameter_library</depend>
   <depend>pluginlib</depend>

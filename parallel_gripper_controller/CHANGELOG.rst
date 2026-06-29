@@ -2,6 +2,22 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich
+
+6.6.0 (2026-04-22)
+------------------
+* fix(parallel_gripper): rename variables for consistency (`#2314 <https://github.com/ros-controls/ros2_controllers/issues/2314>`_)
+* Contributors: Akshay Arjun
+
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+
 6.3.0 (2026-02-03)
 ------------------
 

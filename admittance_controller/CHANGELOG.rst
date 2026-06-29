@@ -2,6 +2,28 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
+* fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (`#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich, Souri Rishik
+
+6.6.0 (2026-04-22)
+------------------
+* Update admittance_controller to use shared 6D robot description (`#2173 <https://github.com/ros-controls/ros2_controllers/issues/2173>`_)
+* Contributors: Naitik
+
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+* Consistently add <cmath> include with define for windows (`#2193 <https://github.com/ros-controls/ros2_controllers/issues/2193>`_)
+* [Admittance] applies control frame transform to mass matrix (`#1139 <https://github.com/ros-controls/ros2_controllers/issues/1139>`_)
+* Fix dynamic allocation in admittance_rule (`#2150 <https://github.com/ros-controls/ros2_controllers/issues/2150>`_)
+* Contributors: Christoph Fröhlich, Marco Magri, Surya!
+
 6.3.0 (2026-02-03)
 ------------------
 * Check robot description validity in AdmittanceController (`#2009 <https://github.com/ros-controls/ros2_controllers/issues/2009>`_)

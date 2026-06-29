@@ -35,6 +35,7 @@ public:
     dof_state_values_ = {
       get_joint1_state_position(), get_joint2_state_position(), get_joint1_state_velocity(),
       get_joint2_state_velocity()};
+    dof_command_values_ = {0.0, 0.0};
   }
 
   double get_joint1_state_position() const { return 10.0; }
@@ -56,7 +57,7 @@ public:
 TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_interface)
 {
   SetUpController("test_pid_controller_with_feedforward_gain_dual_interface");
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
@@ -74,7 +75,7 @@ TEST_F(PidControllerDualInterfaceTest, test_chained_feedforward_with_gain_dual_i
   controller_->set_chained_mode(true);
 
   // activate controller
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // set up the reference interface,

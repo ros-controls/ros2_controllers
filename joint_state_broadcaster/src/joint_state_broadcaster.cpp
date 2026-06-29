@@ -68,9 +68,22 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
 {
   controller_interface::InterfaceConfiguration state_interfaces_config;
 
-  if (use_all_available_interfaces())
+  if (use_urdf_joint_interfaces())
   {
-    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+    state_interfaces_config.type =
+      controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT;
+    for (const auto & joint : model_.joints_)
+    {
+      if (
+        joint.second->type == urdf::Joint::CONTINUOUS ||
+        joint.second->type == urdf::Joint::REVOLUTE || joint.second->type == urdf::Joint::PRISMATIC)
+      {
+        for (const auto & interface : map_interface_to_joint_state_)
+        {
+          state_interfaces_config.names.push_back(joint.first + "/" + interface.first);
+        }
+      }
+    }
   }
   else
   {
@@ -92,12 +105,12 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (use_all_available_interfaces())
+  if (use_urdf_joint_interfaces())
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "'joints' or 'interfaces' parameter is empty. "
-      "All available state interfaces will be published");
+      "'joints' or 'interfaces' parameter is empty. Will try to publish all available state "
+      "interfaces of the URDF joints.");
     params_.joints.clear();
     params_.interfaces.clear();
   }
@@ -116,8 +129,9 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
       params_.interfaces.end())
     {
       map_interface_to_joint_state_[interface] = interface;
-      RCLCPP_WARN(
-        get_node()->get_logger(),
+      // Warn if custom mapping is being ignored
+      RCLCPP_WARN_EXPRESSION(
+        get_node()->get_logger(), interface != interface_to_map,
         "Mapping from '%s' to interface '%s' will not be done, because '%s' is defined "
         "in 'interface' parameter.",
         interface_to_map.c_str(), interface.c_str(), interface.c_str());
@@ -143,16 +157,6 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
     realtime_joint_state_publisher_ =
       std::make_shared<realtime_tools::RealtimePublisher<sensor_msgs::msg::JointState>>(
         joint_state_publisher_);
-
-    if (params_.publish_dynamic_joint_states)
-    {
-      dynamic_joint_state_publisher_ =
-        get_node()->create_publisher<control_msgs::msg::DynamicJointState>(
-          topic_name_prefix + "dynamic_joint_states", rclcpp::SystemDefaultsQoS());
-      realtime_dynamic_joint_state_publisher_ =
-        std::make_shared<realtime_tools::RealtimePublisher<control_msgs::msg::DynamicJointState>>(
-          dynamic_joint_state_publisher_);
-    }
   }
   catch (const std::exception & e)
   {
@@ -166,10 +170,33 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   is_model_loaded_ = !urdf.empty() && model_.initString(urdf);
   if (!is_model_loaded_)
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Failed to parse robot description. Will publish all the interfaces with '%s', '%s' and '%s'",
-      HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT);
+    if (use_urdf_joint_interfaces())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Robot description could not be loaded. Cannot determine URDF joints to publish. "
+        "Either provide a valid robot description, or explicitly set both 'joints' and "
+        "'interfaces' parameters.");
+      return CallbackReturn::ERROR;
+    }
+    else
+    {
+      if (params_.use_urdf_to_filter)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "'use_urdf_to_filter' parameter is set to true, but robot description could not be "
+          "parsed. Will publish the joints defined in 'joints' parameter without filtering with "
+          "URDF. Fix the robot description to filter joints with URDF.");
+      }
+      else
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Failed to parse robot description. Will publish the joints defined in 'joints' "
+          "parameter along with the defined interfaces in 'interface' parameter.");
+      }
+    }
   }
 
   // joint_names reserve space for all joints
@@ -204,11 +231,6 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
-
-  if (params_.publish_dynamic_joint_states)
-  {
-    init_dynamic_joint_state_msg();
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -251,10 +273,19 @@ bool JointStateBroadcaster::init_joint_data()
       name_if_value_mapping_[prefix_name] = {};
     }
     // add interface name
+
     std::string interface_name = si->get_interface_name();
     if (map_interface_to_joint_state_.count(interface_name) > 0)
     {
       interface_name = map_interface_to_joint_state_[interface_name];
+    }
+    else
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Interface '%s' of joint '%s' is not mapped to any joint state field. The default value %f "
+        "will be used.",
+        interface_name.c_str(), prefix_name.c_str(), kUninitializedValue);
     }
     name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
 
@@ -274,22 +305,31 @@ bool JointStateBroadcaster::init_joint_data()
         }
       }
     }
+    else
+    {
+      // If default interfaces (pos/vel/eff) are missing, log a warning and return NaN in
+      // the fields.
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Interface '%s' of joint '%s' is not present in JointState message fields. NaN's will be "
+        "filled in the respective field.",
+        interface_name.c_str(), prefix_name.c_str());
+    }
   }
+
   std::reverse(joint_names_.begin(), joint_names_.end());
   if (is_model_loaded_ && params_.use_urdf_to_filter && params_.joints.empty())
   {
-    std::vector<std::string> joint_names_filtered;
-    for (const auto & [joint_name, urdf_joint] : model_.joints_)
-    {
-      if (urdf_joint && urdf_joint->type != urdf::Joint::FIXED)
-      {
-        if (std::find(joint_names_.begin(), joint_names_.end(), joint_name) != joint_names_.end())
+    // Preserve the order from the first pass; only remove fixed joints
+    joint_names_.erase(
+      std::remove_if(
+        joint_names_.begin(), joint_names_.end(),
+        [this](const std::string & name)
         {
-          joint_names_filtered.push_back(joint_name);
-        }
-      }
-    }
-    joint_names_ = joint_names_filtered;
+          const auto urdf_joint = model_.getJoint(name);
+          return !urdf_joint || urdf_joint->type == urdf::Joint::FIXED;
+        }),
+      joint_names_.end());
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
@@ -366,44 +406,12 @@ void JointStateBroadcaster::init_joint_state_msg()
   }
 }
 
-void JointStateBroadcaster::init_dynamic_joint_state_msg()
+bool JointStateBroadcaster::use_all_available_interfaces() const
 {
-  dynamic_joint_state_msg_.header.frame_id = frame_id_;
-  dynamic_joint_state_msg_.joint_names.clear();
-  dynamic_joint_state_msg_.interface_values.clear();
-  for (const auto & name_ifv : name_if_value_mapping_)
-  {
-    const auto & name = name_ifv.first;
-    const auto & interfaces_and_values = name_ifv.second;
-    dynamic_joint_state_msg_.joint_names.push_back(name);
-    control_msgs::msg::InterfaceValue if_value;
-    for (const auto & interface_and_value : interfaces_and_values)
-    {
-      if_value.interface_names.emplace_back(interface_and_value.first);
-      if_value.values.emplace_back(kUninitializedValue);
-    }
-    dynamic_joint_state_msg_.interface_values.emplace_back(if_value);
-  }
-
-  // save dynamic joint state data
-  dynamic_joint_states_data_.clear();
-  for (auto ji = 0u; ji < dynamic_joint_state_msg_.joint_names.size(); ++ji)
-  {
-    dynamic_joint_states_data_.push_back(std::vector<const double *>());
-
-    const auto & name = dynamic_joint_state_msg_.joint_names[ji];
-
-    for (auto ii = 0u; ii < dynamic_joint_state_msg_.interface_values[ji].interface_names.size();
-         ++ii)
-    {
-      const auto & interface_name =
-        dynamic_joint_state_msg_.interface_values[ji].interface_names[ii];
-      dynamic_joint_states_data_[ji].push_back(&name_if_value_mapping_[name][interface_name]);
-    }
-  }
+  return this->use_urdf_joint_interfaces();
 }
 
-bool JointStateBroadcaster::use_all_available_interfaces() const
+bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 {
   return params_.joints.empty() || params_.interfaces.empty();
 }
@@ -420,8 +428,13 @@ controller_interface::return_type JointStateBroadcaster::update(
       const auto & opt = state_interfaces_[i].get_optional(0);
       if (opt.has_value())
       {
-        *mapped_values_[map_index++] = opt.value();
+        *mapped_values_[map_index] = opt.value();
       }
+      // Always advance map_index for every DOUBLE interface, regardless of whether the read
+      // succeeded. If we only advance on success, a temporary read failure (e.g. lock contention
+      // on a chained interface) causes all subsequent interfaces to be written into the wrong
+      // mapped_values_ slots, corrupting the published joint states.
+      ++map_index;
     }
   }
 
@@ -429,7 +442,6 @@ controller_interface::return_type JointStateBroadcaster::update(
   {
     joint_state_msg_.header.stamp = time;
 
-    // update joint state message and dynamic joint state message
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       joint_state_msg_.position[i] = joint_states_data_[i].position_;
@@ -437,21 +449,6 @@ controller_interface::return_type JointStateBroadcaster::update(
       joint_state_msg_.effort[i] = joint_states_data_[i].effort_;
     }
     realtime_joint_state_publisher_->try_publish(joint_state_msg_);
-  }
-
-  if (realtime_dynamic_joint_state_publisher_)
-  {
-    dynamic_joint_state_msg_.header.stamp = time;
-    for (auto ji = 0u; ji < dynamic_joint_state_msg_.joint_names.size(); ++ji)
-    {
-      for (auto ii = 0u; ii < dynamic_joint_state_msg_.interface_values[ji].interface_names.size();
-           ++ii)
-      {
-        dynamic_joint_state_msg_.interface_values[ji].values[ii] =
-          *dynamic_joint_states_data_[ji][ii];
-      }
-    }
-    realtime_dynamic_joint_state_publisher_->try_publish(dynamic_joint_state_msg_);
   }
 
   return controller_interface::return_type::OK;

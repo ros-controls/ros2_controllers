@@ -2,6 +2,23 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.7.0 (2026-05-12)
+------------------
+* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich
+
+6.6.0 (2026-04-22)
+------------------
+
+6.5.0 (2026-04-02)
+------------------
+
+6.4.0 (2026-03-12)
+------------------
+* [PID Controllers] Set first set point to current measurement (`#2205 <https://github.com/ros-controls/ros2_controllers/issues/2205>`_)
+* Contributors: Sai Kishor Kothakota
+
 6.3.0 (2026-02-03)
 ------------------
 

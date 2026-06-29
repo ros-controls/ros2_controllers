@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include <gmock/gmock.h>
 
 #include <cmath>
@@ -1041,4 +1045,99 @@ TEST(TestWrapAroundJoint, wraparound_all_joints_no_offset)
   EXPECT_EQ(current_position[0], next_position[0]);
   EXPECT_EQ(current_position[1], next_position[1]);
   EXPECT_EQ(current_position[2], next_position[2]);
+}
+// Regression test for #2282: with a velocity-only trajectory whose last
+// segment is skipped (sample_time advances past the last segment without
+// entering it, e.g. controller rate slower than the last segment duration),
+// the last point's positions never get deduced from velocities. Before the
+// fix, the "whole animation has played out" branch would copy that point
+// into output_state with empty positions, which then segfaults later in
+// JointTrajectoryController::compute_error_for_joint.
+TEST(TestTrajectory, sample_velocity_only_skipped_last_segment_deduces_positions)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.time_from_start = rclcpp::Duration::from_seconds(1.0);
+  p1.positions = {0.0};
+  p1.velocities = {1.0};
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.time_from_start = rclcpp::Duration::from_seconds(2.0);
+  // intentionally velocity-only; positions will be deduced
+  p2.velocities = {1.0};
+
+  trajectory_msgs::msg::JointTrajectoryPoint p3;
+  p3.time_from_start = rclcpp::Duration::from_seconds(2.001);
+  // intentionally velocity-only and tiny duration to model the skipped-last-segment case
+  p3.velocities = {1.0};
+
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  traj_msg->points = {p1, p2, p3};
+
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  auto traj = joint_trajectory_controller::Trajectory(time_now, p1, traj_msg);
+
+  trajectory_msgs::msg::JointTrajectoryPoint output_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+
+  // First sample at time_now anchors trajectory_start_time_ = time_now (header
+  // stamp left default so the sample() code path that sets it on first call
+  // fires). Second sample inside segment 0 so p2's positions get deduced from
+  // velocities.
+  traj.sample(time_now, DEFAULT_INTERPOLATION, output_state, start, end);
+  traj.sample(
+    time_now + rclcpp::Duration::from_seconds(1.5), DEFAULT_INTERPOLATION, output_state, start,
+    end);
+  ASSERT_FALSE(output_state.positions.empty());
+
+  // Now sample past the end: segment 1 (between p2 and p3, 1 ms) is skipped
+  // entirely, leaving p3.positions empty without the fix.
+  const bool ok = traj.sample(
+    time_now + rclcpp::Duration::from_seconds(3.0), DEFAULT_INTERPOLATION, output_state, start,
+    end);
+
+  EXPECT_TRUE(ok);
+  ASSERT_FALSE(output_state.positions.empty())
+    << "sample() must not return success with empty positions; would segfault "
+       "in JointTrajectoryController::compute_error_for_joint";
+  EXPECT_EQ(output_state.positions.size(), p1.positions.size());
+}
+// Regression test for #2282 pathological case: every point in the trajectory
+// is velocity-only and sample_time is so far past the end that no segment
+// was ever entered to deduce positions. With no usable position chain, the
+// "whole animation has played out" branch must return false rather than
+// copy empty positions into output_state.
+TEST(TestTrajectory, sample_velocity_only_all_segments_skipped_returns_false)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.time_from_start = rclcpp::Duration::from_seconds(0.001);
+  p1.velocities = {1.0};
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.time_from_start = rclcpp::Duration::from_seconds(0.002);
+  p2.velocities = {1.0};
+
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  traj_msg->points = {p1, p2};
+
+  trajectory_msgs::msg::JointTrajectoryPoint state_before;
+  // intentionally empty positions on the prior-state too, to force the
+  // "no usable position anywhere" case
+  state_before.velocities = {1.0};
+
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  auto traj = joint_trajectory_controller::Trajectory(time_now, state_before, traj_msg);
+
+  trajectory_msgs::msg::JointTrajectoryPoint output_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+
+  // Anchor trajectory_start_time_ = time_now via a first sample. With
+  // state_before.positions also empty, no segment will ever produce non-empty
+  // positions, so the "whole animation has played out" branch must return false.
+  traj.sample(time_now, DEFAULT_INTERPOLATION, output_state, start, end);
+  const bool ok = traj.sample(
+    time_now + rclcpp::Duration::from_seconds(10.0), DEFAULT_INTERPOLATION, output_state, start,
+    end);
+
+  EXPECT_FALSE(ok)
+    << "sample() must return false when it cannot produce a non-empty positions vector";
 }

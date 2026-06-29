@@ -38,6 +38,12 @@ pid_controller:
       size_lt<>: 3,
     }
   }
+  set_current_state_as_first_setpoint: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+    description: "When true, the controller will set the current state as the first setpoint when the controller is activated. This can help to avoid large initial errors and sudden jumps in the control output when the controller starts."
+  }
   use_external_measured_states: {
     type: bool,
     default_value: false,

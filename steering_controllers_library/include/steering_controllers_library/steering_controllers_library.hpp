@@ -28,6 +28,7 @@
 
 // TODO(anyone): Replace with controller specific messages
 #include "control_msgs/msg/steering_controller_status.hpp"
+#include "control_msgs/srv/set_odometry.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -54,6 +55,13 @@ public:
 
   virtual bool update_odometry(const rclcpp::Duration & period) = 0;
 
+  void set_odometry(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+    std::shared_ptr<control_msgs::srv::SetOdometry::Response> res);
+
+  bool reset();
+
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -61,6 +69,12 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  controller_interface::CallbackReturn on_cleanup(
+    const rclcpp_lifecycle::State & previous_state) override;
+
+  controller_interface::CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
   controller_interface::return_type update_reference_from_subscribers(
@@ -107,6 +121,10 @@ protected:
 
   /// Odometry:
   steering_kinematics::SteeringKinematics odometry_;
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
 
   SteeringControllerStateMsg published_state_;
 

@@ -17,7 +17,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros_controls.rolling.repos'
-      - 'ros_controls.kilted.repos'
+      - 'ros_controls.lyrical.repos'
       - '**.xml'
 
 concurrency:
@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [rolling]
+        ROS_DISTRO: [lyrical, rolling]
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: testing
