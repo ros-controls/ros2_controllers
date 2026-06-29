@@ -91,6 +91,15 @@ if(BUILD_TESTING)
   )
   target_compile_definitions(test_trajectory_controller PRIVATE _USE_MATH_DEFINES)
 
+  ament_add_gmock(test_joint_limiter_jtc
+    test/test_joint_limiter_jtc.cpp)
+  set_tests_properties(test_joint_limiter_jtc PROPERTIES TIMEOUT 240)
+  target_link_libraries(test_joint_limiter_jtc
+    joint_trajectory_controller
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+  target_compile_definitions(test_joint_limiter_jtc PRIVATE _USE_MATH_DEFINES)
+
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
   ament_add_gmock(test_load_joint_trajectory_controller
     test/test_load_joint_trajectory_controller.cpp

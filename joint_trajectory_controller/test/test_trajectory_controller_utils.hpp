@@ -39,6 +39,35 @@ using controller_interface::deactivate_succeeds;
 namespace
 {
 const double COMMON_THRESHOLD = 0.001;
+
+std::vector<rclcpp::Parameter> DefaultJointLimiterParams()
+{
+  return {
+    rclcpp::Parameter("joint_limiter_type", "joint_limits/JointTrajectoryPointSaturationLimiter"),
+    rclcpp::Parameter("joint_limits.joint1.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint1.min_position", -1.5),
+    rclcpp::Parameter("joint_limits.joint1.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint1.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint1.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint2.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint2.min_position", -1.5),
+    rclcpp::Parameter("joint_limits.joint2.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint2.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint2.max_acceleration", 5.0),
+    rclcpp::Parameter("joint_limits.joint3.has_position_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_position", 1.5),
+    rclcpp::Parameter("joint_limits.joint3.min_position", -1.5),
+    rclcpp::Parameter("joint_limits.joint3.has_velocity_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_velocity", 0.5),
+    rclcpp::Parameter("joint_limits.joint3.has_acceleration_limits", true),
+    rclcpp::Parameter("joint_limits.joint3.max_acceleration", 5.0),
+  };
+}
+
 const double INITIAL_POS_JOINT1 = 1.1;
 const double INITIAL_POS_JOINT2 = 2.1;
 const double INITIAL_POS_JOINT3 = 3.1;
