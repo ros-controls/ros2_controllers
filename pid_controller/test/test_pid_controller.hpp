@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "pid_controller/pid_controller.hpp"
@@ -36,16 +37,13 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 using ControllerModeSrvType = pid_controller::PidController::ControllerModeSrvType;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestablePidController : public pid_controller::PidController

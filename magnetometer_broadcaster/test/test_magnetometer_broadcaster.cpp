@@ -31,9 +31,11 @@
 #include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
 #include <ros2_control_test_assets/descriptions.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
+#include "controller_interface/test_utils.hpp"
 
-using callback_return_type =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
@@ -58,7 +60,7 @@ class MagnetometerBroadcasterTest : public ::testing::Test
 public:
   void SetUp()
   {
-    broadcaster = std::make_shared<magnetometer_broadcaster::MagnetometerBroadcaster>();
+    broadcaster = std::make_unique<magnetometer_broadcaster::MagnetometerBroadcaster>();
   }
 
   void TearDown() { broadcaster.reset(); }
@@ -117,7 +119,7 @@ protected:
     std::make_shared<hardware_interface::StateInterface>(
       sensor_name_, "magnetic_field.z", &sensor_values_[2]);
 
-  controller_interface::ControllerInterfaceSharedPtr broadcaster = nullptr;
+  std::unique_ptr<magnetometer_broadcaster::MagnetometerBroadcaster> broadcaster;
 };
 
 TEST_F(MagnetometerBroadcasterTest, whenNoParamsAreSetThenInitShouldFail)
@@ -144,8 +146,8 @@ TEST_F(
   const auto result = broadcaster->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(broadcaster->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
-  ASSERT_EQ(broadcaster->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(broadcaster));
+  ASSERT_TRUE(activate_succeeds(broadcaster));
 }
 
 TEST_F(MagnetometerBroadcasterTest, whenBroadcasterIsActiveShouldPublishWithCovarianceSetToZero)
@@ -155,9 +157,9 @@ TEST_F(MagnetometerBroadcasterTest, whenBroadcasterIsActiveShouldPublishWithCova
   const auto result = broadcaster->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(broadcaster->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(broadcaster));
   setup_broadcaster();
-  ASSERT_EQ(broadcaster->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(broadcaster));
 
   const auto msg = subscribe_and_get_message();
   EXPECT_EQ(msg.header.frame_id, frame_id_);
@@ -182,9 +184,9 @@ TEST_F(
   const auto result = broadcaster->init(
     create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf));
   ASSERT_EQ(result, controller_interface::return_type::OK);
-  ASSERT_EQ(broadcaster->on_configure(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(broadcaster));
   setup_broadcaster();
-  ASSERT_EQ(broadcaster->on_activate(rclcpp_lifecycle::State()), callback_return_type::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(broadcaster));
 
   const auto msg = subscribe_and_get_message();
   EXPECT_EQ(msg.header.frame_id, frame_id_);

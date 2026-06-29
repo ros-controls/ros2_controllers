@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -38,18 +39,15 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using ControllerStateMsg = mecanum_drive_controller::MecanumDriveController::ControllerStateMsg;
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 using TfStateMsg = mecanum_drive_controller::MecanumDriveController::TfStateMsg;
 using OdomStateMsg = mecanum_drive_controller::MecanumDriveController::OdomStateMsg;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController

@@ -34,12 +34,6 @@ using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 void ForceTorqueSensorBroadcasterTest::SetUpTestCase() {}
 
 void ForceTorqueSensorBroadcasterTest::TearDownTestCase() {}

@@ -34,14 +34,14 @@ TEST_F(MotionPrimitivesForwardControllerTest, all_parameters_set_configure_succe
 
   ASSERT_TRUE(controller_->params_.tf_prefix.empty());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 }
 
 TEST_F(MotionPrimitivesForwardControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto command_interfaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_interfaces.names.size(), command_values_.size());
@@ -63,8 +63,8 @@ TEST_F(MotionPrimitivesForwardControllerTest, activate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // check that the message queue is reset
   auto & moprim_queue_ = controller_->moprim_queue_;
@@ -75,8 +75,8 @@ TEST_F(MotionPrimitivesForwardControllerTest, update_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -87,23 +87,23 @@ TEST_F(MotionPrimitivesForwardControllerTest, deactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
 TEST_F(MotionPrimitivesForwardControllerTest, reactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 
   auto val_opt = controller_->command_interfaces_[0].get_optional();
   ASSERT_TRUE(std::isnan(val_opt.value()));
 
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   val_opt = controller_->command_interfaces_[0].get_optional();
   ASSERT_TRUE(std::isnan(val_opt.value()));
@@ -117,8 +117,8 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),

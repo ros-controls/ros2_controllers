@@ -60,13 +60,6 @@ using controller_interface::deactivate_succeeds;
 namespace
 {
 const double COMMON_THRESHOLD = 0.001;
-
-constexpr auto NODE_SUCCESS =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-constexpr auto NODE_FAILURE =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-constexpr auto NODE_ERROR =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
