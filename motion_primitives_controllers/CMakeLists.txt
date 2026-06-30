@@ -84,6 +84,8 @@ if(BUILD_TESTING)
   find_package(hardware_interface REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+
   ament_add_gmock(
     test_load_motion_primitives_forward_controller
     test/test_load_motion_primitives_forward_controller.cpp
@@ -91,6 +93,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_load_motion_primitives_forward_controller
     ${PROJECT_NAME}
     controller_manager::controller_manager
+  )
+  target_link_libraries(test_load_motion_primitives_forward_controller
     ros2_control_test_assets::ros2_control_test_assets
   )
 
@@ -103,6 +107,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}
     controller_interface::controller_interface
     hardware_interface::hardware_interface
+  )
+  target_link_libraries(test_motion_primitives_forward_controller
     ros2_control_test_assets::ros2_control_test_assets
   )
 endif()
