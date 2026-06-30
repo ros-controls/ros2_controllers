@@ -14,6 +14,7 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -31,10 +32,9 @@ using ControllerTwistReferenceMsg =
   steering_controllers_library::SteeringControllersLibrary::ControllerTwistReferenceMsg;
 
 // called from RT control loop
-void reset_controller_reference_msg(
-  ControllerTwistReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+void reset_controller_reference_msg(ControllerTwistReferenceMsg & msg)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0);
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
@@ -263,7 +263,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     "~/reference", subscribers_qos,
     std::bind(&SteeringControllersLibrary::reference_callback, this, std::placeholders::_1));
 
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.set(current_ref_);
 
   try
@@ -470,7 +470,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 {
   // Try to set default value in command.
   // If this fails, then another command will be received soon anyways.
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.try_set(current_ref_);
 
   return controller_interface::CallbackReturn::SUCCESS;
@@ -727,9 +727,27 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
-
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
+
+  // store current ref (for open loop odometry) and update odometry
+  if (std::isfinite(reference_interfaces_[0]))
+  {
+    last_linear_velocity_ = reference_interfaces_[0];
+  }
+  else
+  {
+    last_linear_velocity_ = 0.0;
+  }
+  if (std::isfinite(reference_interfaces_[1]))
+  {
+    last_angular_velocity_ = reference_interfaces_[1];
+  }
+  else
+  {
+    last_angular_velocity_ = 0.0;
+  }
+  update_odometry(period);
 
   reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
   reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
@@ -763,7 +781,7 @@ bool SteeringControllersLibrary::reset()
 {
   odometry_.set_odometry(0.0, 0.0, 0.0);
 
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.set(current_ref_);
 
   last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();

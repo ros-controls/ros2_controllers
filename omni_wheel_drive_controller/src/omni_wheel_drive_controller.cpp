@@ -566,7 +566,7 @@ void OmniWheelDriveController::reset_buffers()
 
   // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
-  command_msg_.header.stamp = get_node()->now();
+  command_msg_.header.stamp = rclcpp::Time(0);
   command_msg_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   command_msg_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   command_msg_.twist.linear.z = std::numeric_limits<double>::quiet_NaN();

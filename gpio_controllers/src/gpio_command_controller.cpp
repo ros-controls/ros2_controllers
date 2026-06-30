@@ -34,10 +34,9 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
 }
 
 // called from RT control loop
-void reset_controller_reference_msg(
-  gpio_controllers::CmdType & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
+void reset_controller_reference_msg(gpio_controllers::CmdType & msg)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0);
   msg.interface_groups.clear();
   msg.interface_values.clear();
 }
@@ -147,7 +146,7 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
 
   initialize_gpio_state_msg();
   // Set default value in command
-  reset_controller_reference_msg(gpio_commands_, get_node());
+  reset_controller_reference_msg(gpio_commands_);
   rt_command_.try_set(gpio_commands_);
   RCLCPP_INFO(get_node()->get_logger(), "activate successful");
   return CallbackReturn::SUCCESS;
@@ -156,7 +155,7 @@ CallbackReturn GpioCommandController::on_activate(const rclcpp_lifecycle::State 
 CallbackReturn GpioCommandController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   // Set default value in command
-  reset_controller_reference_msg(gpio_commands_, get_node());
+  reset_controller_reference_msg(gpio_commands_);
   rt_command_.try_set(gpio_commands_);
   return CallbackReturn::SUCCESS;
 }
