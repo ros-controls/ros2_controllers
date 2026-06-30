@@ -190,7 +190,6 @@ TEST_F(PidControllerTest, reactivate_success)
     dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
-  
   ASSERT_TRUE(deactivate_succeeds(controller_));
   ASSERT_EQ(
     controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
@@ -198,7 +197,6 @@ TEST_F(PidControllerTest, reactivate_success)
     dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
-  
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(
     controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
