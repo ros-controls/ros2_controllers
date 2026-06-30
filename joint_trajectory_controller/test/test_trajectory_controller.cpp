@@ -2120,15 +2120,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
-
-  RCLCPP_WARN(
-    traj_controller_->get_node()->get_logger(),
-    "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
-  // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/
-  // joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
-  return;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
@@ -2138,24 +2132,24 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   // *INDENT-ON*
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
-  // Send full trajectory
+
+  // Use node clock so future-stamped publish and controller update() share the same time base.
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
   publish(points_delay, full_traj, rclcpp::Time(), {}, full_traj_velocities);
-  // Sleep until first waypoint of full trajectory
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {full_traj[0].begin(), full_traj[0].end()};
   expected_desired = expected_actual;
-  //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
-  auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time = waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, start_time);
 
-  // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   publish(
-    points_delay, partial_traj, rclcpp::Clock(RCL_STEADY_TIME).now() + delay * 2, {},
+    points_delay, partial_traj, end_time + rclcpp::Duration(delay * 2), {},
     partial_traj_velocities);
-  // Wait until the end start and end of partial traj
 
+  // joints 0 and 1 follow partial_traj; joint 2 holds at full_traj's last position
   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
   expected_desired = expected_actual;
 
@@ -3291,4 +3285,75 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
   }
 
   executor.cancel();
+}
+
+// ===========================================================================
+// Trajectory deferral tests (allow_trajectory_replacement)
+// ===========================================================================
+
+/**
+ * @brief A stamp=0 trajectory arriving while a deferred trajectory is pending must drop the
+ * pending one and install itself immediately, even well past the pending's fire time.
+ */
+TEST_F(TrajectoryControllerTest, blend_stamp0_preempts_pending)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+  const builtin_interfaces::msg::Duration step{rclcpp::Duration::from_seconds(0.5)};
+
+  std::vector<std::vector<double>> traj_a{{{2., 3., 4.}}};
+  publish(step, traj_a, start_time + rclcpp::Duration::from_seconds(2.0));
+  traj_controller_->wait_for_trajectory(executor);
+  auto t1 = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), start_time);
+
+  std::vector<std::vector<double>> traj_b{{{5., 6., 7.}}};
+  publish(step, traj_b, rclcpp::Time());
+
+  trajectory_msgs::msg::JointTrajectoryPoint expected;
+  expected.positions = {5., 6., 7.};
+  waitAndCompareState(expected, expected, executor, rclcpp::Duration::from_seconds(3.0), 0.1, t1);
+}
+
+/**
+ * @brief fill_partial_goal() for a deferred partial trajectory is called at FIRE time,
+ * not at receive time. The omitted joint holds the position it had when the trajectory fired.
+ */
+TEST_F(TrajectoryControllerTest, blend_partial_goal_fill_uses_fire_time_state)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
+               rclcpp::Parameter("allow_partial_joints_goal", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint3: initial 3.1 → 6.0 over 1 s. Cubic spline values used in assertions:
+  //   t=0.3 s (receive time): ≈ 3.73
+  //   t=0.5 s (FIRE time):    ≈ 4.55
+  const builtin_interfaces::msg::Duration one_s{rclcpp::Duration::from_seconds(1.0)};
+  std::vector<std::vector<double>> old_traj{{{4.0, 5.0, 6.0}}};
+  publish(one_s, old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+
+  auto t_receive = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  const builtin_interfaces::msg::Duration half_s{rclcpp::Duration::from_seconds(0.5)};
+  std::vector<std::vector<double>> partial_traj{{{2.0, 2.5}}};
+  publish(half_s, partial_traj, start_time + rclcpp::Duration::from_seconds(0.5));
+  traj_controller_->wait_for_trajectory(executor);
+
+  auto t_parked = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), t_receive);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t_parked);
+
+  // joint3 must be near FIRE-time value (≈4.55), not receive-time value (≈3.73).
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(2.0, state.positions[0], 0.15);
+    EXPECT_NEAR(2.5, state.positions[1], 0.15);
+    EXPECT_NEAR(4.55, state.positions[2], 0.25);
+  }
 }
