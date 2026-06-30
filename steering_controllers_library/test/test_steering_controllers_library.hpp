@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/executor.hpp"
@@ -30,6 +31,9 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
@@ -57,13 +61,6 @@ static constexpr size_t NR_REF_ITFS = 2;
 static constexpr double WHEELBASE_ = 3.24644;
 static constexpr double WHEELS_TRACK_ = 2.12321;
 static constexpr double WHEELS_RADIUS_ = 0.45;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableSteeringControllersLibrary
