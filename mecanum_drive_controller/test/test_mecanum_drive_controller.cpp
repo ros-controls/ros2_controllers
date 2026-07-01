@@ -947,18 +947,18 @@ TEST_F(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured)
   // Fill the queue with zero velocity
   for (int i = 0; i < 3; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
   }
 
   // Send a large step command - without limits it should be applied immediately
-  controller_->reference_interfaces_[0] = 10.0;
-  controller_->reference_interfaces_[1] = 5.0;
-  controller_->reference_interfaces_[2] = 3.0;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(10.0);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(5.0);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(3.0);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.001)),
     controller_interface::return_type::OK);
@@ -973,10 +973,10 @@ TEST_F(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured)
   const size_t rr = controller_->get_rear_right_wheel_index();
   const size_t rl = controller_->get_rear_left_wheel_index();
 
-  EXPECT_NEAR(4.0, joint_command_values_[fl], 1e-3);
-  EXPECT_NEAR(36.0, joint_command_values_[fr], 1e-3);
-  EXPECT_NEAR(16.0, joint_command_values_[rr], 1e-3);
-  EXPECT_NEAR(24.0, joint_command_values_[rl], 1e-3);
+  EXPECT_NEAR(4.0, controller_->command_interfaces_[fl].get_optional().value(), 1e-3);
+  EXPECT_NEAR(36.0, controller_->command_interfaces_[fr].get_optional().value(), 1e-3);
+  EXPECT_NEAR(16.0, controller_->command_interfaces_[rr].get_optional().value(), 1e-3);
+  EXPECT_NEAR(24.0, controller_->command_interfaces_[rl].get_optional().value(), 1e-3);
 }
 
 // Test that velocity limits are applied to linear x commands.
@@ -995,13 +995,13 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
   // Fill the speed limiter queue with zero velocity
   for (int i = 0; i < 3; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(0.0, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(0.0, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
   }
 
   const double dt = 0.001;
@@ -1015,36 +1015,38 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
 
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
-      EXPECT_GT(linear / wheels_radius, joint_command_values_[0])
+      EXPECT_GT(linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value())
         << "at t: " << i * dt
         << "s, but this wheel velocity should only be achieved at t: " << time_acc;
     }
 
     // After acceleration time, should reach target
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
 
     // Fill queue at steady state
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+      EXPECT_NEAR(
+        linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     }
   }
 
@@ -1056,34 +1058,36 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
 
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
-      EXPECT_LT(linear / wheels_radius, joint_command_values_[0])
+      EXPECT_LT(linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value())
         << "at t: " << i * dt
         << "s, but this wheel velocity should only be achieved at t: " << time_acc;
     }
 
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
 
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+      EXPECT_NEAR(
+        linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     }
   }
 
@@ -1095,34 +1099,36 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
 
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
-      EXPECT_LT(linear / wheels_radius, joint_command_values_[0])
+      EXPECT_LT(linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value())
         << "at t: " << i * dt
         << "s, but this wheel velocity should only be achieved at t: " << time_acc;
     }
 
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
 
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+      EXPECT_NEAR(
+        linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     }
   }
 
@@ -1134,34 +1140,36 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_x)
 
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
-      EXPECT_GT(linear / wheels_radius, joint_command_values_[0])
+      EXPECT_GT(linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value())
         << "at t: " << i * dt
         << "s, but this wheel velocity should only be achieved at t: " << time_acc;
     }
 
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
 
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+      EXPECT_NEAR(
+        linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     }
   }
 }
@@ -1181,9 +1189,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_y)
   // Fill the speed limiter queue with zero velocity
   for (int i = 0; i < 3; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
@@ -1200,25 +1208,26 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_linear_y)
   const size_t fr = controller_->get_front_right_wheel_index();
   for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = linear_y;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(linear_y);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_GT(linear_y / wheels_radius, joint_command_values_[fr])
+    EXPECT_GT(linear_y / wheels_radius, controller_->command_interfaces_[fr].get_optional().value())
       << "at t: " << i * dt
       << "s, but this wheel velocity should only be achieved at t: " << time_acc;
   }
 
   // After acceleration time, should reach target
-  controller_->reference_interfaces_[0] = 0.0;
-  controller_->reference_interfaces_[1] = linear_y;
-  controller_->reference_interfaces_[2] = 0.0;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(linear_y);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
-  EXPECT_NEAR(linear_y / wheels_radius, joint_command_values_[fr], 1e-3);
+  EXPECT_NEAR(
+    linear_y / wheels_radius, controller_->command_interfaces_[fr].get_optional().value(), 1e-3);
 }
 
 // Test that velocity limits are applied to angular z commands.
@@ -1237,9 +1246,9 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_angular_z)
   // Fill the speed limiter queue with zero velocity
   for (int i = 0; i < 3; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
@@ -1257,25 +1266,28 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_angular_z)
   const size_t fr = controller_->get_front_right_wheel_index();
   for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
   {
-    controller_->reference_interfaces_[0] = 0.0;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = angular_z;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(angular_z);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_GT(k * angular_z / wheels_radius, joint_command_values_[fr])
+    EXPECT_GT(
+      k * angular_z / wheels_radius, controller_->command_interfaces_[fr].get_optional().value())
       << "at t: " << i * dt
       << "s, but this wheel velocity should only be achieved at t: " << time_acc;
   }
 
   // After acceleration time, should reach target
-  controller_->reference_interfaces_[0] = 0.0;
-  controller_->reference_interfaces_[1] = 0.0;
-  controller_->reference_interfaces_[2] = angular_z;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(angular_z);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
-  EXPECT_NEAR(k * angular_z / wheels_radius, joint_command_values_[fr], 1e-3);
+  EXPECT_NEAR(
+    k * angular_z / wheels_radius, controller_->command_interfaces_[fr].get_optional().value(),
+    1e-3);
 }
 
 // Test that reset_buffers() clears the jerk-limiter history, the reference interfaces,
@@ -1289,9 +1301,9 @@ TEST_F(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state)
   ASSERT_TRUE(activate_succeeds(controller_));
 
   // Dirty all buffers that reset_buffers() is responsible for clearing.
-  controller_->reference_interfaces_[0] = 1.0;
-  controller_->reference_interfaces_[1] = 2.0;
-  controller_->reference_interfaces_[2] = 3.0;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(2.0);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(3.0);
 
   std::queue<std::array<double, 3>> dirty;
   dirty.push({{4.0, 5.0, 6.0}});
@@ -1341,14 +1353,15 @@ TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buff
   // non-zero history.
   for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) + 5; ++i)
   {
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
   }
-  EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+  EXPECT_NEAR(
+    linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
   EXPECT_NEAR(linear, controller_->previous_two_commands_.back()[0], 1e-3);
 
   // Deactivate then re-activate: limiter history must be reset to zero.
@@ -1362,13 +1375,13 @@ TEST_F(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buff
 
   // After reactivation, requesting the same target should once again be limited
   // by max_acceleration starting from zero, not pass through immediately.
-  controller_->reference_interfaces_[0] = linear;
-  controller_->reference_interfaces_[1] = 0.0;
-  controller_->reference_interfaces_[2] = 0.0;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
-  EXPECT_LT(joint_command_values_[0], linear / wheels_radius)
+  EXPECT_LT(controller_->command_interfaces_[0].get_optional().value(), linear / wheels_radius)
     << "Limiter history was not reset across lifecycle transitions; the wheel command "
        "should be ramping up from zero again.";
 }
@@ -1401,20 +1414,20 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
   {
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear_ref;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear_ref);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(expected_vel, joint_command_values_[0], 1e-3);
+      EXPECT_NEAR(expected_vel, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     }
   };
 
   // wait for the speed limiter to fill the queue
-  controller_->reference_interfaces_[0] = 0.0;
-  controller_->reference_interfaces_[1] = 0.0;
-  controller_->reference_interfaces_[2] = 0.0;
+  (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
   wait_for_limiter(0.0, 0.0);
 
   // Phase 1: accelerate with max_acceleration = 2.0
@@ -1423,20 +1436,21 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
     const double time_acc = linear / max_acceleration_1;
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
     wait_for_limiter(linear, linear / wheels_radius);
   }
@@ -1446,20 +1460,21 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
     const double time_dec = 1.0 / std::abs(max_deceleration);
     for (int i = 0; i < static_cast<int>(std::floor(time_dec / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
     wait_for_limiter(linear, 0.0);
   }
@@ -1478,20 +1493,21 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
     ASSERT_LT(time_acc_2, time_acc_1);
     for (int i = 0; i < static_cast<int>(std::floor(time_acc_2 / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
-      controller_->reference_interfaces_[2] = 0.0;
+      (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+      (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
-    controller_->reference_interfaces_[2] = 0.0;
+    (void)controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+    (void)controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    (void)controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(linear / wheels_radius, joint_command_values_[0], 1e-3);
+    EXPECT_NEAR(
+      linear / wheels_radius, controller_->command_interfaces_[0].get_optional().value(), 1e-3);
     // wait for the speed limiter to fill the queue
     wait_for_limiter(linear, linear / wheels_radius);
   }

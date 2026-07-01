@@ -593,9 +593,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   if (!std::isnan(ref_linear_x) && !std::isnan(ref_linear_y) && !std::isnan(ref_angular_z))
   {
     // Apply speed limits before inverse kinematics
-    double linear_x_command = reference_interfaces_[0];
-    double linear_y_command = reference_interfaces_[1];
-    double angular_z_command = reference_interfaces_[2];
+    double linear_x_command = ref_linear_x;
+    double linear_y_command = ref_linear_y;
+    double angular_z_command = ref_angular_z;
 
     double & last_linear_x = previous_two_commands_.back()[0];
     double & second_to_last_linear_x = previous_two_commands_.front()[0];
