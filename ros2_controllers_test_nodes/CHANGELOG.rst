@@ -2,6 +2,11 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix/spdx license expression (backport `#2370 <https://github.com/ros-controls/ros2_controllers/issues/2370>`_) (`#2373 <https://github.com/ros-controls/ros2_controllers/issues/2373>`_)
+* Contributors: mergify[bot]
+
 4.40.1 (2026-05-12)
 -------------------
 * Add lyrical workflows, update README, and fix gcc-15 issues (backport `#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_) (`#2352 <https://github.com/ros-controls/ros2_controllers/issues/2352>`_)

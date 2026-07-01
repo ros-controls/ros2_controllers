@@ -2,6 +2,12 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Final test cleanup - call appropriate lifecycle transitions (backport `#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_) (`#2432 <https://github.com/ros-controls/ros2_controllers/issues/2432>`_)
+* Test fix - call appropriate lifecycle transitions in controller tests: admittance_controller, pose_broadcaster, tricycle_steering_controller (backport `#2345 <https://github.com/ros-controls/ros2_controllers/issues/2345>`_) (`#2354 <https://github.com/ros-controls/ros2_controllers/issues/2354>`_)
+* Contributors: mergify[bot]
+
 4.40.1 (2026-05-12)
 -------------------
 * fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (backport `#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_) (`#2338 <https://github.com/ros-controls/ros2_controllers/issues/2338>`_)

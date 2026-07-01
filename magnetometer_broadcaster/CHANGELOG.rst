@@ -1,10 +1,11 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package pose_broadcaster
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package magnetometer_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
-* Test fix - call appropriate lifecycle transitions in controller tests: admittance_controller, pose_broadcaster, tricycle_steering_controller (backport `#2345 <https://github.com/ros-controls/ros2_controllers/issues/2345>`_) (`#2354 <https://github.com/ros-controls/ros2_controllers/issues/2354>`_)
+* Final test cleanup - call appropriate lifecycle transitions (backport `#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_) (`#2432 <https://github.com/ros-controls/ros2_controllers/issues/2432>`_)
+* broadcaster for magnetic field values from a magnetometer (backport `#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_) (`#2371 <https://github.com/ros-controls/ros2_controllers/issues/2371>`_)
 * Contributors: mergify[bot]
 
 4.40.1 (2026-05-12)
@@ -24,8 +25,6 @@ Forthcoming
 
 4.36.0 (2025-12-31)
 -------------------
-* Controller interface api update to ros2_controller packages (backport `#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_) (`#2068 <https://github.com/ros-controls/ros2_controllers/issues/2068>`_)
-* Contributors: mergify[bot]
 
 4.35.0 (2025-12-01)
 -------------------
@@ -38,8 +37,6 @@ Forthcoming
 
 4.33.0 (2025-10-03)
 -------------------
-* Update API for realtime publisher (backport `#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_) (`#1944 <https://github.com/ros-controls/ros2_controllers/issues/1944>`_)
-* Contributors: mergify[bot]
 
 4.32.0 (2025-09-12)
 -------------------
@@ -67,21 +64,15 @@ Forthcoming
 
 4.26.0 (2025-06-06)
 -------------------
-* Use target_link_libraries instead of ament_target_dependencies (backport `#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_) (`#1699 <https://github.com/ros-controls/ros2_controllers/issues/1699>`_)
-* Contributors: mergify[bot]
 
 4.25.0 (2025-05-17)
 -------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Deprecate tf.publish_rate parameter for pose_broadcaster (`#1614 <https://github.com/ros-controls/ros2_controllers/issues/1614>`_)
-* Contributors: Aarav Gupta
 
 4.23.0 (2025-04-10)
 -------------------
-* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
-* Contributors: Christoph Fröhlich
 
 4.22.0 (2025-03-17)
 -------------------
@@ -91,30 +82,18 @@ Forthcoming
 
 4.20.0 (2025-01-29)
 -------------------
-* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
-* Contributors: Christoph Fröhlich
 
 4.19.0 (2025-01-13)
 -------------------
-* [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (`#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_)
-* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
-* Contributors: Bence Magyar, Felix Exner
 
 4.18.0 (2024-12-19)
 -------------------
 
 4.17.0 (2024-12-07)
 -------------------
-* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
-* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
 
 4.16.0 (2024-11-08)
 -------------------
-* Add hardware_interface_testing dependency (`#1335 <https://github.com/ros-controls/ros2_controllers/issues/1335>`_)
-* Implement new PoseBroadcaster controller (`#1311 <https://github.com/ros-controls/ros2_controllers/issues/1311>`_)
-* Contributors: Christoph Fröhlich, RobertWilbrandt
 
 4.15.0 (2024-10-07)
 -------------------

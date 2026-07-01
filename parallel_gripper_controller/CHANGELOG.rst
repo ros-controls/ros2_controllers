@@ -2,6 +2,11 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Test fix - call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (backport `#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_) (`#2393 <https://github.com/ros-controls/ros2_controllers/issues/2393>`_)
+* Contributors: mergify[bot]
+
 4.40.1 (2026-05-12)
 -------------------
 

@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Deliver abort action result before destroying goal handle on preemption (backport `#2422 <https://github.com/ros-controls/ros2_controllers/issues/2422>`_) (`#2423 <https://github.com/ros-controls/ros2_controllers/issues/2423>`_)
+* Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (backport `#2410 <https://github.com/ros-controls/ros2_controllers/issues/2410>`_) (`#2414 <https://github.com/ros-controls/ros2_controllers/issues/2414>`_)
+* [JTC] Fix segfault when last trajectory segment is skipped (backport `#2359 <https://github.com/ros-controls/ros2_controllers/issues/2359>`_) (`#2364 <https://github.com/ros-controls/ros2_controllers/issues/2364>`_)
+* More general initialization of state from command (backport `#2294 <https://github.com/ros-controls/ros2_controllers/issues/2294>`_) (`#2356 <https://github.com/ros-controls/ros2_controllers/issues/2356>`_)
+* Contributors: mergify[bot]
+
 4.40.1 (2026-05-12)
 -------------------
 * Suppress cppcheck errors from macros from version.h (backport `#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_) (`#2347 <https://github.com/ros-controls/ros2_controllers/issues/2347>`_)
