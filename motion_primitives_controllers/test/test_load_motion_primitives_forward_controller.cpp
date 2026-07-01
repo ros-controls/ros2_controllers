@@ -32,9 +32,13 @@ TEST(TestLoadMotionPrimitivesForwardController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_motion_primitives_forward_controller",
-    "motion_primitives_controllers/MotionPrimitivesForwardController"));
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/motion_primitives_forward_controller_params.yaml";
+  cm.set_parameter({"test_motion_primitives_forward_controller.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_motion_primitives_forward_controller.type",
+     "motion_primitives_controllers/MotionPrimitivesForwardController"});
+  ASSERT_NE(cm.load_controller("test_motion_primitives_forward_controller"), nullptr);
 
   rclcpp::shutdown();
 }
