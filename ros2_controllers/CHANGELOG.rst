@@ -2,6 +2,14 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* broadcaster for magnetic field values from a magnetometer (backport `#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_) (`#2372 <https://github.com/ros-controls/ros2_controllers/issues/2372>`_)
+  Co-authored-by: Christian Rauch <Rauch.Christian@gmx.de>
+  Co-authored-by: Christoph Fröhlich <christophfroehlich@users.noreply.github.com>
+  Co-authored-by: mergify[bot] <37929162+mergify[bot]@users.noreply.github.com>
+* Contributors: mergify[bot]
+
 5.15.1 (2026-05-12)
 -------------------
 

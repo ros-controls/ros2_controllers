@@ -1,10 +1,14 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package pose_broadcaster
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package magnetometer_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
-* Test fix - call appropriate lifecycle transitions in controller tests: admittance_controller, pose_broadcaster, tricycle_steering_controller (backport `#2345 <https://github.com/ros-controls/ros2_controllers/issues/2345>`_) (`#2355 <https://github.com/ros-controls/ros2_controllers/issues/2355>`_)
+* Final test cleanup - call appropriate lifecycle transitions (backport `#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_) (`#2433 <https://github.com/ros-controls/ros2_controllers/issues/2433>`_)
+* broadcaster for magnetic field values from a magnetometer (backport `#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_) (`#2372 <https://github.com/ros-controls/ros2_controllers/issues/2372>`_)
+  Co-authored-by: Christian Rauch <Rauch.Christian@gmx.de>
+  Co-authored-by: Christoph Fröhlich <christophfroehlich@users.noreply.github.com>
+  Co-authored-by: mergify[bot] <37929162+mergify[bot]@users.noreply.github.com>
 * Contributors: mergify[bot]
 
 5.15.1 (2026-05-12)
@@ -33,14 +37,9 @@ Forthcoming
 
 5.9.0 (2025-11-10)
 ------------------
-* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
-* Contributors: Anand Vardhan
 
 5.8.0 (2025-10-02)
 ------------------
-* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
-* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
-* Contributors: Christoph Fröhlich
 
 5.7.0 (2025-09-12)
 ------------------
@@ -65,29 +64,21 @@ Forthcoming
 
 5.1.0 (2025-06-11)
 ------------------
-* Remove deprecated parameter from pose_broadcaster (`#1685 <https://github.com/ros-controls/ros2_controllers/issues/1685>`_)
-* Contributors: Christoph Fröhlich
 
 5.0.2 (2025-05-26)
 ------------------
 
 5.0.1 (2025-05-24)
 ------------------
-* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
-* Contributors: Sai Kishor Kothakota
 
 5.0.0 (2025-05-17)
 ------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Deprecate tf.publish_rate parameter for pose_broadcaster (`#1614 <https://github.com/ros-controls/ros2_controllers/issues/1614>`_)
-* Contributors: Aarav Gupta
 
 4.23.0 (2025-04-10)
 -------------------
-* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
-* Contributors: Christoph Fröhlich
 
 4.22.0 (2025-03-17)
 -------------------
@@ -97,30 +88,18 @@ Forthcoming
 
 4.20.0 (2025-01-29)
 -------------------
-* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
-* Contributors: Christoph Fröhlich
 
 4.19.0 (2025-01-13)
 -------------------
-* [pose_broadcaster] Check for valid pose before attempting to publish a tf for it (`#1479 <https://github.com/ros-controls/ros2_controllers/issues/1479>`_)
-* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
-* Contributors: Bence Magyar, Felix Exner
 
 4.18.0 (2024-12-19)
 -------------------
 
 4.17.0 (2024-12-07)
 -------------------
-* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
-* Add few warning flags to error in all ros2_controllers packages and fix tests (`#1370 <https://github.com/ros-controls/ros2_controllers/issues/1370>`_)
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota
 
 4.16.0 (2024-11-08)
 -------------------
-* Add hardware_interface_testing dependency (`#1335 <https://github.com/ros-controls/ros2_controllers/issues/1335>`_)
-* Implement new PoseBroadcaster controller (`#1311 <https://github.com/ros-controls/ros2_controllers/issues/1311>`_)
-* Contributors: Christoph Fröhlich, RobertWilbrandt
 
 4.15.0 (2024-10-07)
 -------------------

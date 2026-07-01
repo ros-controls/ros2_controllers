@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (backport `#2399 <https://github.com/ros-controls/ros2_controllers/issues/2399>`_) (`#2403 <https://github.com/ros-controls/ros2_controllers/issues/2403>`_)
+* Contributors: mergify[bot]
+
 5.15.1 (2026-05-12)
 -------------------
 * Add lyrical workflows, update README, and fix gcc-15 issues (backport `#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_) (`#2353 <https://github.com/ros-controls/ros2_controllers/issues/2353>`_)

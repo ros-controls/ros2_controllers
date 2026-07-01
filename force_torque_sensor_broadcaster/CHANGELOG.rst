@@ -2,6 +2,12 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Final test cleanup - call appropriate lifecycle transitions (backport `#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_) (`#2433 <https://github.com/ros-controls/ros2_controllers/issues/2433>`_)
+* Test fix - call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (backport `#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_) (`#2394 <https://github.com/ros-controls/ros2_controllers/issues/2394>`_)
+* Contributors: mergify[bot]
+
 5.15.1 (2026-05-12)
 -------------------
 * Suppress cppcheck errors from macros from version.h (backport `#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_) (`#2348 <https://github.com/ros-controls/ros2_controllers/issues/2348>`_)
