@@ -1,0 +1,363 @@
+# Copyright (c) 2025, b»robotized by Stogl Robotics
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+gpio_tool_controller:
+  use_action: {
+    type: bool,
+    default_value: false,
+    description: "If set controllers provides actions instead of services for setting it to disengaged/engaged state and configurations."
+  }
+  timeout: {
+    type: double,
+    default_value: 5.0,
+    description: "Timeout for the waiting on signals from the tool about reached state.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
+  tolerance: {
+    type: double,
+    default_value: 0.01,
+    description: "Tolerance for the state values to be considered reached.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
+  engaged_joints: {
+    type: string_array,
+    default_value: [],
+    description: "List of joint names that should change values according to enaged state of the tool.",
+    validation: {
+      unique<>: null,
+    }
+  }
+  disengaged:
+    name: {
+      type: string,
+      default_value: "disengaged",
+      description: "Name of the disengaged state if you want to use different on in the application, e.g., 'open'.",
+    }
+    joint_states: {
+      type: double_array,
+      default_value: [],
+      description: "List of values that are published for the joint to `joint_states` topic when tool is disengaged. The order of the values must match the order of the joint names in `engaged_joints` parameter.",
+    }
+    set_before_command:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value before disengageding the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set before disengageding the tool",
+      }
+    set_before_state:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that confirm the reached state 'before' disengaging the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for state interfaces that confirm the reached state 'before' disengaging the tool",
+      }
+    command:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value to disengage the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set to disengage the tool",
+      }
+    state:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to have a specific value to confirm the tool is disengaged",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values that state interfaces have to have to confirm the tool is disengaged",
+      }
+    set_after_command:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set after the tool is disengaged.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set set after the tool is disengaged.",
+      }
+    set_after_state:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to have a specific value to confirm 'after' the tool is disengaged.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values that state interfaces have to have to confirm 'after' the tool is disengaged.",
+      }
+
+  possible_engaged_states: {
+    type: string_array,
+    description: "List of possible engaged states, e.g., a gripper can be `close_empty` or `close_full`.",
+    validation: {
+      unique<>: null,
+      not_empty<>: null,
+    }
+  }
+
+  engaged:
+    name: {
+      type: string,
+      default_value: "engaged",
+      description: "Name of the engaged state if you want to use different on in the application, e.g., 'close'.",
+    }
+    set_before_command:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value before engageing the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set before engageing the tool",
+      }
+    set_before_state:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that confirm the reached state 'before' engageing the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for state interfaces that confirm the reached state 'before' engageing the tool",
+      }
+    command:
+      interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value to engage the tool",
+        validation: {
+          unique<>: null,
+        }
+      }
+      values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set to engage the tool",
+      }
+    states:
+      __map_possible_engaged_states:
+        joint_states: {
+          type: double_array,
+          default_value: [],
+          description: "List of joint values when tool is engaged. The order of the values must match the order of the joint names in engaged_joints parameter."
+        }
+        interfaces: {
+          type: string_array,
+          default_value: [],
+          description: "(optional) list of state interfaces that have to have a specific value to confirm the tool is engaged in a specific state.",
+          validation: {
+            unique<>: null,
+          }
+        }
+        values: {
+          type: double_array,
+          default_value: [],
+          description: "(optional) list of values that state interfaces have to have to confirm the tool is engaged in a specific state.",
+        }
+        set_after_command_interfaces: {
+          type: string_array,
+          default_value: [],
+          description: "(optional) list of command interfaces that have to be set after the tool is enaged in a specific state.",
+          validation: {
+            unique<>: null,
+          }
+        }
+        set_after_command_values: {
+          type: double_array,
+          default_value: [],
+          description: "(optional) list of values for command interfaces that have to be set after the tool is enaged in a specific state.",
+        }
+        set_after_state_interfaces: {
+          type: string_array,
+          default_value: [],
+          description: "(optional) list of state interfaces that have to have a specific value to confirm 'after' the tool is engaged in a specific state.",
+          validation: {
+            unique<>: null,
+          }
+        }
+        set_after_state_values: {
+          type: double_array,
+          default_value: [],
+          description: "(optional) list of values that state interfaces have to have to confirm 'after' the tool is engaged in a specific state.",
+        }
+
+  configurations: {
+    type: string_array,
+    default_value: [],
+    description: "Configuration names that can be used to switch between different configurations of the tool",
+    validation: {
+      unique<>: null,
+    }
+  }
+
+  configuration_joints: {
+    type: string_array,
+    default_value: [],
+    description: "List of joint names that are used to switch between different configurations of the tool",
+    validation: {
+      unique<>: null,
+    }
+  }
+
+  configuration_setup:
+    __map_configurations:
+      joint_states: {
+        type: double_array,
+        default_value: [],
+        description: "List of joint states values that tool has in certain configurations. The order of the values must match the order of the joint names in `engaged_joints` parameter.",
+      }
+      set_before_command_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value before switching to a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      set_before_command_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set before switching to a specific configuration.",
+      }
+      set_before_state_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that confirm the reached state 'before' switching to a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      set_before_state_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for state interfaces that confirm the reached state 'before' switching to a specific configuration.",
+      }
+      command_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set to a specific value for switching to a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      command_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set for switching to aa specific configuration.",
+      }
+      state_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to have a specific value to confirm the tool is in a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      state_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values that state interfaces have to have to confirm the tool is in a specific configuration.",
+      }
+      set_after_command_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of command interfaces that have to be set after switching to a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      set_after_command_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values for command interfaces that have to be set after switching to a specific configuration.",
+      }
+      set_after_state_interfaces: {
+        type: string_array,
+        default_value: [],
+        description: "(optional) list of state interfaces that have to have a specific value to confirm 'after' switching to a specific configuration.",
+        validation: {
+          unique<>: null,
+        }
+      }
+      set_after_state_values: {
+        type: double_array,
+        default_value: [],
+        description: "(optional) list of values that state interfaces have to have to confirm 'after' switching to a specific configuration.",
+      }
+
+  tool_specific_sensors: {
+    type: string_array,
+    default_value: [],
+    description: "List of sensor names that are specific to the tool",
+    validation: {
+      unique<>: null,
+    }
+  }
+  sensors_interfaces:
+    __map_tool_specific_sensors:
+      interface: {
+        type: string,
+        default_value: "",
+        description: "Name of the state interface that is specific to a tool sensor.",
+      }
