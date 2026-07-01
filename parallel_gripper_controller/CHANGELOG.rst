@@ -2,6 +2,11 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (`#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_)
+* Contributors: Junius Santoso
+
 6.7.0 (2026-05-12)
 ------------------
 * Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)

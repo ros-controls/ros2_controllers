@@ -2,6 +2,11 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)
+* Contributors: Junius Santoso
+
 6.7.0 (2026-05-12)
 ------------------
 

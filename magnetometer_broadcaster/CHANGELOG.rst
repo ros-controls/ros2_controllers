@@ -1,28 +1,22 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package rqt_joint_trajectory_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package magnetometer_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
-* rqt-jtc: Fix more shutdown races (`#2431 <https://github.com/ros-controls/ros2_controllers/issues/2431>`_)
-* rqt-jtc: Add launch test, fix Qt6 API changes and more(`#2405 <https://github.com/ros-controls/ros2_controllers/issues/2405>`_)
-* Contributors: Christoph Fröhlich
+* Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)
+* fix(magnetometer_broadcaster): Refactor to avoid pluginlib in tests (`#2387 <https://github.com/ros-controls/ros2_controllers/issues/2387>`_)
+* Add broadcaster for magnetic field values from a magnetometer (`#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_)
+* Contributors: Christian Rauch, Christoph Fröhlich, Junius Santoso
 
 6.7.0 (2026-05-12)
 ------------------
-* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
-* [rqt_jtc] Use urdf_parser_py (`#2254 <https://github.com/ros-controls/ros2_controllers/issues/2254>`_)
-* Contributors: Christoph Fröhlich, Sahil Lakhmani
 
 6.6.0 (2026-04-22)
 ------------------
-* [RQT_JTC] add unit tests for parse_joint_limits (`#2281 <https://github.com/ros-controls/ros2_controllers/issues/2281>`_)
-* Contributors: Sahil Lakhmani
 
 6.5.0 (2026-04-02)
 ------------------
-* rqt_jtc: Check for interface type when adding joint names (`#2231 <https://github.com/ros-controls/ros2_controllers/issues/2231>`_)
-* Contributors: Felix Exner
 
 6.4.0 (2026-03-12)
 ------------------
@@ -38,8 +32,6 @@ Forthcoming
 
 6.0.0 (2025-11-10)
 ------------------
-* fix issue of not listing new JTCs (`#1891 <https://github.com/ros-controls/ros2_controllers/issues/1891>`_)
-* Contributors: Peter Mitrano (AR)
 
 5.8.0 (2025-10-02)
 ------------------
@@ -61,8 +53,6 @@ Forthcoming
 
 5.3.0 (2025-07-14)
 ------------------
-* fix rqt_joint_trajectory_controller for robots with namespace (`#1792 <https://github.com/ros-controls/ros2_controllers/issues/1792>`_)
-* Contributors: Oscar Lima
 
 5.2.0 (2025-06-23)
 ------------------
@@ -84,14 +74,9 @@ Forthcoming
 
 4.23.0 (2025-04-10)
 -------------------
-* Bump version of pre-commit hooks (`#1618 <https://github.com/ros-controls/ros2_controllers/issues/1618>`_)
-* Contributors: github-actions[bot]
 
 4.22.0 (2025-03-17)
 -------------------
-* [JTC] Accept larger number of `joints` than `command_joints` (`#809 <https://github.com/ros-controls/ros2_controllers/issues/809>`_)
-* Update documentation of rqt_joint_trajectory_controller (`#1578 <https://github.com/ros-controls/ros2_controllers/issues/1578>`_)
-* Contributors: Aditya Pawar, Christoph Fröhlich
 
 4.21.0 (2025-03-01)
 -------------------
@@ -107,8 +92,6 @@ Forthcoming
 
 4.17.0 (2024-12-07)
 -------------------
-* Update maintainers and add url tags (`#1363 <https://github.com/ros-controls/ros2_controllers/issues/1363>`_)
-* Contributors: Christoph Fröhlich
 
 4.16.0 (2024-11-08)
 -------------------
@@ -118,8 +101,6 @@ Forthcoming
 
 4.14.0 (2024-09-11)
 -------------------
-* Fix bug for displaying all controllers (`#1259 <https://github.com/ros-controls/ros2_controllers/issues/1259>`_)
-* Contributors: Francisco Martín Rico
 
 4.13.0 (2024-08-22)
 -------------------
@@ -138,16 +119,12 @@ Forthcoming
 
 4.9.0 (2024-06-05)
 ------------------
-* [RQT-JTC] limits from jtc controlled joints (`#1146 <https://github.com/ros-controls/ros2_controllers/issues/1146>`_)
-* Contributors: Jakub Delicat
 
 4.8.0 (2024-05-14)
 ------------------
 
 4.7.0 (2024-03-22)
 ------------------
-* [CI] Code coverage + pre-commit (`#1057 <https://github.com/ros-controls/ros2_controllers/issues/1057>`_)
-* Contributors: Christoph Fröhlich
 
 4.6.0 (2024-02-12)
 ------------------
@@ -160,13 +137,9 @@ Forthcoming
 
 4.3.0 (2024-01-08)
 ------------------
-* Add rqt_JTC to docs (`#950 <https://github.com/ros-controls/ros2_controllers/issues/950>`_)
-* Contributors: Christoph Fröhlich
 
 4.2.0 (2023-12-12)
 ------------------
-* Fix rqt jtc bugs for continuous joints and other minor bugs (`#890 <https://github.com/ros-controls/ros2_controllers/issues/890>`_)
-* Contributors: Sai Kishor Kothakota
 
 4.1.0 (2023-12-01)
 ------------------
@@ -200,16 +173,12 @@ Forthcoming
 
 3.10.0 (2023-06-04)
 -------------------
-* Adapted rqt_jtc to newest control_msgs for jtc (`#643 <https://github.com/ros-controls/ros2_controllers/issues/643>`_)
-* Contributors: gwalck
 
 3.9.0 (2023-05-28)
 ------------------
 
 3.8.0 (2023-05-14)
 ------------------
-* switch from dash to underscore in setup.cfg (`#595 <https://github.com/ros-controls/ros2_controllers/issues/595>`_)
-* Contributors: Alex Moriarty
 
 3.7.0 (2023-05-02)
 ------------------
@@ -234,8 +203,6 @@ Forthcoming
 
 3.0.0 (2023-01-19)
 ------------------
-* 🔧 Fixes and updated on pre-commit hooks and their action (`#492 <https://github.com/ros-controls/ros2_controllers/issues/492>`_)
-* Contributors: Denis Štogl
 
 2.15.0 (2022-12-06)
 -------------------
@@ -248,18 +215,12 @@ Forthcoming
 
 2.12.0 (2022-09-01)
 -------------------
-* fix: :bug: make bare exceptions more narrow (`#422 <https://github.com/ros-controls/ros2_controllers/issues/422>`_)
-* Fix formatting because pre-commit was not running on CI for some time. (`#409 <https://github.com/ros-controls/ros2_controllers/issues/409>`_)
-* Contributors: Denis Štogl, Jaron Lundwall
 
 2.11.0 (2022-08-04)
 -------------------
 
 2.10.0 (2022-08-01)
 -------------------
-* Formatting changes from pre-commit (`#400 <https://github.com/ros-controls/ros2_controllers/issues/400>`_)
-* port rqt_joint_trajectory_controller to ros2 (`#356 <https://github.com/ros-controls/ros2_controllers/issues/356>`_)
-* Contributors: Bence Magyar, Noel Jiménez García, Tyler Weaver
 
 2.9.0 (2022-07-14)
 ------------------

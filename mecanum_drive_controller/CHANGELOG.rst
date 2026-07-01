@@ -2,6 +2,12 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (`#2406 <https://github.com/ros-controls/ros2_controllers/issues/2406>`_)
+* Added velocity limiting to the mecanum controller. (`#2313 <https://github.com/ros-controls/ros2_controllers/issues/2313>`_)
+* Contributors: Junius Santoso, Tony Baltovski
+
 6.7.0 (2026-05-12)
 ------------------
 * Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)

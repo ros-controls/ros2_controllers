@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (`#2406 <https://github.com/ros-controls/ros2_controllers/issues/2406>`_)
+* Contributors: Junius Santoso
+
 6.7.0 (2026-05-12)
 ------------------
 * Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)

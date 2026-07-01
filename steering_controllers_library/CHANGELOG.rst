@@ -2,6 +2,13 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Simplify reduce_wheel_speed_until_steering_reached logic (`#2396 <https://github.com/ros-controls/ros2_controllers/issues/2396>`_)
+* Remove deprecated steering_odometry class (`#2400 <https://github.com/ros-controls/ros2_controllers/issues/2400>`_)
+* Call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (`#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_)
+* Contributors: Christoph Fröhlich, Junius Santoso
+
 6.7.0 (2026-05-12)
 ------------------
 * Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
