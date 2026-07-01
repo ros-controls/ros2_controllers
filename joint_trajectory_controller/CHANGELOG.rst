@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix JTC userdoc YAML indentation and stray quote (backport `#2327 <https://github.com/ros-controls/ros2_controllers/issues/2327>`_) (`#2328 <https://github.com/ros-controls/ros2_controllers/issues/2328>`_)
+* Contributors: mergify[bot]
+
 2.53.1 (2026-04-22)
 -------------------
 

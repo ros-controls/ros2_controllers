@@ -2,6 +2,13 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rqt-jtc: Fix more shutdown races (backport `#2431 <https://github.com/ros-controls/ros2_controllers/issues/2431>`_) (`#2437 <https://github.com/ros-controls/ros2_controllers/issues/2437>`_)
+* rqt-jtc: Add launch test (backport `#2405 <https://github.com/ros-controls/ros2_controllers/issues/2405>`_) (`#2416 <https://github.com/ros-controls/ros2_controllers/issues/2416>`_)
+* Add lyrical workflows, update README, and fix gcc-15 issues (backport `#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_) (`#2351 <https://github.com/ros-controls/ros2_controllers/issues/2351>`_)
+* Contributors: mergify[bot]
+
 2.53.1 (2026-04-22)
 -------------------
 * [RQT_JTC] add unit tests for parse_joint_limits (backport `#2281 <https://github.com/ros-controls/ros2_controllers/issues/2281>`_) (`#2287 <https://github.com/ros-controls/ros2_controllers/issues/2287>`_)
