@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.53.2 (2026-07-01)
+-------------------
 * Simplify reduce_wheel_speed_until_steering_reached logic (backport `#2396 <https://github.com/ros-controls/ros2_controllers/issues/2396>`_) (`#2426 <https://github.com/ros-controls/ros2_controllers/issues/2426>`_)
 * Contributors: mergify[bot]
 
