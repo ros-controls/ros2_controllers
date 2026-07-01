@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.41.0 (2026-07-01)
+-------------------
 * rqt-jtc: Fix more shutdown races (backport `#2431 <https://github.com/ros-controls/ros2_controllers/issues/2431>`_) (`#2438 <https://github.com/ros-controls/ros2_controllers/issues/2438>`_)
 * rqt-jtc: Add launch test (backport `#2405 <https://github.com/ros-controls/ros2_controllers/issues/2405>`_) (`#2417 <https://github.com/ros-controls/ros2_controllers/issues/2417>`_)
   Co-authored-by: Christoph Fröhlich <christophfroehlich@users.noreply.github.com>

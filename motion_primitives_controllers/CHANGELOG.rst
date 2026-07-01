@@ -2,8 +2,8 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.41.0 (2026-07-01)
+-------------------
 * fix: update dead documentation links (backport `#2398 <https://github.com/ros-controls/ros2_controllers/issues/2398>`_) (`#2411 <https://github.com/ros-controls/ros2_controllers/issues/2411>`_)
 * Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (backport `#2399 <https://github.com/ros-controls/ros2_controllers/issues/2399>`_) (`#2402 <https://github.com/ros-controls/ros2_controllers/issues/2402>`_)
 * Fix motion_primitive_controller TOC in docs (backport `#2221 <https://github.com/ros-controls/ros2_controllers/issues/2221>`_) (`#2366 <https://github.com/ros-controls/ros2_controllers/issues/2366>`_)

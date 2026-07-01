@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.41.0 (2026-07-01)
+-------------------
 * Fix/spdx license expression (backport `#2370 <https://github.com/ros-controls/ros2_controllers/issues/2370>`_) (`#2373 <https://github.com/ros-controls/ros2_controllers/issues/2373>`_)
 * Contributors: mergify[bot]
 
