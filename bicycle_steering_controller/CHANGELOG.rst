@@ -2,8 +2,8 @@
 Changelog for package bicycle_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.8.0 (2026-07-01)
+------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (`#2410 <https://github.com/ros-controls/ros2_controllers/issues/2410>`_)
 * Contributors: Junius Santoso
 

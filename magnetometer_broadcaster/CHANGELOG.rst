@@ -2,8 +2,8 @@
 Changelog for package magnetometer_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.8.0 (2026-07-01)
+------------------
 * Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)
 * fix(magnetometer_broadcaster): Refactor to avoid pluginlib in tests (`#2387 <https://github.com/ros-controls/ros2_controllers/issues/2387>`_)
 * Add broadcaster for magnetic field values from a magnetometer (`#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_)

@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.8.0 (2026-07-01)
+------------------
 * Trajectory blending with new trajectory deferral (`#2401 <https://github.com/ros-controls/ros2_controllers/issues/2401>`_)
 * [JTC] Deliver abort action result before destroying goal handle on preemption (`#2422 <https://github.com/ros-controls/ros2_controllers/issues/2422>`_)
 * Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (`#2410 <https://github.com/ros-controls/ros2_controllers/issues/2410>`_)
