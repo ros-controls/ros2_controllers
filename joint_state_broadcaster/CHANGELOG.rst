@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.8.0 (2026-07-01)
+------------------
+* Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (`#2410 <https://github.com/ros-controls/ros2_controllers/issues/2410>`_)
+* [JSB] Remove dynamic_joint_states and use INDIVIDUAL_BEST_EFFORT for interfaces (`#2187 <https://github.com/ros-controls/ros2_controllers/issues/2187>`_)
+* Contributors: Junius Santoso, Sai Kishor Kothakota
+
 6.7.0 (2026-05-12)
 ------------------
 * Suppress cppcheck errors from macros from version.h (`#2346 <https://github.com/ros-controls/ros2_controllers/issues/2346>`_)
