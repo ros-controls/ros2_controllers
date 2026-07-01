@@ -34,20 +34,10 @@ TEST(TestLoadJointGroupVelocityController, load_controller)
       ros2_control_test_assets::minimal_robot_urdf),
     executor, "test_controller_manager");
 
-<<<<<<< HEAD:effort_controllers/test/test_load_joint_group_effort_controller.cpp
   ASSERT_NE(
     cm.load_controller(
       "test_joint_group_effort_controller", "effort_controllers/JointGroupEffortController"),
     nullptr);
-=======
-  const std::string test_file_path =
-    std::string(TEST_FILES_DIRECTORY) + "/motion_primitives_forward_controller_params.yaml";
-  cm.set_parameter({"test_motion_primitives_forward_controller.params_file", test_file_path});
-  cm.set_parameter(
-    {"test_motion_primitives_forward_controller.type",
-     "motion_primitives_controllers/MotionPrimitivesForwardController"});
-  ASSERT_NE(cm.load_controller("test_motion_primitives_forward_controller"), nullptr);
->>>>>>> f6bcf6c (fix: correct test_load_controller tests for motion_primitives and pid_controller (#2445)):motion_primitives_controllers/test/test_load_motion_primitives_forward_controller.cpp
 
   rclcpp::shutdown();
 }
