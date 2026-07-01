@@ -59,16 +59,13 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   return result;
 }
 
-controller_interface::CallbackReturn RangeSensorBroadcasterTest::configure_broadcaster(
-  std::vector<rclcpp::Parameter> & parameters)
+void RangeSensorBroadcasterTest::configure_broadcaster(std::vector<rclcpp::Parameter> & parameters)
 {
   // Configure the broadcaster
   for (auto parameter : parameters)
   {
     range_broadcaster_->get_node()->set_parameter(parameter);
   }
-
-  return range_broadcaster_->on_configure(rclcpp_lifecycle::State());
 }
 
 void RangeSensorBroadcasterTest::subscribe_and_get_message(sensor_msgs::msg::Range & range_msg)
@@ -128,7 +125,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
   std::vector<rclcpp::Parameter> parameters;
   // explicitly give an empty sensor name to generate an error
   parameters.emplace_back(rclcpp::Parameter("sensor_name", ""));
-  ASSERT_EQ(configure_broadcaster(parameters), controller_interface::CallbackReturn::ERROR);
+  configure_broadcaster(parameters);
+  ASSERT_FALSE(configure_succeeds(range_broadcaster_));
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
@@ -139,7 +137,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
   std::vector<rclcpp::Parameter> parameters;
   // explicitly give an empty frame_id to generate an error
   parameters.emplace_back(rclcpp::Parameter("frame_id", ""));
-  ASSERT_EQ(configure_broadcaster(parameters), controller_interface::CallbackReturn::ERROR);
+  configure_broadcaster(parameters);
+  ASSERT_FALSE(configure_succeeds(range_broadcaster_));
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
@@ -147,9 +146,7 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
   // Third Test without sensor_name SUCCESS Expected
   init_broadcaster("test_range_sensor_broadcaster");
 
-  ASSERT_EQ(
-    range_broadcaster_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = range_broadcaster_->command_interface_configuration();
@@ -162,11 +159,9 @@ TEST_F(RangeSensorBroadcasterTest, ActivateDeactivate_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
 
-  ASSERT_EQ(
-    range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = range_broadcaster_->command_interface_configuration();
@@ -176,9 +171,7 @@ TEST_F(RangeSensorBroadcasterTest, ActivateDeactivate_RangeBroadcaster_Success)
   ASSERT_THAT(state_if_conf.names, SizeIs(1lu));
   ASSERT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
-  ASSERT_EQ(
-    range_broadcaster_->on_deactivate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(range_broadcaster_));
 
   // check interface configuration
   cmd_if_conf = range_broadcaster_->command_interface_configuration();
@@ -193,10 +186,9 @@ TEST_F(RangeSensorBroadcasterTest, Update_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
-  ASSERT_EQ(
-    range_broadcaster_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
+
   auto result = range_broadcaster_->update(
     range_broadcaster_->get_node()->get_clock()->now(), rclcpp::Duration::from_seconds(0.01));
 
@@ -207,8 +199,8 @@ TEST_F(RangeSensorBroadcasterTest, Publish_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
-  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
 
   sensor_msgs::msg::Range range_msg;
   subscribe_and_get_message(range_msg);
@@ -228,8 +220,8 @@ TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
-  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
 
   sensor_msgs::msg::Range range_msg;
 
@@ -264,8 +256,8 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
 {
   init_broadcaster("test_range_sensor_broadcaster");
 
-  range_broadcaster_->on_configure(rclcpp_lifecycle::State());
-  range_broadcaster_->on_activate(rclcpp_lifecycle::State());
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
 
   sensor_msgs::msg::Range range_msg;
 
