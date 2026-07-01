@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.16.0 (2026-07-01)
+-------------------
 * Simplify reduce_wheel_speed_until_steering_reached logic (backport `#2396 <https://github.com/ros-controls/ros2_controllers/issues/2396>`_) (`#2428 <https://github.com/ros-controls/ros2_controllers/issues/2428>`_)
 * Test fix - call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (backport `#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_) (`#2394 <https://github.com/ros-controls/ros2_controllers/issues/2394>`_)
 * Contributors: mergify[bot]

@@ -2,8 +2,8 @@
 Changelog for package range_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.16.0 (2026-07-01)
+-------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (backport `#2406 <https://github.com/ros-controls/ros2_controllers/issues/2406>`_) (`#2408 <https://github.com/ros-controls/ros2_controllers/issues/2408>`_)
 * Contributors: mergify[bot]
 

@@ -2,8 +2,8 @@
 Changelog for package magnetometer_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.16.0 (2026-07-01)
+-------------------
 * Final test cleanup - call appropriate lifecycle transitions (backport `#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_) (`#2433 <https://github.com/ros-controls/ros2_controllers/issues/2433>`_)
 * broadcaster for magnetic field values from a magnetometer (backport `#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_) (`#2372 <https://github.com/ros-controls/ros2_controllers/issues/2372>`_)
   Co-authored-by: Christian Rauch <Rauch.Christian@gmx.de>
