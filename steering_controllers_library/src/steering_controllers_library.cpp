@@ -511,35 +511,14 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   auto logger = get_node()->get_logger();
 
   // store current ref (for open loop odometry) and update odometry
-<<<<<<< HEAD
-  last_linear_velocity_ = reference_interfaces_[0];
-  last_angular_velocity_ = reference_interfaces_[1];
-  update_odometry(period);
-=======
   const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
   const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
   const double ref_linear = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
   const double ref_angular = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
 
-  // check if odometry set was requested by non-RT thread
-  if (set_odom_requested_.load())
-  {
-    auto param_op = requested_odom_params_.try_get();
-    if (param_op.has_value())
-    {
-      auto params = param_op.value();
-      odometry_.set_odometry(params.x, params.y, params.yaw);
-      set_odom_requested_.store(false);
-    }
-  }
-  else
-  {
-    // store current ref (for open loop odometry) and update odometry
-    last_linear_velocity_ = ref_linear;
-    last_angular_velocity_ = ref_angular;
-    update_odometry(period);
-  }
->>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
+  last_linear_velocity_ = ref_linear;
+  last_angular_velocity_ = ref_angular;
+  update_odometry(period);
 
   // MOVE ROBOT
 
