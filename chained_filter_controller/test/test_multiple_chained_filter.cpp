@@ -115,6 +115,9 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
 {
   SetUpController();
   ASSERT_TRUE(configure_succeeds(controller_));
+  // export_state_interfaces must be called to populate ordered_exported_state_interfaces_
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
@@ -124,8 +127,6 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
   EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   // output should be the same
-  auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 
@@ -152,6 +153,9 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
 {
   SetUpController("test_chained_filter_multiple_interfaces_config_per_input");
   ASSERT_TRUE(configure_succeeds(controller_));
+  // export_state_interfaces must be called to populate ordered_exported_state_interfaces_
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
@@ -161,8 +165,6 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
   EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
   // output should be the same
-  auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(2u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
 

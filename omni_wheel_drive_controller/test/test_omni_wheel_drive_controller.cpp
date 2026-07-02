@@ -367,6 +367,8 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   assignResourcesPosFeedback();
 
   EXPECT_TRUE(activate_succeeds(controller_));
@@ -374,9 +376,11 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_unchained_mode)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
@@ -450,6 +454,8 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   assignResourcesPosFeedback();
 
   EXPECT_TRUE(activate_succeeds(controller_));
@@ -457,9 +463,11 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
@@ -467,10 +475,10 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
     ASSERT_FALSE(std::isnan(command_itfs_[i]->get_optional().value()));
   }
 
-  // Imitate preceding controllers by setting reference_interfaces_
-  controller_->reference_interfaces_[0] = 1.0;
-  controller_->reference_interfaces_[1] = 1.0;
-  controller_->reference_interfaces_[2] = 1.0;
+  // Imitate preceding controllers by setting ordered_exported_reference_interfaces_
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(1.0);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -513,6 +521,8 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   assignResourcesPosFeedback();
 
   EXPECT_TRUE(activate_succeeds(controller_));
@@ -520,9 +530,11 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < command_itfs_.size(); i++)
@@ -562,9 +574,11 @@ TEST_F(OmniWheelDriveControllerTest, deactivate_then_activate)
 
   waitForSetup(executor);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface))
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())))
       << "Reference interfaces should initially be NaN on activation";
   }
   for (size_t i = 0; i < command_itfs_.size(); i++)
@@ -601,6 +615,8 @@ TEST_F(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_wit
   ASSERT_TRUE(controller_->set_chained_mode(false));
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   assignResourcesPosFeedback();
 
   EXPECT_TRUE(activate_succeeds(controller_));
@@ -637,6 +653,8 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   wheels_pos_states_ = {1, 1, 1};
   wheels_vel_states_ = {1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3};
@@ -647,9 +665,11 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_test)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 3; i++)
@@ -700,6 +720,8 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   wheels_pos_states_ = {1, 1, 1};
   wheels_vel_states_ = {1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3};
@@ -710,9 +732,11 @@ TEST_F(OmniWheelDriveControllerTest, 3_wheel_rot_test)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 3; i++)
@@ -763,6 +787,8 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   wheels_pos_states_ = {1, 1, 1, 1};
   wheels_vel_states_ = {1, 1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
@@ -773,9 +799,11 @@ TEST_F(OmniWheelDriveControllerTest, 4_wheel_rot_test)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 4; i++)
@@ -826,6 +854,8 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   wheels_pos_states_ = {1, 1, 1, 1, 1};
   wheels_vel_states_ = {1, 1, 1, 1, 1};
   wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4, 0.5};
@@ -836,9 +866,11 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
   // But NaNs should not propagate to command interfaces
   for (size_t i = 0; i < 5; i++)
@@ -879,6 +911,72 @@ TEST_F(OmniWheelDriveControllerTest, 5_wheel_test)
   executor.cancel();
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
+{
+  // 0. Initialize and activate
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+
+  // chained mode needed to write directly to reference interfaces
+  controller_->set_chained_mode(true);
+
+  EXPECT_TRUE(configure_succeeds(controller_));
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  assignResourcesPosFeedback();
+
+  EXPECT_TRUE(activate_succeeds(controller_));
+
+  const double dt = 0.01;  // 100 Hz
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+
+  // simulate movement
+  auto move_robot = [&](double vx, double vy, double wz)
+  {
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(vy));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[2]->set_value(wz));
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+    for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
+    {
+      double velocity_command = command_itfs_[i]->get_optional().value();
+      wheels_pos_states_[i] += velocity_command * dt;
+    }
+    test_time += period;
+  };
+
+  // 1. Move the robot forward in X
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Call Set Odometry Service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  controller_->update(test_time, period);
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);
+
+  // 3. Move again to ensure it still works
+  double start_y = controller_->odometry_.getY();
+  for (int i = 0; i < 5; ++i) move_robot(1.0, 0.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.getY(), start_y);
+
+  // 4. Cleanup
+  EXPECT_TRUE(deactivate_succeeds(controller_));
+}
+
+>>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
