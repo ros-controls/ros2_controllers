@@ -51,6 +51,8 @@ controller_interface::CallbackReturn ForwardCommandController::read_parameters()
     command_interface_types_.push_back(joint + "/" + params_.interface_name);
   }
 
+  history_depth_ = static_cast<size_t>(params_.queue_size);
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
