@@ -82,10 +82,6 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
 
   cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
 
-  // Allocate reference interfaces if needed
-  const int nr_ref_itfs = 3;
-  reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
-
   // Reset the controller
   if (!reset())
   {
@@ -264,17 +260,17 @@ controller_interface::return_type OmniWheelDriveController::update_reference_fro
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    reference_interfaces_[0] = 0.0;
-    reference_interfaces_[1] = 0.0;
-    reference_interfaces_[2] = 0.0;
+    ordered_exported_reference_interfaces_[0]->set_value(0.0);
+    ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    ordered_exported_reference_interfaces_[2]->set_value(0.0);
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) &&
     std::isfinite(command_msg_.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg_.twist.linear.x;
-    reference_interfaces_[1] = command_msg_.twist.linear.y;
-    reference_interfaces_[2] = command_msg_.twist.angular.z;
+    ordered_exported_reference_interfaces_[0]->set_value(command_msg_.twist.linear.x);
+    ordered_exported_reference_interfaces_[1]->set_value(command_msg_.twist.linear.y);
+    ordered_exported_reference_interfaces_[2]->set_value(command_msg_.twist.angular.z);
   }
   else
   {
@@ -292,9 +288,14 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
 {
   rclcpp::Logger logger = get_node()->get_logger();
 
-  if (
-    !std::isfinite(reference_interfaces_[0]) || !std::isfinite(reference_interfaces_[1]) ||
-    !std::isfinite(reference_interfaces_[2]))
+  const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+  const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+  const auto ref_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+  const double ref_linear_x = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_linear_y = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_angular_z = ref_2.value_or(std::numeric_limits<double>::quiet_NaN());
+
+  if (!std::isfinite(ref_linear_x) || !std::isfinite(ref_linear_y) || !std::isfinite(ref_angular_z))
   {
     // NaNs occur on initialization when the reference interfaces are not yet set
     return controller_interface::return_type::OK;
@@ -402,15 +403,22 @@ void OmniWheelDriveController::compute_and_set_wheel_velocities()
 {
   bool set_command_result = true;
 
+  const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+  const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+  const auto ref_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+  const double ref_linear_x = ref_0.value_or(0.0);
+  const double ref_linear_y = ref_1.value_or(0.0);
+  const double ref_angular_z = ref_2.value_or(0.0);
+
   double angle_bw_wheels = (2 * M_PI) / static_cast<double>(registered_wheel_handles_.size());
   for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
   {
     set_command_result &= registered_wheel_handles_[i].velocity.get().set_value(
       ((std::sin((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
-        reference_interfaces_[0]) -
+        ref_linear_x) -
        (std::cos((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
-        reference_interfaces_[1]) -
-       (reference_interfaces_[2] * params_.robot_radius)) /
+        ref_linear_y) -
+       (ref_angular_z * params_.robot_radius)) /
       params_.wheel_radius);
   }
 
@@ -498,9 +506,10 @@ void OmniWheelDriveController::halt()
 
 void OmniWheelDriveController::reset_buffers()
 {
-  std::fill(
-    reference_interfaces_.begin(), reference_interfaces_.end(),
-    std::numeric_limits<double>::quiet_NaN());
+  for (const auto & interface : ordered_exported_reference_interfaces_)
+  {
+    interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  }
 
   // Fill RealtimeBox with NaNs so it will contain a known value
   // but still indicate that no command has yet been sent.
@@ -516,20 +525,21 @@ void OmniWheelDriveController::reset_buffers()
 
 bool OmniWheelDriveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
-std::vector<hardware_interface::CommandInterface>
-OmniWheelDriveController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+OmniWheelDriveController::on_export_reference_interfaces_list()
 {
-  std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(reference_interfaces_.size());
+  std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
+  constexpr size_t NR_REF_ITFS = 3;
+  reference_interfaces.reserve(NR_REF_ITFS);
 
   std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
 
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  for (size_t i = 0; i < NR_REF_ITFS; ++i)
   {
-    reference_interfaces.push_back(
-      hardware_interface::CommandInterface(
-        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-        &reference_interfaces_[i]));
+    auto cmd_interface = std::make_shared<hardware_interface::CommandInterface>(
+      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY);
+    cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+    reference_interfaces.push_back(cmd_interface);
   }
 
   return reference_interfaces;
