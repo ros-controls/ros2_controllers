@@ -74,7 +74,8 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 protected:
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
 
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
@@ -105,9 +106,10 @@ protected:
     hardware_interface::HW_IF_POSITION, hardware_interface::HW_IF_VELOCITY,
     hardware_interface::HW_IF_ACCELERATION};
 
-  // internal reference values
-  std::vector<std::reference_wrapper<double>> position_reference_;
-  std::vector<std::reference_wrapper<double>> velocity_reference_;
+  // Indices for accessing ordered_exported_reference_interfaces_
+  // -1 means this interface type is not exported
+  int position_reference_index_ = -1;
+  int velocity_reference_index_ = -1;
 
   // Admittance rule and dependent variables;
   std::unique_ptr<admittance_controller::AdmittanceRule> admittance_;

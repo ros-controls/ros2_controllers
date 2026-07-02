@@ -107,7 +107,8 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    auto ref_itfs = export_reference_interfaces();
     return mecanum_drive_controller::MecanumDriveController::on_activate(previous_state);
   }
 
@@ -193,10 +194,18 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
+<<<<<<< HEAD
       command_itfs_.emplace_back(
         hardware_interface::CommandInterface(
           command_joint_names_[i], interface_name_, &joint_command_values_[i]));
       command_ifs.emplace_back(command_itfs_.back());
+=======
+      auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)cmd_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(cmd_itf);
+      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
+>>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
     }
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -205,10 +214,18 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
+<<<<<<< HEAD
       state_itfs_.emplace_back(
         hardware_interface::StateInterface(
           command_joint_names_[i], interface_name_, &joint_state_values_[i]));
       state_ifs.emplace_back(state_itfs_.back());
+=======
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
+      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
+>>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));

@@ -91,12 +91,14 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -124,9 +126,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -168,9 +170,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -197,12 +199,14 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -231,9 +235,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -264,9 +268,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -280,6 +284,72 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(SteeringControllersLibraryTest, odometry_set_service)
+{
+  // 0. Initialize and Activate
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
+
+  controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  const double dt = 0.02;  // 50Hz update
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+  rclcpp::Time test_time = controller_->get_node()->now();
+
+  auto move_robot = [&](double vx, double wz)
+  {
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(wz));
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+    // Update wheel positions based on commands to simulate feedback
+    for (size_t i = 0; i < NR_CMD_ITFS; ++i)
+    {
+      joint_state_values_[i] = controller_->command_interfaces_[i].get_optional().value();
+    }
+    test_time += period;
+  };
+
+  // 1. Test robot movement initially
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);
+  ASSERT_GT(controller_->odometry_.get_x(), 0.0);
+
+  // 2. Call the odometry set service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;
+
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+  ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+  // Validate the expected robot pose after service call
+  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_heading(), 1.57079632679, 1e-5);
+
+  // 3. Move forward again to verify
+  double start_y = controller_->odometry_.get_y();
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.get_y(), start_y);
+}
+
+>>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
