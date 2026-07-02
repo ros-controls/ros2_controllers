@@ -327,8 +327,9 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
 
   EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
   EXPECT_EQ(
-    controller_->reference_interfaces_.size(), dof_names_.size() * state_interfaces_.size());
-  EXPECT_EQ(controller_->reference_interfaces_.size(), dof_state_values_.size());
+    controller_->ordered_exported_reference_interfaces_.size(),
+    dof_names_.size() * state_interfaces_.size());
+  EXPECT_EQ(controller_->ordered_exported_reference_interfaces_.size(), dof_state_values_.size());
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
     EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
@@ -364,9 +365,11 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
   EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isfinite(interface));
+    EXPECT_TRUE(
+      std::isfinite(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 
   controller_->set_reference(dof_command_values_);
@@ -379,7 +382,10 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward
   {
     EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
     EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(
+      std::isfinite(
+        controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+          std::numeric_limits<double>::quiet_NaN())));
   }
 
   ASSERT_EQ(
