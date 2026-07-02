@@ -20,9 +20,17 @@
 
 #include <memory>
 #include <string>
+#include <cstring>
 
 namespace imu_sensor_broadcaster
 {
+// Helper function to convert uint32 bits to float32
+inline float uint32_to_float32(uint32_t value)
+{
+  float result;
+  std::memcpy(&result, &value, sizeof(float));
+  return result;
+}
 controller_interface::CallbackReturn IMUSensorBroadcaster::on_init()
 {
   try
@@ -116,6 +124,34 @@ controller_interface::return_type IMUSensorBroadcaster::update(
   {
     realtime_publisher_->msg_.header.stamp = time;
     imu_sensor_->get_values_as_message(realtime_publisher_->msg_);
+    
+    // Convert uint32 bit patterns to float32 for all sensor data
+    // Angular velocity
+    realtime_publisher_->msg_.angular_velocity.x = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.angular_velocity.x));
+    realtime_publisher_->msg_.angular_velocity.y = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.angular_velocity.y));
+    realtime_publisher_->msg_.angular_velocity.z = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.angular_velocity.z));
+    
+    // Linear acceleration
+    realtime_publisher_->msg_.linear_acceleration.x = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.linear_acceleration.x));
+    realtime_publisher_->msg_.linear_acceleration.y = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.linear_acceleration.y));
+    realtime_publisher_->msg_.linear_acceleration.z = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.linear_acceleration.z));
+    
+    // Orientation (quaternion)
+    realtime_publisher_->msg_.orientation.x = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.orientation.x));
+    realtime_publisher_->msg_.orientation.y = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.orientation.y));
+    realtime_publisher_->msg_.orientation.z = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.orientation.z));
+    realtime_publisher_->msg_.orientation.w = 
+      uint32_to_float32(static_cast<uint32_t>(realtime_publisher_->msg_.orientation.w));
+    
     realtime_publisher_->unlockAndPublish();
   }
 
