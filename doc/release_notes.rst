@@ -53,6 +53,7 @@ joint_trajectory_controller
   continues executing until the start time arrives, then the new trajectory is executed.
   This is a partial port of the ROS 1 trajectory replacement behavior.
   (`#2401 <https://github.com/ros-controls/ros2_controllers/pull/2401>`_)
+* Added ``action_execution_timeout`` parameter that aborts the goal when total execution time from trajectory start exceeds the configured limit. (`#2360 <https://github.com/ros-controls/ros2_controllers/pull/2360>`_)
 
 pid_controller
 **************

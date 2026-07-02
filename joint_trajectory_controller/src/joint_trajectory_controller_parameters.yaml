@@ -143,6 +143,18 @@ joint_trajectory_controller:
      ``cmd_timeout`` must be greater than ``constraints.goal_time``, otherwise ignored.
      If zero, timeout is deactivated",
   }
+  action_execution_timeout: {
+    type: double,
+    default_value: 0.0,
+    description: "Absolute wall-clock timeout from trajectory start.
+     When exceeded, the goal is aborted with GOAL_TOLERANCE_VIOLATED.
+     If zero, timeout is disabled.
+     This is a controller-level parameter (not per-goal).
+     Distinct from ``constraints.goal_time``, a per-goal grace period after the last trajectory point.",
+    validation: {
+      gt_eq: [0.0],
+    }
+  }
   gains:
     __map_joints:
       p: {
