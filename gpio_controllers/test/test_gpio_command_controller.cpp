@@ -217,22 +217,22 @@ public:
     return params;
   }
   const std::vector<std::string> gpio_names{"gpio1", "gpio2"};
-  std::vector<double> gpio_commands{1.0, 0.0, 3.1};
-  std::vector<double> gpio_states{1.0, 0.0, 3.1};
+  const std::vector<double> gpio_commands{1.0, 0.0, 3.1};
+  const std::vector<double> gpio_states{1.0, 0.0, 3.1};
 
   CommandInterface::SharedPtr gpio_1_1_dig_cmd =
-    std::make_shared<CommandInterface>(gpio_names.at(0), "dig.1", &gpio_commands.at(0));
+    std::make_shared<CommandInterface>(gpio_names.at(0), "dig.1", "double", "1.0");
   CommandInterface::SharedPtr gpio_1_2_dig_cmd =
-    std::make_shared<CommandInterface>(gpio_names.at(0), "dig.2", &gpio_commands.at(1));
+    std::make_shared<CommandInterface>(gpio_names.at(0), "dig.2", "double", "0.0");
   CommandInterface::SharedPtr gpio_2_ana_cmd =
-    std::make_shared<CommandInterface>(gpio_names.at(1), "ana.1", &gpio_commands.at(2));
+    std::make_shared<CommandInterface>(gpio_names.at(1), "ana.1", "double", "3.1");
 
   StateInterface::SharedPtr gpio_1_1_dig_state =
-    std::make_shared<StateInterface>(gpio_names.at(0), "dig.1", &gpio_states.at(0));
+    std::make_shared<StateInterface>(gpio_names.at(0), "dig.1", "double", "1.0");
   StateInterface::SharedPtr gpio_1_2_dig_state =
-    std::make_shared<StateInterface>(gpio_names.at(0), "dig.2", &gpio_states.at(1));
+    std::make_shared<StateInterface>(gpio_names.at(0), "dig.2", "double", "0.0");
   StateInterface::SharedPtr gpio_2_ana_state =
-    std::make_shared<StateInterface>(gpio_names.at(1), "ana.1", &gpio_states.at(2));
+    std::make_shared<StateInterface>(gpio_names.at(1), "ana.1", "double", "3.1");
   std::unique_ptr<rclcpp::Node> node;
 };
 

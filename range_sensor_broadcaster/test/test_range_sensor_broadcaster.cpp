@@ -226,6 +226,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
   sensor_msgs::msg::Range range_msg;
 
   sensor_range_ = 0.10f;
+  range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -239,6 +240,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
 #endif
 
   sensor_range_ = 4.0;
+  range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -262,6 +264,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
   sensor_msgs::msg::Range range_msg;
 
   sensor_range_ = 0.0;
+  range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -276,6 +279,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
 #endif
 
   sensor_range_ = 6.0;
+  range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);

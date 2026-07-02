@@ -181,24 +181,24 @@ protected:
   const std::string controller_name = "test_tricycle_controller";
   std::unique_ptr<TestableTricycleController> controller_;
 
-  double position_ = 0.1;
-  double velocity_ = 0.2;
+  const double position_ = 0.1;
+  const double velocity_ = 0.2;
 
   hardware_interface::StateInterface::SharedPtr steering_joint_pos_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      steering_joint_name, HW_IF_POSITION, &position_);
+      steering_joint_name, HW_IF_POSITION, "double", "0.1");
 
   hardware_interface::StateInterface::SharedPtr traction_joint_vel_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      traction_joint_name, HW_IF_VELOCITY, &velocity_);
+      traction_joint_name, HW_IF_VELOCITY, "double", "0.2");
 
   hardware_interface::CommandInterface::SharedPtr steering_joint_pos_cmd_ =
     std::make_shared<hardware_interface::CommandInterface>(
-      steering_joint_name, HW_IF_POSITION, &position_);
+      steering_joint_name, HW_IF_POSITION, "double", "0.1");
 
   hardware_interface::CommandInterface::SharedPtr traction_joint_vel_cmd_ =
     std::make_shared<hardware_interface::CommandInterface>(
-      traction_joint_name, HW_IF_VELOCITY, &velocity_);
+      traction_joint_name, HW_IF_VELOCITY, "double", "0.2");
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;

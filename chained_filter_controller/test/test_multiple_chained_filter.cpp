@@ -136,17 +136,17 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), 2.0);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
-  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), 3.0);
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.6);
 
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // output should have reached steady state (mean filter)
-  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
-  EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 2.0);
+  EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 3.0);
 }
 
 TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_input)
@@ -174,9 +174,9 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), 2.0);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
-  EXPECT_EQ(joint_2_pos_->get_optional().value(), joint_states_[1]);
+  EXPECT_EQ(joint_2_pos_->get_optional().value(), 2.8);
   // second update call, mean of (2.2, 2.8)
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.5);
 
@@ -184,7 +184,7 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // output should have reached steady state for the first input (mean filter)
-  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 2.0);
   // third update call, mean of (2.2, 2.8, 2.8)
   EXPECT_EQ(state_if_exported_conf[1]->get_optional().value(), 2.6);
 
@@ -192,9 +192,9 @@ TEST_F(MultipleChainedFilterTest, UpdateFilter_multiple_interfaces_config_per_in
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // no change
-  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 2.0);
   // output should have reached steady state (mean filter)
-  EXPECT_NEAR(state_if_exported_conf[1]->get_optional().value(), joint_states_[1], 1e-5);
+  EXPECT_NEAR(state_if_exported_conf[1]->get_optional().value(), 2.8, 1e-5);
 }
 
 int main(int argc, char ** argv)

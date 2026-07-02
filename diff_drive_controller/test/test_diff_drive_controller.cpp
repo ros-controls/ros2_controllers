@@ -233,26 +233,26 @@ protected:
   std::unique_ptr<TestableDiffDriveController> controller_;
 
   std::vector<double> position_values_ = {0.1, 0.2};
-  std::vector<double> velocity_values_ = {0.01, 0.02};
+  const std::vector<double> velocity_values_ = {0.01, 0.02};
 
   hardware_interface::StateInterface::SharedPtr left_wheel_pos_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      left_wheel_names[0], HW_IF_POSITION, &position_values_[0]);
+      left_wheel_names[0], HW_IF_POSITION, "double", "0.1");
   hardware_interface::StateInterface::SharedPtr right_wheel_pos_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      right_wheel_names[0], HW_IF_POSITION, &position_values_[1]);
+      right_wheel_names[0], HW_IF_POSITION, "double", "0.2");
   hardware_interface::StateInterface::SharedPtr left_wheel_vel_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]);
+      left_wheel_names[0], HW_IF_VELOCITY, "double", "0.01");
   hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_ =
     std::make_shared<hardware_interface::StateInterface>(
-      right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]);
+      right_wheel_names[0], HW_IF_VELOCITY, "double", "0.02");
   hardware_interface::CommandInterface::SharedPtr left_wheel_vel_cmd_ =
     std::make_shared<hardware_interface::CommandInterface>(
-      left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]);
+      left_wheel_names[0], HW_IF_VELOCITY, "double", "0.01");
   hardware_interface::CommandInterface::SharedPtr right_wheel_vel_cmd_ =
     std::make_shared<hardware_interface::CommandInterface>(
-      right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]);
+      right_wheel_names[0], HW_IF_VELOCITY, "double", "0.02");
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -1359,7 +1359,9 @@ TEST_F(TestDiffDriveController, odometry_set_service)
 
   // simulate the movement by updating the position feedback
   position_values_[0] += 0.1;  // left wheel moved
+  left_wheel_pos_state_->set_value(position_values_[0]);
   position_values_[1] += 0.1;  // right wheel moved
+  right_wheel_pos_state_->set_value(position_values_[1]);
   controller_->update(test_time, period);
   test_time += period;
   EXPECT_GT(controller_->odometry_.getY(), -2.0);

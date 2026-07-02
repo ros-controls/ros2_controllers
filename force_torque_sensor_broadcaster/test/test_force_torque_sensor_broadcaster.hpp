@@ -66,26 +66,19 @@ public:
 protected:
   const std::string sensor_name_ = "fts_sensor";
   const std::string frame_id_ = "fts_sensor_frame";
-  std::array<double, 6> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
-
+  const std::array<double, 6> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
   hardware_interface::StateInterface::SharedPtr fts_force_x_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "force.x", &sensor_values_[0]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.x", "double", "1.1");
   hardware_interface::StateInterface::SharedPtr fts_force_y_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "force.y", &sensor_values_[1]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.y", "double", "2.2");
   hardware_interface::StateInterface::SharedPtr fts_force_z_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "force.z", &sensor_values_[2]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.z", "double", "3.3");
   hardware_interface::StateInterface::SharedPtr fts_torque_x_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "torque.x", &sensor_values_[3]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.x", "double", "4.4");
   hardware_interface::StateInterface::SharedPtr fts_torque_y_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "torque.y", &sensor_values_[4]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.y", "double", "5.5");
   hardware_interface::StateInterface::SharedPtr fts_torque_z_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "torque.z", &sensor_values_[5]);
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.z", "double", "6.6");
 
   std::unique_ptr<FriendForceTorqueSensorBroadcaster> fts_broadcaster_;
 

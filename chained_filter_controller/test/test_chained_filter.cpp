@@ -142,13 +142,13 @@ TEST_F(ChainedFilterTest, UpdateFilter)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), 2.0);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // output should have reached steady state (mean filter)
-  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 2.0);
 }
 
 TEST_F(ChainedFilterTest, DeactivateSucceeds)

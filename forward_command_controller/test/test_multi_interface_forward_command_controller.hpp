@@ -76,16 +76,12 @@ protected:
   // dummy joint state value used for tests
   const std::string joint_name_ = "joint1";
 
-  double pos_cmd_ = 1.1;
-  double vel_cmd_ = 2.1;
-  double eff_cmd_ = 3.1;
-
   CommandInterface::SharedPtr joint_1_pos_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_POSITION, &pos_cmd_);
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_POSITION, "double", "1.1");
   CommandInterface::SharedPtr joint_1_vel_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_VELOCITY, &vel_cmd_);
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_VELOCITY, "double", "2.1");
   CommandInterface::SharedPtr joint_1_eff_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_EFFORT, &eff_cmd_);
+    std::make_shared<CommandInterface>(joint_name_, HW_IF_EFFORT, "double", "3.1");
   rclcpp::executors::SingleThreadedExecutor executor;
 };
 
