@@ -307,7 +307,7 @@ controller_interface::return_type BatteryStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   sums_ = {};
-  int interface_cnt = 0;
+  std::size_t interface_cnt = 0;
   uint8_t combined_power_supply_status =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
   uint8_t combined_power_supply_health =
@@ -395,14 +395,14 @@ controller_interface::return_type BatteryStateBroadcaster::update(
       if (interfaces.battery_present)
       {
         raw_battery_states_msg.battery_states[i].present =
-          state_interfaces_[interface_cnt].get_optional().value_or(false);
+          state_interfaces_[interface_cnt].get_optional<bool>().value_or(false);
         interface_cnt++;
       }
       else
       {
         if (
           (!std::isnan(raw_battery_states_msg.battery_states[i].voltage)) &&
-          (raw_battery_states_msg.battery_states[i].voltage))
+          (raw_battery_states_msg.battery_states[i].voltage != 0.0f))
         {
           raw_battery_states_msg.battery_states[i].present = true;
         }
@@ -428,16 +428,18 @@ controller_interface::return_type BatteryStateBroadcaster::update(
 
     if (counts_.temperature_cnt)
     {
-      battery_state_msg.temperature = sums_.temperature_sum / counts_.temperature_cnt;
+      battery_state_msg.temperature =
+        sums_.temperature_sum / static_cast<float>(counts_.temperature_cnt);
     }
     if (counts_.current_cnt)
     {
-      battery_state_msg.current = sums_.current_sum / counts_.current_cnt;
+      battery_state_msg.current = sums_.current_sum / static_cast<float>(counts_.current_cnt);
     }
     battery_state_msg.charge = sums_.charge_sum;
     if (counts_.percentage_cnt)
     {
-      battery_state_msg.percentage = sums_.percentage_sum / counts_.percentage_cnt;
+      battery_state_msg.percentage =
+        sums_.percentage_sum / static_cast<float>(counts_.percentage_cnt);
     }
     battery_state_msg.power_supply_status = combined_power_supply_status;
     battery_state_msg.power_supply_health = combined_power_supply_health;

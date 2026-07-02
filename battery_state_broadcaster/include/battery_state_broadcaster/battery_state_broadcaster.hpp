@@ -102,9 +102,9 @@ protected:
 
   struct BatteryInterfaceCounts
   {
-    float temperature_cnt = 0.0f;
-    float current_cnt = 0.0f;
-    float percentage_cnt = 0.0f;
+    int temperature_cnt = 0;
+    int current_cnt = 0;
+    int percentage_cnt = 0;
   };
 
 private:
