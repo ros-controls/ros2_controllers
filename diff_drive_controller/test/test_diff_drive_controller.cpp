@@ -79,7 +79,6 @@ public:
     return realtime_odometry_publisher_;
   }
   // Declare these tests as friends so we can access odometry_message_
-<<<<<<< HEAD
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_false_no_namespace);
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_no_namespace);
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_no_namespace);
@@ -87,12 +86,6 @@ public:
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_test_prefix_true_set_namespace);
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_true_set_namespace);
   // Declare these tests as friends so we can access controller_->reference_interfaces_
-=======
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_prefix_no_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_prefix_set_namespace);
-  FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_tilde_prefix_set_namespace);
->>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
   FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
@@ -1163,12 +1156,7 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
     EXPECT_TRUE(std::isnan(interface->get_optional().value()))
       << "Reference interfaces should initially be NaN on activation";
   }
-<<<<<<< HEAD
   EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_optional().value())
-=======
-
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
->>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
     << "Wheels should still have the same command as when they were last set (on deactivation)";
   EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_optional().value())
     << "Wheels should still have the same command as when they were last set (on deactivation)";

@@ -301,12 +301,8 @@ TEST_F(PidControllerTest, test_update_logic_feedforward_off)
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
-<<<<<<< HEAD
   EXPECT_EQ(*(controller_->feedforward_mode_enabled_.readFromRT()), false);
-  for (const auto & interface : controller_->reference_interfaces_)
-=======
   for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
->>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
   {
     EXPECT_TRUE(
       std::isfinite(

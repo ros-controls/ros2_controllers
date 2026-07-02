@@ -577,42 +577,26 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(ref_i) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-<<<<<<< HEAD
       if (*(feedforward_mode_enabled_.readFromRT()))
       {
-        if (reference_interfaces_.size() == 2 * dof_)
+        if (ordered_exported_reference_interfaces_.size() == 2 * dof_)
         {
+          const auto ref_value_dof_i =
+            ordered_exported_reference_interfaces_[dof_ + i]->get_optional<double>();
+          const double ref_dof_i =
+            ref_value_dof_i.value_or(std::numeric_limits<double>::quiet_NaN());
           // two interfaces
-          if (std::isfinite(reference_interfaces_[dof_ + i]))
+          if (std::isfinite(ref_dof_i))
           {
-            tmp_command = reference_interfaces_[dof_ + i] *
-                          params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
+            tmp_command =
+              ref_dof_i * params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
           }
         }
         else  // one interface
         {
-          tmp_command = reference_interfaces_[i] *
-                        params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
+          tmp_command = ref_i * params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
         }
       }
-=======
-      if (ordered_exported_reference_interfaces_.size() == 2 * dof_)
-      {
-        const auto ref_value_dof_i =
-          ordered_exported_reference_interfaces_[dof_ + i]->get_optional<double>();
-        const double ref_dof_i = ref_value_dof_i.value_or(std::numeric_limits<double>::quiet_NaN());
-        // two interfaces
-        if (std::isfinite(ref_dof_i))
-        {
-          tmp_command =
-            ref_dof_i * params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
-        }
-      }
-      else  // one interface
-      {
-        tmp_command = ref_i * params_.gains.dof_names_map[params_.dof_names[i]].feedforward_gain;
-      }
->>>>>>> 8ad7d35 (Use new chainable controller exports API (#2350))
 
       double error = ref_i - measured_state_values_[i];
       if (params_.gains.dof_names_map[params_.dof_names[i]].angle_wraparound)
