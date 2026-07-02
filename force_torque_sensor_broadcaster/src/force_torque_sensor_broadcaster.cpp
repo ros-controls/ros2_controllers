@@ -210,10 +210,10 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_reference
   return controller_interface::return_type::OK;
 }
 
-std::vector<hardware_interface::StateInterface>
-ForceTorqueSensorBroadcaster::on_export_state_interfaces()
+std::vector<hardware_interface::StateInterface::SharedPtr>
+ForceTorqueSensorBroadcaster::on_export_state_interfaces_list()
 {
-  std::vector<hardware_interface::StateInterface> exported_state_interfaces;
+  std::vector<hardware_interface::StateInterface::SharedPtr> exported_state_interfaces;
 
   std::vector<std::string> force_names(
     {params_.interface_names.force.x, params_.interface_names.force.y,
@@ -243,33 +243,39 @@ ForceTorqueSensorBroadcaster::on_export_state_interfaces()
   }
   if (!force_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, force_names[0], &wrench_raw_.wrench.force.x);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, force_names[0]);
+    si->set_value(wrench_raw_.wrench.force.x);
+    exported_state_interfaces.push_back(si);
   }
   if (!force_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, force_names[1], &wrench_raw_.wrench.force.y);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, force_names[1]);
+    si->set_value(wrench_raw_.wrench.force.y);
+    exported_state_interfaces.push_back(si);
   }
   if (!force_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, force_names[2], &wrench_raw_.wrench.force.z);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, force_names[2]);
+    si->set_value(wrench_raw_.wrench.force.z);
+    exported_state_interfaces.push_back(si);
   }
   if (!torque_names[0].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, torque_names[0], &wrench_raw_.wrench.torque.x);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, torque_names[0]);
+    si->set_value(wrench_raw_.wrench.torque.x);
+    exported_state_interfaces.push_back(si);
   }
   if (!torque_names[1].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, torque_names[1], &wrench_raw_.wrench.torque.y);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, torque_names[1]);
+    si->set_value(wrench_raw_.wrench.torque.y);
+    exported_state_interfaces.push_back(si);
   }
   if (!torque_names[2].empty())
   {
-    exported_state_interfaces.emplace_back(
-      export_prefix, torque_names[2], &wrench_raw_.wrench.torque.z);
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, torque_names[2]);
+    si->set_value(wrench_raw_.wrench.torque.z);
+    exported_state_interfaces.push_back(si);
   }
   return exported_state_interfaces;
 }

@@ -341,23 +341,20 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
   return state_interfaces_config;
 }
 
-std::vector<hardware_interface::CommandInterface>
-MecanumDriveController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+MecanumDriveController::on_export_reference_interfaces_list()
 {
-  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
-
-  std::vector<hardware_interface::CommandInterface> reference_interfaces;
-
-  reference_interfaces.reserve(reference_interfaces_.size());
+  std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
+  reference_interfaces.reserve(NR_REF_ITFS);
 
   std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
 
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  for (size_t i = 0; i < NR_REF_ITFS; ++i)
   {
-    reference_interfaces.push_back(
-      hardware_interface::CommandInterface(
-        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-        &reference_interfaces_[i]));
+    auto cmd_interface = std::make_shared<hardware_interface::CommandInterface>(
+      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY);
+    cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+    reference_interfaces.push_back(cmd_interface);
   }
 
   return reference_interfaces;
@@ -431,9 +428,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
       !std::isnan(current_ref_.twist.angular.z))
     {
-      reference_interfaces_[0] = current_ref_.twist.linear.x;
-      reference_interfaces_[1] = current_ref_.twist.linear.y;
-      reference_interfaces_[2] = current_ref_.twist.angular.z;
+      ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
+      ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.linear.y);
+      ordered_exported_reference_interfaces_[2]->set_value(current_ref_.twist.angular.z);
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
@@ -451,9 +448,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
       !std::isnan(current_ref_.twist.angular.z))
     {
-      reference_interfaces_[0] = 0.0;
-      reference_interfaces_[1] = 0.0;
-      reference_interfaces_[2] = 0.0;
+      ordered_exported_reference_interfaces_[0]->set_value(0.0);
+      ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      ordered_exported_reference_interfaces_[2]->set_value(0.0);
 
       current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
       current_ref_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -532,14 +529,18 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   // INVERSE KINEMATICS (move robot).
   // Compute wheels velocities (this is the actual ik):
   // NOTE: the input desired twist (from topic `~/reference`) is a body twist.
-  if (
-    !std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]) &&
-    !std::isnan(reference_interfaces_[2]))
+  const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+  const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+  const auto ref_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+  const double ref_linear_x = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_linear_y = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_angular_z = ref_2.value_or(std::numeric_limits<double>::quiet_NaN());
+  if (!std::isnan(ref_linear_x) && !std::isnan(ref_linear_y) && !std::isnan(ref_angular_z))
   {
     // Apply speed limits before inverse kinematics
-    double linear_x_command = reference_interfaces_[0];
-    double linear_y_command = reference_interfaces_[1];
-    double angular_z_command = reference_interfaces_[2];
+    double linear_x_command = ref_linear_x;
+    double linear_y_command = ref_linear_y;
+    double angular_z_command = ref_angular_z;
 
     double & last_linear_x = previous_two_commands_.back()[0];
     double & second_to_last_linear_x = previous_two_commands_.front()[0];
@@ -660,15 +661,21 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     controller_state_msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
     controller_state_msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
 
-    controller_state_msg_.reference_velocity.linear.x = reference_interfaces_[0];
-    controller_state_msg_.reference_velocity.linear.y = reference_interfaces_[1];
-    controller_state_msg_.reference_velocity.angular.z = reference_interfaces_[2];
+    const auto ref_state_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+    const auto ref_state_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+    const auto ref_state_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+    controller_state_msg_.reference_velocity.linear.x =
+      ref_state_0.value_or(std::numeric_limits<double>::quiet_NaN());
+    controller_state_msg_.reference_velocity.linear.y =
+      ref_state_1.value_or(std::numeric_limits<double>::quiet_NaN());
+    controller_state_msg_.reference_velocity.angular.z =
+      ref_state_2.value_or(std::numeric_limits<double>::quiet_NaN());
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
 
-  reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-  reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-  reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+  ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
+  ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
+  ordered_exported_reference_interfaces_[2]->set_value(std::numeric_limits<double>::quiet_NaN());
 
   return controller_interface::return_type::OK;
 }
