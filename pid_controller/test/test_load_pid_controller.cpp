@@ -35,7 +35,11 @@ TEST(TestLoadPidController, load_controller)
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
 
-  ASSERT_NO_THROW(cm.load_controller("test_pid_controller", "pid_controller/PidController"));
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/pid_controller_params.yaml";
+  cm.set_parameter({"test_pid_controller.params_file", test_file_path});
+  cm.set_parameter({"test_pid_controller.type", "pid_controller/PidController"});
+  ASSERT_NE(cm.load_controller("test_pid_controller"), nullptr);
 
   rclcpp::shutdown();
 }
