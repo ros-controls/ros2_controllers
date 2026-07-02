@@ -871,16 +871,16 @@ TEST_F(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest)
     size_t rr_index = controller_->get_rear_right_wheel_index();
     joint_state_values_[fl_index] =
       controller_->command_interfaces_[fl_index].get_optional().value();
-    (void)state_itfs_[fl_index]->set_value(joint_state_values_[fl_index]);
+    (void)state_itfs_[fl_index].set_value(joint_state_values_[fl_index]);
     joint_state_values_[fr_index] =
       controller_->command_interfaces_[fr_index].get_optional().value();
-    (void)state_itfs_[fr_index]->set_value(joint_state_values_[fr_index]);
+    (void)state_itfs_[fr_index].set_value(joint_state_values_[fr_index]);
     joint_state_values_[rl_index] =
       controller_->command_interfaces_[rl_index].get_optional().value();
-    (void)state_itfs_[rl_index]->set_value(joint_state_values_[rl_index]);
+    (void)state_itfs_[rl_index].set_value(joint_state_values_[rl_index]);
     joint_state_values_[rr_index] =
       controller_->command_interfaces_[rr_index].get_optional().value();
-    (void)state_itfs_[rr_index]->set_value(joint_state_values_[rr_index]);
+    (void)state_itfs_[rr_index].set_value(joint_state_values_[rr_index]);
   }
 
   RCLCPP_INFO(
