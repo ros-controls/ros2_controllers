@@ -142,9 +142,10 @@ controller_interface::return_type IMUSensorBroadcaster::update_reference_from_su
   return controller_interface::return_type::OK;
 }
 
-std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_state_interfaces()
+std::vector<hardware_interface::StateInterface::SharedPtr>
+IMUSensorBroadcaster::on_export_state_interfaces_list()
 {
-  std::vector<hardware_interface::StateInterface> exported_state_interfaces;
+  std::vector<hardware_interface::StateInterface::SharedPtr> exported_state_interfaces;
 
   std::string export_prefix = get_node()->get_name();
   if (!params_.sensor_name.empty())
@@ -153,36 +154,23 @@ std::vector<hardware_interface::StateInterface> IMUSensorBroadcaster::on_export_
     export_prefix = export_prefix + "/" + params_.sensor_name;
   }
 
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "orientation.x", &state_message_.orientation.x));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "orientation.y", &state_message_.orientation.y));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "orientation.z", &state_message_.orientation.z));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "orientation.w", &state_message_.orientation.w));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "angular_velocity.x", &state_message_.angular_velocity.x));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "angular_velocity.y", &state_message_.angular_velocity.y));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "angular_velocity.z", &state_message_.angular_velocity.z));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "linear_acceleration.x", &state_message_.linear_acceleration.x));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "linear_acceleration.y", &state_message_.linear_acceleration.y));
-  exported_state_interfaces.emplace_back(
-    hardware_interface::StateInterface(
-      export_prefix, "linear_acceleration.z", &state_message_.linear_acceleration.z));
+  auto add_interface = [&](const std::string & name, double value)
+  {
+    auto si = std::make_shared<hardware_interface::StateInterface>(export_prefix, name);
+    si->set_value(value);
+    exported_state_interfaces.push_back(si);
+  };
+
+  add_interface("orientation.x", state_message_.orientation.x);
+  add_interface("orientation.y", state_message_.orientation.y);
+  add_interface("orientation.z", state_message_.orientation.z);
+  add_interface("orientation.w", state_message_.orientation.w);
+  add_interface("angular_velocity.x", state_message_.angular_velocity.x);
+  add_interface("angular_velocity.y", state_message_.angular_velocity.y);
+  add_interface("angular_velocity.z", state_message_.angular_velocity.z);
+  add_interface("linear_acceleration.x", state_message_.linear_acceleration.x);
+  add_interface("linear_acceleration.y", state_message_.linear_acceleration.y);
+  add_interface("linear_acceleration.z", state_message_.linear_acceleration.z);
 
   return exported_state_interfaces;
 }

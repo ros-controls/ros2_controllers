@@ -200,12 +200,14 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -233,9 +235,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -277,9 +279,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -305,12 +307,14 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -339,9 +343,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -372,9 +376,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -397,6 +401,8 @@ TEST_F(SteeringControllersLibraryTest, applies_velocity_limits_to_references)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
 
   ControllerReferenceMsg msg;
@@ -437,11 +443,13 @@ TEST_F(SteeringControllersLibraryTest, test_reset_buffers_clears_limiter_state)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
 
   // Dirty all buffers that reset_buffers() is responsible for clearing.
-  controller_->reference_interfaces_[0] = 1.0;
-  controller_->reference_interfaces_[1] = 2.0;
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(2.0));
 
   std::queue<std::array<double, 2>> dirty;
   dirty.push({{4.0, 5.0}});
@@ -456,9 +464,9 @@ TEST_F(SteeringControllersLibraryTest, test_reset_buffers_clears_limiter_state)
 
   controller_->reset_buffers();
 
-  for (const auto & itf : controller_->reference_interfaces_)
+  for (const auto & itf : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(itf));
+    EXPECT_TRUE(std::isnan(itf->get_optional().value()));
   }
   ASSERT_EQ(controller_->previous_two_commands_.size(), 2u);
   EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 2>{{0.0, 0.0}}));
@@ -478,6 +486,8 @@ TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
 
   const double dt = 0.001;
@@ -488,8 +498,8 @@ TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_
   // Ramp up linear speed to steady-state so limiter history has non-zero values.
   for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) + 5; ++i)
   {
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
@@ -508,8 +518,8 @@ TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_
 
   // After reactivation, requesting the same target should be limited again
   // starting from zero, not pass through immediately.
-  controller_->reference_interfaces_[0] = linear;
-  controller_->reference_interfaces_[1] = 0.0;
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
@@ -541,6 +551,8 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
@@ -551,8 +563,8 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
   {
     for (int i = 0; i < 3; ++i)
     {
-      controller_->reference_interfaces_[0] = linear_ref;
-      controller_->reference_interfaces_[1] = 0.0;
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear_ref));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
@@ -569,14 +581,14 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     const double time_acc = linear / max_acceleration_1;
     for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
@@ -592,14 +604,14 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     const double time_dec = 1.0 / std::abs(max_deceleration);
     for (int i = 0; i < static_cast<int>(std::floor(time_dec / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
@@ -624,14 +636,14 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     ASSERT_LT(time_acc_2, time_acc_1);
     for (int i = 0; i < static_cast<int>(std::floor(time_acc_2 / dt)) - 1; ++i)
     {
-      controller_->reference_interfaces_[0] = linear;
-      controller_->reference_interfaces_[1] = 0.0;
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
         controller_interface::return_type::OK);
     }
-    controller_->reference_interfaces_[0] = linear;
-    controller_->reference_interfaces_[1] = 0.0;
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
@@ -651,6 +663,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
 
   controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   controller_->get_node()->trigger_transition(
     rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
@@ -664,8 +678,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
 
   auto move_robot = [&](double vx, double wz)
   {
-    controller_->reference_interfaces_[0] = vx;  // linear velocity
-    controller_->reference_interfaces_[1] = wz;  // angular velocity
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(wz));
 
     ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 

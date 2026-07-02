@@ -60,8 +60,6 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_li
       return controller_interface::CallbackReturn::FAILURE;
     }
     filters_.resize(params_.input_interfaces.size());
-    output_state_values_.resize(
-      params_.output_interfaces.size(), std::numeric_limits<double>::quiet_NaN());
 
     // Check if global filter chain configuration is set, if not we use a per-interface
     // configuration
@@ -111,9 +109,10 @@ controller_interface::CallbackReturn ChainedFilter::on_configure(const rclcpp_li
 
 controller_interface::CallbackReturn ChainedFilter::on_activate(const rclcpp_lifecycle::State &)
 {
-  std::fill(
-    output_state_values_.begin(), output_state_values_.end(),
-    std::numeric_limits<double>::quiet_NaN());
+  for (const auto & exported_state_interface : ordered_exported_state_interfaces_)
+  {
+    (void)exported_state_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  }
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -132,16 +131,19 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
     }
     if (std::isfinite(sensor_op.value()))
     {
-      filters_[i]->update(sensor_op.value(), output_state_values_[i]);
+      double filtered_value;
+      filters_[i]->update(sensor_op.value(), filtered_value);
+      (void)ordered_exported_state_interfaces_[i]->set_value(filtered_value);
     }
   }
 
   return controller_interface::return_type::OK;
 }
 
-std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_interfaces()
+std::vector<hardware_interface::StateInterface::SharedPtr>
+ChainedFilter::on_export_state_interfaces_list()
 {
-  std::vector<hardware_interface::StateInterface> state_interfaces;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_interfaces;
   state_interfaces.reserve(params_.output_interfaces.size());
   for (size_t i = 0; i < params_.output_interfaces.size(); ++i)
   {
@@ -153,8 +155,9 @@ std::vector<hardware_interface::StateInterface> ChainedFilter::on_export_state_i
     const std::string iface_prefix =
       (pos != std::string::npos) ? "/" + full_name.substr(0, pos) : "";
 
-    state_interfaces.emplace_back(
-      get_node()->get_name() + iface_prefix, iface_name, &output_state_values_.at(i));
+    auto si = std::make_shared<hardware_interface::StateInterface>(
+      get_node()->get_name() + iface_prefix, iface_name);
+    state_interfaces.push_back(si);
   }
   return state_interfaces;
 }
