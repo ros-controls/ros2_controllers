@@ -42,7 +42,6 @@ generate_parameter_library(pid_controller_parameters
 add_library(pid_controller SHARED
   src/pid_controller.cpp
 )
-target_compile_features(pid_controller PUBLIC cxx_std_17)
 target_include_directories(pid_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/pid_controller>
@@ -67,6 +66,8 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
 
   add_rostest_with_parameters_gmock(
     test_pid_controller

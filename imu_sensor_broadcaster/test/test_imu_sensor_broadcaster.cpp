@@ -16,8 +16,11 @@
  * Authors: Subhas Das, Denis Stogl, Victor Lopez, Christoph Froehlich
  */
 
+#define _USE_MATH_DEFINES
+
 #include "test_imu_sensor_broadcaster.hpp"
 
+#include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -36,11 +39,6 @@
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
 using testing::SizeIs;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-}  // namespace
 
 void IMUSensorBroadcasterTest::SetUpTestCase() {}
 
@@ -132,7 +130,7 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Configure_Success)
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure passed
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -152,8 +150,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure and activate success
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   // check interface configuration
   auto cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -164,7 +162,7 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Activate_Success)
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
   // deactivate passed
-  ASSERT_EQ(imu_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(imu_broadcaster_));
 
   // check interface configuration
   cmd_if_conf = imu_broadcaster_->command_interface_configuration();
@@ -183,8 +181,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Update_Success)
   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   ASSERT_EQ(
     imu_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -199,8 +197,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorName_Publish_Success)
   imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   sensor_msgs::msg::Imu imu_msg;
   subscribe_and_get_message(imu_msg);
@@ -235,8 +233,8 @@ TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset)
      rclcpp::Parameter("rotation_offset.pitch", 0.),
      rclcpp::Parameter("rotation_offset.yaw", M_PI_2)});
 
-  ASSERT_EQ(imu_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(imu_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
 
   sensor_msgs::msg::Imu imu_msg;
   subscribe_and_get_message(imu_msg);

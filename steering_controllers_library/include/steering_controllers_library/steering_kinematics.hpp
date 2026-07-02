@@ -214,9 +214,12 @@ public:
     const bool reduce_wheel_speed_until_steering_reached = false);
 
   /**
-   *  \brief Reset poses, heading, and accumulators
+   *  \brief Set poses and heading with the given values and reset accumulators
+   * \param x x position [m]
+   * \param y y position [m]
+   * \param heading heading [rad]
    */
-  void reset_odometry();
+  void set_odometry(const double & x, const double & y, const double & heading);
 
 private:
   /**

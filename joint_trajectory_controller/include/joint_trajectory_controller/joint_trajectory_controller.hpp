@@ -150,6 +150,19 @@ protected:
   // reserved storage for result of the command when closed loop pid adapter is used
   std::vector<double> tmp_command_;
 
+  // If true, enable calculations to stop all joints using constant deceleration
+  bool should_decelerate_on_cancel_ = false;
+  // reserved storage for the max deceleration values
+  std::vector<double> max_decel_;
+  // reserved storage for each joints max stopping time
+  std::vector<double> stop_time_;
+  // reserved storage for each joints hold position at stop
+  std::vector<double> hold_position_;
+  // reserved storage for each joints stop direction
+  std::vector<double> stop_direction_;
+  // reserved storage for the stop trajectory
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> stop_trajectory_;
+
   // Things around speed scaling
   std::atomic<double> scaling_factor_{1.0};
   std::atomic<double> scaling_factor_cmd_{1.0};
@@ -168,6 +181,14 @@ protected:
   std::shared_ptr<Trajectory> current_trajectory_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     new_trajectory_msg_;
+
+  // Trajectory deferred until its future start time.
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> pending_traj_msg_ = nullptr;
+  rclcpp::Time pending_start_;
+  // Written by goal_cancelled_callback (non-RT), read in update() (RT) to drop pending.
+  std::atomic<bool> rt_clear_pending_{false};
+  // Suppresses feedback/tolerance/success for an action goal whose trajectory is still deferred.
+  std::atomic<bool> rt_active_goal_deferred_{false};
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -220,6 +241,12 @@ protected:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
+  // true if msg is one of the internally generated hold/success/decelerate trajectories.
+  bool is_internal_hold(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & msg) const
+  {
+    return msg == hold_position_msg_ptr_ ||
+           (stop_trajectory_ != nullptr && msg == stop_trajectory_);
+  }
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);
@@ -238,6 +265,11 @@ protected:
    */
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
 
+  /** @brief decelerate at constant rate to a holding position with
+   * zero velocity and acceleration as new command
+   */
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position();
+
   /** @brief set last trajectory point to be repeated at success
    *
    * no matter if it has nonzero velocity or acceleration
@@ -255,12 +287,11 @@ protected:
   void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
-   * This is only possible if command AND state interfaces exist for the same type,
-   *  therefore needs check for both.
+   * state values (e.g. velocity, acceleration, or effort) which do not have command interfaces will
+   * NOT be updated.
    * @param[out] state to be filled with values from command interfaces.
-   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
-  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  void update_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
   void query_state_service(
@@ -278,6 +309,10 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
+  void assign_point_from_command_interface(
+    std::vector<double> & trajectory_point_interface,
+    const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> &
+      joint_interface);
 
   /**
    * @brief Set scaling factor used for speed scaling trajectory execution

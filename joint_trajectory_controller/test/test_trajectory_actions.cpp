@@ -696,6 +696,42 @@ TEST_F(TestTrajectoryActions, test_tolerances_via_actions)
   }
 }
 
+TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+  int error_code_a = -1;
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points[0].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a, &error_code_a](const GoalHandle::WrappedResult & r)
+    {
+      result_a = r.code;
+      error_code_a = r.result->error_code;
+    };
+    sendActionGoal(points, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // goal B preempts A
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
+    points[0].positions = {1.0, 2.0, 3.0};
+    sendActionGoal(points, 1.0, goal_options_);
+  }
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL, error_code_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 {
   // set joint tolerance parameters
@@ -887,6 +923,123 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   expectCommandPoint(cancelled_position);
 }
 
+TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_to_hold_position)
+{
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
+  SetUpExecutor(params);
+  SetUpControllerHardware();
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
+    point.positions.resize(joint_names_.size());
+    point.velocities.resize(joint_names_.size());
+
+    point.positions[0] = 4.0;
+    point.positions[1] = 5.0;
+    point.positions[2] = 6.0;
+    // canceled trajectory should not end with these velocities
+    point.velocities[0] = 4.0;
+    point.velocities[1] = 5.0;
+    point.velocities[2] = 6.0;
+    points.push_back(point);
+
+    control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
+    goal_msg.trajectory.joint_names = joint_names_;
+    goal_msg.trajectory.points = points;
+
+    // send and wait for half a second before cancel
+    gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    const auto goal_handle = gh_future.get();
+    action_client_->async_cancel_goal(goal_handle);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+  // run update for long enough to allow the joints to come to a stop
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.5));
+  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+
+  if (traj_controller_->has_velocity_state_interface())
+  {
+    // we expect a non-trivial hold trajectory that ramps the velocity to zero
+    expectCommandPoint(cancelled_position, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, false);
+  }
+  else
+  {
+    // decelerate_to_hold_position requires velocity state so this should fall back to
+    // set_hold_position i.e., active but trivial trajectory (one point only)
+    expectCommandPoint(cancelled_position);
+  }
+}
+
+TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_fallback)
+{
+  // parameter `constraints.jointX.max_deceleration_on_cancel` defaults to 0.0 which should
+  // force the controller to fall back to set_hold_position
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
+  SetUpExecutor(params);
+  SetUpControllerHardware();
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  // send goal
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
+    point.positions.resize(joint_names_.size());
+    point.velocities.resize(joint_names_.size());
+
+    point.positions[0] = 4.0;
+    point.positions[1] = 5.0;
+    point.positions[2] = 6.0;
+    // canceled trajectory should not end with these velocities
+    point.velocities[0] = 4.0;
+    point.velocities[1] = 5.0;
+    point.velocities[2] = 6.0;
+    points.push_back(point);
+
+    control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
+    goal_msg.trajectory.joint_names = joint_names_;
+    goal_msg.trajectory.points = points;
+
+    // send and wait for half a second before cancel
+    gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    const auto goal_handle = gh_future.get();
+    action_client_->async_cancel_goal(goal_handle);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
+
+  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+
+  // We always expect a trivial trajectory because we fell back to set_hold_position
+  // i.e., active but trivial trajectory (one point only)
+  expectCommandPoint(cancelled_position);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)
 {
   std::vector<rclcpp::Parameter> params = {
@@ -1042,7 +1195,7 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
       RCLCPP_INFO(node_->get_logger(), "Controller hardware thread finished");
-      traj_controller_->get_node()->deactivate();
+      EXPECT_TRUE(deactivate_succeeds(traj_controller_));
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     });
 
@@ -1310,3 +1463,247 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_sampling_is_correct)
 
 INSTANTIATE_TEST_SUITE_P(
   ScaledJTCTests, TestTrajectoryActionsTestScalingFactor, ::testing::Values(0.25, 0.87, 1.0, 2.0));
+
+/**
+ * @brief Cancelling a deferred goal before its fire time yields CANCELED and prevents
+ * the trajectory from executing.
+ */
+TEST_F(TestTrajectoryActions, blend_cancel_deferred_action_goal)
+{
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  setup_controller_hw_ = true;
+  controller_hw_thread_ = std::thread(
+    [&]()
+    {
+      auto clock = rclcpp::Clock(RCL_ROS_TIME);
+      auto now_time = clock.now();
+      auto last_time = now_time;
+      const auto end_time = now_time + rclcpp::Duration::from_seconds(3.0);
+      while (clock.now() < end_time)
+      {
+        now_time = clock.now();
+        traj_controller_->update(now_time, now_time - last_time);
+        last_time = now_time;
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  {
+    std::vector<JointTrajectoryPoint> points_a(1);
+    points_a[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points_a[0].positions = {4.0, 5.0, 6.0};
+    sendActionGoal(points_a, 1.0, goal_options_);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  rclcpp_action::ResultCode resultcode_b = rclcpp_action::ResultCode::UNKNOWN;
+  std::shared_future<typename GoalHandle::SharedPtr> gh_b;
+  {
+    std::vector<JointTrajectoryPoint> points_b(1);
+    points_b[0].time_from_start = rclcpp::Duration::from_seconds(0.4);
+    points_b[0].positions = {7.0, 8.0, 9.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_b;
+    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_b.trajectory.joint_names = joint_names_;
+    goal_b.trajectory.points = points_b;
+    goal_b.trajectory.header.stamp =
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(0.5);
+    GoalOptions opts_b;
+    opts_b.result_callback = [&resultcode_b](const GoalHandle::WrappedResult & r)
+    { resultcode_b = r.code; };
+    gh_b = action_client_->async_send_goal(goal_b, opts_b);
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));  // well before 500 ms fire time
+  auto goal_handle_b = gh_b.get();
+  ASSERT_TRUE(goal_handle_b);
+  action_client_->async_cancel_goal(goal_handle_b);
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, resultcode_b);
+}
+
+/**
+ * @brief Accepting future-stamped goal B while A executes immediately preempts A (ABORTED —
+ * server-side preemption in ROS 2). The old trajectory continues until B's stamp, then B
+ * executes and completes with SUCCEEDED. Mirrors ROS 1's executePartialActionTrajInFuture.
+ */
+TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
+{
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  setup_controller_hw_ = true;
+  controller_hw_thread_ = std::thread(
+    [&]()
+    {
+      auto clock = rclcpp::Clock(RCL_ROS_TIME);
+      auto now_time = clock.now();
+      auto last_time = now_time;
+      const auto end_time = now_time + rclcpp::Duration::from_seconds(3.0);
+      while (clock.now() < end_time)
+      {
+        now_time = clock.now();
+        traj_controller_->update(now_time, now_time - last_time);
+        last_time = now_time;
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  rclcpp_action::ResultCode resultcode_a = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points_a(1);
+    points_a[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points_a[0].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&resultcode_a](const GoalHandle::WrappedResult & r)
+    { resultcode_a = r.code; };
+    sendActionGoal(points_a, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  rclcpp_action::ResultCode resultcode_b = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points_b(1);
+    points_b[0].time_from_start = rclcpp::Duration::from_seconds(0.4);
+    points_b[0].positions = {7.0, 8.0, 9.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_b;
+    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_b.trajectory.joint_names = joint_names_;
+    goal_b.trajectory.points = points_b;
+    goal_b.trajectory.header.stamp =
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(0.4);
+    GoalOptions opts_b;
+    opts_b.result_callback = [&resultcode_b](const GoalHandle::WrappedResult & r)
+    { resultcode_b = r.code; };
+    action_client_->async_send_goal(goal_b, opts_b);
+  }
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, resultcode_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, resultcode_b);
+}
+
+/**
+ * @brief A stamp=0 topic trajectory preempts a deferred action goal at the trajectory level:
+ * the topic trajectory installs immediately and the deferred goal never fires.
+ * NOTE: the action goal handle is not formally canceled on topic preemption — that
+ * cross-interface preemption gap is pre-existing; this test covers trajectory behavior only.
+ */
+TEST_F(TestTrajectoryActions, blend_topic_preempts_deferred_action_goal)
+{
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  setup_controller_hw_ = true;
+  controller_hw_thread_ = std::thread(
+    [&]()
+    {
+      auto clock = rclcpp::Clock(RCL_ROS_TIME);
+      auto now_time = clock.now();
+      auto last_time = now_time;
+      const auto end_time = now_time + rclcpp::Duration::from_seconds(3.0);
+      while (clock.now() < end_time)
+      {
+        now_time = clock.now();
+        traj_controller_->update(now_time, now_time - last_time);
+        last_time = now_time;
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  // goal_init establishes an active trajectory; deferral only triggers when has_active_trajectory()
+  {
+    std::vector<JointTrajectoryPoint> points_init(1);
+    points_init[0].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points_init[0].positions = {4.0, 5.0, 6.0};
+    sendActionGoal(points_init, 1.0, goal_options_);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  {
+    std::vector<JointTrajectoryPoint> points_a(1);
+    points_a[0].time_from_start = rclcpp::Duration::from_seconds(0.5);
+    points_a[0].positions = {7.0, 8.0, 9.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_a;
+    goal_a.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_a.trajectory.joint_names = joint_names_;
+    goal_a.trajectory.points = points_a;
+    goal_a.trajectory.header.stamp =
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(1.0);
+    action_client_->async_send_goal(goal_a, goal_options_);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  const builtin_interfaces::msg::Duration half_s{rclcpp::Duration::from_seconds(0.5)};
+  std::vector<std::vector<double>> topic_traj{{{-1., -2., -3.}}};
+  publish(half_s, topic_traj, rclcpp::Time());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  controller_hw_thread_.join();
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    const auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(-1., state.positions[0], 0.2);
+    EXPECT_NEAR(-2., state.positions[1], 0.2);
+    EXPECT_NEAR(-3., state.positions[2], 0.2);
+  }
+}
+
+/**
+ * @brief Deactivating the controller while an action goal is deferred (future-stamped, not yet
+ * fired) must report ABORTED — the goal never executed and the controller is going inactive.
+ * Deactivation at 0.5 s fires before the deferred goal's start at 0.8 s.
+ */
+TEST_F(TestTrajectoryActions, blend_deactivate_aborts_deferred_action_goal)
+{
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  setup_controller_hw_ = true;
+  controller_hw_thread_ = std::thread(
+    [&]()
+    {
+      auto clock = rclcpp::Clock(RCL_ROS_TIME);
+      auto now_time = clock.now();
+      auto last_time = now_time;
+      const auto end_time = now_time + rclcpp::Duration::from_seconds(0.5);
+      while (clock.now() < end_time)
+      {
+        now_time = clock.now();
+        traj_controller_->update(now_time, now_time - last_time);
+        last_time = now_time;
+      }
+      traj_controller_->get_node()->deactivate();
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  // goal_a establishes an active trajectory; deferral only triggers when has_active_trajectory()
+  {
+    std::vector<JointTrajectoryPoint> points_a(1);
+    points_a[0].time_from_start = rclcpp::Duration::from_seconds(1.0);
+    points_a[0].positions = {4.0, 5.0, 6.0};
+    sendActionGoal(points_a, 1.0, goal_options_);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  {
+    std::vector<JointTrajectoryPoint> points_b(1);
+    points_b[0].time_from_start = rclcpp::Duration::from_seconds(0.4);
+    points_b[0].positions = {7.0, 8.0, 9.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_b;
+    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_b.trajectory.joint_names = joint_names_;
+    goal_b.trajectory.points = points_b;
+    goal_b.trajectory.header.stamp =
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(0.8);
+    action_client_->async_send_goal(goal_b, goal_options_);
+  }
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+}

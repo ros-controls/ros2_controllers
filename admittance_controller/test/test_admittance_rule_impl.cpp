@@ -14,11 +14,14 @@
 //
 // Authors: Julia Jia
 
+#define _USE_MATH_DEFINES
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <cmath>
 #include <memory>
 
 #include "admittance_controller/admittance_rule.hpp"

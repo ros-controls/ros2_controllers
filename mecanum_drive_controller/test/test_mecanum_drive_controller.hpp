@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -38,18 +39,15 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using ControllerStateMsg = mecanum_drive_controller::MecanumDriveController::ControllerStateMsg;
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 using TfStateMsg = mecanum_drive_controller::MecanumDriveController::TfStateMsg;
 using OdomStateMsg = mecanum_drive_controller::MecanumDriveController::OdomStateMsg;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController
@@ -93,6 +91,14 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
   FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
 
+  FRIEND_TEST(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_x);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_y);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_angular_z);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_runtime_update);
+  FRIEND_TEST(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state);
+  FRIEND_TEST(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buffers);
+
 public:
   controller_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override
@@ -103,7 +109,8 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    auto ref_itfs = export_reference_interfaces();
     return mecanum_drive_controller::MecanumDriveController::on_activate(previous_state);
   }
 
@@ -189,9 +196,10 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          command_joint_names_[i], interface_name_, &joint_command_values_[i]));
+      auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)cmd_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(cmd_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -201,9 +209,10 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          command_joint_names_[i], interface_name_, &joint_state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
