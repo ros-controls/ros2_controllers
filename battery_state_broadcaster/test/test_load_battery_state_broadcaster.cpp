@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright (c) 2025, b-robotized Group
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,18 +24,27 @@
 
 TEST(TestLoadBatteryStateBroadcaster, load_controller)
 {
-  rclcpp::init(0, nullptr);
-
   std::shared_ptr<rclcpp::Executor> executor =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
   controller_manager::ControllerManager cm(
     executor, ros2_control_test_assets::minimal_robot_urdf, true, "test_controller_manager");
+  const std::string test_file_path =
+    std::string(TEST_FILES_DIRECTORY) + "/battery_state_broadcaster_params.yaml";
 
-  ASSERT_NE(
-    cm.load_controller(
-      "test_battery_state_broadcaster", "battery_state_broadcaster/BatteryStateBroadcaster"),
-    nullptr);
+  cm.set_parameter({"test_battery_state_broadcaster.params_file", test_file_path});
+  cm.set_parameter(
+    {"test_battery_state_broadcaster.type", "battery_state_broadcaster/BatteryStateBroadcaster"});
 
+  ASSERT_NO_THROW(cm.load_controller(
+    "test_battery_state_broadcaster", "battery_state_broadcaster/BatteryStateBroadcaster"));
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleMock(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
   rclcpp::shutdown();
+  return result;
 }

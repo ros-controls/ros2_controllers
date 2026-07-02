@@ -1,0 +1,306 @@
+// Copyright (c) 2025, b-robotized Group
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <limits>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
+#include "test_battery_state_broadcaster.hpp"
+
+// Test correct broadcaster initialization
+TEST_F(BatteryStateBroadcasterTest, init_success) { SetUpBatteryStateBroadcaster(); }
+
+// Test that BatteryStateBroadcaster parses parameters correctly,
+// Test that BatteryStateBroadcaster aggregates interfaces and battery properties correctly,
+// sets up state interfaces on configure, and computes aggregated counts/sums.
+TEST_F(BatteryStateBroadcasterTest, all_parameters_set_configure_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_TRUE(battery_state_broadcaster_->params_.batteries.empty());
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_THAT(battery_state_broadcaster_->batteries_, testing::ElementsAreArray(battery_names_));
+
+  auto interface_params = battery_state_broadcaster_->params_.interfaces.batteries_map;
+  auto properties = battery_state_broadcaster_->params_.batteries_map;
+  EXPECT_EQ(interface_params.at("battery0").battery_temperature, true);
+  EXPECT_EQ(interface_params.at("battery0").battery_current, false);
+  EXPECT_EQ(interface_params.at("battery0").battery_charge, true);
+  EXPECT_EQ(interface_params.at("battery0").battery_percentage, false);
+  EXPECT_EQ(interface_params.at("battery0").battery_power_supply_status, true);
+  EXPECT_EQ(interface_params.at("battery0").battery_power_supply_health, true);
+  EXPECT_EQ(interface_params.at("battery0").battery_present, false);
+
+  EXPECT_EQ(interface_params.at("battery1").battery_temperature, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_current, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_charge, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_percentage, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_power_supply_status, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_power_supply_health, true);
+  EXPECT_EQ(interface_params.at("battery1").battery_present, false);
+
+  EXPECT_EQ(properties.at("battery0").minimum_voltage, 0.0);
+  EXPECT_EQ(properties.at("battery0").maximum_voltage, 10.0);
+  EXPECT_EQ(properties.at("battery0").capacity, 12000.0);
+  EXPECT_EQ(properties.at("battery0").design_capacity, 13000.0);
+  EXPECT_EQ(properties.at("battery0").power_supply_technology, 3);
+  EXPECT_EQ(properties.at("battery0").location, "slot0");
+  EXPECT_EQ(properties.at("battery0").serial_number, "serial_device_0");
+
+  EXPECT_EQ(properties.at("battery1").minimum_voltage, 0.0);
+  EXPECT_EQ(properties.at("battery1").maximum_voltage, 15.0);
+  EXPECT_EQ(properties.at("battery1").capacity, 17000.0);
+  EXPECT_EQ(properties.at("battery1").design_capacity, 18000.0);
+  EXPECT_EQ(properties.at("battery1").power_supply_technology, 3);
+  EXPECT_EQ(properties.at("battery1").location, "slot1");
+  EXPECT_EQ(properties.at("battery1").serial_number, "serial_device_1");
+
+  // check property aggregation
+  EXPECT_EQ(battery_state_broadcaster_->counts_.temperature_cnt, 2.0);
+  EXPECT_EQ(battery_state_broadcaster_->counts_.current_cnt, 1.0);
+  EXPECT_EQ(
+    battery_state_broadcaster_->counts_.percentage_cnt,
+    2.0);  // because min and max voltage are valid
+  EXPECT_EQ(battery_state_broadcaster_->sums_.capacity_sum, 29000.0);
+  EXPECT_EQ(battery_state_broadcaster_->sums_.design_capacity_sum, 31000.0);
+
+  // check interface configuration
+  auto cmd_if_conf = battery_state_broadcaster_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, IsEmpty());
+  EXPECT_EQ(cmd_if_conf.type, controller_interface::interface_configuration_type::NONE);
+  auto state_if_conf = battery_state_broadcaster_->state_interface_configuration();
+  ASSERT_THAT(state_if_conf.names, SizeIs(12lu));
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+}
+
+// check fails when no defined interfaces
+TEST_F(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail)
+{
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_battery_state_broadcaster";
+  params.robot_description = "";
+  params.update_rate = 0;
+  params.node_namespace = "";
+  params.node_options = battery_state_broadcaster_->define_custom_node_options();
+  ASSERT_EQ(battery_state_broadcaster_->init(params), controller_interface::return_type::OK);
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_FAILURE);
+}
+
+TEST_F(BatteryStateBroadcasterTest, activate_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(BatteryStateBroadcasterTest, deactivate_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+}
+
+TEST_F(BatteryStateBroadcasterTest, check_exported_intefaces)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  auto command_intefaces = battery_state_broadcaster_->command_interface_configuration();
+  ASSERT_EQ(command_intefaces.names.size(), static_cast<size_t>(0));
+
+  auto state_interfaces = battery_state_broadcaster_->state_interface_configuration();
+  ASSERT_EQ(state_interfaces.names.size(), itfs_values_.size());
+  EXPECT_EQ(state_interfaces.names[0], "battery0/battery_voltage");
+  EXPECT_EQ(state_interfaces.names[1], "battery0/battery_temperature");
+  EXPECT_EQ(state_interfaces.names[2], "battery0/battery_charge");
+  EXPECT_EQ(state_interfaces.names[3], "battery0/battery_power_supply_status");
+  EXPECT_EQ(state_interfaces.names[4], "battery0/battery_power_supply_health");
+  EXPECT_EQ(state_interfaces.names[5], "battery1/battery_voltage");
+  EXPECT_EQ(state_interfaces.names[6], "battery1/battery_temperature");
+  EXPECT_EQ(state_interfaces.names[7], "battery1/battery_current");
+  EXPECT_EQ(state_interfaces.names[8], "battery1/battery_charge");
+  EXPECT_EQ(state_interfaces.names[9], "battery1/battery_percentage");
+  EXPECT_EQ(state_interfaces.names[10], "battery1/battery_power_supply_status");
+  EXPECT_EQ(state_interfaces.names[11], "battery1/battery_power_supply_health");
+}
+
+TEST_F(BatteryStateBroadcasterTest, update_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_EQ(
+    battery_state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+}
+
+// check correct values published
+// check correct aggregation for present, percentage, averages, and sums, and higher criticality
+TEST_F(BatteryStateBroadcasterTest, publish_status_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_EQ(
+    battery_state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  RawBatteryStatesMsg raw_battery_states_msg;
+  BatteryStateMsg battery_state_msg;
+  subscribe_and_get_messages(raw_battery_states_msg, battery_state_msg);
+
+  ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
+
+  // battery0
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_EQ(battery0.header.frame_id, "battery0");
+  EXPECT_DOUBLE_EQ(battery0.voltage, 5.0);
+  EXPECT_DOUBLE_EQ(battery0.temperature, 60.0);
+  EXPECT_TRUE(std::isnan(battery0.current));  // disabled in params
+  EXPECT_DOUBLE_EQ(battery0.charge, 6000.0);
+  EXPECT_DOUBLE_EQ(battery0.capacity, 12000.0);
+  EXPECT_DOUBLE_EQ(battery0.design_capacity, 13000.0);
+  // percentage calculated (no interface) = (5.0 - 0.0) * 100 / (10.0 - 0.0) = 50
+  EXPECT_DOUBLE_EQ(battery0.percentage, 50.0);
+  EXPECT_EQ(battery0.power_supply_status, 3);  // from itfs_values_[3]
+  EXPECT_EQ(battery0.power_supply_health, 0);  // from itfs_values_[4]
+  EXPECT_EQ(battery0.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
+  EXPECT_TRUE(battery0.present);  // voltage > 0.0
+  EXPECT_EQ(battery0.location, "slot0");
+  EXPECT_EQ(battery0.serial_number, "serial_device_0");
+
+  // battery1
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_EQ(battery1.header.frame_id, "battery1");
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.temperature, 80.0);
+  EXPECT_DOUBLE_EQ(battery1.current, 2000.0);
+  EXPECT_DOUBLE_EQ(battery1.charge, 5000.0);
+  EXPECT_DOUBLE_EQ(battery1.capacity, 17000.0);
+  EXPECT_DOUBLE_EQ(battery1.design_capacity, 18000.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_EQ(battery1.power_supply_status, 2);   // from itfs_values_[10]
+  EXPECT_EQ(battery1.power_supply_health, 4);   // from itfs_values_[11]
+  EXPECT_EQ(battery1.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
+  EXPECT_TRUE(battery1.present);  // voltage > 0.0
+  EXPECT_EQ(battery1.location, "slot1");
+  EXPECT_EQ(battery1.serial_number, "serial_device_1");
+
+  // Combined battery state message
+  EXPECT_EQ(battery_state_msg.header.frame_id, "");
+  EXPECT_DOUBLE_EQ(battery_state_msg.voltage, 7.5);              // average of 5 + 10
+  EXPECT_DOUBLE_EQ(battery_state_msg.temperature, 70.0);         // average of 60 + 80
+  EXPECT_DOUBLE_EQ(battery_state_msg.current, 2000.0);           // only battery1 contributes
+  EXPECT_DOUBLE_EQ(battery_state_msg.charge, 11000.0);           // sum of 6000 + 5000
+  EXPECT_DOUBLE_EQ(battery_state_msg.capacity, 29000.0);         // sum of 6000 + 5000
+  EXPECT_DOUBLE_EQ(battery_state_msg.design_capacity, 31000.0);  // sum of 6000 + 5000
+  EXPECT_DOUBLE_EQ(battery_state_msg.percentage, 58.0);          // average of 50 + 66
+  EXPECT_EQ(battery_state_msg.power_supply_status, 3);           // max(3, 2)
+  EXPECT_EQ(battery_state_msg.power_supply_health, 4);           // max(0, 4)
+  EXPECT_EQ(battery_state_msg.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
+  EXPECT_TRUE(battery_state_msg.present);  // voltage > 0.0
+  EXPECT_EQ(battery_state_msg.location, "slot0, slot1, ");
+  EXPECT_EQ(battery_state_msg.serial_number, "serial_device_0, serial_device_1, ");
+}
+
+TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_TRUE(battery0_voltage_itf_->set_value(10.0));
+
+  RawBatteryStatesMsg raw_battery_states_msg;
+  BatteryStateMsg battery_state_msg;
+  subscribe_and_get_messages(raw_battery_states_msg, battery_state_msg);
+
+  ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
+
+  // battery0
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_DOUBLE_EQ(battery0.voltage, 10.0);
+  // percentage calculated (no interface) = (10.0 - 0.0) * 100 / (10.0 - 0.0) = 100
+  EXPECT_DOUBLE_EQ(battery0.percentage, 100.0);
+  EXPECT_TRUE(battery0.present);  // voltage > 0.0
+
+  // battery1
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_TRUE(battery1.present);                // voltage > 0.0
+
+  // Combined battery state message
+  EXPECT_DOUBLE_EQ(battery_state_msg.voltage, 10.0);     // average of 10 + 10
+  EXPECT_DOUBLE_EQ(battery_state_msg.percentage, 83.0);  // average of 100 + 66
+  EXPECT_TRUE(battery_state_msg.present);                // voltage > 0.0
+}
+
+TEST_F(BatteryStateBroadcasterTest, publish_nan_voltage)
+{
+  SetUpBatteryStateBroadcaster();
+
+  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  ASSERT_TRUE(battery0_voltage_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
+
+  RawBatteryStatesMsg raw_battery_states_msg;
+  BatteryStateMsg battery_state_msg;
+  subscribe_and_get_messages(raw_battery_states_msg, battery_state_msg);
+
+  ASSERT_EQ(raw_battery_states_msg.battery_states.size(), 2u);
+
+  // battery0
+  const auto & battery0 = raw_battery_states_msg.battery_states[0];
+  EXPECT_TRUE(std::isnan(battery0.voltage));
+  EXPECT_TRUE(std::isnan(battery0.percentage));
+  EXPECT_FALSE(battery0.present);  // voltage nan
+
+  // battery1
+  const auto & battery1 = raw_battery_states_msg.battery_states[1];
+  EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
+  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_TRUE(battery1.present);                // voltage > 0.0
+
+  // Combined battery state message
+  EXPECT_TRUE(std::isnan(battery_state_msg.voltage));     // average of nan + 10
+  EXPECT_TRUE(std::isnan(battery_state_msg.percentage));  // average of nan + 66
+  EXPECT_TRUE(battery_state_msg.present);
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
+}
