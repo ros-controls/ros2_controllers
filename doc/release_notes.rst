@@ -62,6 +62,7 @@ steering_controllers_library
 *****************************
 * Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
 * Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+* Add reference limiter to the steering controllers library. (`#2413 <https://github.com/ros-controls/ros2_controllers/pull/2413>`_).
 
 magnetometer_broadcaster
 ************************

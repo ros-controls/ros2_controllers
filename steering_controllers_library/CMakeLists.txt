@@ -8,6 +8,7 @@ export_windows_symbols()
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
+  control_toolbox
   controller_interface
   generate_parameter_library
   geometry_msgs
@@ -31,8 +32,11 @@ endforeach()
 add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
 add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
+# get include dirs from control_toolbox for the custom validators
+get_target_property(TB_INCLUDE_DIRS control_toolbox::rate_limiter_parameters INTERFACE_INCLUDE_DIRECTORIES)
 generate_parameter_library(steering_controllers_library_parameters
   src/steering_controllers_library.yaml
+  ${TB_INCLUDE_DIRS}/control_toolbox/custom_validators.hpp
 )
 
 add_library(
@@ -46,6 +50,8 @@ target_include_directories(steering_controllers_library PUBLIC
   "$<INSTALL_INTERFACE:include/steering_controllers_library>")
 target_link_libraries(steering_controllers_library PUBLIC
                       steering_controllers_library_parameters
+                      control_toolbox::rate_limiter_parameters
+                      control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
                       pluginlib::pluginlib

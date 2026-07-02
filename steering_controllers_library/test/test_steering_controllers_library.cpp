@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include <limits>
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -388,6 +390,268 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
+}
+
+TEST_F(SteeringControllersLibraryTest, applies_velocity_limits_to_references)
+{
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("linear.x.max_velocity", rclcpp::ParameterValue(0.1));
+  node_options.append_parameter_override("angular.z.max_velocity", rclcpp::ParameterValue(0.1));
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 1.5;
+  msg.twist.linear.y = 0.0;
+  msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.x = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.y = std::numeric_limits<double>::quiet_NaN();
+  msg.twist.angular.z = 0.3;
+  controller_->input_ref_.set(msg);
+
+  const auto expected_commands = controller_->odometry_.get_commands(
+    0.1, 0.1, controller_->params_.open_loop,
+    controller_->params_.reduce_wheel_speed_until_steering_reached);
+
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    std::get<0>(expected_commands)[CMD_TRACTION_RIGHT_WHEEL], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_TRACTION_LEFT_WHEEL].get_optional().value(),
+    std::get<0>(expected_commands)[CMD_TRACTION_LEFT_WHEEL], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_RIGHT_WHEEL].get_optional().value(),
+    std::get<1>(expected_commands)[0], 1e-6);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[CMD_STEER_LEFT_WHEEL].get_optional().value(),
+    std::get<1>(expected_commands)[1], 1e-6);
+}
+
+TEST_F(SteeringControllersLibraryTest, test_reset_buffers_clears_limiter_state)
+{
+  SetUpController("test_steering_controllers_library");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  // Dirty all buffers that reset_buffers() is responsible for clearing.
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(2.0));
+
+  std::queue<std::array<double, 2>> dirty;
+  dirty.push({{4.0, 5.0}});
+  dirty.push({{6.0, 7.0}});
+  std::swap(controller_->previous_two_commands_, dirty);
+
+  ControllerReferenceMsg dirty_ref;
+  dirty_ref.header.stamp = controller_->get_node()->now();
+  dirty_ref.twist.linear.x = 1.0;
+  dirty_ref.twist.angular.z = 2.0;
+  controller_->input_ref_.set(dirty_ref);
+
+  controller_->reset_buffers();
+
+  for (const auto & itf : controller_->ordered_exported_reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(itf->get_optional().value()));
+  }
+  ASSERT_EQ(controller_->previous_two_commands_.size(), 2u);
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 2>{{0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 2>{{0.0, 0.0}}));
+
+  auto reset_ref = controller_->input_ref_.get();
+  EXPECT_TRUE(std::isnan(reset_ref.twist.linear.x));
+  EXPECT_TRUE(std::isnan(reset_ref.twist.angular.z));
+}
+
+TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_buffers)
+{
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("linear.x.max_acceleration", rclcpp::ParameterValue(2.0));
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  const double dt = 0.001;
+  const double linear = 1.0;
+  const double max_acceleration = 2.0;
+  const double time_acc = linear / max_acceleration;
+
+  // Ramp up linear speed to steady-state so limiter history has non-zero values.
+  for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) + 5; ++i)
+  {
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+  }
+  EXPECT_NEAR(linear / WHEELS_RADIUS_, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+  EXPECT_NEAR(linear, controller_->previous_two_commands_.back()[0], 1e-3);
+
+  // Deactivate then re-activate: limiter history must be reset to zero.
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 2>{{0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 2>{{0.0, 0.0}}));
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+  EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 2>{{0.0, 0.0}}));
+  EXPECT_EQ(controller_->previous_two_commands_.back(), (std::array<double, 2>{{0.0, 0.0}}));
+
+  // After reactivation, requesting the same target should be limited again
+  // starting from zero, not pass through immediately.
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+  EXPECT_LT(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], linear / WHEELS_RADIUS_)
+    << "Limiter history was not reset across lifecycle transitions; the wheel command "
+       "should be ramping up from zero again.";
+}
+
+TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
+{
+  // If you set a linear velocity reference without acceleration limits,
+  // then the wheel velocity command (rotations/s) will be:
+  // ideal_wheel_velocity_command (rotations/s) = linear_velocity_command (m/s) / wheel_radius (m).
+  // (The velocity command looks like a step function).
+  // However, if there are acceleration limits, then the actual wheel velocity command
+  // should always be less than the ideal velocity, and should only become
+  // equal at time = linear_velocity_command (m/s) / acceleration_limit (m/s^2).
+  const double max_acceleration_1 = 2.0;
+  const double max_acceleration_2 = 5.0;
+  const double max_deceleration = -4.0;
+
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override(
+    "linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration_1));
+  node_options.append_parameter_override(
+    "linear.x.max_deceleration", rclcpp::ParameterValue(max_deceleration));
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  const double dt = 0.001;
+  const double ideal_wheel_velocity = 1.0 / WHEELS_RADIUS_;
+
+  auto wait_for_limiter = [&](double linear_ref, double expected_vel)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear_ref));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      EXPECT_NEAR(expected_vel, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+    }
+  };
+
+  // Wait for the speed limiter to fill the queue.
+  wait_for_limiter(0.0, 0.0);
+
+  // Phase 1: accelerate with max_acceleration = 2.0.
+  {
+    const double linear = 1.0;
+    const double time_acc = linear / max_acceleration_1;
+    for (int i = 0; i < static_cast<int>(std::floor(time_acc / dt)) - 1; ++i)
+    {
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(ideal_wheel_velocity, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+
+    // Wait for the speed limiter to fill the queue.
+    wait_for_limiter(linear, ideal_wheel_velocity);
+  }
+
+  // Stop the robot.
+  {
+    const double linear = 0.0;
+    const double time_dec = 1.0 / std::abs(max_deceleration);
+    for (int i = 0; i < static_cast<int>(std::floor(time_dec / dt)) - 1; ++i)
+    {
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(0.0, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+
+    // Wait for the speed limiter to fill the queue.
+    wait_for_limiter(linear, 0.0);
+  }
+
+  // Phase 2: update parameter at runtime to max_acceleration = 5.0.
+  {
+    auto result = controller_->get_node()->set_parameter(
+      rclcpp::Parameter("linear.x.max_acceleration", rclcpp::ParameterValue(max_acceleration_2)));
+    ASSERT_TRUE(result.successful);
+  }
+
+  // Phase 3: accelerate with max_acceleration = 5.0.
+  {
+    const double linear = 1.0;
+    const double time_acc_1 = linear / max_acceleration_1;
+    const double time_acc_2 = linear / max_acceleration_2;
+    ASSERT_LT(time_acc_2, time_acc_1);
+    for (int i = 0; i < static_cast<int>(std::floor(time_acc_2 / dt)) - 1; ++i)
+    {
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+      ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+        controller_interface::return_type::OK);
+    }
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(linear));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0));
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(ideal_wheel_velocity, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+
+    // Wait for the speed limiter to fill the queue.
+    wait_for_limiter(linear, ideal_wheel_velocity);
+  }
 }
 
 TEST_F(SteeringControllersLibraryTest, odometry_set_service)
