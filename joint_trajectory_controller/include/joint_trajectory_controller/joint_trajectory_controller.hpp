@@ -211,7 +211,7 @@ protected:
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
-  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+  virtual void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_received_callback(

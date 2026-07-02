@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -1140,4 +1141,209 @@ TEST(TestTrajectory, sample_velocity_only_all_segments_skipped_returns_false)
 
   EXPECT_FALSE(ok)
     << "sample() must return false when it cannot produce a non-empty positions vector";
+}
+
+// fill_cubic_spline_velocities (the positions->velocities sibling of
+// deduce_from_derivatives): solves the knot velocities that turn a positions-
+// only trajectory into a global cubic spline (C2).
+
+namespace
+{
+// Build a positions-only chunk; positions_per_point[i] holds one position per
+// joint for waypoint i, spaced dt apart.
+trajectory_msgs::msg::JointTrajectory make_positions_chunk(
+  const std::vector<std::vector<double>> & positions_per_point, double dt)
+{
+  trajectory_msgs::msg::JointTrajectory traj;
+  for (size_t i = 0; i < positions_per_point.size(); ++i)
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+    point.positions = positions_per_point[i];
+    point.time_from_start = rclcpp::Duration::from_seconds(static_cast<double>(i) * dt);
+    traj.points.push_back(point);
+  }
+  return traj;
+}
+
+double knot_time(const trajectory_msgs::msg::JointTrajectory & traj, size_t i)
+{
+  return rclcpp::Duration(traj.points[i].time_from_start).seconds();
+}
+
+// Acceleration of the per-segment cubic Hermite evaluated at the knot, from
+// either side: arrive = end of segment [i-1, i]; leave = start of [i, i+1].
+double accel_arrive(const trajectory_msgs::msg::JointTrajectory & traj, size_t i, size_t joint)
+{
+  const double duration = knot_time(traj, i) - knot_time(traj, i - 1);
+  const double pos_a = traj.points[i - 1].positions[joint];
+  const double pos_b = traj.points[i].positions[joint];
+  const double vel_a = traj.points[i - 1].velocities[joint];
+  const double vel_b = traj.points[i].velocities[joint];
+  return (6.0 * pos_a - 6.0 * pos_b) / (duration * duration) +
+         (2.0 * vel_a + 4.0 * vel_b) / duration;
+}
+
+double accel_leave(const trajectory_msgs::msg::JointTrajectory & traj, size_t i, size_t joint)
+{
+  const double duration = knot_time(traj, i + 1) - knot_time(traj, i);
+  const double pos_a = traj.points[i].positions[joint];
+  const double pos_b = traj.points[i + 1].positions[joint];
+  const double vel_a = traj.points[i].velocities[joint];
+  const double vel_b = traj.points[i + 1].velocities[joint];
+  return (-6.0 * pos_a + 6.0 * pos_b) / (duration * duration) -
+         (4.0 * vel_a + 2.0 * vel_b) / duration;
+}
+}  // namespace
+
+/**
+ * @brief fill_cubic_spline_velocities makes the per-segment cubic Hermite C2:
+ * acceleration is continuous across every interior knot, with rest boundary
+ * conditions (v0 = v_{N-1} = 0), for each joint solved independently.
+ */
+TEST(TestTrajectory, fill_cubic_spline_velocities_makes_acceleration_continuous)
+{
+  const double dt = 0.1;
+  std::vector<std::vector<double>> positions_per_point;
+  for (int i = 0; i < 7; ++i)
+  {
+    // two joints with distinct paths
+    positions_per_point.push_back({0.1 + 0.4 * std::sin(M_PI * i * dt), 0.5 - 0.1 * i});
+  }
+  auto traj = make_positions_chunk(positions_per_point, dt);
+
+  joint_trajectory_controller::fill_cubic_spline_velocities(traj);
+
+  const size_t n = traj.points.size();
+  for (const auto & point : traj.points)
+  {
+    ASSERT_EQ(point.velocities.size(), 2u);
+  }
+  for (size_t joint = 0; joint < 2; ++joint)
+  {
+    for (size_t i = 1; i + 1 < n; ++i)
+    {
+      EXPECT_NEAR(accel_arrive(traj, i, joint), accel_leave(traj, i, joint), 1e-6)
+        << "acceleration discontinuous at knot " << i << " joint " << joint;
+    }
+    EXPECT_NEAR(traj.points.front().velocities[joint], 0.0, 1e-9);
+    EXPECT_NEAR(traj.points.back().velocities[joint], 0.0, 1e-9);
+  }
+}
+
+/**
+ * @brief End-to-end through the real sampler: a positions-only chunk that is
+ * velocity-filled and then sampled by Trajectory::sample() produces smooth,
+ * bounded acceleration; the SAME positions left unfilled interpolate linearly
+ * (C0) and show far larger acceleration spikes at the knots.
+ */
+TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
+{
+  // Realistic action chunk: 50 waypoints at 25 Hz (~2 s) on a smooth path.
+  const double dt = 1.0 / 25.0;
+  const int n = 50;
+  auto make_msg = [&]()
+  {
+    auto msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+    msg->header.stamp = rclcpp::Time(0);
+    for (int i = 0; i < n; ++i)
+    {
+      const double s = static_cast<double>(i) / (n - 1);
+      // sin^2 (Hann-shaped): zero slope at s=0 and s=1, so the spline's rest
+      // boundary condition (v0 = v_N = 0) is natural.
+      trajectory_msgs::msg::JointTrajectoryPoint point;
+      point.positions = {0.1 + 0.5 * std::sin(M_PI * s) * std::sin(M_PI * s)};
+      point.time_from_start = rclcpp::Duration::from_seconds(i * dt);
+      msg->points.push_back(point);
+    }
+    return msg;
+  };
+
+  // Sample densely across the chunk span and return the peak |second difference|
+  // of the sampled position (the acceleration actually experienced).
+  auto peak_sampled_acceleration = [&](std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint point_before;
+    point_before.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point_before.positions = {msg->points.front().positions[0]};
+    const rclcpp::Time time_now = rclcpp::Clock().now();
+    auto traj = joint_trajectory_controller::Trajectory(time_now, point_before, msg);
+
+    const double sample_dt = 0.002;
+    const double span = (n - 1) * dt;
+    std::vector<double> positions;
+    joint_trajectory_controller::TrajectoryPointConstIter start, end;
+    trajectory_msgs::msg::JointTrajectoryPoint out;
+    for (double t = 0.0; t <= span; t += sample_dt)
+    {
+      traj.sample(
+        time_now + rclcpp::Duration::from_seconds(t), DEFAULT_INTERPOLATION, out, start, end);
+      positions.push_back(out.positions[0]);
+    }
+    double peak = 0.0;
+    for (size_t k = 2; k < positions.size(); ++k)
+    {
+      const double accel =
+        (positions[k] - 2.0 * positions[k - 1] + positions[k - 2]) / (sample_dt * sample_dt);
+      peak = std::max(peak, std::abs(accel));
+    }
+    return peak;
+  };
+
+  auto filled = make_msg();
+  joint_trajectory_controller::fill_cubic_spline_velocities(*filled);
+  auto unfilled = make_msg();  // positions only -> JTC linear (C0)
+
+  const double peak_filled = peak_sampled_acceleration(filled);
+  const double peak_unfilled = peak_sampled_acceleration(unfilled);
+
+  double analytic_peak = 0.0;
+  for (size_t i = 0; i + 1 < static_cast<size_t>(n); ++i)
+  {
+    analytic_peak = std::max(analytic_peak, std::abs(accel_leave(*filled, i, 0)));
+  }
+  EXPECT_LT(peak_filled, 2.0 * analytic_peak + 1.0)
+    << "sampled acceleration should track the spline's analytic acceleration";
+  EXPECT_GT(peak_unfilled, 3.0 * peak_filled)
+    << "unfilled positions-only samples to a C0 staircase with far larger accel spikes";
+}
+
+/**
+ * @brief Edge cases: a two-point chunk is a valid single segment (rest-to-rest);
+ * trajectories with < 2 points or inconsistent widths are a safe no-op; and
+ * back-to-back chunks of different sizes both fill correctly.
+ */
+TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
+{
+  // N == 2: valid single segment, rest BC -> both velocities 0.
+  {
+    auto traj = make_positions_chunk({{0.0}, {0.5}}, 0.1);
+    joint_trajectory_controller::fill_cubic_spline_velocities(traj);
+    ASSERT_EQ(traj.points[0].velocities.size(), 1u);
+    EXPECT_NEAR(traj.points[0].velocities[0], 0.0, EPS);
+    EXPECT_NEAR(traj.points[1].velocities[0], 0.0, EPS);
+  }
+  // N == 1 and empty: no-op (velocities stay empty), must not crash.
+  {
+    auto one = make_positions_chunk({{0.3}}, 0.1);
+    joint_trajectory_controller::fill_cubic_spline_velocities(one);
+    EXPECT_TRUE(one.points[0].velocities.empty());
+
+    trajectory_msgs::msg::JointTrajectory empty;
+    joint_trajectory_controller::fill_cubic_spline_velocities(empty);
+    EXPECT_TRUE(empty.points.empty());
+  }
+  // Varying sizes back-to-back: a small then a large chunk both fill correctly.
+  {
+    auto small = make_positions_chunk({{0.0}, {0.1}, {0.2}}, 0.1);
+    auto large =
+      make_positions_chunk({{0.0}, {0.1}, {0.2}, {0.3}, {0.2}, {0.1}, {0.0}, {0.1}, {0.2}}, 0.1);
+    joint_trajectory_controller::fill_cubic_spline_velocities(small);
+    joint_trajectory_controller::fill_cubic_spline_velocities(large);
+    ASSERT_EQ(small.points.size(), 3u);
+    ASSERT_EQ(large.points.size(), 9u);
+    for (const auto & point : small.points) EXPECT_EQ(point.velocities.size(), 1u);
+    for (const auto & point : large.points) EXPECT_EQ(point.velocities.size(), 1u);
+    EXPECT_NEAR(small.points.front().velocities[0], 0.0, EPS);
+    EXPECT_NEAR(large.points.back().velocities[0], 0.0, EPS);
+  }
 }

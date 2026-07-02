@@ -53,6 +53,7 @@ joint_trajectory_controller
   continues executing until the start time arrives, then the new trajectory is executed.
   This is a partial port of the ROS 1 trajectory replacement behavior.
   (`#2401 <https://github.com/ros-controls/ros2_controllers/pull/2401>`_)
+* Added ``InferenceBridgeController``, a variant that ingests positions-only action chunks and upsamples them into a smooth global C2 cubic spline by solving the knot velocities, configured with the new ``policy_frequency`` parameter. (`#2443 <https://github.com/ros-controls/ros2_controllers/pull/2443>`_)
 
 pid_controller
 **************
