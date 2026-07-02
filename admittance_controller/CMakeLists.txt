@@ -66,6 +66,8 @@ if(BUILD_TESTING)
   # Dynamically loaded during test
   find_package(kinematics_interface_kdl REQUIRED)
 
+  add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
+
   # test loading admittance controller
   add_rostest_with_parameters_gmock(test_load_admittance_controller
     test/test_load_admittance_controller.cpp
