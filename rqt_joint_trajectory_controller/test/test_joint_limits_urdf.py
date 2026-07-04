@@ -81,13 +81,13 @@ def _fixed(name):
 class _TestLogger:
     def __init__(self):
         self.info_messages = []
-        self.warn_messages = []
+        self.warning_messages = []
 
     def info(self, msg):
         self.info_messages.append(msg)
 
-    def warn(self, msg):
-        self.warn_messages.append(msg)
+    def warning(self, msg):
+        self.warning_messages.append(msg)
 
 
 class _TestNode:
@@ -153,10 +153,10 @@ def test_continuous_joint_max_defaults_to_plus_pi():
     assert result["wheel"]["max_position"] == pytest.approx(math.pi)
 
 
-def test_continuous_joint_has_position_limits_false():
-    # Continuous joints are unbounded — the GUI should not enforce limits
+def test_continuous_joint_has_position_limits_true():
+    # Continuous joints are unbounded — it still gets position limits to activate the slider
     result = parse_joint_limits(_robot(_continuous("wheel", 5.0)), ["wheel"])
-    assert result["wheel"]["has_position_limits"] is False
+    assert result["wheel"]["has_position_limits"] is True
 
 
 def test_continuous_joint_velocity_is_preserved():
@@ -306,6 +306,18 @@ def test_missing_limit_tag_for_required_joint_raises():
         parse_joint_limits(urdf, ["j"])
 
 
+def test_missing_limit_tag_allow_incomplete_false_still_raises():
+    """Explicit strict mode keeps raising on missing <limit> tags."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    with pytest.raises(Exception, match="Missing limits tag"):
+        parse_joint_limits(urdf, ["j"], allow_incomplete_joints=False)
+
+
 def test_missing_limit_tag_for_unrequired_joint_skipped_silently():
     """Joint NOT in joints_names with no <limit> is silently ignored.
 
@@ -358,6 +370,79 @@ def test_get_joint_limits_empty_description_returns_empty_dict(monkeypatch):
         msg == 'Waiting for robot description on topic "/robot_description" ...'
         for msg in logger.info_messages
     )
+
+
+def test_missing_lower_upper_allow_incomplete_false_still_raises():
+    """Explicit strict mode keeps raising on missing lower/upper limits."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    with pytest.raises(Exception, match="Missing lower/upper position limits"):
+        parse_joint_limits(urdf, ["j"], allow_incomplete_joints=False)
+
+
+def test_missing_limit_tag_allow_incomplete_true_returns_disabled_joint():
+    """Tolerant mode keeps required joints but marks them non-position-limited."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    result = parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True)
+    assert result["j"]["has_position_limits"] is False
+    assert result["j"]["min_position"] == pytest.approx(-2.0 * math.pi)
+    assert result["j"]["max_position"] == pytest.approx(2.0 * math.pi)
+    assert result["j"]["max_velocity"] == pytest.approx(1.0)
+
+
+def test_missing_limit_tag_allow_incomplete_true_logs_warning():
+    """Tolerant mode emits a warning through the provided logger."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        "</joint>"
+    )
+    logger = _TestLogger()
+    parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
+    assert len(logger.warning_messages) == 1
+    assert "has no <limit> tag" in logger.warning_messages[0]
+
+
+def test_missing_lower_upper_allow_incomplete_true_returns_disabled_joint():
+    """Tolerant mode handles missing lower/upper by creating a disabled slider joint."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    result = parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True)
+    assert result["j"]["has_position_limits"] is False
+    assert result["j"]["min_position"] == pytest.approx(-2.0 * math.pi)
+    assert result["j"]["max_position"] == pytest.approx(2.0 * math.pi)
+    assert result["j"]["max_velocity"] == pytest.approx(1.0)
+
+
+def test_missing_lower_upper_allow_incomplete_true_logs_warning():
+    """Tolerant mode logs when position bounds are incomplete."""
+    urdf = _robot(
+        '<link name="j_link"/>'
+        '<joint name="j" type="revolute">'
+        '<parent link="base"/><child link="j_link"/>'
+        '<limit velocity="1.0" effort="5"/>'
+        "</joint>"
+    )
+    logger = _TestLogger()
+    parse_joint_limits(urdf, ["j"], allow_incomplete_joints=True, logger=logger)
+    assert len(logger.warning_messages) == 1
+    assert "missing/empty lower/upper position limits" in logger.warning_messages[0]
 
 
 def test_missing_velocity_raises():
