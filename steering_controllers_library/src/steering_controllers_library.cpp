@@ -455,6 +455,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     else
     {
       {
+<<<<<<< HEAD
         for (size_t i = 0; i < params_.front_wheels_names.size(); i++)
         {
           command_interfaces_[i].set_value(timeout ? 0.0 : traction_commands[i]);
@@ -464,6 +465,21 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
           command_interfaces_[i + params_.front_wheels_names.size()].set_value(
             steering_commands[i]);
         }
+=======
+        RCLCPP_WARN(logger, "Unable to set steering command at index %zu: value = %f", i, value);
+        return controller_interface::return_type::OK;
+      }
+    }
+  }
+  else
+  {
+    for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
+    {
+      if (!command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max()))
+      {
+        RCLCPP_WARN(logger, "Unable to set command interface to value 0.0");
+        return controller_interface::return_type::OK;
+>>>>>>> c7b97ca (Fix safety concerns with halt logic across controllers (#2326))
       }
     }
   }

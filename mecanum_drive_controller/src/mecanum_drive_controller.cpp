@@ -467,10 +467,22 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
   else
   {
+<<<<<<< HEAD
     command_interfaces_[FRONT_LEFT].set_value(0.0);
     command_interfaces_[FRONT_RIGHT].set_value(0.0);
     command_interfaces_[REAR_RIGHT].set_value(0.0);
     command_interfaces_[REAR_LEFT].set_value(0.0);
+=======
+    const bool value_set_error =
+      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    RCLCPP_ERROR_EXPRESSION(
+      get_node()->get_logger(), !value_set_error,
+      "Setting values to command interfaces has failed! "
+      "This means that you are maybe blocking the interface in your hardware for too long.");
+>>>>>>> c7b97ca (Fix safety concerns with halt logic across controllers (#2326))
   }
 
   // Publish odometry message
