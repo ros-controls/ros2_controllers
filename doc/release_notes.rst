@@ -48,6 +48,12 @@ joint_trajectory_controller
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 * Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+* Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``
+  parameter. A trajectory arriving while another is executing is spliced into
+  the active one instead of discarding it: the old path is followed up to the new start time, a
+  velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal
+  continue and finish their original motion. (`#2419
+  <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
 
 pid_controller
 **************

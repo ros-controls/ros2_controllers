@@ -115,10 +115,18 @@ Trajectory Replacement
 
 Joint trajectory messages allow to specify the time at which a new trajectory should start executing by means of the header timestamp, where zero time (the default) means "start now".
 
-.. warning::
+.. note::
+  This behavior is implemented in ROS 2 via the ``allow_trajectory_replacement`` parameter
+  (default ``true``; see `#84 <https://github.com/ros-controls/ros2_controllers/issues/84>`__).
+  When enabled, a newly arriving trajectory is spliced into the active one exactly as described below,
+  rather than discarding it. The handoff anchor is sampled from the active trajectory at its internal 
+  scaled cursor (``traj_time_``) instead of wall-clock time, so the transition is velocity-continuous 
+  and free of position jumps even under ``speed_scaling``.
 
-  As of now, this functionality is not ported to ROS 2, see `this issue <https://github.com/ros-controls/ros2_controllers/issues/84>`__ for more information.
-  The current implementation just forgets the old trajectory.
+.. warning::
+  One difference from ROS 1 remains: because ROS 2 uses a single monolithic trajectory, joints
+  omitted from a partial goal are re-sampled onto the new trajectory's time grid. With sparse new
+  waypoints, this re-interpolation may deviate slightly from the omitted joint's original path.
 
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
 Rather, the controller will take the useful parts of both and combine them appropriately, yielding a smarter trajectory replacement strategy.
