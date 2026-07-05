@@ -275,7 +275,6 @@ controller_interface::return_type JointTrajectoryController::update(
       params_.allow_trajectory_replacement && has_active_trajectory() &&
       current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
     {
-      // keep the useful part of the old trajectory and blend the new one into it
       blend_with_active_trajectory(*new_external_msg, time);
     }
     else

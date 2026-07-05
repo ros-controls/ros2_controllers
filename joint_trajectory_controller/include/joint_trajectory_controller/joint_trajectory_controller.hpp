@@ -94,7 +94,6 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint command_next_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
-  // Scratch point for sampling the old trajectory while blending
   trajectory_msgs::msg::JointTrajectoryPoint blend_sample_;
   // Tracks which controller joints are commanded by a new blended trajectory
   std::vector<bool> blend_commanded_;
@@ -236,13 +235,11 @@ protected:
   // positions set to current position, velocities, accelerations and efforts to 0.0
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  // Fills joints missing from trajectory_msg by sampling the active trajectory,
-  // allowing omitted joints to continue their original motion during a blend.
+  // Fills omitted joints by sampling the active trajectory so they keep their old motion.
   void fill_omitted_joints_from_old(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & time);
-  // Blends a new trajectory with the active one (Merge-at-Arrival).
-  // Replaces trajectory_msg in place with the blended trajectory (prefix + bridge + suffix).
+  // Blends a new trajectory into the active one in place (Merge-at-Arrival: prefix+bridge+suffix).
   void blend_with_active_trajectory(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & time);
