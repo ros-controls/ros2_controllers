@@ -87,7 +87,6 @@ if(BUILD_TESTING)
 
   ament_add_gmock(test_odometry
     test/test_odometry.cpp
-    src/odometry.cpp
   )
   target_link_libraries(test_odometry
     omni_wheel_drive_controller
