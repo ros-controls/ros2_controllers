@@ -109,7 +109,8 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    auto ref_itfs = export_reference_interfaces();
     return mecanum_drive_controller::MecanumDriveController::on_activate(previous_state);
   }
 
@@ -195,9 +196,10 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          command_joint_names_[i], interface_name_, &joint_command_values_[i]));
+      auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)cmd_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(cmd_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -207,9 +209,10 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          command_joint_names_[i], interface_name_, &joint_state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        command_joint_names_[i], interface_name_);
+      (void)state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
