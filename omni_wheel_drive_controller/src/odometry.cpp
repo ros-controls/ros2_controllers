@@ -52,10 +52,16 @@ bool Odometry::updateFromPos(const std::vector<double> & wheels_pos, const rclcp
   }
 
   // Disable deprecated warnings
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  if (updateFromVel(wheels_vel, time))
+#endif
+  const bool updated = updateFromVel(wheels_vel, time);
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
+
+  if (updated)
   {
     return true;
   }
@@ -71,6 +77,10 @@ bool Odometry::update_from_pos(const std::vector<double> & wheels_pos, double dt
   }
 
   // Estimate angular velocity of wheels using old and current position [rads/s]:
+  if (wheels_pos.size() != wheels_old_pos_.size())
+  {
+    return false;
+  }
   std::vector<double> wheels_vel(wheels_pos.size());
   for (size_t i = 0; i < static_cast<size_t>(wheels_pos.size()); ++i)
   {
@@ -103,6 +113,10 @@ bool Odometry::updateFromVel(const std::vector<double> & wheels_vel, const rclcp
 bool Odometry::update_from_vel(const std::vector<double> & wheels_vel, double dt)
 {
   if (std::fabs(dt) < 1e-6)
+  {
+    return false;
+  }
+  if (wheels_vel.empty() || wheels_vel.size() != wheels_old_pos_.size())
   {
     return false;
   }
@@ -168,6 +182,11 @@ bool Odometry::updateOpenLoop(
 bool Odometry::update_open_loop(
   const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel, double dt)
 {
+  if (std::fabs(dt) < 1e-6)
+  {
+    return false;
+  }
+
   // Integrate odometry:
   integrate(linear_x_vel, linear_y_vel, angular_vel, dt);
 
