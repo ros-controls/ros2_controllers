@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rqt-jtc: Make continuous sending opt-in and add Send Once button, adjustable ``time_from_start`` and publish frequency (`#1579 <https://github.com/ros-controls/ros2_controllers/issues/1579>`_)
+* Contributors: Shaochang TAN
+
 6.8.0 (2026-07-01)
 ------------------
 * rqt-jtc: Fix more shutdown races (`#2431 <https://github.com/ros-controls/ros2_controllers/issues/2431>`_)
