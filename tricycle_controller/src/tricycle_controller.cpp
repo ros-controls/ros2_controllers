@@ -187,7 +187,7 @@ controller_interface::return_type TricycleController::update(
   double alpha_delta = abs(alpha_write - alpha_read);
   double scale;
   const double min_alpha_delta = M_PI / 6.0;  // 30°
-  const double min_scale = 0.01;               // 1% creep floor
+  const double min_scale = 0.01;              // 1% creep floor
   if (alpha_delta < min_alpha_delta)
   {
     scale = 1.0;

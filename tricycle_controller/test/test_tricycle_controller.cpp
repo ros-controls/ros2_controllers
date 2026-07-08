@@ -486,4 +486,3 @@ TEST_F(TestTricycleController, velocity_attenuation_at_pi_2_boundary)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
   executor.cancel();
 }
-
