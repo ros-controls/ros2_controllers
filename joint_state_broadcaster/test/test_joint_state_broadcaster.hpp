@@ -60,6 +60,8 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime);
 };
 
 // Minimal 3-joint URDF covering the joint_names_ used in tests
@@ -167,6 +169,16 @@ protected:
   hardware_interface::StateInterface::SharedPtr joint_1_moving_state_ =
     std::make_shared<hardware_interface::StateInterface>(
       joint_names_[0], "is_moving", "bool", "false");
+
+  // Measurement-time interfaces for the timestamp_state_interfaces feature.
+  double measurement_sec_value_ = 1234.0;
+  double measurement_nsec_value_ = 567000000.0;
+  hardware_interface::StateInterface::SharedPtr measurement_sec_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "measurement_clock", "measurement_time_sec", &measurement_sec_value_);
+  hardware_interface::StateInterface::SharedPtr measurement_nsec_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "measurement_clock", "measurement_time_nsec", &measurement_nsec_value_);
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 

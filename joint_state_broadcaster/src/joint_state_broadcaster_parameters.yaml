@@ -64,3 +64,20 @@ joint_state_broadcaster:
     read_only: true,
     description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
   }
+  timestamp_state_interfaces:
+    sec: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "[Optional] Full name of a state interface (e.g. 'measurement_clock/measurement_time_sec')
+      whose value is the integer seconds of a measurement time. When both sec and nsec are set and the
+      interfaces are available, the published header.stamp is sourced from them instead of the
+      controller-manager time. Empty (default) or unset preserves the standard behaviour (header.stamp = time)."
+    }
+    nsec: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "[Optional] Full name of a state interface holding the nanoseconds part of the
+      measurement time. See timestamp_state_interfaces.sec."
+    }

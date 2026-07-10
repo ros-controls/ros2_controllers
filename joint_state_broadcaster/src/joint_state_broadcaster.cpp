@@ -23,6 +23,9 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/qos.hpp"
+#include <cmath>
+#include <cstdint>
+
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
 
@@ -94,6 +97,14 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
       {
         state_interfaces_config.names.push_back(joint + "/" + interface);
       }
+    }
+    // Also claim the optional measurement-time interfaces (if configured). In ALL mode they are
+    // already included; here (INDIVIDUAL) they must be requested explicitly.
+    if (!params_.timestamp_state_interfaces.sec.empty() &&
+      !params_.timestamp_state_interfaces.nsec.empty())
+    {
+      state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.sec);
+      state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.nsec);
     }
   }
 
@@ -231,6 +242,33 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
 
   init_auxiliary_data();
   init_joint_state_msg();
+
+  // Resolve the optional measurement-time interfaces (source of header.stamp). If configured but
+  // not among the claimed state interfaces, warn once and fall back to the controller-manager time.
+  timestamp_sec_index_.reset();
+  timestamp_nsec_index_.reset();
+  if (!params_.timestamp_state_interfaces.sec.empty() &&
+    !params_.timestamp_state_interfaces.nsec.empty())
+  {
+    for (std::size_t i = 0; i < state_interfaces_.size(); ++i)
+    {
+      const auto name = state_interfaces_[i].get_name();
+      if (name == params_.timestamp_state_interfaces.sec) { timestamp_sec_index_ = i; }
+      else if (name == params_.timestamp_state_interfaces.nsec) { timestamp_nsec_index_ = i; }
+    }
+    if (!timestamp_sec_index_.has_value() || !timestamp_nsec_index_.has_value())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "timestamp_state_interfaces is set (sec='%s', nsec='%s') but the interface(s) were not "
+        "found among the claimed state interfaces; header.stamp will use the controller-manager "
+        "time.",
+        params_.timestamp_state_interfaces.sec.c_str(),
+        params_.timestamp_state_interfaces.nsec.c_str());
+      timestamp_sec_index_.reset();
+      timestamp_nsec_index_.reset();
+    }
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -438,9 +476,25 @@ controller_interface::return_type JointStateBroadcaster::update(
     }
   }
 
+  // header.stamp: get it from the configured measurement-time interfaces when available and
+  // valid. otherwise use the controller-manager time.
+  rclcpp::Time stamp = time;
+  if (timestamp_sec_index_.has_value() && timestamp_nsec_index_.has_value())
+  {
+    const auto sec_opt = state_interfaces_[*timestamp_sec_index_].get_optional(0);
+    const auto nsec_opt = state_interfaces_[*timestamp_nsec_index_].get_optional(0);
+    if (sec_opt.has_value() && nsec_opt.has_value() && std::isfinite(sec_opt.value()) &&
+      std::isfinite(nsec_opt.value()) && sec_opt.value() > 0.0 && nsec_opt.value() >= 0.0)
+    {
+      stamp = rclcpp::Time(
+        static_cast<int32_t>(sec_opt.value()), static_cast<uint32_t>(nsec_opt.value()),
+        time.get_clock_type());
+    }
+  }
+
   if (realtime_joint_state_publisher_)
   {
-    joint_state_msg_.header.stamp = time;
+    joint_state_msg_.header.stamp = stamp;
 
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {

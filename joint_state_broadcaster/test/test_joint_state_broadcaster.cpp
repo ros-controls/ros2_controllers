@@ -194,6 +194,59 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
 }
 
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
+{
+  // With timestamp_state_interfaces set and the interfaces present, header.stamp is taken from
+  // them, not from the controller-manager `time` passed to update().
+  init_broadcaster_and_set_parameters(
+    "", {}, {},
+    {rclcpp::Parameter("timestamp_state_interfaces.sec", "measurement_clock/measurement_time_sec"),
+     rclcpp::Parameter(
+       "timestamp_state_interfaces.nsec", "measurement_clock/measurement_time_nsec")});
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_2_pos_state_);
+  state_ifs.emplace_back(joint_3_pos_state_);
+  state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(joint_2_vel_state_);
+  state_ifs.emplace_back(joint_3_vel_state_);
+  state_ifs.emplace_back(joint_1_eff_state_);
+  state_ifs.emplace_back(joint_2_eff_state_);
+  state_ifs.emplace_back(joint_3_eff_state_);
+  state_ifs.emplace_back(measurement_sec_state_);
+  state_ifs.emplace_back(measurement_nsec_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  // A distinct controller-manager time; the published stamp must NOT equal it.
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(5, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
+  EXPECT_EQ(stamp.sec, 1234) << "header.stamp should come from measurement_time_sec, not the CM time";
+  EXPECT_EQ(stamp.nanosec, 567000000u);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime)
+{
+  // Default (param unset): header.stamp is the controller-manager `time`.
+  SetUpStateBroadcaster();
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(7, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
+  EXPECT_EQ(stamp.sec, 7);
+  EXPECT_EQ(stamp.nanosec, 0u);
+}
+
 TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest)
 {
   // publisher not initialized yet

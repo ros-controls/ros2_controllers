@@ -15,7 +15,9 @@
 #ifndef JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_
 #define JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -98,6 +100,11 @@ protected:
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
+
+  // Optional source for header.stamp: indices into state_interfaces_ of the configured
+  // measurement-time sec/nsec interfaces. Unset -> header.stamp uses the controller-manager time.
+  std::optional<std::size_t> timestamp_sec_index_;
+  std::optional<std::size_t> timestamp_nsec_index_;
 
   std::string frame_id_;
 
