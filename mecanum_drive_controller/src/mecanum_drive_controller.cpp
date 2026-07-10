@@ -670,10 +670,10 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   else
   {
     bool value_set_error = true;
-    value_set_error &= command_interfaces_[FRONT_LEFT].set_value(0.0, -1);
-    value_set_error &= command_interfaces_[FRONT_RIGHT].set_value(0.0, -1);
-    value_set_error &= command_interfaces_[REAR_RIGHT].set_value(0.0, -1);
-    value_set_error &= command_interfaces_[REAR_LEFT].set_value(0.0, -1);
+    value_set_error &= command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    value_set_error &= command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    value_set_error &= command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    value_set_error &= command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
     RCLCPP_ERROR_EXPRESSION(
       get_node()->get_logger(), !value_set_error,
       "Setting values to command interfaces has failed! "
