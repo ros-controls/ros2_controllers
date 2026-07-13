@@ -35,6 +35,14 @@ Published topics
    controller’s namespace (e.g., ``/my_state_broadcaster/joint_states``). If ``false`` (default),
    it is published at the root (e.g., ``/joint_states``).
 
+.. note::
+
+   By default ``header.stamp`` is set to the controller-manager update time. Set the optional
+   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` parameters to the full
+   names of two state interfaces which contain a measurement time reported by the
+   hardware (see the Parameters section below). This measurement time will then be used
+   instead in the stamp.
+
 
 Parameters
 ----------
