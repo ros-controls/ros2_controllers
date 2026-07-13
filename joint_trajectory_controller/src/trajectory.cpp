@@ -153,7 +153,7 @@ void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
 
     // Interior knots: each row enforces continuous acceleration across the knot
     // (the global cubic-spline condition) for non-uniform spacing.
-    for (size_t i = 1; i + 1 < n; ++i)
+    for (size_t i = 1; i < n - 1; ++i)
     {
       const double duration_prev = times[i] - times[i - 1];
       const double duration_next = times[i + 1] - times[i];
