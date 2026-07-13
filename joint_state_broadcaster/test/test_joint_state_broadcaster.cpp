@@ -232,6 +232,26 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
   EXPECT_EQ(stamp.nanosec, 567000000u);
 }
 
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInUrdfFilterMode)
+{
+  // In URDF-filter mode (no joints/interfaces parameters, INDIVIDUAL_BEST_EFFORT) the
+  // configured measurement-time interfaces must still be requested, otherwise they are never
+  // claimed and header.stamp silently falls back to the controller-manager time.
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, {}, {},
+    {rclcpp::Parameter("timestamp_state_interfaces.sec", "measurement_clock/measurement_time_sec"),
+     rclcpp::Parameter(
+       "timestamp_state_interfaces.nsec", "measurement_clock/measurement_time_nsec")});
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+
+  const auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains("measurement_clock/measurement_time_sec"));
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains("measurement_clock/measurement_time_nsec"));
+}
+
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime)
 {
   // Default (param unset): header.stamp is the controller-manager `time`.

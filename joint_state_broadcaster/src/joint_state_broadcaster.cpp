@@ -98,15 +98,15 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
         state_interfaces_config.names.push_back(joint + "/" + interface);
       }
     }
-    // Also claim the optional measurement-time interfaces (if configured). In ALL mode they are
-    // already included; here (INDIVIDUAL) they must be requested explicitly.
-    if (
-      !params_.timestamp_state_interfaces.sec.empty() &&
-      !params_.timestamp_state_interfaces.nsec.empty())
-    {
-      state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.sec);
-      state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.nsec);
-    }
+  }
+
+  // Claim the optional measurement-time interfaces (if configured) in either configuration mode.
+  if (
+    !params_.timestamp_state_interfaces.sec.empty() &&
+    !params_.timestamp_state_interfaces.nsec.empty())
+  {
+    state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.sec);
+    state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.nsec);
   }
 
   return state_interfaces_config;
