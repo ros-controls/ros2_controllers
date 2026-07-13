@@ -199,7 +199,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
   // With timestamp_state_interfaces set and the interfaces present, header.stamp is taken from
   // them, not from the controller-manager `time` passed to update().
   init_broadcaster_and_set_parameters(
-    "", {}, {},
+    kThreeJointURDF, {}, {},
     {rclcpp::Parameter("timestamp_state_interfaces.sec", "measurement_clock/measurement_time_sec"),
      rclcpp::Parameter(
        "timestamp_state_interfaces.nsec", "measurement_clock/measurement_time_nsec")});
@@ -227,7 +227,8 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
     controller_interface::return_type::OK);
 
   const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
-  EXPECT_EQ(stamp.sec, 1234) << "header.stamp should come from measurement_time_sec, not the CM time";
+  EXPECT_EQ(stamp.sec, 1234)
+    << "header.stamp should come from measurement_time_sec, not the CM time";
   EXPECT_EQ(stamp.nanosec, 567000000u);
 }
 

@@ -21,10 +21,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "rclcpp/qos.hpp"
 #include <cmath>
 #include <cstdint>
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "rclcpp/qos.hpp"
 
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
@@ -100,7 +100,8 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
     }
     // Also claim the optional measurement-time interfaces (if configured). In ALL mode they are
     // already included; here (INDIVIDUAL) they must be requested explicitly.
-    if (!params_.timestamp_state_interfaces.sec.empty() &&
+    if (
+      !params_.timestamp_state_interfaces.sec.empty() &&
       !params_.timestamp_state_interfaces.nsec.empty())
     {
       state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.sec);
@@ -247,14 +248,21 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   // not among the claimed state interfaces, warn once and fall back to the controller-manager time.
   timestamp_sec_index_.reset();
   timestamp_nsec_index_.reset();
-  if (!params_.timestamp_state_interfaces.sec.empty() &&
+  if (
+    !params_.timestamp_state_interfaces.sec.empty() &&
     !params_.timestamp_state_interfaces.nsec.empty())
   {
     for (std::size_t i = 0; i < state_interfaces_.size(); ++i)
     {
       const auto name = state_interfaces_[i].get_name();
-      if (name == params_.timestamp_state_interfaces.sec) { timestamp_sec_index_ = i; }
-      else if (name == params_.timestamp_state_interfaces.nsec) { timestamp_nsec_index_ = i; }
+      if (name == params_.timestamp_state_interfaces.sec)
+      {
+        timestamp_sec_index_ = i;
+      }
+      else if (name == params_.timestamp_state_interfaces.nsec)
+      {
+        timestamp_nsec_index_ = i;
+      }
     }
     if (!timestamp_sec_index_.has_value() || !timestamp_nsec_index_.has_value())
     {
@@ -483,7 +491,8 @@ controller_interface::return_type JointStateBroadcaster::update(
   {
     const auto sec_opt = state_interfaces_[*timestamp_sec_index_].get_optional(0);
     const auto nsec_opt = state_interfaces_[*timestamp_nsec_index_].get_optional(0);
-    if (sec_opt.has_value() && nsec_opt.has_value() && std::isfinite(sec_opt.value()) &&
+    if (
+      sec_opt.has_value() && nsec_opt.has_value() && std::isfinite(sec_opt.value()) &&
       std::isfinite(nsec_opt.value()) && sec_opt.value() > 0.0 && nsec_opt.value() >= 0.0)
     {
       stamp = rclcpp::Time(
