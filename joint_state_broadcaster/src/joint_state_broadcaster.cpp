@@ -304,6 +304,12 @@ bool JointStateBroadcaster::init_joint_data()
     HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
+    // Skip the optional measurement-time interfaces: they are the source of header.stamp, not
+    // joint state data, so they must not be treated as (missing) joint state fields.
+    if (is_timestamp_interface(si->get_name()))
+    {
+      continue;
+    }
     if (si->get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       RCLCPP_WARN(
@@ -399,6 +405,12 @@ void JointStateBroadcaster::init_auxiliary_data()
   mapped_values_.clear();
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
+    // Measurement-time interfaces are not joint state data. Keep them out of the mapping so the
+    // update() read loop (which skips them too) stays index-aligned with mapped_values_.
+    if (is_timestamp_interface(state_interfaces_[i].get_name()))
+    {
+      continue;
+    }
     if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       continue;
@@ -462,12 +474,24 @@ bool JointStateBroadcaster::use_urdf_joint_interfaces() const
   return params_.joints.empty() || params_.interfaces.empty();
 }
 
+bool JointStateBroadcaster::is_timestamp_interface(const std::string & full_interface_name) const
+{
+  return full_interface_name == params_.timestamp_state_interfaces.sec ||
+         full_interface_name == params_.timestamp_state_interfaces.nsec;
+}
+
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   size_t map_index = 0u;
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
+    // Measurement-time interfaces are handled separately for header.stamp (below). Skip them here
+    // so map_index stays aligned with mapped_values_ (which also excludes them).
+    if (is_timestamp_interface(state_interfaces_[i].get_name()))
+    {
+      continue;
+    }
     if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
     {
       // no retries, just try to get the latest value once

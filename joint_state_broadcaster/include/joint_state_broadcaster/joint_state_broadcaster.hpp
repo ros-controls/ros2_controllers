@@ -95,6 +95,11 @@ protected:
 
   bool use_urdf_joint_interfaces() const;
 
+  /// \brief Whether \p full_interface_name is one of the configured measurement-time interfaces.
+  /// Such interfaces are the source of header.stamp, not joint state data, and are therefore
+  /// excluded from the joint-state read/publish path.
+  bool is_timestamp_interface(const std::string & full_interface_name) const;
+
 protected:
   // Optional parameters
   std::shared_ptr<ParamListener> param_listener_;

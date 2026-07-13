@@ -230,6 +230,11 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
   EXPECT_EQ(stamp.sec, 1234)
     << "header.stamp should come from measurement_time_sec, not the CM time";
   EXPECT_EQ(stamp.nanosec, 567000000u);
+
+  // The measurement-time interfaces are the stamp source, not joint state data: they must not be
+  // treated as a joint (which would also emit "not mapped to any joint state field" warnings).
+  EXPECT_EQ(state_broadcaster_->name_if_value_mapping_.count("measurement_clock"), 0u)
+    << "measurement-time interfaces should not appear as a joint in the state message";
 }
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInUrdfFilterMode)
