@@ -122,7 +122,7 @@ The bridge instead solves the knot velocities of a global cubic spline (rest bou
 ``v0 = v_{N-1} = 0``) and writes them into the trajectory, so the existing sampler reproduces a
 smooth C2 motion. Messages that already carry velocities are passed through unchanged.
 
-It adds a single parameter, ``policy_frequency`` (double, Hz, default ``30.0``), used to synthesize
+It adds a single parameter, ``policy_frequency`` (double, Hz, default ``30.0``) on top of joint trajectory controller parameters, which is used to synthesize
 ``time_from_start = i / policy_frequency`` for incoming chunks that carry no timing.
 
    .. code-block:: yaml
