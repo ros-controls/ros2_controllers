@@ -675,9 +675,12 @@ public:
     {
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(position.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
-        EXPECT_NEAR(position.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
-        EXPECT_NEAR(position.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
       }
 
       if (traj_controller_->has_velocity_command_interface())
