@@ -1368,6 +1368,8 @@ TEST_F(TestDiffDriveController, odometry_set_service)
   // simulate the movement by updating the position feedback
   position_values_[0] += 0.1;  // left wheel moved
   position_values_[1] += 0.1;  // right wheel moved
+  std::ignore = left_wheel_pos_state_->set_value(position_values_[0]);
+  std::ignore = right_wheel_pos_state_->set_value(position_values_[1]);
   controller_->update(test_time, period);
   test_time += period;
   EXPECT_GT(controller_->odometry_.getY(), -2.0);
