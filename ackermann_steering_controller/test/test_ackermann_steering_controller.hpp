@@ -162,15 +162,13 @@ protected:
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
         traction_joints_names_[0], traction_interface_name_));
-    std::ignore =
-      command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]);
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
         traction_joints_names_[1], steering_interface_name_));
-    std::ignore =
-      command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_LEFT_WHEEL]);
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_LEFT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(

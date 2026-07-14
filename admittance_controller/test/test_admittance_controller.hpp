@@ -220,8 +220,8 @@ protected:
 
     for (auto i = 0u; i < fts_state_names_.size(); ++i)
     {
-      auto fts_state_itf = std::make_shared<hardware_interface::StateInterface>(
-        ft_sensor_name_, fts_itf_names[i]);
+      auto fts_state_itf =
+        std::make_shared<hardware_interface::StateInterface>(ft_sensor_name_, fts_itf_names[i]);
       std::ignore = fts_state_itf->set_value(fts_state_values_[i]);
       state_itfs_.emplace_back(fts_state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
