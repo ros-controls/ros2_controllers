@@ -1319,9 +1319,9 @@ TEST_F(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state)
 
   controller_->reset_buffers();
 
-  for (const auto & itf : controller_->reference_interfaces_)
+  for (const auto & itf : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(itf));
+    EXPECT_TRUE(std::isnan(itf->get_optional<double>().value()));
   }
   ASSERT_EQ(controller_->previous_two_commands_.size(), 2u);
   EXPECT_EQ(controller_->previous_two_commands_.front(), (std::array<double, 3>{{0.0, 0.0, 0.0}}));
