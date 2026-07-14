@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -101,6 +102,25 @@ protected:
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
+
+    left_wheel_pos_state_ =
+      std::make_shared<hardware_interface::StateInterface>(left_wheel_names[0], HW_IF_POSITION);
+    std::ignore = left_wheel_pos_state_->set_value(position_values_[0]);
+    right_wheel_pos_state_ =
+      std::make_shared<hardware_interface::StateInterface>(right_wheel_names[0], HW_IF_POSITION);
+    std::ignore = right_wheel_pos_state_->set_value(position_values_[1]);
+    left_wheel_vel_state_ =
+      std::make_shared<hardware_interface::StateInterface>(left_wheel_names[0], HW_IF_VELOCITY);
+    std::ignore = left_wheel_vel_state_->set_value(velocity_values_[0]);
+    right_wheel_vel_state_ =
+      std::make_shared<hardware_interface::StateInterface>(right_wheel_names[0], HW_IF_VELOCITY);
+    std::ignore = right_wheel_vel_state_->set_value(velocity_values_[1]);
+    left_wheel_vel_cmd_ =
+      std::make_shared<hardware_interface::CommandInterface>(left_wheel_names[0], HW_IF_VELOCITY);
+    std::ignore = left_wheel_vel_cmd_->set_value(velocity_values_[0]);
+    right_wheel_vel_cmd_ =
+      std::make_shared<hardware_interface::CommandInterface>(right_wheel_names[0], HW_IF_VELOCITY);
+    std::ignore = right_wheel_vel_cmd_->set_value(velocity_values_[1]);
   }
 
   void TearDown() override
@@ -235,24 +255,12 @@ protected:
   std::vector<double> position_values_ = {0.1, 0.2};
   std::vector<double> velocity_values_ = {0.01, 0.02};
 
-  hardware_interface::StateInterface::SharedPtr left_wheel_pos_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      left_wheel_names[0], HW_IF_POSITION, &position_values_[0]);
-  hardware_interface::StateInterface::SharedPtr right_wheel_pos_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      right_wheel_names[0], HW_IF_POSITION, &position_values_[1]);
-  hardware_interface::StateInterface::SharedPtr left_wheel_vel_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]);
-  hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]);
-  hardware_interface::CommandInterface::SharedPtr left_wheel_vel_cmd_ =
-    std::make_shared<hardware_interface::CommandInterface>(
-      left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]);
-  hardware_interface::CommandInterface::SharedPtr right_wheel_vel_cmd_ =
-    std::make_shared<hardware_interface::CommandInterface>(
-      right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]);
+  hardware_interface::StateInterface::SharedPtr left_wheel_pos_state_;
+  hardware_interface::StateInterface::SharedPtr right_wheel_pos_state_;
+  hardware_interface::StateInterface::SharedPtr left_wheel_vel_state_;
+  hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_;
+  hardware_interface::CommandInterface::SharedPtr left_wheel_vel_cmd_;
+  hardware_interface::CommandInterface::SharedPtr right_wheel_vel_cmd_;
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
