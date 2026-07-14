@@ -913,7 +913,9 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_hold_position)
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  std::vector<double> cancelled_position{
+    pos_cmd_interfaces_[0]->get_optional().value(), pos_cmd_interfaces_[1]->get_optional().value(),
+    pos_cmd_interfaces_[2]->get_optional().value()};
 
   // run an update
   updateControllerAsync(rclcpp::Duration::from_seconds(0.01));
@@ -972,7 +974,9 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_to_hold_po
 
   // run update for long enough to allow the joints to come to a stop
   updateControllerAsync(rclcpp::Duration::from_seconds(0.5));
-  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  std::vector<double> cancelled_position{
+    pos_cmd_interfaces_[0]->get_optional().value(), pos_cmd_interfaces_[1]->get_optional().value(),
+    pos_cmd_interfaces_[2]->get_optional().value()};
 
   if (traj_controller_->has_velocity_state_interface())
   {
@@ -1033,7 +1037,9 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_fallback)
   EXPECT_EQ(
     control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL, common_action_result_code_);
 
-  std::vector<double> cancelled_position{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  std::vector<double> cancelled_position{
+    pos_cmd_interfaces_[0]->get_optional().value(), pos_cmd_interfaces_[1]->get_optional().value(),
+    pos_cmd_interfaces_[2]->get_optional().value()};
 
   // We always expect a trivial trajectory because we fell back to set_hold_position
   // i.e., active but trivial trajectory (one point only)
@@ -1225,30 +1231,30 @@ TEST_P(TestTrajectoryActionsTestParameterized, deactivate_controller_aborts_acti
   // method.
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(state_ref.positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(state_ref.positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(state_ref.positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(state_ref.positions.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    EXPECT_EQ(0.0, joint_vel_[0]);
-    EXPECT_EQ(0.0, joint_vel_[1]);
-    EXPECT_EQ(0.0, joint_vel_[2]);
+    EXPECT_EQ(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_EQ(0.0, vel_cmd_interfaces_[1]->get_optional().value());
+    EXPECT_EQ(0.0, vel_cmd_interfaces_[2]->get_optional().value());
   }
 
   if (traj_controller_->has_acceleration_command_interface())
   {
-    EXPECT_EQ(0.0, joint_acc_[0]);
-    EXPECT_EQ(0.0, joint_acc_[1]);
-    EXPECT_EQ(0.0, joint_acc_[2]);
+    EXPECT_EQ(0.0, acc_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_EQ(0.0, acc_cmd_interfaces_[1]->get_optional().value());
+    EXPECT_EQ(0.0, acc_cmd_interfaces_[2]->get_optional().value());
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
-    EXPECT_EQ(0.0, joint_eff_[0]);
-    EXPECT_EQ(0.0, joint_eff_[1]);
-    EXPECT_EQ(0.0, joint_eff_[2]);
+    EXPECT_EQ(0.0, eff_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_EQ(0.0, eff_cmd_interfaces_[1]->get_optional().value());
+    EXPECT_EQ(0.0, eff_cmd_interfaces_[2]->get_optional().value());
   }
 }
 
