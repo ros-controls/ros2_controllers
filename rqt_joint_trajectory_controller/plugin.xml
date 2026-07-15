@@ -12,7 +12,7 @@
         <statustip>Plugins related to robot tools.</statustip>
       </group>
       <label>Joint trajectory controller</label>
-      <icon>resource/scope.png</icon>
+      <icon type="file">resource/scope.png</icon>
       <statustip>
         Monitor and send commands to running joint trajectory controllers.
       </statustip>

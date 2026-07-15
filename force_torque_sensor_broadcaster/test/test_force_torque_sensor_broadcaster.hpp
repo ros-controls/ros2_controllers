@@ -24,7 +24,13 @@
 #include <memory>
 #include <string>
 
+#include "controller_interface/test_utils.hpp"
+
 #include "force_torque_sensor_broadcaster/force_torque_sensor_broadcaster.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 // subclassing and friending so we can access member variables
 class FriendForceTorqueSensorBroadcaster
