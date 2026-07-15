@@ -888,6 +888,7 @@ TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
     {
       double velocity_command = command_itfs_[i]->get_optional().value();
       wheels_pos_states_[i] += velocity_command * dt;
+      std::ignore = state_itfs_[i]->set_value(wheels_pos_states_[i]);
     }
     test_time += period;
   };
