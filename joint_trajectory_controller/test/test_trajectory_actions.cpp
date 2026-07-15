@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "control_msgs/action/detail/follow_joint_trajectory__struct.hpp"
@@ -94,6 +95,7 @@ protected:
         {
           now_time = clock.now();
           traj_controller_->update(now_time, now_time - last_time);
+          mirrorCommandToStateIfNotSeparate();
           last_time = now_time;
         }
       });
@@ -1453,7 +1455,9 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_sampling_is_correct)
     traj_controller_->update(sample_time, controller_period);
     for (size_t i = 0; i < joint_state_pos_.size(); ++i)
     {
-      joint_state_pos_[i] += (joint_pos_[i] - joint_state_pos_[i]) * scaling_factor;
+      joint_state_pos_[i] +=
+        (pos_cmd_interfaces_[i]->get_optional().value() - joint_state_pos_[i]) * scaling_factor;
+      std::ignore = pos_state_interfaces_[i]->set_value(joint_state_pos_[i]);
     }
     trajectory_msgs::msg::JointTrajectoryPoint sampled_point;
     joint_trajectory_controller::TrajectoryPointConstIter start_segment_itr, end_segment_itr;

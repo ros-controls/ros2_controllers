@@ -357,6 +357,7 @@ public:
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
+    separate_cmd_and_state_values_ = separate_cmd_and_state_values;
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     pos_cmd_interfaces_.reserve(joint_names_.size());
@@ -416,6 +417,12 @@ public:
         joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
         joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       }
+      (void)pos_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_pos_[i] : initial_pos_joints[i]);
+      (void)vel_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_vel_[i] : initial_vel_joints[i]);
+      (void)acc_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_acc_[i] : initial_acc_joints[i]);
       loaned_state_ifs.emplace_back(pos_state_interfaces_.back(), nullptr);
       loaned_state_ifs.emplace_back(vel_state_interfaces_.back(), nullptr);
       loaned_state_ifs.emplace_back(acc_state_interfaces_.back(), nullptr);
@@ -570,6 +577,41 @@ public:
    * @note use the faster updateControllerAsync() if no subscriptions etc.
    * have to be used from the waitSet/executor
    */
+  /**
+   * @brief Mirrors the command interfaces' current values into the paired state interfaces.
+   * With ideal (non-separate) hardware, the state is expected to instantaneously reflect
+   * whatever was last commanded, so this simulates that loopback after every update() cycle.
+   */
+  void mirrorCommandToStateIfNotSeparate()
+  {
+    if (separate_cmd_and_state_values_)
+    {
+      return;
+    }
+    for (size_t i = 0; i < pos_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        pos_state_interfaces_[i]->set_value(pos_cmd_interfaces_[i]->get_optional().value());
+    }
+    for (size_t i = 0; i < vel_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        vel_state_interfaces_[i]->set_value(vel_cmd_interfaces_[i]->get_optional().value());
+    }
+    for (size_t i = 0; i < acc_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        acc_state_interfaces_[i]->set_value(acc_cmd_interfaces_[i]->get_optional().value());
+    }
+    // the speed scaling GPIO pair is always aliased in the ideal-hardware simulation, regardless
+    // of separate_cmd_and_state_values_
+    for (size_t i = 0; i < gpio_state_interfaces.size(); ++i)
+    {
+      std::ignore =
+        gpio_state_interfaces[i]->set_value(gpio_command_interfaces_[i]->get_optional().value());
+    }
+  }
+
   void updateController(
     rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
     const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
@@ -583,6 +625,7 @@ public:
     {
       auto now = clock.now();
       traj_controller_->update(now, now - previous_time);
+      mirrorCommandToStateIfNotSeparate();
       previous_time = now;
       std::this_thread::sleep_for(update_rate.to_chrono<std::chrono::milliseconds>());
     }
@@ -612,6 +655,7 @@ public:
     while (time_counter <= end_time)
     {
       traj_controller_->update(time_counter, update_rate);
+      mirrorCommandToStateIfNotSeparate();
       time_counter += update_rate;
     }
     return end_time;
@@ -844,6 +888,7 @@ public:
   std::vector<hardware_interface::StateInterface::SharedPtr> vel_state_interfaces_;
   std::vector<hardware_interface::StateInterface::SharedPtr> acc_state_interfaces_;
   std::vector<hardware_interface::StateInterface::SharedPtr> gpio_state_interfaces;
+  bool separate_cmd_and_state_values_ = false;
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest
