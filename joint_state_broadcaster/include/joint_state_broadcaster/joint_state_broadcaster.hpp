@@ -16,6 +16,7 @@
 #define JOINT_STATE_BROADCASTER__JOINT_STATE_BROADCASTER_HPP_
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -95,10 +96,13 @@ protected:
 
   bool use_urdf_joint_interfaces() const;
 
-  /// \brief Whether \p full_interface_name is one of the configured measurement-time interfaces.
-  /// Such interfaces are the source of header.stamp, not joint state data, and are therefore
-  /// excluded from the joint-state read/publish path.
+  /// \brief Whether the given interface is a measurement time interface.
   bool is_timestamp_interface(const std::string & full_interface_name) const;
+
+  /// \brief Read a measurement time component (sec or nsec) as an integer, whether the interface
+  /// is a double, int32 or uint32.
+  /// \return the value, or std::nullopt if it cannot be read.
+  std::optional<int64_t> read_time_component(std::size_t state_interface_index) const;
 
 protected:
   // Optional parameters
@@ -106,8 +110,8 @@ protected:
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
-  // Optional source for header.stamp: indices into state_interfaces_ of the configured
-  // measurement-time sec/nsec interfaces. Unset -> header.stamp uses the controller-manager time.
+  // Optional source for header.stamp: indices of the configured measurement time sec and nsec
+  // interfaces. When unset, header.stamp uses the controller manager time.
   std::optional<std::size_t> timestamp_sec_index_;
   std::optional<std::size_t> timestamp_nsec_index_;
 

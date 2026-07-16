@@ -70,9 +70,10 @@ joint_state_broadcaster:
       default_value: "",
       read_only: true,
       description: "[Optional] Full name of a state interface (e.g. 'measurement_clock/measurement_time_sec')
-      whose value is the integer seconds of a measurement time. When both sec and nsec are set and the
-      interfaces are available, the published header.stamp is sourced from them instead of the
-      controller-manager time. Empty (default) or unset preserves the standard behaviour (header.stamp = time)."
+      whose value is seconds of measurement time. The interface may be of type double,
+      int32 or uint32. When both sec and nsec are set and the interfaces are available, the published
+      header.stamp is sourced from them instead of the controller manager time. Empty (default) or
+      unset keeps the standard behaviour (header.stamp = controller time)."
     }
     nsec: {
       type: string,

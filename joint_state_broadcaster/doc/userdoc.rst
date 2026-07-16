@@ -37,11 +37,28 @@ Published topics
 
 .. note::
 
-   By default ``header.stamp`` is set to the controller-manager update time. Set the optional
-   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` parameters to the full
-   names of two state interfaces which contain a measurement time reported by the
-   hardware (see the Parameters section below). This measurement time will then be used
-   instead in the stamp.
+   By default ``header.stamp`` is the controller manager update time. Set the optional
+   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` parameters to the
+   full names of two state interfaces that carry a measurement time reported by the hardware,
+   (if the hardware interface writes it). That measurement time is then used for the stamp.
+
+Example:
+
+.. code-block:: yaml
+
+   joint_state_broadcaster:
+     ros__parameters:
+       timestamp_state_interfaces:
+         sec: measurement_clock/measurement_time_sec
+         nsec: measurement_clock/measurement_time_nsec
+
+.. code-block:: xml
+
+   <sensor name="measurement_clock">
+     <!-- type may be of type ``double``, ``int32`` or ``uint32``. -->
+     <state_interface name="measurement_time_sec" data_type="uint32"/>
+     <state_interface name="measurement_time_nsec" data_type="uint32"/>
+   </sensor>
 
 
 Parameters
