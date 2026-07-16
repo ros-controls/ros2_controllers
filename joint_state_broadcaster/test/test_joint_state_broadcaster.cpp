@@ -320,6 +320,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInUrdfFilterMod
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesPartialConfigurationRejected)
 {
+  // Setting only one of sec or nsec must fail configuration.
   for (const auto & parameter :
        {rclcpp::Parameter("timestamp_state_interfaces.sec", kTimestampSecInterface),
         rclcpp::Parameter("timestamp_state_interfaces.nsec", kTimestampNsecInterface)})
@@ -347,6 +348,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInExplicitMode)
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsupportedTypeUsesControllerTime)
 {
+  // An unsupported interface data type falls back to the controller manager time.
   auto unsupported_sec = std::make_shared<hardware_interface::StateInterface>(
     "measurement_clock", "measurement_time_sec", "bool", "true");
   init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
@@ -362,6 +364,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsupportedTypeUsesCon
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesDoNotMaskMissingJointInterfaces)
 {
+  // Activation fails when only timestamp interfaces are present and no joint interfaces.
   init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
 
   std::vector<LoanedStateInterface> state_ifs;
@@ -376,6 +379,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesDoNotMaskMissingJointI
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesInvalidValuesAreSafe)
 {
+  // Invalid values are rejected without throwing, keeping the last valid stamp or zero.
   init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
   assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
   ASSERT_TRUE(configure_succeeds(state_broadcaster_));
@@ -424,6 +428,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesInvalidValuesAreSafe)
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUint32OverflowIsSafe)
 {
+  // A uint32 seconds value above INT32_MAX is rejected, keeping a zero stamp.
   hardware_interface::InterfaceInfo sec_info;
   sec_info.name = "measurement_time_sec";
   sec_info.data_type = "uint32";
@@ -477,6 +482,7 @@ TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesZeroUntilFirstValidMea
 
 TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesRetainLastValidStamp)
 {
+  // A transient read failure keeps the last valid stamp.
   init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
   assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
   ASSERT_TRUE(configure_succeeds(state_broadcaster_));
