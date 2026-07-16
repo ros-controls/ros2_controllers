@@ -37,10 +37,11 @@ Published topics
 
 .. note::
 
-   By default ``header.stamp`` is the controller manager update time. Set the optional
-   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` parameters to the
-   full names of two state interfaces that carry a measurement time reported by the hardware,
-   (if the hardware interface writes it). That measurement time is then used for the stamp.
+   By default ``header.stamp`` is the controller manager update time. Set both
+   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` to the full names of
+   two state interfaces that the hardware writes a measurement time to, in the controller manager
+   clock domain. That measurement time is then used for the stamp. A seconds value of zero means no
+   measurement time is available.
 
 Example:
 
@@ -55,7 +56,7 @@ Example:
 .. code-block:: xml
 
    <sensor name="measurement_clock">
-     <!-- type may be of type ``double``, ``int32`` or ``uint32``. -->
+     <!-- data_type may be double, int32 or uint32 -->
      <state_interface name="measurement_time_sec" data_type="uint32"/>
      <state_interface name="measurement_time_nsec" data_type="uint32"/>
    </sensor>

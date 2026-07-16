@@ -96,13 +96,20 @@ protected:
 
   bool use_urdf_joint_interfaces() const;
 
+  /// \brief Whether both measurement time interfaces are configured.
+  bool use_timestamp_interfaces() const;
+
   /// \brief Whether the given interface is a measurement time interface.
   bool is_timestamp_interface(const std::string & full_interface_name) const;
 
-  /// \brief Read a measurement time component (sec or nsec) as an integer, whether the interface
-  /// is a double, int32 or uint32.
+  /// \brief Read and validate an integer measurement time component.
   /// \return the value, or std::nullopt if it cannot be read.
-  std::optional<int64_t> read_time_component(std::size_t state_interface_index) const;
+  std::optional<int64_t> read_time_component(
+    std::size_t state_interface_index, int64_t minimum, int64_t maximum) const;
+
+  /// \brief Read a valid measurement timestamp from the configured state interfaces.
+  /// \return the timestamp, or std::nullopt if either component is unavailable or invalid.
+  std::optional<rclcpp::Time> read_measurement_time(rcl_clock_type_t clock_type) const;
 
 protected:
   // Optional parameters
@@ -110,10 +117,10 @@ protected:
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
-  // Optional source for header.stamp: indices of the configured measurement time sec and nsec
-  // interfaces. When unset, header.stamp uses the controller manager time.
+  // Optional source for header.stamp and the last timestamp read successfully from it.
   std::optional<std::size_t> timestamp_sec_index_;
   std::optional<std::size_t> timestamp_nsec_index_;
+  std::optional<rclcpp::Time> last_valid_measurement_time_;
 
   std::string frame_id_;
 

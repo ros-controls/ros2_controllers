@@ -63,6 +63,11 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp);
   FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime);
   FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesIntegerType);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUnsupportedTypeUsesControllerTime);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesInvalidValuesAreSafe);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUint32OverflowIsSafe);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesRetainLastValidStamp);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesZeroUntilFirstValidMeasurement);
 };
 
 // Minimal 3-joint URDF covering the joint_names_ used in tests
@@ -121,6 +126,10 @@ public:
   void assign_state_interfaces(
     const std::vector<std::string> & joint_names = {},
     const std::vector<std::string> & interfaces = {});
+
+  void assign_state_interfaces_with_timestamp(
+    const hardware_interface::StateInterface::SharedPtr & sec,
+    const hardware_interface::StateInterface::SharedPtr & nsec);
 
   void test_published_joint_state_message(const std::string & topic);
 
