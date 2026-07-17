@@ -47,34 +47,43 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_expect_clamp
     rclcpp::Parameter("joint_limits.joint3.max_position", 5.0),
   };
 
-  // Start joints at max_position so position clamping and stopping-distance
-  // checks both pass trivially (no velocity generated from position difference)
-  std::vector<double> initial_pos = {5.0, 5.0, 5.0};
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
   SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
 
-  // Publish a trajectory with position beyond limits
-  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(10);
-  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
-  std::vector<std::vector<double>> points{{{10.0, 5.0, 2.0}}};
-  std::vector<std::vector<double>> points_velocities{{{0.0, 0.0, 0.0}}};
+  // 3 waypoints spaced 200ms apart -> t=0.2, t=0.4, t=0.6
+  // With 10ms updates, each segment gets ~20 interpolated samples
+  constexpr auto DELAY_BTWN_POINTS = std::chrono::milliseconds(200);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(DELAY_BTWN_POINTS)};
+  std::vector<std::vector<double>> points{
+    {{10.0, 0.0, 0.0}}, {{10.0, 5.0, 2.0}}, {{5.0, 10.0, 5.0}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> limit_enforced_points{
+    {{5.0, 0.0, 0.0}}, {{5.0, 5.0, 2.0}}, {{5.0, 5.0, 5.0}}};
 
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
 
-  // First update samples command_next_ at t=0.01
-  traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-
-  // Position should be clamped to max_position=5.0
-  auto cmd_next = traj_controller_->get_command_next();
-  ASSERT_FALSE(cmd_next.positions.empty());
-  EXPECT_NEAR(cmd_next.positions[0], 5.0, COMMON_THRESHOLD);
-  EXPECT_NEAR(cmd_next.positions[1], 5.0, COMMON_THRESHOLD);
-  EXPECT_NEAR(cmd_next.positions[2], 2.0, COMMON_THRESHOLD);
-
-  // Hardware command interfaces also reflect the clamped position
-  EXPECT_NEAR(joint_pos_[0], 5.0, COMMON_THRESHOLD);
-  EXPECT_NEAR(joint_pos_[1], 5.0, COMMON_THRESHOLD);
-  EXPECT_NEAR(joint_pos_[2], 2.0, COMMON_THRESHOLD);
+  // Step through with constant 10ms period (matches controller's update_rate=100Hz)
+  // 60 steps = 0.60s, covers full trajectory (last waypoint at 0.6s)
+  auto logger = traj_controller_->get_node()->get_logger();
+  const double dt = 0.01;
+  for (size_t i = 0; i < 3; ++i)
+  {
+    for (size_t j = 0; j < 20; ++j)
+    {
+      traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(dt));
+    }
+    auto cmd_next = traj_controller_->get_command_next();
+    ASSERT_FALSE(cmd_next.positions.empty());
+    EXPECT_NEAR(cmd_next.positions[0], limit_enforced_points[i][0], COMMON_THRESHOLD);
+    EXPECT_NEAR(cmd_next.positions[1], limit_enforced_points[i][1], COMMON_THRESHOLD);
+    EXPECT_NEAR(cmd_next.positions[2], limit_enforced_points[i][2], COMMON_THRESHOLD);
+    // Hardware command interfaces also reflect the clamped position
+    EXPECT_NEAR(joint_pos_[0], limit_enforced_points[i][0], COMMON_THRESHOLD);
+    EXPECT_NEAR(joint_pos_[1], limit_enforced_points[i][1], COMMON_THRESHOLD);
+    EXPECT_NEAR(joint_pos_[2], limit_enforced_points[i][2], COMMON_THRESHOLD);
+  }
 
   executor.cancel();
 }
