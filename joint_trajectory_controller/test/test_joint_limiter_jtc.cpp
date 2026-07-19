@@ -298,11 +298,13 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and
 
   // 3 waypoints spaced 200ms apart -> t=0.2, t=0.4, t=0.6
   // With 10ms updates, each segment gets 20 interpolated samples
-  constexpr auto DELAY_BTWN_POINTS = std::chrono::milliseconds(200);
+  constexpr auto DELAY_BTWN_POINTS = std::chrono::milliseconds(1500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(DELAY_BTWN_POINTS)};
-  std::vector<std::vector<double>> points{{{5.0, 0.0, 0.0}}, {{5.0, 5.0, 2.0}}, {{5.0, 5.0, 5.0}}};
+  std::vector<std::vector<double>> points{{{5.0, 0.0, 0.0}}, {{0.0, 5.0, 2.0}}, {{-5.0, 5.0, 5.0}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> limit_enforced_points{
+    {{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{1.5, 5.0, 5.0}}};
 
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
@@ -316,7 +318,7 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and
   const double max_pos = 1.5;
   for (size_t i = 0; i < 3; ++i)
   {
-    for (size_t j = 0; j < 20; ++j)
+    for (size_t j = 0; j < 150; ++j)
     {
       traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(dt));
       auto cmd_next = traj_controller_->get_command_next();
@@ -342,7 +344,25 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and
       EXPECT_LE(std::fabs(joint_pos_[1]), max_pos);
       EXPECT_LE(std::fabs(joint_pos_[2]), max_pos);
     }
+    auto cmd_seg_end = traj_controller_->get_command_next();
+    ASSERT_FALSE(cmd_seg_end.positions.empty());
+    EXPECT_LE(std::fabs(cmd_seg_end.positions[0]), max_pos);
+    EXPECT_LE(std::fabs(cmd_seg_end.positions[1]), max_pos);
+    EXPECT_LE(std::fabs(cmd_seg_end.positions[2]), max_pos);
+    EXPECT_LE(std::fabs(joint_pos_[0]), max_pos);
+    EXPECT_LE(std::fabs(joint_pos_[1]), max_pos);
+    EXPECT_LE(std::fabs(joint_pos_[2]), max_pos);
   }
+
+  // After full trajectory, verify final commands remain within limits
+  auto cmd_final = traj_controller_->get_command_next();
+  ASSERT_FALSE(cmd_final.positions.empty());
+  EXPECT_LE(std::fabs(cmd_final.positions[0]), max_pos);
+  EXPECT_LE(std::fabs(cmd_final.positions[1]), max_pos);
+  EXPECT_LE(std::fabs(cmd_final.positions[2]), max_pos);
+  EXPECT_LE(std::fabs(joint_pos_[0]), max_pos);
+  EXPECT_LE(std::fabs(joint_pos_[1]), max_pos);
+  EXPECT_LE(std::fabs(joint_pos_[2]), max_pos);
 
   executor.cancel();
 }
