@@ -349,12 +349,6 @@ controller_interface::return_type JointTrajectoryController::update(
   state_current_.time_from_start.nanosec = 0;
   read_state_from_state_interfaces(state_current_);
 
-  // Apply joint limiter to current state before interpolation
-  if (joint_limiter_)
-  {
-    joint_limiter_->enforce(state_current_, state_current_, update_period_);
-  }
-
   // currently carrying out a trajectory
   if (has_active_trajectory())
   {
