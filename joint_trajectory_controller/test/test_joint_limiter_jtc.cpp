@@ -284,7 +284,7 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_velocity_and_accelera
 /**
  * @brief verify joint limiter enforces position, velocity, and acceleration limits together
  */
-TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and_acceleration)
+TEST_F(TrajectoryControllerTest, when_trajectory_within_limits_position_velocity_and_acceleration)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
 
@@ -300,11 +300,90 @@ TEST_F(TrajectoryControllerTest, when_joint_limiter_limits_position_velocity_and
   // With 10ms updates, each segment gets 20 interpolated samples
   constexpr auto DELAY_BTWN_POINTS = std::chrono::milliseconds(1500);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(DELAY_BTWN_POINTS)};
-  std::vector<std::vector<double>> points{{{5.0, 0.0, 0.0}}, {{0.0, 5.0, 2.0}}, {{-5.0, 5.0, 5.0}}};
+  std::vector<std::vector<double>> points{{{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{-1.5, 1.5, 1.5}}};
   std::vector<std::vector<double>> points_velocities{
     {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}};
   std::vector<std::vector<double>> limit_enforced_points{
-    {{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{1.5, 5.0, 5.0}}};
+    {{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{-1.5, 1.5, 1.5}}};
+
+  publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
+  traj_controller_->wait_for_trajectory(executor);
+
+  // Step through with constant 10ms period (matches controller's update_rate=100Hz)
+  // 150 steps per segment * 3 segments = 450 steps = 4.50s, covers full trajectory
+  auto logger = traj_controller_->get_node()->get_logger();
+  const double dt = 0.01;
+  const double max_vel = 2.0;
+  const double max_acc = 5.0;
+  const double max_pos = 1.5;
+  for (size_t i = 0; i < 3; ++i)
+  {
+    for (size_t j = 0; j < 150; ++j)
+    {
+      traj_controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(dt));
+      auto cmd_next = traj_controller_->get_command_next();
+      ASSERT_FALSE(cmd_next.velocities.empty());
+      EXPECT_LE(std::fabs(cmd_next.velocities[0]), max_vel);
+      EXPECT_LE(std::fabs(cmd_next.velocities[1]), max_vel);
+      EXPECT_LE(std::fabs(cmd_next.velocities[2]), max_vel);
+      EXPECT_LE(std::fabs(joint_vel_[0]), max_vel);
+      EXPECT_LE(std::fabs(joint_vel_[1]), max_vel);
+      EXPECT_LE(std::fabs(joint_vel_[2]), max_vel);
+      ASSERT_FALSE(cmd_next.accelerations.empty());
+      EXPECT_LE(std::fabs(cmd_next.accelerations[0]), max_acc);
+      EXPECT_LE(std::fabs(cmd_next.accelerations[1]), max_acc);
+      EXPECT_LE(std::fabs(cmd_next.accelerations[2]), max_acc);
+      EXPECT_LE(std::fabs(joint_acc_[0]), max_acc);
+      EXPECT_LE(std::fabs(joint_acc_[1]), max_acc);
+      EXPECT_LE(std::fabs(joint_acc_[2]), max_acc);
+      // Verify position limits are enforced throughout the trajectory
+      EXPECT_LE(std::fabs(cmd_next.positions[0]), max_pos);
+      EXPECT_LE(std::fabs(cmd_next.positions[1]), max_pos);
+      EXPECT_LE(std::fabs(cmd_next.positions[2]), max_pos);
+      EXPECT_LE(std::fabs(joint_pos_[0]), max_pos);
+      EXPECT_LE(std::fabs(joint_pos_[1]), max_pos);
+      EXPECT_LE(std::fabs(joint_pos_[2]), max_pos);
+    }
+    auto cmd_seg_end = traj_controller_->get_command_next();
+    ASSERT_FALSE(cmd_seg_end.positions.empty());
+    ASSERT_FALSE(cmd_seg_end.positions.empty());
+    EXPECT_NEAR(cmd_seg_end.positions[0], limit_enforced_points[i][0], COMMON_THRESHOLD);
+    EXPECT_NEAR(cmd_seg_end.positions[1], limit_enforced_points[i][1], COMMON_THRESHOLD);
+    EXPECT_NEAR(cmd_seg_end.positions[2], limit_enforced_points[i][2], COMMON_THRESHOLD);
+    // Hardware command interfaces also reflect the clamped position
+    EXPECT_NEAR(joint_pos_[0], limit_enforced_points[i][0], COMMON_THRESHOLD);
+    EXPECT_NEAR(joint_pos_[1], limit_enforced_points[i][1], COMMON_THRESHOLD);
+    EXPECT_NEAR(joint_pos_[2], limit_enforced_points[i][2], COMMON_THRESHOLD);
+  }
+
+  executor.cancel();
+}
+
+/**
+ * @brief verify joint limiter enforces position, velocity, and acceleration limits together
+ */
+TEST_F(
+  TrajectoryControllerTest, when_joint_limiter_within_limits_position_velocity_and_acceleration)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+
+  auto params = DefaultJointLimiterParams();
+
+  std::vector<double> initial_pos = {0.0, 0.0, 0.0};
+  SetUpAndActivateTrajectoryController(executor, params, false, 0.0, 1.0, initial_pos);
+
+  // 3 waypoints spaced 200ms apart -> t=0.2, t=0.4, t=0.6
+  // With 10ms updates, each segment gets 20 interpolated samples
+  constexpr auto DELAY_BTWN_POINTS = std::chrono::milliseconds(1500);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(DELAY_BTWN_POINTS)};
+  std::vector<std::vector<double>> points{{{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{-1.5, 1.5, 1.5}}};
+  std::vector<std::vector<double>> points_velocities{
+    {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}};
+  std::vector<std::vector<double>> limit_enforced_points{
+    {{1.5, 0.0, 0.0}}, {{0.0, 1.5, 1.5}}, {{-1.5, 1.5, 1.5}}};
 
   publish(time_from_start, points, rclcpp::Time(), {}, points_velocities);
   traj_controller_->wait_for_trajectory(executor);
