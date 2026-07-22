@@ -36,8 +36,9 @@ double min_segment_duration(
   double max_linear_speed, double max_angular_speed, double min_duration);
 
 /// Time-parameterized Cartesian path: cubic-spline (C2) translation and SLERP orientation.
-/// Translation waypoint velocities are solved with joint_trajectory_controller::fill_cubic_spline_velocities;
-/// orientation is interpolated directly from the waypoint quaternions.
+/// Translation waypoint velocities are solved with
+/// joint_trajectory_controller::fill_cubic_spline_velocities; orientation is interpolated directly
+/// from the waypoint quaternions.
 class CartesianTrajectory
 {
 public:
@@ -46,7 +47,8 @@ public:
     const std::vector<double> & times, const std::vector<Eigen::Vector3d> & positions,
     const std::vector<Eigen::Quaterniond> & orientations);
 
-  /// Sample the pose at time t (clamped to [front, back]). Returns false if the path has no waypoints.
+  /// Sample the pose at time t (clamped to [front, back]). Returns false if the path has no
+  /// waypoints.
   bool sample(double t, Eigen::Vector3d & position, Eigen::Quaterniond & orientation) const;
 
   double duration() const;

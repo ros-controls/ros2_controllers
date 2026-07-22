@@ -111,7 +111,8 @@ bool CartesianTrajectory::sample(
   const double u = t - times_[i];
   const double s = u / h;
 
-  // Cubic Hermite per axis, matching the has_velocity branch of Trajectory::interpolate_between_points.
+  // Cubic Hermite per axis, matching the has_velocity branch of
+  // Trajectory::interpolate_between_points.
   for (int axis = 0; axis < 3; ++axis)
   {
     const double p0 = positions_[i][axis];

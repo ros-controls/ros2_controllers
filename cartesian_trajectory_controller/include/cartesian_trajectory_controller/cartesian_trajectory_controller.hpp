@@ -35,7 +35,6 @@ namespace cartesian_trajectory_controller
 
 class CartesianTrajectory;
 
-
 /**
  * @brief Executes Cartesian motion on top of the Joint Trajectory Controller (JTC).
  *
@@ -72,9 +71,9 @@ private:
   /// Build the timed Cartesian waypoints: the current pose as waypoint 0, then the message poses
   /// (message timing if present, otherwise synthesized from the max Cartesian/angular speeds).
   bool build_cartesian_waypoints(
-    const trajectory_msgs::msg::MultiDOFJointTrajectory & msg, const Eigen::Isometry3d & current_pose,
-    std::vector<double> & times, std::vector<Eigen::Vector3d> & positions,
-    std::vector<Eigen::Quaterniond> & orientations) const;
+    const trajectory_msgs::msg::MultiDOFJointTrajectory & msg,
+    const Eigen::Isometry3d & current_pose, std::vector<double> & times,
+    std::vector<Eigen::Vector3d> & positions, std::vector<Eigen::Quaterniond> & orientations) const;
 
   /// Densely resample the Cartesian path and integrate differential IK (from the seed joints q)
   /// into a joint trajectory.

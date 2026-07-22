@@ -214,7 +214,8 @@ bool CartesianTrajectoryController::solve_ik_along_path(
 
     Eigen::Matrix<double, 7, 1> x_target;
     x_target << target_position.x(), target_position.y(), target_position.z(),
-      target_orientation.x(), target_orientation.y(), target_orientation.z(), target_orientation.w();
+      target_orientation.x(), target_orientation.y(), target_orientation.z(),
+      target_orientation.w();
 
     Eigen::Isometry3d current;
     if (!kinematics_->calculate_link_transform(q, tip, current))

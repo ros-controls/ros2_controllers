@@ -35,7 +35,8 @@ CartesianTrajectory make_trajectory()
 }
 }  // namespace
 
-// Cubic Hermite interpolates the waypoints, so sampling at a waypoint time returns that waypoint's pose.
+// Cubic Hermite interpolates the waypoints, so sampling at a waypoint time returns that waypoint's
+// pose.
 TEST(TestCartesianTrajectory, passes_through_waypoints)
 {
   auto traj = make_trajectory();
@@ -77,7 +78,8 @@ TEST(TestCartesianTrajectory, clamps_outside_span)
   EXPECT_NEAR(p.z(), 0.2, 1e-9);
 }
 
-// align_quaternions_shortest_arc flips signs so consecutive waypoints share a hemisphere (dot >= 0).
+// align_quaternions_shortest_arc flips signs so consecutive waypoints share a hemisphere (dot >=
+// 0).
 TEST(TestCartesianTrajectory, aligns_to_shortest_arc)
 {
   const Eigen::Quaterniond q(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
@@ -88,7 +90,8 @@ TEST(TestCartesianTrajectory, aligns_to_shortest_arc)
   EXPECT_GE(quats[0].dot(quats[1]), 0.0);  // now on the same hemisphere -> shortest arc
 }
 
-// min_segment_duration returns the larger of the linear/angular-limited times, floored at min_duration.
+// min_segment_duration returns the larger of the linear/angular-limited times, floored at
+// min_duration.
 TEST(TestCartesianTrajectory, segment_duration_respects_speed_limits)
 {
   const Eigen::Quaterniond identity = Eigen::Quaterniond::Identity();
