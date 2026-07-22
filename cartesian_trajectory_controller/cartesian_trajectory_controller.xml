@@ -1,0 +1,10 @@
+<library path="cartesian_trajectory_controller">
+  <class name="cartesian_trajectory_controller/CartesianTrajectoryController"
+         type="cartesian_trajectory_controller::CartesianTrajectoryController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Executes Cartesian motion by interpolating end-effector poses (SLERP + cubic spline) and
+      running differential inverse kinematics into a joint trajectory on top of the joint trajectory controller.
+    </description>
+  </class>
+</library>
