@@ -513,7 +513,7 @@ controller_interface::return_type JointTrajectoryController::update(
         // store the previous command and time used in open-loop control mode
         last_commanded_state_ = command_next_;
         last_commanded_time_ = time;
-      }      // Do not report on an action goal whose trajectory is still deferred (blending): its real
+      }  // Do not report on an action goal whose trajectory is still deferred (blending): its real
       // trajectory has not started yet, so the old trajectory's progress must not succeed/abort it.
       if (rt_active_goal_local_ && !rt_active_goal_deferred_)
       {
@@ -535,7 +535,7 @@ controller_interface::return_type JointTrajectoryController::update(
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
           result->set__error_string("Aborted due to path tolerance violation");
           rt_active_goal_local_->setAborted(result);
-          rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
+          rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
           rt_has_pending_goal_ = false;
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
@@ -561,7 +561,7 @@ controller_interface::return_type JointTrajectoryController::update(
             result->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
             result->set__error_string("Goal successfully reached!");
             rt_active_goal_local_->setSucceeded(result);
-            rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
+            rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_INFO(logger, "Goal reached, success!");
@@ -578,7 +578,7 @@ controller_interface::return_type JointTrajectoryController::update(
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             result->set__error_string(error_string);
             rt_active_goal_local_->setAborted(result);
-            rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
+            rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
@@ -1315,7 +1315,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
     active_goal->setAborted(action_res);
-    rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
+    rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
   }
 
   for (size_t index = 0; index < num_cmd_joints_; ++index)
@@ -1492,7 +1492,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
-    rt_active_goal_.try_set([](auto goal) { goal = RealtimeGoalHandlePtr(); });
+    rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
     if (should_decelerate_on_cancel_)
     {

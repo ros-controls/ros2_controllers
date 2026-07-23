@@ -66,6 +66,12 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  if(NOT TARGET ros2_control_test_assets::ros2_control_test_assets)
+    add_library(ros2_control_test_assets::ros2_control_test_assets INTERFACE IMPORTED)
+    set_target_properties(ros2_control_test_assets::ros2_control_test_assets PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${ros2_control_test_assets_INCLUDE_DIRS}"
+    )
+  endif()
 
   ament_add_gmock(test_trajectory test/test_trajectory.cpp)
   target_link_libraries(test_trajectory
