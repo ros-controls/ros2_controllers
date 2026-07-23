@@ -29,8 +29,7 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, all_parameters_set_configure_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
 
   // Check interface configuration
   auto cmd_if_conf = vda5050_safety_state_broadcaster_->command_interface_configuration();
@@ -52,10 +51,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, no_interfaces_set_activate_fail)
   params.node_options = vda5050_safety_state_broadcaster_->define_custom_node_options();
   ASSERT_EQ(vda5050_safety_state_broadcaster_->init(params), controller_interface::return_type::OK);
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_FAILURE);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_FALSE(activate_succeeds(vda5050_safety_state_broadcaster_));
 }
 
 // Test all message initial values
@@ -63,30 +60,34 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, activate_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
+
+  ASSERT_TRUE(fieldViolation2_itf_->set_value(0.0));
+  ASSERT_TRUE(eStopRemote2_itf_->set_value(0.0));
+  ASSERT_TRUE(eStopAutoack_itf_->set_value(0.0));
+
+  Vda5050SafetyStateMsg vda5050_safety_state_msg;
+  subscribe_and_get_messages(vda5050_safety_state_msg);
+
+  EXPECT_EQ(vda5050_safety_state_msg.e_stop, control_msgs::msg::VDA5050SafetyState::NONE);
+  EXPECT_FALSE(vda5050_safety_state_msg.field_violation);
 }
 
 TEST_F(VDA5050SafetyStateBroadcasterTest, deactivate_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(deactivate_succeeds(vda5050_safety_state_broadcaster_));
 }
 
 TEST_F(VDA5050SafetyStateBroadcasterTest, check_exported_interfaces)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
 
   auto command_interfaces = vda5050_safety_state_broadcaster_->command_interface_configuration();
   ASSERT_EQ(command_interfaces.names.size(), static_cast<size_t>(0));
@@ -109,10 +110,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
 
   ASSERT_EQ(
     vda5050_safety_state_broadcaster_->update(
@@ -125,10 +124,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, publish_status_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
 
   ASSERT_EQ(
     vda5050_safety_state_broadcaster_->update(
@@ -147,10 +144,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
 
   ASSERT_TRUE(fieldViolation2_itf_->set_value(0.0));
   ASSERT_TRUE(eStopManual1_itf_->set_value(1.0));
@@ -187,10 +182,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, publish_nan_voltage)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
 
   ASSERT_TRUE(fieldViolation2_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
   ASSERT_TRUE(eStopRemote2_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));

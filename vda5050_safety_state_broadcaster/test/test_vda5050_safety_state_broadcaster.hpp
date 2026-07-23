@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
@@ -33,15 +34,11 @@
 #include "vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster.hpp"
 
 using Vda5050SafetyStateMsg = control_msgs::msg::VDA5050SafetyState;
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 using testing::IsEmpty;
 using testing::SizeIs;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-constexpr auto NODE_FAILURE = controller_interface::CallbackReturn::FAILURE;
-}  // namespace
 
 class FriendVDA5050SafetyStateBroadcaster
 : public vda5050_safety_state_broadcaster::Vda5050SafetyStateBroadcaster
