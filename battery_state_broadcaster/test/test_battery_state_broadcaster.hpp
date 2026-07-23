@@ -29,10 +29,11 @@
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "rclcpp/executor.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/wait_result_kind.hpp"
+#include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 #include "control_msgs/msg/battery_state_array.hpp"
@@ -173,49 +174,58 @@ protected:
     RawBatteryStatesMsg & raw_battery_states_msg, BatteryStateMsg & battery_state_msg)
   {
     // create a new subscriber
-    RawBatteryStatesMsg::SharedPtr received_raw_battery_states_msg;
-    BatteryStateMsg::SharedPtr received_battery_state_msg;
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto raw_battery_states_callback = [&](const RawBatteryStatesMsg::SharedPtr msg)
-    { received_raw_battery_states_msg = msg; };
-    auto battery_state_callback = [&](const BatteryStateMsg::SharedPtr msg)
-    { received_battery_state_msg = msg; };
     auto raw_battery_states_subscription =
       test_subscription_node.create_subscription<RawBatteryStatesMsg>(
-        "/test_battery_state_broadcaster/raw_battery_states", 10, raw_battery_states_callback);
+        "/test_battery_state_broadcaster/raw_battery_states", 10,
+        [](const RawBatteryStatesMsg::SharedPtr) {});
     auto battery_state_subscription = test_subscription_node.create_subscription<BatteryStateMsg>(
-      "/test_battery_state_broadcaster/battery_state", 10, battery_state_callback);
-    rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(test_subscription_node.get_node_base_interface());
+      "/test_battery_state_broadcaster/battery_state", 10, [](const BatteryStateMsg::SharedPtr) {});
 
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
-    int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
+    RawBatteryStatesMsg received_raw_battery_states_msg;
+    BatteryStateMsg received_battery_state_msg;
+    bool has_raw_battery_states_msg = false;
+    bool has_battery_state_msg = false;
+
+    rclcpp::WaitSet wait_set;
+    wait_set.add_subscription(raw_battery_states_subscription);
+    wait_set.add_subscription(battery_state_subscription);
+
+    int max_sub_check_loop_count = 100;  // max number of tries for pub/sub loop
     while (max_sub_check_loop_count--)
     {
       battery_state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-      const auto timeout = std::chrono::milliseconds{5};
-      const auto until = test_subscription_node.get_clock()->now() + timeout;
-      while ((!received_battery_state_msg || !received_raw_battery_states_msg) &&
-             test_subscription_node.get_clock()->now() < until)
+
+      if (wait_set.wait(std::chrono::milliseconds(20)).kind() == rclcpp::WaitResultKind::Ready)
       {
-        executor.spin_some();
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        rclcpp::MessageInfo raw_msg_info;
+        rclcpp::MessageInfo battery_msg_info;
+        if (raw_battery_states_subscription->take(received_raw_battery_states_msg, raw_msg_info))
+        {
+          has_raw_battery_states_msg = true;
+        }
+        if (battery_state_subscription->take(received_battery_state_msg, battery_msg_info))
+        {
+          has_battery_state_msg = true;
+        }
       }
+
       // check if message has been received
-      if (received_raw_battery_states_msg.get() && received_battery_state_msg.get())
+      if (has_raw_battery_states_msg && has_battery_state_msg)
       {
         break;
       }
     }
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
-    ASSERT_TRUE(received_raw_battery_states_msg);
-    ASSERT_TRUE(received_battery_state_msg);
+    ASSERT_TRUE(has_raw_battery_states_msg);
+    ASSERT_TRUE(has_battery_state_msg);
 
     // take message from subscription
-    raw_battery_states_msg = *received_raw_battery_states_msg;
-    battery_state_msg = *received_battery_state_msg;
+    raw_battery_states_msg = received_raw_battery_states_msg;
+    battery_state_msg = received_battery_state_msg;
   }
 };
 
