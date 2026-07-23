@@ -162,10 +162,8 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(
-    vda5050_safety_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(vda5050_safety_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(vda5050_safety_state_broadcaster_));
 
   ASSERT_TRUE(fieldViolation2_itf_->set_value(0.0));
   ASSERT_TRUE(fieldViolation3_itf_->set_value(true));

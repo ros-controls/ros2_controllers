@@ -83,16 +83,16 @@ public:
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
 
-    state_ifs.emplace_back(fieldViolation1_itf_);
-    state_ifs.emplace_back(fieldViolation2_itf_);
-    state_ifs.emplace_back(fieldViolation3_itf_);
-    state_ifs.emplace_back(eStopManual1_itf_);
-    state_ifs.emplace_back(eStopManual2_itf_);
-    state_ifs.emplace_back(eStopManual3_itf_);
-    state_ifs.emplace_back(eStopRemote1_itf_);
-    state_ifs.emplace_back(eStopRemote2_itf_);
-    state_ifs.emplace_back(eStopAutoack_itf_);
-    state_ifs.emplace_back(eStopAutoack2_itf_);
+    state_ifs.emplace_back(fieldViolation1_itf_, nullptr);
+    state_ifs.emplace_back(fieldViolation2_itf_, nullptr);
+    state_ifs.emplace_back(fieldViolation3_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual1_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual2_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual3_itf_, nullptr);
+    state_ifs.emplace_back(eStopRemote1_itf_, nullptr);
+    state_ifs.emplace_back(eStopRemote2_itf_, nullptr);
+    state_ifs.emplace_back(eStopAutoack_itf_, nullptr);
+    state_ifs.emplace_back(eStopAutoack2_itf_, nullptr);
 
     vda5050_safety_state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
   }
