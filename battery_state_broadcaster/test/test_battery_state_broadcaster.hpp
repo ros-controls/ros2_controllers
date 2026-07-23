@@ -79,6 +79,44 @@ public:
   {
     // initialize controller
     battery_state_broadcaster_ = std::make_unique<FriendBatteryStateBroadcaster>();
+
+    battery0_voltage_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery0", "battery_voltage");
+    std::ignore = battery0_voltage_itf_->set_value(itfs_values_[0]);
+    battery0_temperature_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery0", "battery_temperature");
+    std::ignore = battery0_temperature_itf_->set_value(itfs_values_[1]);
+    battery0_charge_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery0", "battery_charge");
+    std::ignore = battery0_charge_itf_->set_value(itfs_values_[2]);
+    battery0_status_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "battery0", "battery_power_supply_status");
+    std::ignore = battery0_status_itf_->set_value(itfs_values_[3]);
+    battery0_health_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "battery0", "battery_power_supply_health");
+    std::ignore = battery0_health_itf_->set_value(itfs_values_[4]);
+
+    battery1_voltage_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery1", "battery_voltage");
+    std::ignore = battery1_voltage_itf_->set_value(itfs_values_[5]);
+    battery1_temperature_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery1", "battery_temperature");
+    std::ignore = battery1_temperature_itf_->set_value(itfs_values_[6]);
+    battery1_current_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery1", "battery_current");
+    std::ignore = battery1_current_itf_->set_value(itfs_values_[7]);
+    battery1_charge_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery1", "battery_charge");
+    std::ignore = battery1_charge_itf_->set_value(itfs_values_[8]);
+    battery1_percentage_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("battery1", "battery_percentage");
+    std::ignore = battery1_percentage_itf_->set_value(itfs_values_[9]);
+    battery1_status_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "battery1", "battery_power_supply_status");
+    std::ignore = battery1_status_itf_->set_value(itfs_values_[10]);
+    battery1_health_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "battery1", "battery_power_supply_health");
+    std::ignore = battery1_health_itf_->set_value(itfs_values_[11]);
   }
   void TearDown() { battery_state_broadcaster_.reset(nullptr); }
 
@@ -130,42 +168,18 @@ protected:
     4.0      // 11 battery1_health
   }};
 
-  hardware_interface::StateInterface::SharedPtr battery0_voltage_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery0", "battery_voltage", &itfs_values_[0]);
-  hardware_interface::StateInterface::SharedPtr battery0_temperature_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery0", "battery_temperature", &itfs_values_[1]);
-  hardware_interface::StateInterface::SharedPtr battery0_charge_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery0", "battery_charge", &itfs_values_[2]);
-  hardware_interface::StateInterface::SharedPtr battery0_status_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery0", "battery_power_supply_status", &itfs_values_[3]);
-  hardware_interface::StateInterface::SharedPtr battery0_health_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery0", "battery_power_supply_health", &itfs_values_[4]);
-  hardware_interface::StateInterface::SharedPtr battery1_voltage_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_voltage", &itfs_values_[5]);
-  hardware_interface::StateInterface::SharedPtr battery1_temperature_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_temperature", &itfs_values_[6]);
-  hardware_interface::StateInterface::SharedPtr battery1_current_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_current", &itfs_values_[7]);
-  hardware_interface::StateInterface::SharedPtr battery1_charge_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_charge", &itfs_values_[8]);
-  hardware_interface::StateInterface::SharedPtr battery1_percentage_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_percentage", &itfs_values_[9]);
-  hardware_interface::StateInterface::SharedPtr battery1_status_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_power_supply_status", &itfs_values_[10]);
-  hardware_interface::StateInterface::SharedPtr battery1_health_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "battery1", "battery_power_supply_health", &itfs_values_[11]);
+  hardware_interface::StateInterface::SharedPtr battery0_voltage_itf_;
+  hardware_interface::StateInterface::SharedPtr battery0_temperature_itf_;
+  hardware_interface::StateInterface::SharedPtr battery0_charge_itf_;
+  hardware_interface::StateInterface::SharedPtr battery0_status_itf_;
+  hardware_interface::StateInterface::SharedPtr battery0_health_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_voltage_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_temperature_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_current_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_charge_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_percentage_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_status_itf_;
+  hardware_interface::StateInterface::SharedPtr battery1_health_itf_;
 
   // Test related parameters
   std::unique_ptr<FriendBatteryStateBroadcaster> battery_state_broadcaster_;
