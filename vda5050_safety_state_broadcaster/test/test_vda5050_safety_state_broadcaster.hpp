@@ -28,6 +28,8 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/wait_result_kind.hpp"
+#include "rclcpp/wait_set.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
 #include "control_msgs/msg/vda5050_safety_state.hpp"
@@ -145,44 +147,47 @@ protected:
   void subscribe_and_get_messages(Vda5050SafetyStateMsg & vda5050_safety_state_msg)
   {
     // create a new subscriber
-    Vda5050SafetyStateMsg::SharedPtr received_vda5050_safety_state_msg;
     rclcpp::Node test_subscription_node("test_subscription_node");
-    auto vda5050_safety_state_callback = [&](const Vda5050SafetyStateMsg::SharedPtr msg)
-    { received_vda5050_safety_state_msg = msg; };
     auto vda5050_safety_state_subscription =
       test_subscription_node.create_subscription<Vda5050SafetyStateMsg>(
         "/test_vda5050_safety_state_broadcaster/vda5050_safety_state", 10,
-        vda5050_safety_state_callback);
-    rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(test_subscription_node.get_node_base_interface());
+        [](const Vda5050SafetyStateMsg::SharedPtr) {});
 
     // call update to publish the test value
     // since update doesn't guarantee a published message, republish until received
-    int max_sub_check_loop_count = 5;  // max number of tries for pub/sub loop
+    Vda5050SafetyStateMsg received_vda5050_safety_state_msg;
+    bool has_vda5050_safety_state_msg = false;
+
+    rclcpp::WaitSet wait_set;
+    wait_set.add_subscription(vda5050_safety_state_subscription);
+
+    int max_sub_check_loop_count = 100;  // max number of tries for pub/sub loop
     while (max_sub_check_loop_count--)
     {
       vda5050_safety_state_broadcaster_->update(
         rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
-      const auto timeout = std::chrono::milliseconds{5};
-      const auto until = test_subscription_node.get_clock()->now() + timeout;
-      while ((!received_vda5050_safety_state_msg) &&
-             test_subscription_node.get_clock()->now() < until)
+
+      if (wait_set.wait(std::chrono::milliseconds(20)).kind() == rclcpp::WaitResultKind::Ready)
       {
-        executor.spin_some();
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        rclcpp::MessageInfo msg_info;
+        if (vda5050_safety_state_subscription->take(received_vda5050_safety_state_msg, msg_info))
+        {
+          has_vda5050_safety_state_msg = true;
+        }
       }
+
       // check if message has been received
-      if (received_vda5050_safety_state_msg.get())
+      if (has_vda5050_safety_state_msg)
       {
         break;
       }
     }
     ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
                                               "controller/broadcaster update loop";
-    ASSERT_TRUE(received_vda5050_safety_state_msg);
+    ASSERT_TRUE(has_vda5050_safety_state_msg);
 
     // take message from subscription
-    vda5050_safety_state_msg = *received_vda5050_safety_state_msg;
+    vda5050_safety_state_msg = received_vda5050_safety_state_msg;
   }
 };
 
