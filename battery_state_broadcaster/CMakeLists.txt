@@ -27,7 +27,7 @@ add_compile_definitions(RCPPUTILS_VERSION_MAJOR=${rcpputils_VERSION_MAJOR})
 add_compile_definitions(RCPPUTILS_VERSION_MINOR=${rcpputils_VERSION_MINOR})
 
 generate_parameter_library(battery_state_broadcaster_parameters
-  src/battery_state_broadcaster.yaml
+  src/battery_state_broadcaster_parameters.yaml
 )
 
 add_library(
