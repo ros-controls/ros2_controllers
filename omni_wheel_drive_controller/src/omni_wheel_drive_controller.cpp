@@ -559,7 +559,8 @@ void OmniWheelDriveController::halt()
   bool set_command_result = true;
   for (const WheelHandle & wheel_handle : registered_wheel_handles_)
   {
-    set_command_result &= wheel_handle.velocity.get().set_value(0.0);
+    set_command_result |=
+      wheel_handle.velocity.get().set_value(0.0, std::numeric_limits<unsigned int>::max());
   }
   rclcpp::Logger logger = get_node()->get_logger();
   RCLCPP_DEBUG_EXPRESSION(
