@@ -32,8 +32,6 @@
 #include "control_msgs/msg/battery_state_array.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 
-class FriendBatteryStateBroadcaster;
-
 namespace battery_state_broadcaster
 {
 /**
@@ -107,20 +105,18 @@ protected:
     int percentage_cnt = 0;
   };
 
-private:
-  friend class ::FriendBatteryStateBroadcaster;
-
   battery_state_broadcaster::Params params_;
 
   std::vector<std::string> batteries_;
 
+  BatteryInterfaceSums sums_;
+  BatteryInterfaceCounts counts_;
+
+private:
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::msg::BatteryState>>
     battery_state_realtime_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::msg::BatteryStateArray>>
     raw_battery_states_realtime_publisher_;
-
-  BatteryInterfaceSums sums_;
-  BatteryInterfaceCounts counts_;
 
   std::shared_ptr<battery_state_broadcaster::ParamListener> param_listener_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::BatteryState>> battery_state_publisher_;

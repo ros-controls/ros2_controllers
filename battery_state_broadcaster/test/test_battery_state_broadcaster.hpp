@@ -50,7 +50,7 @@ using testing::SizeIs;
 // subclassing and friending so we can access member variables
 class FriendBatteryStateBroadcaster : public battery_state_broadcaster::BatteryStateBroadcaster
 {
-  // Re-expose the private members of the base class that the tests need.
+  // Re-expose base class members that the tests need.
   using BatteryStateBroadcaster::batteries_;
   using BatteryStateBroadcaster::counts_;
   using BatteryStateBroadcaster::params_;
