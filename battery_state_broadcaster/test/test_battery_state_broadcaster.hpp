@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "battery_state_broadcaster/battery_state_broadcaster.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -39,16 +40,12 @@
 
 using BatteryStateMsg = sensor_msgs::msg::BatteryState;
 using RawBatteryStatesMsg = control_msgs::msg::BatteryStateArray;
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 using sensor_msgs::msg::BatteryState;
 using testing::IsEmpty;
 using testing::SizeIs;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-constexpr auto NODE_FAILURE = controller_interface::CallbackReturn::FAILURE;
-}  // namespace
 
 // subclassing and friending so we can access member variables
 class FriendBatteryStateBroadcaster : public battery_state_broadcaster::BatteryStateBroadcaster

@@ -33,7 +33,7 @@ TEST_F(BatteryStateBroadcasterTest, all_parameters_set_configure_success)
 
   ASSERT_TRUE(battery_state_broadcaster_->params_.batteries.empty());
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
 
   ASSERT_THAT(battery_state_broadcaster_->batteries_, testing::ElementsAreArray(battery_names_));
 
@@ -100,32 +100,32 @@ TEST_F(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail)
   params.node_options = battery_state_broadcaster_->define_custom_node_options();
   ASSERT_EQ(battery_state_broadcaster_->init(params), controller_interface::return_type::OK);
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_FAILURE);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_FALSE(activate_succeeds(battery_state_broadcaster_));
 }
 
 TEST_F(BatteryStateBroadcasterTest, activate_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
 }
 
 TEST_F(BatteryStateBroadcasterTest, deactivate_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(deactivate_succeeds(battery_state_broadcaster_));
 }
 
 TEST_F(BatteryStateBroadcasterTest, check_exported_intefaces)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
 
   auto command_intefaces = battery_state_broadcaster_->command_interface_configuration();
   ASSERT_EQ(command_intefaces.names.size(), static_cast<size_t>(0));
@@ -150,8 +150,8 @@ TEST_F(BatteryStateBroadcasterTest, update_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
 
   ASSERT_EQ(
     battery_state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -164,8 +164,8 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
 
   ASSERT_EQ(
     battery_state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -233,8 +233,8 @@ TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
 
   ASSERT_TRUE(battery0_voltage_itf_->set_value(10.0));
 
@@ -267,8 +267,8 @@ TEST_F(BatteryStateBroadcasterTest, publish_nan_voltage)
 {
   SetUpBatteryStateBroadcaster();
 
-  ASSERT_EQ(battery_state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(battery_state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
 
   ASSERT_TRUE(battery0_voltage_itf_->set_value(std::numeric_limits<double>::quiet_NaN()));
 
