@@ -72,11 +72,11 @@ TEST_F(BatteryStateBroadcasterTest, all_parameters_set_configure_success)
   EXPECT_EQ(properties.at("battery1").serial_number, "serial_device_1");
 
   // check property aggregation
-  EXPECT_EQ(battery_state_broadcaster_->counts_.temperature_cnt, 2.0);
-  EXPECT_EQ(battery_state_broadcaster_->counts_.current_cnt, 1.0);
+  EXPECT_EQ(battery_state_broadcaster_->counts_.temperature_cnt, 2);
+  EXPECT_EQ(battery_state_broadcaster_->counts_.current_cnt, 1);
   EXPECT_EQ(
     battery_state_broadcaster_->counts_.percentage_cnt,
-    2.0);  // because min and max voltage are valid
+    2);  // because min and max voltage are valid
   EXPECT_EQ(battery_state_broadcaster_->sums_.capacity_sum, 29000.0);
   EXPECT_EQ(battery_state_broadcaster_->sums_.design_capacity_sum, 31000.0);
 
