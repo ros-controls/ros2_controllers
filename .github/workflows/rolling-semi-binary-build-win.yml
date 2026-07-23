@@ -7,6 +7,8 @@ on:
   pull_request: &event
     branches:
       - master
+      - '*feature*'
+      - '*feature/**'
     paths:
       - '**.hpp'
       - '**.h'
