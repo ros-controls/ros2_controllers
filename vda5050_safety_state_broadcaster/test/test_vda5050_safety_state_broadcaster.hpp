@@ -19,6 +19,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -68,6 +69,37 @@ public:
   {
     // initialize controller
     vda5050_safety_state_broadcaster_ = std::make_unique<FriendVDA5050SafetyStateBroadcaster>();
+
+    fieldViolation1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "fieldViolation");
+    std::ignore = fieldViolation1_itf_->set_value(itfs_values_[0]);
+    fieldViolation2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "fieldViolation");
+    std::ignore = fieldViolation2_itf_->set_value(itfs_values_[1]);
+    fieldViolation3_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor3", "fieldViolation", "bool", "false");
+
+    eStopManual1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopManual");
+    std::ignore = eStopManual1_itf_->set_value(itfs_values_[2]);
+    eStopManual2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "eStopManual");
+    std::ignore = eStopManual2_itf_->set_value(itfs_values_[3]);
+    eStopManual3_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor3", "eStopManual", "bool", "false");
+
+    eStopRemote1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopRemote");
+    std::ignore = eStopRemote1_itf_->set_value(itfs_values_[4]);
+    eStopRemote2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "eStopRemote");
+    std::ignore = eStopRemote2_itf_->set_value(itfs_values_[5]);
+
+    eStopAutoack_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopAutoack");
+    std::ignore = eStopAutoack_itf_->set_value(itfs_values_[6]);
+    eStopAutoack2_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "eStopAutoack", "bool", "false");
   }
   void TearDown() { vda5050_safety_state_broadcaster_.reset(nullptr); }
 
@@ -110,36 +142,16 @@ protected:
     1.0,  // 5 eStopRemote2
     1.0,  // 6 eStopAutoack
   }};
-  hardware_interface::StateInterface::SharedPtr fieldViolation1_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor1", "fieldViolation", &itfs_values_[0]);
-  hardware_interface::StateInterface::SharedPtr fieldViolation2_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor2", "fieldViolation", &itfs_values_[1]);
-  hardware_interface::StateInterface::SharedPtr fieldViolation3_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor2", "fieldViolation", "bool", "false");
-  hardware_interface::StateInterface::SharedPtr eStopManual1_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor1", "eStopManual", &itfs_values_[2]);
-  hardware_interface::StateInterface::SharedPtr eStopManual2_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor2", "eStopManual", &itfs_values_[3]);
-  hardware_interface::StateInterface::SharedPtr eStopManual3_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor3", "eStopManual", "bool", "false");
-  hardware_interface::StateInterface::SharedPtr eStopRemote1_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor1", "eStopRemote", &itfs_values_[4]);
-  hardware_interface::StateInterface::SharedPtr eStopRemote2_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor2", "eStopRemote", &itfs_values_[5]);
-  hardware_interface::StateInterface::SharedPtr eStopAutoack_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor1", "eStopAutoack", &itfs_values_[6]);
-  hardware_interface::StateInterface::SharedPtr eStopAutoack2_itf_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      "PLC_sensor2", "eStopAutoack", "bool", "false");
+  hardware_interface::StateInterface::SharedPtr fieldViolation1_itf_;
+  hardware_interface::StateInterface::SharedPtr fieldViolation2_itf_;
+  hardware_interface::StateInterface::SharedPtr fieldViolation3_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual1_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual2_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual3_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopRemote1_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopRemote2_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopAutoack_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopAutoack2_itf_;
 
   // Test related parameters
   std::unique_ptr<FriendVDA5050SafetyStateBroadcaster> vda5050_safety_state_broadcaster_;
