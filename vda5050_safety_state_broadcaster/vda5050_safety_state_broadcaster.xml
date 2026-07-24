@@ -2,7 +2,7 @@
   <class name="vda5050_safety_state_broadcaster/Vda5050SafetyStateBroadcaster"
          type="vda5050_safety_state_broadcaster::Vda5050SafetyStateBroadcaster" base_class_type="controller_interface::ControllerInterface">
   <description>
-    vda5050_safety_state_broadcaster publishes the safety states as defined in the VDA 5050 standard as a control_msgs/VDA5050.
+    vda5050_safety_state_broadcaster publishes the safety states as defined in the VDA 5050 standard as a control_msgs/msg/VDA5050SafetyState message.
   </description>
   </class>
 </library>

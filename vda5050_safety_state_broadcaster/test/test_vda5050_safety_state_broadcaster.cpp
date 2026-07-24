@@ -176,7 +176,7 @@ TEST_F(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success)
   EXPECT_EQ(vda5050_safety_state_msg.e_stop, control_msgs::msg::VDA5050SafetyState::MANUAL);
 }
 
-TEST_F(VDA5050SafetyStateBroadcasterTest, publish_nan_voltage)
+TEST_F(VDA5050SafetyStateBroadcasterTest, publish_nan_interfaces)
 {
   SetUpVDA5050SafetyStateBroadcaster();
 

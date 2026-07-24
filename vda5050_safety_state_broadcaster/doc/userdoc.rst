@@ -14,7 +14,7 @@ Interfaces
 The broadcaster can read the following state interfaces, configured via parameters:
 
 - ``interfaces``
-    - ``field_violation`` (string_array): interface names used for field violation events by setting value to 1.0 or true.
+    - ``fieldViolation`` (string_array): interface names used for field violation events by setting value to 1.0 or true.
     - ``eStop``:
         - ``manual`` (string_array): interface names used for manual eStop events by setting value to 1.0 or true.
         - ``remote`` (string_array): interface names used for remote eStop events by setting value to 1.0 or true.
