@@ -218,8 +218,8 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
   EXPECT_DOUBLE_EQ(battery_state_msg.temperature, 70.0);         // average of 60 + 80
   EXPECT_DOUBLE_EQ(battery_state_msg.current, 2000.0);           // only battery1 contributes
   EXPECT_DOUBLE_EQ(battery_state_msg.charge, 11000.0);           // sum of 6000 + 5000
-  EXPECT_DOUBLE_EQ(battery_state_msg.capacity, 29000.0);         // sum of 6000 + 5000
-  EXPECT_DOUBLE_EQ(battery_state_msg.design_capacity, 31000.0);  // sum of 6000 + 5000
+  EXPECT_DOUBLE_EQ(battery_state_msg.capacity, 29000.0);         // sum of 12000 + 17000
+  EXPECT_DOUBLE_EQ(battery_state_msg.design_capacity, 31000.0);  // sum of 13000 + 18000
   EXPECT_DOUBLE_EQ(battery_state_msg.percentage, 58.0);          // average of 50 + 66
   EXPECT_EQ(battery_state_msg.power_supply_status, 3);           // max(3, 2)
   EXPECT_EQ(battery_state_msg.power_supply_health, 4);           // max(0, 4)

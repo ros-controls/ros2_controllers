@@ -125,8 +125,20 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
   // Get count of enabled batteries for each interface
   for (size_t i = 0; i < params_.batteries.size(); ++i)
   {
-    const auto & interfaces = params_.interfaces.batteries_map.at(params_.batteries.at(i));
-    const auto & battery_properties = params_.batteries_map.at(params_.batteries.at(i));
+    const auto & battery_name = params_.batteries.at(i);
+    const auto interfaces_it = params_.interfaces.batteries_map.find(battery_name);
+    const auto props_it = params_.batteries_map.find(battery_name);
+    if (interfaces_it == params_.interfaces.batteries_map.end() || props_it == params_.batteries_map.end())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "Missing parameters for battery '%s' (expected entries under 'interfaces.%s' and '%s').",
+        battery_name.c_str(), battery_name.c_str(), battery_name.c_str());
+      return controller_interface::CallbackReturn::ERROR;
+    }
+
+    const auto & interfaces = interfaces_it->second;
+    const auto & battery_properties = props_it->second;
 
     if (interfaces.battery_temperature)
     {
@@ -371,9 +383,16 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         auto max_volt = params_.batteries_map.at(params_.batteries.at(i)).maximum_voltage;
         float voltage = raw_battery_states_msg.battery_states[i].voltage;
 
-        raw_battery_states_msg.battery_states[i].percentage =
-          static_cast<float>((voltage - min_volt) * 100.0 / (max_volt - min_volt));
-        sums_.percentage_sum += raw_battery_states_msg.battery_states[i].percentage;
+        if (std::isfinite(min_volt) && std::isfinite(max_volt) && (max_volt > min_volt))
+        {
+          raw_battery_states_msg.battery_states[i].percentage =
+            static_cast<float>((voltage - min_volt) * 100.0 / (max_volt - min_volt));
+          sums_.percentage_sum += raw_battery_states_msg.battery_states[i].percentage;
+        }
+        else
+        {
+          raw_battery_states_msg.battery_states[i].percentage = kUninitializedValue;
+        }
       }
       if (interfaces.battery_power_supply_status)
       {
