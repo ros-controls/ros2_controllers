@@ -20,6 +20,7 @@
 #ifndef VDA5050_SAFETY_STATE_BROADCASTER__VDA5050_SAFETY_STATE_BROADCASTER_HPP_
 #define VDA5050_SAFETY_STATE_BROADCASTER__VDA5050_SAFETY_STATE_BROADCASTER_HPP_
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -27,12 +28,14 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
+#include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
-#include <vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster_parameters.hpp>
+#include "vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster_parameters.hpp"
 #include "control_msgs/msg/vda5050_safety_state.hpp"
 
 namespace vda5050_safety_state_broadcaster

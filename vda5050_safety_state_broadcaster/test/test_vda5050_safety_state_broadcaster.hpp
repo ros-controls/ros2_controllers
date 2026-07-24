@@ -56,7 +56,7 @@ class FriendVDA5050SafetyStateBroadcaster
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_status_success);
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success);
   FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success);
-  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_nan_voltage);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_nan_interfaces);
 };
 
 class VDA5050SafetyStateBroadcasterTest : public ::testing::Test

@@ -205,7 +205,7 @@ Vda5050SafetyStateBroadcaster::determineEstopState()
     {
       RCLCPP_DEBUG_THROTTLE(
         get_node()->get_logger(), *get_node()->get_clock(), 1000,
-        "E-stop triggered by interface %s", state_interfaces_[itf_idx].get_name().c_str())
+        "E-stop triggered by interface %s", state_interfaces_[itf_idx].get_name().c_str());
       if (itf_idx < itfs_ids_.remote_start)
       {
         return control_msgs::msg::VDA5050SafetyState::MANUAL;
