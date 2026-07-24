@@ -32,7 +32,7 @@ battery_state_broadcaster:
         type: bool,
         default_value: false,
         read_only: true,
-        description: "Whether to read charge level [%] (0.0 to 100.0) from this battery's state interface. If unmeasured, linear percentage is calculated using min and max voltage parameters (if provided), otherwise NaN."
+        description: "Whether to read charge level [%] (0.0 to 100.0) from this battery's state interface. If unmeasured, linear percentage is calculated using the minimum_voltage and maximum_voltage parameters (if provided), otherwise NaN."
       }
       battery_power_supply_status: {
         type: bool,
