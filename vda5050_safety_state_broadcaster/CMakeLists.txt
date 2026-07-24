@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(vda5050_safety_state_broadcaster)
 
 find_package(ros2_control_cmake REQUIRED)
