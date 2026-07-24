@@ -476,7 +476,8 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         break;
       }
     }
-    battery_state_msg.charge = has_charge_interface ? sums_.charge_sum : kUninitializedValue;
+    battery_state_msg.charge =
+      has_charge_interface ? sums_.charge_sum : static_cast<float>(kUninitializedValue);
     if (counts_.percentage_cnt)
     {
       battery_state_msg.percentage =
