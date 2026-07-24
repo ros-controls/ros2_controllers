@@ -36,6 +36,6 @@ jobs:
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: testing
-      upstream_workspace: ros2_controllers-not-released.${{ matrix.ROS_DISTRO }}.repos
+      upstream_workspace: ros2_controllers.${{ matrix.ROS_DISTRO }}.repos
       not_test_build: true
       target_cmake_args: -DCMAKE_CXX_FLAGS="-isystem /opt/ros/${{ matrix.ROS_DISTRO }}/include -Werror=deprecated-declarations"
