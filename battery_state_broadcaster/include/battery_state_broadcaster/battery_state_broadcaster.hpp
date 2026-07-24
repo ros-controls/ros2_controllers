@@ -124,8 +124,6 @@ private:
     raw_battery_states_publisher_;
   sensor_msgs::msg::BatteryState battery_state_msg;
   control_msgs::msg::BatteryStateArray raw_battery_states_msg;
-
-  std::vector<bool> battery_presence_;
 };
 
 }  // namespace battery_state_broadcaster

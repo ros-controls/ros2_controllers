@@ -82,7 +82,6 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
       "No batteries configured. Set 'batteries' (preferred) or 'sensor_name' (deprecated).");
     return controller_interface::CallbackReturn::ERROR;
   }
-  battery_presence_.resize(batteries_.size(), false);
   try
   {
     battery_state_publisher_ = get_node()->create_publisher<sensor_msgs::msg::BatteryState>(
