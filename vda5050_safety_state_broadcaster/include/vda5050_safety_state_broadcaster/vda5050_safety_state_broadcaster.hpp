@@ -98,8 +98,7 @@ private:
   };
 
   InterfaceIds itfs_ids_;
-  bool fieldViolation_value = false;
-  std::string estop_msg = control_msgs::msg::VDA5050SafetyState::NONE;
+  std::string estop_msg_ = control_msgs::msg::VDA5050SafetyState::NONE;
 
   bool get_bool_itf_value(const hardware_interface::LoanedStateInterface & state_itf)
   {

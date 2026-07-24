@@ -173,7 +173,7 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_deactivat
 controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  fieldViolation_value = false;
+  bool fieldViolation_value = false;
   for (size_t itf_idx = 0; itf_idx < itfs_ids_.manual_start; ++itf_idx)
   {
     if (get_bool_itf_value(state_interfaces_[itf_idx]))
@@ -183,12 +183,12 @@ controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
     }
   }
 
-  estop_msg = determineEstopState();
+  estop_msg_ = determineEstopState();
 
   if (realtime_vda5050_safety_state_publisher_)
   {
     safety_state_msg_.field_violation = fieldViolation_value;
-    safety_state_msg_.e_stop = estop_msg;
+    safety_state_msg_.e_stop = estop_msg_;
     realtime_vda5050_safety_state_publisher_->try_publish(safety_state_msg_);
   }
 
