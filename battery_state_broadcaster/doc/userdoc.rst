@@ -33,41 +33,60 @@ The broadcaster publishes two topics:
 - ``~/battery_state`` (``sensor_msgs/msg/BatteryState``)
   Publishes a **single aggregated battery message** representing the combined status across all batteries.
 
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| Field                       | ``battery_state``                                                       | ``raw_battery_states``                                                                                                                          |
-+=============================+=========================================================================+=================================================================================================================================================+
-| ``header.frame_id``         | Empty                                                                   | Battery name                                                                                                                                    |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``voltage``                 | Mean across all batteries                                               | From battery's ``battery_voltage`` interface *(mandatory)* (NaN if unmeasured)                                                                  |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``temperature``             | Mean across batteries reporting temperature                             | From battery's ``battery_temperature`` interface if enabled, otherwise nan.                                                                     |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``current``                 | Mean across batteries reporting current                                 | From battery's ``battery_current`` interface if enabled, otherwise nan.                                                                         |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``charge``                  | Sum across batteries reporting charge                                   | From battery's ``battery_charge`` interface if enabled, otherwise nan.                                                                          |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``capacity``                | Sum across all batteries                                                | From battery's ``capacity`` parameter if provided, otherwise nan.                                                                               |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``design_capacity``         | Sum across all batteries                                                | From battery's ``design_capacity`` parameter if provided, otherwise nan.                                                                        |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``percentage``              | Mean across batteries reporting/calculating percentage                  | From battery's ``battery_percentage`` interface if enabled, otherwise calculated from battery's ``minimum_voltage`` and ``maximum_voltage`` parameters. |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_status``     | Highest reported enum value                                             | From battery's ``battery_power_supply_status`` interface if enabled, otherwise 0 (unknown).                                                     |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_health``     | Highest reported enum value                                             | From battery's ``battery_power_supply_health`` interface if enabled, otherwise 0 (unknown).                                                     |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``power_supply_technology`` | Reported as-is if same across all batteries, otherwise set to *Unknown* | From battery's ``power_supply_technology`` parameter if provided, otherwise 0 (unknown).                                                        |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``present``                 | True                                                                    | From battery's ``battery_present`` interface if enabled, otherwise true if the battery voltage value is valid (not NaN and not 0.0).                                   |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``cell_voltage``            | Empty                                                                   | Empty                                                                                                                                           |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``cell_temperature``        | Empty                                                                   | Empty                                                                                                                                           |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``location``                | All battery locations appended                                          | From battery's ``location`` parameter if provided, otherwise empty.                                                                             |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
-| ``serial_number``           | All battery serial numbers appended                                     | From battery's ``serial_number`` parameter if provided, otherwise empty.                                                                        |
-+-----------------------------+-------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - ``battery_state``
+     - ``raw_battery_states``
+   * - ``header.frame_id``
+     - Empty
+     - Battery name
+   * - ``voltage``
+     - Mean across all batteries
+     - From battery's ``battery_voltage`` interface *(mandatory)* (NaN if unmeasured)
+   * - ``temperature``
+     - Mean across batteries reporting temperature
+     - From battery's ``battery_temperature`` interface if enabled, otherwise nan.
+   * - ``current``
+     - Mean across batteries reporting current
+     - From battery's ``battery_current`` interface if enabled, otherwise nan.
+   * - ``charge``
+     - Sum across batteries reporting charge
+     - From battery's ``battery_charge`` interface if enabled, otherwise nan.
+   * - ``capacity``
+     - Sum across all batteries
+     - From battery's ``capacity`` parameter if provided, otherwise nan.
+   * - ``design_capacity``
+     - Sum across all batteries
+     - From battery's ``design_capacity`` parameter if provided, otherwise nan.
+   * - ``percentage``
+     - Mean across batteries reporting/calculating percentage
+     - From battery's ``battery_percentage`` interface if enabled, otherwise calculated from battery's ``minimum_voltage`` and ``maximum_voltage`` parameters.
+   * - ``power_supply_status``
+     - Highest reported enum value
+     - From battery's ``battery_power_supply_status`` interface if enabled, otherwise 0 (unknown).
+   * - ``power_supply_health``
+     - Highest reported enum value
+     - From battery's ``battery_power_supply_health`` interface if enabled, otherwise 0 (unknown).
+   * - ``power_supply_technology``
+     - Reported as-is if same across all batteries, otherwise set to *Unknown*
+     - From battery's ``power_supply_technology`` parameter if provided, otherwise 0 (unknown).
+   * - ``present``
+     - True
+     - From battery's ``battery_present`` interface if enabled, otherwise true if the battery voltage value is valid (not NaN and not 0.0).
+   * - ``cell_voltage``
+     - Empty
+     - Empty
+   * - ``cell_temperature``
+     - Empty
+     - Empty
+   * - ``location``
+     - All battery locations appended
+     - From battery's ``location`` parameter if provided, otherwise empty.
+   * - ``serial_number``
+     - All battery serial numbers appended
+     - From battery's ``serial_number`` parameter if provided, otherwise empty.
 
 
 Parameters
