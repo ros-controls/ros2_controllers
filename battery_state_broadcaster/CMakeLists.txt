@@ -7,15 +7,16 @@ export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   builtin_interfaces
+  control_msgs
   controller_interface
   hardware_interface
   generate_parameter_library
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  rcpputils
   realtime_tools
   sensor_msgs
-  urdf
 )
 
 find_package(ament_cmake REQUIRED)
@@ -49,7 +50,9 @@ target_link_libraries(battery_state_broadcaster PUBLIC
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
+                      rcpputils::rcpputils
                       realtime_tools::realtime_tools
+                      ${control_msgs_TARGETS}
                       ${sensor_msgs_TARGETS}
                       ${builtin_interfaces_TARGETS})
 

@@ -121,7 +121,7 @@ TEST_F(BatteryStateBroadcasterTest, deactivate_success)
   ASSERT_TRUE(deactivate_succeeds(battery_state_broadcaster_));
 }
 
-TEST_F(BatteryStateBroadcasterTest, check_exported_intefaces)
+TEST_F(BatteryStateBroadcasterTest, check_exported_interfaces)
 {
   SetUpBatteryStateBroadcaster();
 
