@@ -245,10 +245,6 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
     return controller_interface::CallbackReturn::FAILURE;
   }
 
-  // get parameters from the listener in case they were updated
-  param_listener_->refresh_dynamic_parameters();
-  params_ = param_listener_->get_params();
-
   uint8_t combined_power_supply_technology;
   if (!params_.sensor_name.empty())
   {

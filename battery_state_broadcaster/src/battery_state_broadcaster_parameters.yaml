@@ -13,36 +13,43 @@ battery_state_broadcaster:
       battery_temperature: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read battery temperature [°C] from this battery's state interface (If unmeasured NaN)."
       }
       battery_current: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read battery current [A] from this battery's state interface (If unmeasured NaN)."
       }
       battery_charge: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read battery charge [Ah] from this battery's state interface (If unmeasured NaN)."
       }
       battery_percentage: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read charge level [%] (0.0 to 100.0) from this battery's state interface. If unmeasured, linear percentage is calculated using min and max voltage parameters (if provided), otherwise NaN."
       }
       battery_power_supply_status: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read power supply status (e.g., Charging, Full, see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg) from this battery's state interface. If unmeasured, status is set to unknown."
       }
       battery_power_supply_health: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read power supply health (e.g., Good, Overheat, see https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/BatteryState.msg) from this battery's state interface. If unmeasured, health is set to unknown."
       }
       battery_present: {
         type: bool,
         default_value: false,
+        read_only: true,
         description: "Whether to read battery presence status (true if battery is present) from this battery's state interface. If unmeasured, the presence will be inferred from the battery voltage value (true if voltage is not NaN and not 0.0, otherwise false)."
       }
   __map_batteries:
