@@ -128,7 +128,9 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
     const auto & battery_name = params_.batteries.at(i);
     const auto interfaces_it = params_.interfaces.batteries_map.find(battery_name);
     const auto props_it = params_.batteries_map.find(battery_name);
-    if (interfaces_it == params_.interfaces.batteries_map.end() || props_it == params_.batteries_map.end())
+    if (
+      interfaces_it == params_.interfaces.batteries_map.end() ||
+      props_it == params_.batteries_map.end())
     {
       RCLCPP_ERROR(
         get_node()->get_logger(),
