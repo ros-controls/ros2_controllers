@@ -43,7 +43,7 @@ battery_state_broadcaster:
       battery_present: {
         type: bool,
         default_value: false,
-        description: "Whether to read battery presence status (true if battery is present) from this battery's state interface. If unmeasured, the presence will be set to true if any other state interfaces from this battery are available."
+        description: "Whether to read battery presence status (true if battery is present) from this battery's state interface. If unmeasured, the presence will be inferred from the battery voltage value (true if voltage is not NaN and not 0.0, otherwise false)."
       }
   __map_batteries:
     minimum_voltage: {

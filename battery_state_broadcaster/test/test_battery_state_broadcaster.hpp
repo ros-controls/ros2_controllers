@@ -15,6 +15,7 @@
 #ifndef TEST_BATTERY_STATE_BROADCASTER_HPP_
 #define TEST_BATTERY_STATE_BROADCASTER_HPP_
 
+#include <array>
 #include <chrono>
 #include <limits>
 #include <memory>
