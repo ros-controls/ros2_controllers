@@ -467,7 +467,17 @@ controller_interface::return_type BatteryStateBroadcaster::update(
     {
       battery_state_msg.current = sums_.current_sum / static_cast<float>(counts_.current_cnt);
     }
-    battery_state_msg.charge = sums_.charge_sum;
+
+    bool has_charge_interface = false;
+    for (const auto & battery : params_.batteries)
+    {
+      if (params_.interfaces.batteries_map.at(battery).battery_charge)
+      {
+        has_charge_interface = true;
+        break;
+      }
+    }
+    battery_state_msg.charge = has_charge_interface ? sums_.charge_sum : kUninitializedValue;
     if (counts_.percentage_cnt)
     {
       battery_state_msg.percentage =
