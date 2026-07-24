@@ -35,8 +35,8 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 
-#include "vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster_parameters.hpp"
 #include "control_msgs/msg/vda5050_safety_state.hpp"
+#include "vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster_parameters.hpp"
 
 namespace vda5050_safety_state_broadcaster
 {

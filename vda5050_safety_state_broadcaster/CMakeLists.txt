@@ -9,6 +9,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   controller_interface
   generate_parameter_library
+  hardware_interface
   pluginlib
   rclcpp_lifecycle
   realtime_tools
@@ -36,6 +37,7 @@ target_include_directories(vda5050_safety_state_broadcaster
 target_link_libraries(vda5050_safety_state_broadcaster PUBLIC
                       vda5050_safety_state_broadcaster_parameters
                       controller_interface::controller_interface
+                      hardware_interface::hardware_interface
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       rclcpp_lifecycle::rclcpp_lifecycle
