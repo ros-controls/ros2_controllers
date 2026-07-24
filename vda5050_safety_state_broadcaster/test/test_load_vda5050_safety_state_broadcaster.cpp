@@ -35,11 +35,13 @@ TEST(TestLoadVDA5050SafetyStateBroadcaster, load_controller)
   cm.set_parameter({"test_vda5050_safety_state_broadcaster.params_file", test_file_path});
   cm.set_parameter(
     {"test_vda5050_safety_state_broadcaster.type",
-     "vda5050_safety_state_broadcaster/VDA5050SafetyStateBroadcaster"});
+     "vda5050_safety_state_broadcaster/Vda5050SafetyStateBroadcaster"});
 
-  ASSERT_NO_THROW(cm.load_controller(
-    "test_vda5050_safety_state_broadcaster",
-    "vda5050_safety_state_broadcaster/VDA5050SafetyStateBroadcaster"));
+  ASSERT_NE(
+    cm.load_controller(
+      "test_vda5050_safety_state_broadcaster",
+      "vda5050_safety_state_broadcaster/Vda5050SafetyStateBroadcaster"),
+    nullptr);
 }
 
 int main(int argc, char ** argv)
