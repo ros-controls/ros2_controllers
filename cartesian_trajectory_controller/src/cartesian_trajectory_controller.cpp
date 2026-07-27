@@ -89,6 +89,10 @@ controller_interface::CallbackReturn CartesianTrajectoryController::on_configure
     "~/cartesian_reference", qos,
     std::bind(&CartesianTrajectoryController::reference_callback, this, std::placeholders::_1));
 
+  // Disable JTC's joint-space command inputs; only ~/cartesian_reference drives this controller.
+  joint_command_subscriber_.reset();
+  action_server_.reset();
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -142,6 +146,8 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   }
 
   const CartesianTrajectory path(times, positions, orientations);
+  // Carry the incoming stamp so JTC's deferred-start works (first knot is ingestion-anchored).
+  joint_traj.header.stamp = msg.header.stamp;
   return solve_ik_along_path(path, q, joint_traj);
 }
 
@@ -229,9 +235,9 @@ bool CartesianTrajectoryController::solve_ik_along_path(
       current_orientation.w();
 
     Eigen::Matrix<double, 6, 1> delta_x;
-    Eigen::VectorXd delta_q;
+    Eigen::VectorXd delta_q = Eigen::VectorXd::Zero(dof_);
     if (
-      !kinematics_->calculate_frame_difference(x_target, x_current, 1.0, delta_x) ||
+      !kinematics_->calculate_frame_difference(x_current, x_target, 1.0, delta_x) ||
       !kinematics_->convert_cartesian_deltas_to_joint_deltas(q, delta_x, tip, delta_q))
     {
       return false;
