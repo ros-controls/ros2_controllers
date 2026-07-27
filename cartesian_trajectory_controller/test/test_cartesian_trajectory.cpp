@@ -109,6 +109,56 @@ TEST(TestCartesianTrajectory, segment_duration_respects_speed_limits)
     0.01, 1e-9);
 }
 
+// A single-waypoint path has zero duration and returns that pose for any query time.
+TEST(TestCartesianTrajectory, single_waypoint_clamps)
+{
+  const std::vector<double> times = {0.5};
+  const std::vector<Eigen::Vector3d> positions = {{1.0, 2.0, 3.0}};
+  const std::vector<Eigen::Quaterniond> orientations = {
+    Eigen::Quaterniond(Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ()))};
+  CartesianTrajectory traj(times, positions, orientations);
+
+  EXPECT_NEAR(traj.duration(), 0.0, 1e-12);
+
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  for (double t : {-1.0, 0.5, 5.0})
+  {
+    ASSERT_TRUE(traj.sample(t, p, q));
+    EXPECT_NEAR((p - positions[0]).norm(), 0.0, 1e-12);
+    EXPECT_NEAR(q.angularDistance(orientations[0]), 0.0, 1e-12);
+  }
+}
+
+// An empty path cannot be sampled.
+TEST(TestCartesianTrajectory, empty_trajectory_sample_returns_false)
+{
+  const std::vector<double> times;
+  const std::vector<Eigen::Vector3d> positions;
+  const std::vector<Eigen::Quaterniond> orientations;
+  CartesianTrajectory traj(times, positions, orientations);
+
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  EXPECT_FALSE(traj.sample(0.0, p, q));
+}
+
+// Cubic-Hermite translation is C1 across a knot (the velocity is continuous, not a staircase).
+TEST(TestCartesianTrajectory, translation_is_smooth_not_staircase)
+{
+  auto traj = make_trajectory();  // knots at t = 0, 1, 2
+  const double eps = 1e-4;
+  Eigen::Vector3d p_before, p_at, p_after;
+  Eigen::Quaterniond q;
+  ASSERT_TRUE(traj.sample(1.0 - eps, p_before, q));
+  ASSERT_TRUE(traj.sample(1.0, p_at, q));
+  ASSERT_TRUE(traj.sample(1.0 + eps, p_after, q));
+
+  const Eigen::Vector3d v_left = (p_at - p_before) / eps;
+  const Eigen::Vector3d v_right = (p_after - p_at) / eps;
+  EXPECT_NEAR((v_left - v_right).norm(), 0.0, 1e-2);  // continuous velocity at the knot
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -80,6 +80,22 @@ if(BUILD_TESTING)
     cartesian_trajectory_controller
     Eigen3::Eigen
   )
+
+  ament_add_gmock(test_cartesian_trajectory_controller
+    test/test_cartesian_trajectory_controller.cpp)
+  target_link_libraries(test_cartesian_trajectory_controller
+    cartesian_trajectory_controller
+    Eigen3::Eigen
+    controller_interface::controller_interface
+    hardware_interface::hardware_interface
+    kinematics_interface::kinematics_interface
+    pluginlib::pluginlib
+    rclcpp::rclcpp
+    ros2_control_test_assets::ros2_control_test_assets
+    ${geometry_msgs_TARGETS}
+    ${trajectory_msgs_TARGETS}
+  )
+  set_tests_properties(test_cartesian_trajectory_controller PROPERTIES TIMEOUT 120)
 endif()
 
 install(
