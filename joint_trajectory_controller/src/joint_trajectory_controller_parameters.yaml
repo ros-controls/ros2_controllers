@@ -130,6 +130,27 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
+  spline_upsampling:
+    enable: {
+      type: bool,
+      default_value: false,
+      read_only: true,
+      description: "Upsample positions-only messages on ``~/joint_trajectory`` into a smooth global C2
+        cubic spline by synthesizing knot velocities (a global tridiagonal solve with rest boundary
+        conditions ``v0 = v_{N-1} = 0``). Messages that already carry velocities are passed through
+        unchanged. Has no effect when ``interpolation_method`` is ``none``.",
+    }
+    policy_frequency: {
+      type: double,
+      default_value: 0.0,
+      description: "Frequency in Hz at which an AI policy emits action-chunk waypoints. When greater
+        than zero, ``time_from_start = i / policy_frequency`` is synthesized for positions-only chunks
+        that arrive without timing. When zero, incoming chunks must already carry strictly-increasing
+        ``time_from_start``. Only used when ``spline_upsampling.enable`` is true.",
+      validation: {
+        gt_eq: [0.0],
+      }
+    }
   allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
     default_value: false,

@@ -1039,6 +1039,23 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
 
+  if (params_.spline_upsampling.enable)
+  {
+    RCLCPP_INFO(
+      logger, "Spline upsampling enabled (policy_frequency=%.2f Hz).",
+      params_.spline_upsampling.policy_frequency);
+    if (interpolation_method_ == interpolation_methods::InterpolationMethod::NONE)
+    {
+      RCLCPP_WARN(logger, "spline_upsampling has no effect when interpolation_method is 'none'.");
+    }
+    if (params_.spline_upsampling.policy_frequency == 0.0)
+    {
+      RCLCPP_WARN(
+        logger, "spline_upsampling.policy_frequency is 0: chunks without their own timing will be "
+                "rejected.");
+    }
+  }
+
   // prepare hold_position_msg
   init_hold_position_msg();
 
@@ -1435,9 +1452,79 @@ void JointTrajectoryController::publish_state(
   }
 }
 
+void JointTrajectoryController::preprocess_incoming_trajectory(
+  trajectory_msgs::msg::JointTrajectory & msg) const
+{
+  if (!params_.spline_upsampling.enable)
+  {
+    return;
+  }
+  // 'none' sampling forwards raw waypoints, so synthesized velocities would be ignored
+  if (interpolation_method_ == interpolation_methods::InterpolationMethod::NONE)
+  {
+    return;
+  }
+  if (!is_positions_only(msg))
+  {
+    return;
+  }
+  synthesize_timing(msg);
+  fill_cubic_spline_velocities(msg);
+}
+
+bool JointTrajectoryController::is_positions_only(
+  const trajectory_msgs::msg::JointTrajectory & traj) const
+{
+  if (traj.points.empty())
+  {
+    return false;
+  }
+  for (const auto & point : traj.points)
+  {
+    if (point.positions.empty())
+    {
+      return false;
+    }
+    if (!point.velocities.empty() || !point.accelerations.empty())
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void JointTrajectoryController::synthesize_timing(
+  trajectory_msgs::msg::JointTrajectory & traj) const
+{
+  const double policy_frequency = params_.spline_upsampling.policy_frequency;
+  if (policy_frequency <= 0.0)
+  {
+    return;  // no rate configured: chunks must carry their own timing
+  }
+  // leave already-timed chunks untouched
+  for (const auto & point : traj.points)
+  {
+    const auto & t = point.time_from_start;
+    if (t.sec != 0 || t.nanosec != 0u)
+    {
+      return;
+    }
+  }
+
+  // TODO: point 0 is at t=0, so a fresh chunk steps to points[0] from the live state
+  // instead of ramping in; a live-state lead-in belongs with cross-chunk continuity.
+  const double dt = 1.0 / policy_frequency;
+  for (size_t i = 0; i < traj.points.size(); ++i)
+  {
+    traj.points[i].time_from_start = rclcpp::Duration::from_seconds(static_cast<double>(i) * dt);
+  }
+}
+
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
+  preprocess_incoming_trajectory(*msg);
+
   if (!validate_trajectory_msg(*msg))
   {
     return;
@@ -1449,7 +1536,7 @@ void JointTrajectoryController::topic_callback(
     add_new_trajectory_msg(msg);
     rt_is_holding_ = false;
   }
-};
+}
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
@@ -1467,6 +1554,13 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   if (!validate_trajectory_msg(goal->trajectory))
   {
     return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  if (params_.spline_upsampling.enable && is_positions_only(goal->trajectory))
+  {
+    RCLCPP_WARN_ONCE(
+      get_node()->get_logger(),
+      "spline_upsampling upsamples the ~/joint_trajectory topic only, not action goals.");
   }
 
   RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");

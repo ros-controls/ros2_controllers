@@ -213,6 +213,14 @@ protected:
   // callback for topic interface
   virtual void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
+  // Non-RT hook run on every incoming trajectory before validation. Currently upsamples
+  // positions-only chunks to a C2 spline when spline_upsampling is enabled; no-op otherwise.
+  void preprocess_incoming_trajectory(trajectory_msgs::msg::JointTrajectory & msg) const;
+  // true if every point has positions but no velocities or accelerations
+  bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;
+  // fill time_from_start from spline_upsampling.policy_frequency when timing is absent
+  void synthesize_timing(trajectory_msgs::msg::JointTrajectory & traj) const;
+
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
