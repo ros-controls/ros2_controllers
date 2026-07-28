@@ -1143,10 +1143,6 @@ TEST(TestTrajectory, sample_velocity_only_all_segments_skipped_returns_false)
     << "sample() must return false when it cannot produce a non-empty positions vector";
 }
 
-// fill_cubic_spline_velocities (the positions->velocities sibling of
-// deduce_from_derivatives): solves the knot velocities that turn a positions-
-// only trajectory into a global cubic spline (C2).
-
 namespace
 {
 // Build a positions-only chunk; positions_per_point[i] holds one position per
@@ -1195,11 +1191,9 @@ double accel_leave(const trajectory_msgs::msg::JointTrajectory & traj, size_t i,
 }
 }  // namespace
 
-/**
- * @brief fill_cubic_spline_velocities makes the per-segment cubic Hermite C2:
- * acceleration is continuous across every interior knot, with rest boundary
- * conditions (v0 = v_{N-1} = 0), for each joint solved independently.
- */
+// fill_cubic_spline_velocities makes the per-segment cubic Hermite C2:
+// acceleration is continuous across every interior knot, with rest boundary
+// conditions (v0 = v_{N-1} = 0), for each joint solved independently.
 TEST(TestTrajectory, fill_cubic_spline_velocities_makes_acceleration_continuous)
 {
   const double dt = 0.1;
@@ -1230,12 +1224,10 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_makes_acceleration_continuous)
   }
 }
 
-/**
- * @brief End-to-end through the real sampler: a positions-only chunk that is
- * velocity-filled and then sampled by Trajectory::sample() produces smooth,
- * bounded acceleration; the SAME positions left unfilled interpolate linearly
- * (C0) and show far larger acceleration spikes at the knots.
- */
+// End-to-end through the real sampler: a positions-only chunk that is
+// velocity-filled and then sampled by Trajectory::sample() produces smooth,
+// bounded acceleration; the SAME positions left unfilled interpolate linearly
+// (C0) and show far larger acceleration spikes at the knots.
 TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
 {
   // Realistic action chunk: 50 waypoints at 25 Hz (~2 s) on a smooth path.
@@ -1307,11 +1299,9 @@ TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
     << "unfilled positions-only samples to a C0 staircase with far larger accel spikes";
 }
 
-/**
- * @brief Edge cases: a two-point chunk is a valid single segment (rest-to-rest);
- * trajectories with < 2 points or inconsistent widths are a safe no-op; and
- * back-to-back chunks of different sizes both fill correctly.
- */
+// Edge cases: a two-point chunk is a valid single segment (rest-to-rest);
+// trajectories with < 2 points or inconsistent widths are a safe no-op; and
+// back-to-back chunks of different sizes both fill correctly.
 TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
 {
   // N == 2: valid single segment, rest BC -> both velocities 0.
@@ -1348,11 +1338,9 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
   }
 }
 
-/**
- * @brief fill_cubic_spline_velocities produces the exact clamped-spline knot
- * velocities. For 3 uniformly spaced points with rest BC (v0 = v2 = 0) the
- * interior velocity is hand-solvable: v1 = 3/4 * (p2 - p0) / h.
- */
+// fill_cubic_spline_velocities produces the exact clamped-spline knot
+// velocities. For 3 uniformly spaced points with rest BC (v0 = v2 = 0) the
+// interior velocity is hand-solvable: v1 = 3/4 * (p2 - p0) / h.
 TEST(TestTrajectory, fill_cubic_spline_velocities_matches_expected_values)
 {
   const double h = 0.1;
@@ -1365,11 +1353,9 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_matches_expected_values)
   EXPECT_NEAR(traj.points[2].velocities[0], 0.0, 1e-9);
 }
 
-/**
- * @brief Non-strictly-increasing timing (here a zero-duration segment) would
- * divide by zero, so fill_cubic_spline_velocities returns false and leaves the
- * trajectory untouched for the caller to reject.
- */
+// Non-strictly-increasing timing (here a zero-duration segment) would
+// divide by zero, so fill_cubic_spline_velocities returns false and leaves the
+// trajectory untouched for the caller to reject.
 TEST(TestTrajectory, fill_cubic_spline_velocities_rejects_non_increasing_timing)
 {
   auto traj = make_positions_chunk({{0.0}, {0.1}, {0.2}}, 0.0);  // all time_from_start = 0

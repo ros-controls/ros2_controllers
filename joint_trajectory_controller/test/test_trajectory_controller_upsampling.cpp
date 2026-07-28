@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Tests for JTC's positions-only action-chunk upsampling (the spline_upsampling.*
-// parameters): the policy helpers (is_positions_only / synthesize_timing /
-// preprocess_incoming_trajectory) and the end-to-end wiring through topic_callback.
-// The cubic-spline math itself lives in trajectory.cpp and is tested in
-// test_trajectory.cpp.
-
 #include <gmock/gmock.h>
 
 #include <memory>
@@ -71,8 +65,6 @@ double time_at(const trajectory_msgs::msg::JointTrajectory & traj, size_t i)
   return rclcpp::Duration(traj.points[i].time_from_start).seconds();
 }
 }  // namespace
-
-// --- helper-level unit tests (no node) ---------------------------------------
 
 // Untimed chunks get time_from_start = i / policy_frequency.
 TEST(JtcUpsamplingHelpers, synthesizes_timing_from_policy_frequency)
@@ -197,8 +189,6 @@ TEST(JtcUpsamplingHelpers, preserves_header_stamp)
   EXPECT_EQ(traj.header.stamp.sec, 123);
   EXPECT_EQ(traj.header.stamp.nanosec, 456u);
 }
-
-// --- end-to-end wiring tests (through topic_callback) ------------------------
 
 // With upsampling off (default), an untimed positions-only chunk is rejected by
 // validate_trajectory_msg (all-zero, non-increasing timestamps), so nothing installs.
