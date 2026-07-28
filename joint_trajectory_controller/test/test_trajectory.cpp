@@ -1211,7 +1211,7 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_makes_acceleration_continuous)
   }
   auto traj = make_positions_chunk(positions_per_point, dt);
 
-  joint_trajectory_controller::fill_cubic_spline_velocities(traj);
+  ASSERT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(traj));
 
   const size_t n = traj.points.size();
   for (const auto & point : traj.points)
@@ -1290,7 +1290,7 @@ TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
   };
 
   auto filled = make_msg();
-  joint_trajectory_controller::fill_cubic_spline_velocities(*filled);
+  ASSERT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(*filled));
   auto unfilled = make_msg();  // positions only -> JTC linear (C0)
 
   const double peak_filled = peak_sampled_acceleration(filled);
@@ -1317,19 +1317,19 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
   // N == 2: valid single segment, rest BC -> both velocities 0.
   {
     auto traj = make_positions_chunk({{0.0}, {0.5}}, 0.1);
-    joint_trajectory_controller::fill_cubic_spline_velocities(traj);
+    EXPECT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(traj));
     ASSERT_EQ(traj.points[0].velocities.size(), 1u);
     EXPECT_NEAR(traj.points[0].velocities[0], 0.0, EPS);
     EXPECT_NEAR(traj.points[1].velocities[0], 0.0, EPS);
   }
-  // N == 1 and empty: no-op (velocities stay empty), must not crash.
+  // N == 1 and empty: no-op, returns false, velocities stay empty, must not crash.
   {
     auto one = make_positions_chunk({{0.3}}, 0.1);
-    joint_trajectory_controller::fill_cubic_spline_velocities(one);
+    EXPECT_FALSE(joint_trajectory_controller::fill_cubic_spline_velocities(one));
     EXPECT_TRUE(one.points[0].velocities.empty());
 
     trajectory_msgs::msg::JointTrajectory empty;
-    joint_trajectory_controller::fill_cubic_spline_velocities(empty);
+    EXPECT_FALSE(joint_trajectory_controller::fill_cubic_spline_velocities(empty));
     EXPECT_TRUE(empty.points.empty());
   }
   // Varying sizes back-to-back: a small then a large chunk both fill correctly.
@@ -1337,13 +1337,45 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_edge_cases)
     auto small = make_positions_chunk({{0.0}, {0.1}, {0.2}}, 0.1);
     auto large =
       make_positions_chunk({{0.0}, {0.1}, {0.2}, {0.3}, {0.2}, {0.1}, {0.0}, {0.1}, {0.2}}, 0.1);
-    joint_trajectory_controller::fill_cubic_spline_velocities(small);
-    joint_trajectory_controller::fill_cubic_spline_velocities(large);
+    EXPECT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(small));
+    EXPECT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(large));
     ASSERT_EQ(small.points.size(), 3u);
     ASSERT_EQ(large.points.size(), 9u);
     for (const auto & point : small.points) EXPECT_EQ(point.velocities.size(), 1u);
     for (const auto & point : large.points) EXPECT_EQ(point.velocities.size(), 1u);
     EXPECT_NEAR(small.points.front().velocities[0], 0.0, EPS);
     EXPECT_NEAR(large.points.back().velocities[0], 0.0, EPS);
+  }
+}
+
+/**
+ * @brief fill_cubic_spline_velocities produces the exact clamped-spline knot
+ * velocities. For 3 uniformly spaced points with rest BC (v0 = v2 = 0) the
+ * interior velocity is hand-solvable: v1 = 3/4 * (p2 - p0) / h.
+ */
+TEST(TestTrajectory, fill_cubic_spline_velocities_matches_expected_values)
+{
+  const double h = 0.1;
+  auto traj = make_positions_chunk({{0.0}, {0.1}, {0.3}}, h);
+  ASSERT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(traj));
+
+  const double expected_v1 = 0.75 * (0.3 - 0.0) / h;  // = 2.25
+  EXPECT_NEAR(traj.points[0].velocities[0], 0.0, 1e-9);
+  EXPECT_NEAR(traj.points[1].velocities[0], expected_v1, 1e-9);
+  EXPECT_NEAR(traj.points[2].velocities[0], 0.0, 1e-9);
+}
+
+/**
+ * @brief Non-strictly-increasing timing (here a zero-duration segment) would
+ * divide by zero, so fill_cubic_spline_velocities returns false and leaves the
+ * trajectory untouched for the caller to reject.
+ */
+TEST(TestTrajectory, fill_cubic_spline_velocities_rejects_non_increasing_timing)
+{
+  auto traj = make_positions_chunk({{0.0}, {0.1}, {0.2}}, 0.0);  // all time_from_start = 0
+  EXPECT_FALSE(joint_trajectory_controller::fill_cubic_spline_velocities(traj));
+  for (const auto & point : traj.points)
+  {
+    EXPECT_TRUE(point.velocities.empty());  // untouched
   }
 }
