@@ -1051,8 +1051,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     if (params_.spline_upsampling.policy_frequency == 0.0)
     {
       RCLCPP_WARN(
-        logger, "spline_upsampling.policy_frequency is 0: chunks without their own timing will be "
-                "rejected.");
+        logger,
+        "spline_upsampling.policy_frequency is 0: chunks without their own timing will be "
+        "rejected.");
     }
   }
 
