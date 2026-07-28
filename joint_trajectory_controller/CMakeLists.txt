@@ -33,14 +33,9 @@ generate_parameter_library(joint_trajectory_controller_parameters
   include/joint_trajectory_controller/validate_jtc_parameters.hpp
 )
 
-generate_parameter_library(inference_bridge_controller_parameters
-  src/inference_bridge_controller_parameters.yaml
-)
-
 add_library(joint_trajectory_controller SHARED
   src/joint_trajectory_controller.cpp
   src/trajectory.cpp
-  src/inference_bridge_controller.cpp
 )
 if(WIN32)
   target_compile_definitions(joint_trajectory_controller PRIVATE _USE_MATH_DEFINES)
@@ -51,7 +46,6 @@ target_include_directories(joint_trajectory_controller PUBLIC
 )
 target_link_libraries(joint_trajectory_controller PUBLIC
                       joint_trajectory_controller_parameters
-                      inference_bridge_controller_parameters
                       control_toolbox::control_toolbox
                       controller_interface::controller_interface
                       hardware_interface::hardware_interface
@@ -113,23 +107,15 @@ if(BUILD_TESTING)
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets)
 
-  ament_add_gmock(test_inference_bridge_controller
-    test/test_inference_bridge_controller.cpp
-  )
-  target_link_libraries(test_inference_bridge_controller
+  ament_add_gmock(test_trajectory_controller_upsampling
+    test/test_trajectory_controller_upsampling.cpp)
+  set_tests_properties(test_trajectory_controller_upsampling PROPERTIES TIMEOUT 240)
+  target_link_libraries(test_trajectory_controller_upsampling
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets
   )
-  target_compile_definitions(test_inference_bridge_controller PRIVATE _USE_MATH_DEFINES)
+  target_compile_definitions(test_trajectory_controller_upsampling PRIVATE _USE_MATH_DEFINES)
 
-  ament_add_gmock(test_load_inference_bridge_controller
-    test/test_load_inference_bridge_controller.cpp
-  )
-  target_link_libraries(test_load_inference_bridge_controller
-    joint_trajectory_controller
-    controller_manager::controller_manager
-    ros2_control_test_assets::ros2_control_test_assets
-  )
 endif()
 
 
@@ -140,7 +126,6 @@ install(
 install(TARGETS
     joint_trajectory_controller
     joint_trajectory_controller_parameters
-    inference_bridge_controller_parameters
   EXPORT export_joint_trajectory_controller
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
