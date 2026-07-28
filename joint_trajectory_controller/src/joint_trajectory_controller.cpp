@@ -459,7 +459,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // If effort interface only, add desired effort as feed forward
             // If velocity interface, ignore desired effort
             size_t index_cmd_joint = map_cmd_to_joints_[i];
-            tmp_command_[index_cmd_joint] =
+            closed_loop_pid_command_[index_cmd_joint] =
               (command_next_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
               (has_effort_command_interface_ ? command_next_.effort[index_cmd_joint] : 0.0) +
               pids_[i]->compute_command(
@@ -469,20 +469,18 @@ controller_interface::return_type JointTrajectoryController::update(
         }
 
         // set values for next hardware write()
+        const std::vector<double> & velocity_command =
+          use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities;
+        const std::vector<double> & effort_command =
+          use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort;
+
         if (has_position_command_interface_)
         {
           assign_interface_from_point(joint_command_interface_[0], command_next_.positions);
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
-          }
+          assign_interface_from_point(joint_command_interface_[1], velocity_command);
         }
         if (has_acceleration_command_interface_)
         {
@@ -490,15 +488,7 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            // If position and effort command interfaces, only pass desired effort
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(joint_command_interface_[3], effort_command);
         }
 
         // store the previous command and time used in open-loop control mode
@@ -941,7 +931,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
-  tmp_command_.resize(dof_, 0.0);
+  closed_loop_pid_command_.resize(dof_, 0.0);
 
   if (use_closed_loop_pid_adapter_)
   {
