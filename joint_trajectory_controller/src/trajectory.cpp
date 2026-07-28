@@ -98,41 +98,41 @@ void wraparound_joint(
   }
 }
 
-void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
+bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
 {
   const size_t n = traj.points.size();
   if (n < 2)
   {
-    return;  // need at least one segment to form a spline
+    return false;
   }
   const size_t n_joints = traj.points[0].positions.size();
   if (n_joints == 0)
   {
-    return;
+    return false;
   }
   for (const auto & point : traj.points)
   {
     if (point.positions.size() != n_joints)
     {
-      return;  // malformed; let validate_trajectory_msg reject it
+      return false;
     }
   }
 
-  // Waypoint times, gathered once and shared across joints.
+  // Waypoint times; bail on non-increasing timing (zero/negative duration -> divide by zero).
   std::vector<double> times(n);
   for (size_t i = 0; i < n; ++i)
   {
     times[i] = rclcpp::Duration(traj.points[i].time_from_start).seconds();
+    if (i > 0 && times[i] <= times[i - 1])
+    {
+      return false;
+    }
   }
 
-  // Tridiagonal system  [lower_diagonal, diagonal, upper_diagonal] * velocities = rhs,
-  // solved per joint by the Thomas algorithm. Local scratch: this runs once per chunk
-  // in the non-RT path, so per-call allocation is fine; preallocate only if it ever
-  // moves into the RT update() loop.
+  // Per-joint tridiagonal solve (Thomas algorithm); non-RT, so per-call scratch is fine.
   std::vector<double> lower_diagonal(n), diagonal(n), upper_diagonal(n), rhs(n);
   std::vector<double> forward_sweep(n), velocities(n);
 
-  // size each point's velocities to the joint count (positions-only -> empty)
   for (auto & point : traj.points)
   {
     point.velocities.assign(n_joints, 0.0);
@@ -140,10 +140,8 @@ void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
 
   for (size_t joint = 0; joint < n_joints; ++joint)
   {
-    // Rest boundary conditions: velocity is zero at both ends (start from / stop at rest).
-    // TODO: a variant accepting a non-zero start velocity would let a caller stitch
-    // successive trajectories together (e.g. cross-chunk C2 continuity in a streaming
-    // controller), using the live state instead of always restarting from rest.
+    // Rest boundary conditions: velocity is zero at both ends.
+    // TODO: accept a non-zero start velocity to stitch chunks (cross-chunk C2 continuity).
     diagonal[0] = 1.0;
     upper_diagonal[0] = 0.0;
     rhs[0] = 0.0;
@@ -151,8 +149,7 @@ void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
     diagonal[n - 1] = 1.0;
     rhs[n - 1] = 0.0;
 
-    // Interior knots: each row enforces continuous acceleration across the knot
-    // (the global cubic-spline condition) for non-uniform spacing.
+    // Interior knots: each row enforces continuous acceleration (global cubic-spline condition).
     for (size_t i = 1; i < n - 1; ++i)
     {
       const double duration_prev = times[i] - times[i - 1];
@@ -168,7 +165,7 @@ void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
                       (pos_curr - pos_prev) / (duration_prev * duration_prev));
     }
 
-    // Thomas algorithm (O(n)): forward sweep ...
+    // Thomas algorithm: forward sweep ...
     forward_sweep[0] = upper_diagonal[0] / diagonal[0];
     velocities[0] = rhs[0] / diagonal[0];
     for (size_t i = 1; i < n; ++i)
@@ -188,6 +185,7 @@ void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
       traj.points[i].velocities[joint] = velocities[i];
     }
   }
+  return true;
 }
 
 void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)

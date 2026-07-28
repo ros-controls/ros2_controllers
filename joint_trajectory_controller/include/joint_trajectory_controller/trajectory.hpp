@@ -221,6 +221,8 @@ void wraparound_joint(
  * spline, so a positions-only trajectory is upgraded from linear (C0) to C2.
  *
  * \param[in,out] traj Trajectory whose points carry positions; velocities are filled.
+ * \return true if velocities were written; false (trajectory left untouched) if it has
+ *   fewer than two points, inconsistent widths, or non-strictly-increasing timing.
  *
  * \code
  *   trajectory_msgs::msg::JointTrajectory msg;  // positions-only waypoints, with time_from_start
@@ -229,7 +231,7 @@ void wraparound_joint(
  *   traj.sample(t, interpolation_methods::DEFAULT_INTERPOLATION, out, start, end);
  * \endcode
  */
-void fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj);
+bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj);
 
 }  // namespace joint_trajectory_controller
 
