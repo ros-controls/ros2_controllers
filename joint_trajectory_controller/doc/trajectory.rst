@@ -49,7 +49,7 @@ The spline interpolator uses the following interpolation strategies depending on
 
 .. note::
   The linear case above is discouraged because positions-only waypoints yield discontinuous
-  velocities. The ``InferenceBridgeController`` variant avoids this for positions-only inputs: it
+  velocities. Enabling ``spline_upsampling`` avoids this for positions-only inputs: the controller
   pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
   writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
   C2. See :ref:`Ingesting positions-only action chunks <joint_trajectory_controller_userdoc>`.
