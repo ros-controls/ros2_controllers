@@ -146,7 +146,7 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   }
 
   const CartesianTrajectory path(times, positions, orientations);
-  // Carry the incoming stamp so JTC's deferred-start works (first knot is ingestion-anchored).
+  // Carry the incoming stamp so JTC's deferred-start works.
   joint_traj.header.stamp = msg.header.stamp;
   return solve_ik_along_path(path, q, joint_traj);
 }

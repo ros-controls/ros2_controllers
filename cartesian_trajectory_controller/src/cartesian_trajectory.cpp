@@ -77,8 +77,8 @@ CartesianTrajectory::CartesianTrajectory(
 bool CartesianTrajectory::sample(
   double t, Eigen::Vector3d & position, Eigen::Quaterniond & orientation) const
 {
-  const size_t n = times_.size();
-  if (n == 0)
+  const size_t num_waypoints = times_.size();
+  if (num_waypoints == 0)
   {
     return false;
   }
@@ -95,37 +95,65 @@ bool CartesianTrajectory::sample(
     return true;
   }
 
-  size_t i = 0;
-  while (i + 1 < n && times_[i + 1] <= t)
+  size_t index = 0;
+  while (index + 1 < num_waypoints && times_[index + 1] <= t)
   {
-    ++i;
+    ++index;
   }
 
-  const double h = times_[i + 1] - times_[i];
-  if (h <= 0.0)
+  const double segment_duration = times_[index + 1] - times_[index];
+  if (segment_duration <= 0.0)
   {
-    position = positions_[i + 1];
-    orientation = orientations_[i + 1];
+    position = positions_[index + 1];
+    orientation = orientations_[index + 1];
     return true;
   }
-  const double u = t - times_[i];
-  const double s = u / h;
+  interpolate_segment(index, t - times_[index], segment_duration, position, orientation);
+  return true;
+}
 
-  // Cubic Hermite per axis, matching the has_velocity branch of
-  // Trajectory::interpolate_between_points.
+void CartesianTrajectory::interpolate_segment(
+  std::size_t index, double time_into_segment, double segment_duration, Eigen::Vector3d & position,
+  Eigen::Quaterniond & orientation) const
+{
+  auto generate_powers = [](int n, double x, double * powers)
+  {
+    powers[0] = 1.0;
+    for (int i = 1; i <= n; ++i)
+    {
+      powers[i] = powers[i - 1] * x;
+    }
+  };
+
+  double t_powers[4];
+  double duration_powers[4];
+  generate_powers(3, time_into_segment, t_powers);
+  generate_powers(3, segment_duration, duration_powers);
+
+  // Cubic Hermite per axis
   for (int axis = 0; axis < 3; ++axis)
   {
-    const double p0 = positions_[i][axis];
-    const double p1 = positions_[i + 1][axis];
-    const double v0 = velocities_[i][axis];
-    const double v1 = velocities_[i + 1][axis];
-    const double c2 = (-3.0 * p0 + 3.0 * p1 - 2.0 * v0 * h - v1 * h) / (h * h);
-    const double c3 = (2.0 * p0 - 2.0 * p1 + v0 * h + v1 * h) / (h * h * h);
-    position[axis] = p0 + v0 * u + c2 * u * u + c3 * u * u * u;
+    const double start_pos = positions_[index][axis];
+    const double start_vel = velocities_[index][axis];
+    const double end_pos = positions_[index + 1][axis];
+    const double end_vel = velocities_[index + 1][axis];
+
+    double coefficients[4] = {0.0, 0.0, 0.0, 0.0};
+    coefficients[0] = start_pos;
+    coefficients[1] = start_vel;
+    coefficients[2] = (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * duration_powers[1] -
+                       end_vel * duration_powers[1]) /
+                      duration_powers[2];
+    coefficients[3] = (2.0 * start_pos - 2.0 * end_pos + start_vel * duration_powers[1] +
+                       end_vel * duration_powers[1]) /
+                      duration_powers[3];
+
+    position[axis] = t_powers[0] * coefficients[0] + t_powers[1] * coefficients[1] +
+                     t_powers[2] * coefficients[2] + t_powers[3] * coefficients[3];
   }
 
-  orientation = orientations_[i].slerp(s, orientations_[i + 1]);
-  return true;
+  orientation =
+    orientations_[index].slerp(time_into_segment / segment_duration, orientations_[index + 1]);
 }
 
 double CartesianTrajectory::duration() const

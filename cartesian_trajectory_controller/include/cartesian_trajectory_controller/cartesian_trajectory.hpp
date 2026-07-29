@@ -15,6 +15,7 @@
 #ifndef CARTESIAN_TRAJECTORY_CONTROLLER__CARTESIAN_TRAJECTORY_HPP_
 #define CARTESIAN_TRAJECTORY_CONTROLLER__CARTESIAN_TRAJECTORY_HPP_
 
+#include <cstddef>
 #include <vector>
 
 #include "Eigen/Dense"
@@ -54,6 +55,11 @@ public:
   double duration() const;
 
 private:
+  /// Cubic-Hermite translation + SLERP orientation within the segment starting at index.
+  void interpolate_segment(
+    std::size_t index, double time_into_segment, double segment_duration,
+    Eigen::Vector3d & position, Eigen::Quaterniond & orientation) const;
+
   std::vector<double> times_;
   std::vector<Eigen::Vector3d> positions_;
   std::vector<Eigen::Vector3d> velocities_;
