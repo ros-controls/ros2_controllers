@@ -7,13 +7,9 @@ on:
   pull_request:
     branches:
       - master
-<<<<<<< HEAD
-    paths:
-=======
       - '*feature*'
       - '*feature/**'
     paths: &paths
->>>>>>> 5e2efbb (Fix branch filters for PRs from a feature branch (#2496))
       - '**.hpp'
       - '**.h'
       - '**.cpp'
