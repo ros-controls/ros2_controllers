@@ -217,17 +217,17 @@ protected:
       {
         rclcpp::MessageInfo raw_msg_info;
         rclcpp::MessageInfo battery_msg_info;
-        if (raw_battery_states_subscription->take(received_raw_battery_states_msg, raw_msg_info))
+        while (raw_battery_states_subscription->take(received_raw_battery_states_msg, raw_msg_info))
         {
           has_raw_battery_states_msg = true;
         }
-        if (battery_state_subscription->take(received_battery_state_msg, battery_msg_info))
+        while (battery_state_subscription->take(received_battery_state_msg, battery_msg_info))
         {
           has_battery_state_msg = true;
         }
       }
 
-      // check if message has been received
+      // Check if messages have been received.
       if (has_raw_battery_states_msg && has_battery_state_msg)
       {
         break;
