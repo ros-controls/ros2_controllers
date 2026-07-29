@@ -52,7 +52,7 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
   params_ = param_listener_->get_params();
   counts_ = {};
   sums_ = {};
-  raw_battery_states_msg.battery_states.clear();
+  raw_battery_states_msg_.battery_states.clear();
 
   if (!params_.sensor_name.empty())
   {
@@ -109,16 +109,16 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_configure(
   }
 
   // Reserve memory in state publisher depending on the message type
-  battery_state_msg.location.reserve(MAX_LENGTH);
-  battery_state_msg.serial_number.reserve(MAX_LENGTH);
+  battery_state_msg_.location.reserve(MAX_LENGTH);
+  battery_state_msg_.serial_number.reserve(MAX_LENGTH);
 
-  raw_battery_states_msg.battery_states.reserve(params_.batteries.size());
+  raw_battery_states_msg_.battery_states.reserve(params_.batteries.size());
   for (size_t i = 0; i < params_.batteries.size(); ++i)
   {
     sensor_msgs::msg::BatteryState battery;
     battery.location.reserve(MAX_LENGTH);
     battery.serial_number.reserve(MAX_LENGTH);
-    raw_battery_states_msg.battery_states.emplace_back(std::move(battery));
+    raw_battery_states_msg_.battery_states.emplace_back(std::move(battery));
   }
 
   // Get count of enabled batteries for each interface
@@ -262,7 +262,7 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
   // handle individual battery states initializations
   for (size_t i = 0; i < params_.batteries.size(); ++i)
   {
-    auto & battery_state = raw_battery_states_msg.battery_states[i];
+    auto & battery_state = raw_battery_states_msg_.battery_states[i];
     const auto & battery_properties = params_.batteries_map.at(params_.batteries.at(i));
 
     battery_state.header.frame_id = params_.batteries[i];
@@ -291,28 +291,24 @@ controller_interface::CallbackReturn BatteryStateBroadcaster::on_activate(
     combined_location += battery_state.location + ", ";
     combined_serial_number += battery_state.serial_number + ", ";
   }
-  raw_battery_states_realtime_publisher_->try_publish(raw_battery_states_msg);
-
   // handle aggregate battery state initialization
-  battery_state_msg.voltage = kUninitializedValue;
-  battery_state_msg.temperature = kUninitializedValue;
-  battery_state_msg.current = kUninitializedValue;
-  battery_state_msg.charge = kUninitializedValue;
-  battery_state_msg.capacity = sums_.capacity_sum;
-  battery_state_msg.design_capacity = sums_.design_capacity_sum;
-  battery_state_msg.percentage = kUninitializedValue;
-  battery_state_msg.power_supply_status =
+  battery_state_msg_.voltage = kUninitializedValue;
+  battery_state_msg_.temperature = kUninitializedValue;
+  battery_state_msg_.current = kUninitializedValue;
+  battery_state_msg_.charge = kUninitializedValue;
+  battery_state_msg_.capacity = sums_.capacity_sum;
+  battery_state_msg_.design_capacity = sums_.design_capacity_sum;
+  battery_state_msg_.percentage = kUninitializedValue;
+  battery_state_msg_.power_supply_status =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
-  battery_state_msg.power_supply_health =
+  battery_state_msg_.power_supply_health =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
-  battery_state_msg.power_supply_technology = combined_power_supply_technology;
-  battery_state_msg.present = true;
-  battery_state_msg.cell_voltage = {};
-  battery_state_msg.cell_temperature = {};
-  battery_state_msg.location = combined_location;
-  battery_state_msg.serial_number = combined_serial_number;
-
-  battery_state_realtime_publisher_->try_publish(battery_state_msg);
+  battery_state_msg_.power_supply_technology = combined_power_supply_technology;
+  battery_state_msg_.present = true;
+  battery_state_msg_.cell_voltage = {};
+  battery_state_msg_.cell_temperature = {};
+  battery_state_msg_.location = combined_location;
+  battery_state_msg_.serial_number = combined_serial_number;
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -339,107 +335,107 @@ controller_interface::return_type BatteryStateBroadcaster::update(
     {
       const auto & interfaces = params_.interfaces.batteries_map.at(params_.batteries.at(i));
 
-      raw_battery_states_msg.battery_states[i].header.stamp = time;
+      raw_battery_states_msg_.battery_states[i].header.stamp = time;
 
-      raw_battery_states_msg.battery_states[i].voltage = static_cast<float>(
+      raw_battery_states_msg_.battery_states[i].voltage = static_cast<float>(
         state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
-      sums_.voltage_sum += raw_battery_states_msg.battery_states[i].voltage;
+      sums_.voltage_sum += raw_battery_states_msg_.battery_states[i].voltage;
       interface_cnt++;
 
       if (interfaces.battery_temperature)
       {
-        raw_battery_states_msg.battery_states[i].temperature = static_cast<float>(
+        raw_battery_states_msg_.battery_states[i].temperature = static_cast<float>(
           state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
-        sums_.temperature_sum += raw_battery_states_msg.battery_states[i].temperature;
+        sums_.temperature_sum += raw_battery_states_msg_.battery_states[i].temperature;
         interface_cnt++;
       }
       if (interfaces.battery_current)
       {
-        raw_battery_states_msg.battery_states[i].current = static_cast<float>(
+        raw_battery_states_msg_.battery_states[i].current = static_cast<float>(
           state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
-        sums_.current_sum += raw_battery_states_msg.battery_states[i].current;
+        sums_.current_sum += raw_battery_states_msg_.battery_states[i].current;
         interface_cnt++;
       }
       if (interfaces.battery_charge)
       {
-        raw_battery_states_msg.battery_states[i].charge = static_cast<float>(
+        raw_battery_states_msg_.battery_states[i].charge = static_cast<float>(
           state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
-        sums_.charge_sum += raw_battery_states_msg.battery_states[i].charge;
+        sums_.charge_sum += raw_battery_states_msg_.battery_states[i].charge;
         interface_cnt++;
       }
       if (interfaces.battery_percentage)
       {
-        raw_battery_states_msg.battery_states[i].percentage = static_cast<float>(
+        raw_battery_states_msg_.battery_states[i].percentage = static_cast<float>(
           state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
-        sums_.percentage_sum += raw_battery_states_msg.battery_states[i].percentage;
+        sums_.percentage_sum += raw_battery_states_msg_.battery_states[i].percentage;
         interface_cnt++;
       }
       else
       {
         auto min_volt = params_.batteries_map.at(params_.batteries.at(i)).minimum_voltage;
         auto max_volt = params_.batteries_map.at(params_.batteries.at(i)).maximum_voltage;
-        float voltage = raw_battery_states_msg.battery_states[i].voltage;
+        float voltage = raw_battery_states_msg_.battery_states[i].voltage;
 
         if (std::isfinite(min_volt) && std::isfinite(max_volt) && (max_volt > min_volt))
         {
-          raw_battery_states_msg.battery_states[i].percentage =
+          raw_battery_states_msg_.battery_states[i].percentage =
             static_cast<float>((voltage - min_volt) * 100.0 / (max_volt - min_volt));
-          sums_.percentage_sum += raw_battery_states_msg.battery_states[i].percentage;
+          sums_.percentage_sum += raw_battery_states_msg_.battery_states[i].percentage;
         }
         else
         {
-          raw_battery_states_msg.battery_states[i].percentage = kUninitializedValue;
+          raw_battery_states_msg_.battery_states[i].percentage = kUninitializedValue;
         }
       }
       if (interfaces.battery_power_supply_status)
       {
-        raw_battery_states_msg.battery_states[i].power_supply_status =
+        raw_battery_states_msg_.battery_states[i].power_supply_status =
           static_cast<uint8_t>(state_interfaces_[interface_cnt].get_optional<double>().value_or(
             sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN));
         if (
-          raw_battery_states_msg.battery_states[i].power_supply_status >
+          raw_battery_states_msg_.battery_states[i].power_supply_status >
           combined_power_supply_status)
         {
           combined_power_supply_status =
-            raw_battery_states_msg.battery_states[i].power_supply_status;
+            raw_battery_states_msg_.battery_states[i].power_supply_status;
         }
         interface_cnt++;
       }
       if (interfaces.battery_power_supply_health)
       {
-        raw_battery_states_msg.battery_states[i].power_supply_health =
+        raw_battery_states_msg_.battery_states[i].power_supply_health =
           static_cast<uint8_t>(state_interfaces_[interface_cnt].get_optional<double>().value_or(
             sensor_msgs::msg::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN));
         if (
-          raw_battery_states_msg.battery_states[i].power_supply_health >
+          raw_battery_states_msg_.battery_states[i].power_supply_health >
           combined_power_supply_health)
         {
           combined_power_supply_health =
-            raw_battery_states_msg.battery_states[i].power_supply_health;
+            raw_battery_states_msg_.battery_states[i].power_supply_health;
         }
         interface_cnt++;
       }
       if (interfaces.battery_present)
       {
-        raw_battery_states_msg.battery_states[i].present =
+        raw_battery_states_msg_.battery_states[i].present =
           state_interfaces_[interface_cnt].get_optional<bool>().value_or(false);
         interface_cnt++;
       }
       else
       {
         if (
-          (!std::isnan(raw_battery_states_msg.battery_states[i].voltage)) &&
-          (raw_battery_states_msg.battery_states[i].voltage != 0.0f))
+          (!std::isnan(raw_battery_states_msg_.battery_states[i].voltage)) &&
+          (raw_battery_states_msg_.battery_states[i].voltage != 0.0f))
         {
-          raw_battery_states_msg.battery_states[i].present = true;
+          raw_battery_states_msg_.battery_states[i].present = true;
         }
         else
         {
-          raw_battery_states_msg.battery_states[i].present = false;
+          raw_battery_states_msg_.battery_states[i].present = false;
         }
       }
     }
-    raw_battery_states_realtime_publisher_->try_publish(raw_battery_states_msg);
+    raw_battery_states_realtime_publisher_->try_publish(raw_battery_states_msg_);
   }
 
   if (!params_.sensor_name.empty())
@@ -450,17 +446,17 @@ controller_interface::return_type BatteryStateBroadcaster::update(
 
   if (battery_state_realtime_publisher_)
   {
-    battery_state_msg.header.stamp = time;
-    battery_state_msg.voltage = sums_.voltage_sum / static_cast<float>(batteries_.size());
+    battery_state_msg_.header.stamp = time;
+    battery_state_msg_.voltage = sums_.voltage_sum / static_cast<float>(batteries_.size());
 
     if (counts_.temperature_cnt)
     {
-      battery_state_msg.temperature =
+      battery_state_msg_.temperature =
         sums_.temperature_sum / static_cast<float>(counts_.temperature_cnt);
     }
     if (counts_.current_cnt)
     {
-      battery_state_msg.current = sums_.current_sum / static_cast<float>(counts_.current_cnt);
+      battery_state_msg_.current = sums_.current_sum / static_cast<float>(counts_.current_cnt);
     }
 
     bool has_charge_interface = false;
@@ -472,17 +468,17 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         break;
       }
     }
-    battery_state_msg.charge =
+    battery_state_msg_.charge =
       has_charge_interface ? sums_.charge_sum : static_cast<float>(kUninitializedValue);
     if (counts_.percentage_cnt)
     {
-      battery_state_msg.percentage =
+      battery_state_msg_.percentage =
         sums_.percentage_sum / static_cast<float>(counts_.percentage_cnt);
     }
-    battery_state_msg.power_supply_status = combined_power_supply_status;
-    battery_state_msg.power_supply_health = combined_power_supply_health;
+    battery_state_msg_.power_supply_status = combined_power_supply_status;
+    battery_state_msg_.power_supply_health = combined_power_supply_health;
 
-    battery_state_realtime_publisher_->try_publish(battery_state_msg);
+    battery_state_realtime_publisher_->try_publish(battery_state_msg_);
   }
 
   return controller_interface::return_type::OK;
