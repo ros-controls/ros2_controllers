@@ -82,10 +82,10 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_configure
 
   // Initialize the indices for different interface types.
   itfs_ids_ = {};
-  itfs_ids_.manual_start = params_.interfaces.fieldViolation.size();
-  itfs_ids_.remote_start = itfs_ids_.manual_start + params_.interfaces.eStop.manual.size();
-  itfs_ids_.autoack_start = itfs_ids_.remote_start + params_.interfaces.eStop.remote.size();
-  itfs_ids_.total_interfaces = itfs_ids_.autoack_start + params_.interfaces.eStop.autoack.size();
+  itfs_ids_.manual_start = params_.interfaces.field_violation.size();
+  itfs_ids_.remote_start = itfs_ids_.manual_start + params_.interfaces.e_stop.manual.size();
+  itfs_ids_.autoack_start = itfs_ids_.remote_start + params_.interfaces.e_stop.remote.size();
+  itfs_ids_.total_interfaces = itfs_ids_.autoack_start + params_.interfaces.e_stop.autoack.size();
 
   RCLCPP_INFO(get_node()->get_logger(), "configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
@@ -106,21 +106,21 @@ Vda5050SafetyStateBroadcaster::state_interface_configuration() const
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   state_interfaces_config.names.reserve(itfs_ids_.total_interfaces);
-  for (auto const & fieldViolation_interface : params_.interfaces.fieldViolation)
+  for (auto const & field_violation_interface : params_.interfaces.field_violation)
   {
-    state_interfaces_config.names.push_back(fieldViolation_interface);
+    state_interfaces_config.names.push_back(field_violation_interface);
   }
-  for (auto const & eStop_manual_interface : params_.interfaces.eStop.manual)
+  for (auto const & e_stop_manual_interface : params_.interfaces.e_stop.manual)
   {
-    state_interfaces_config.names.push_back(eStop_manual_interface);
+    state_interfaces_config.names.push_back(e_stop_manual_interface);
   }
-  for (auto const & eStop_remote_interface : params_.interfaces.eStop.remote)
+  for (auto const & e_stop_remote_interface : params_.interfaces.e_stop.remote)
   {
-    state_interfaces_config.names.push_back(eStop_remote_interface);
+    state_interfaces_config.names.push_back(e_stop_remote_interface);
   }
-  for (auto const & eStop_autoack_interface : params_.interfaces.eStop.autoack)
+  for (auto const & e_stop_autoack_interface : params_.interfaces.e_stop.autoack)
   {
-    state_interfaces_config.names.push_back(eStop_autoack_interface);
+    state_interfaces_config.names.push_back(e_stop_autoack_interface);
   }
 
   return state_interfaces_config;
@@ -173,12 +173,12 @@ controller_interface::CallbackReturn Vda5050SafetyStateBroadcaster::on_deactivat
 controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  bool fieldViolation_value = false;
+  bool field_violation_value = false;
   for (size_t itf_idx = 0; itf_idx < itfs_ids_.manual_start; ++itf_idx)
   {
     if (get_bool_itf_value(state_interfaces_[itf_idx]))
     {
-      fieldViolation_value = true;
+      field_violation_value = true;
       break;
     }
   }
@@ -187,7 +187,7 @@ controller_interface::return_type Vda5050SafetyStateBroadcaster::update(
 
   if (realtime_vda5050_safety_state_publisher_)
   {
-    safety_state_msg_.field_violation = fieldViolation_value;
+    safety_state_msg_.field_violation = field_violation_value;
     safety_state_msg_.e_stop = estop_msg_;
     realtime_vda5050_safety_state_publisher_->try_publish(safety_state_msg_);
   }

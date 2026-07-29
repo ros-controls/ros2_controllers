@@ -1,20 +1,20 @@
 vda5050_safety_state_broadcaster:
   interfaces:
-    fieldViolation:
+    field_violation:
       type: string_array
       default_value: []
       description: "Interface names for field violation events. Supports double (1.0) or bool (true)."
 
-    eStop:
+    e_stop:
       manual:
         type: string_array
         default_value: []
-        description: "Interface names for manual eStop events. Supports double (1.0) or bool (true)."
+        description: "Interface names for manual e-stop events. Supports double (1.0) or bool (true)."
       remote:
         type: string_array
         default_value: []
-        description: "Interface names for remote eStop events. Supports double (1.0) or bool (true)."
+        description: "Interface names for remote e-stop events. Supports double (1.0) or bool (true)."
       autoack:
         type: string_array
         default_value: []
-        description: "Interface names for autoAck eStop events. Supports double (1.0) or bool (true)."
+        description: "Interface names for autoack e-stop events. Supports double (1.0) or bool (true)."
