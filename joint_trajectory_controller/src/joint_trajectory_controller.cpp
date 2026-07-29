@@ -469,18 +469,15 @@ controller_interface::return_type JointTrajectoryController::update(
         }
 
         // set values for next hardware write()
-        const std::vector<double> & velocity_command =
-          use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities;
-        const std::vector<double> & effort_command =
-          use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort;
-
         if (has_position_command_interface_)
         {
           assign_interface_from_point(joint_command_interface_[0], command_next_.positions);
         }
         if (has_velocity_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[1], velocity_command);
+          assign_interface_from_point(
+            joint_command_interface_[1],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities);
         }
         if (has_acceleration_command_interface_)
         {
@@ -488,7 +485,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          assign_interface_from_point(joint_command_interface_[3], effort_command);
+          assign_interface_from_point(
+            joint_command_interface_[3],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort);
         }
 
         // store the previous command and time used in open-loop control mode
