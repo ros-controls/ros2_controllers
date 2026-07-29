@@ -1,10 +1,16 @@
 name: Rolling - RHEL Semi-Binary Build
 on:
   workflow_dispatch:
-  pull_request: &event
+  pull_request:
     branches:
       - master
+<<<<<<< HEAD
     paths:
+=======
+      - '*feature*'
+      - '*feature/**'
+    paths: &paths
+>>>>>>> 5e2efbb (Fix branch filters for PRs from a feature branch (#2496))
       - '**.hpp'
       - '**.h'
       - '**.cpp'
@@ -16,7 +22,10 @@ on:
       - 'ros2_controllers.rolling.repos'
       - 'ros2_controllers.lyrical.repos'
       - '**.xml'
-  push: *event
+  push:
+    branches:
+      - master
+    paths: *paths
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on given branches
