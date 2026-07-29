@@ -19,3 +19,10 @@ repositories:
     type: git
     url: https://github.com/ros-controls/kinematics_interface.git
     version: jazzy
+<<<<<<< HEAD
+=======
+  ros2_control_cmake:
+    type: git
+    url: https://github.com/ros-controls/ros2_control_cmake.git
+    version: jazzy
+>>>>>>> 6c3c996 (Change ros2_control_cmake version to jazzy (#2506))
