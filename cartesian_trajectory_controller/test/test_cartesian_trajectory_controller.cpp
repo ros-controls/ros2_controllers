@@ -207,8 +207,9 @@ protected:
     const Eigen::Isometry3d & x0, const Eigen::Vector3d & dp, double dtheta)
   {
     return {
-      x0.translation() + dp, Eigen::Quaterniond(x0.rotation()) *
-                               Eigen::Quaterniond(Eigen::AngleAxisd(dtheta, Eigen::Vector3d::UnitY()))};
+      x0.translation() + dp,
+      Eigen::Quaterniond(x0.rotation()) *
+        Eigen::Quaterniond(Eigen::AngleAxisd(dtheta, Eigen::Vector3d::UnitY()))};
   }
 
   // Independent FK (same KDL plugin) used to build the target and to check the executed joints.
