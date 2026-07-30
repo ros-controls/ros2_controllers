@@ -179,7 +179,7 @@ bool Odometry::updateOpenLoop(
   return true;
 }
 
-bool Odometry::update_open_loop(
+bool Odometry::try_update_open_loop(
   const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel, double dt)
 {
   if (std::fabs(dt) < 1e-6)
