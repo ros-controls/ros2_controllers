@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/executor.hpp"
@@ -46,13 +47,15 @@ using tricycle_steering_controller::CMD_STEER_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_LEFT_WHEEL;
 using tricycle_steering_controller::CMD_TRACTION_RIGHT_WHEEL;
 
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 namespace
 {
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 const double COMMON_THRESHOLD = 1e-6;
 }  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableTricycleSteeringController
@@ -79,7 +82,7 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    auto ref_itfs = export_reference_interfaces();
     return tricycle_steering_controller::TricycleSteeringController::on_activate(previous_state);
   }
 

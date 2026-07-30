@@ -25,7 +25,12 @@
 #include <string>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "imu_sensor_broadcaster/imu_sensor_broadcaster.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 // subclassing and friending so we can access member variables
 class FriendIMUSensorBroadcaster : public imu_sensor_broadcaster::IMUSensorBroadcaster

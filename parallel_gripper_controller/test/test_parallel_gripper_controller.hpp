@@ -21,9 +21,14 @@
 
 #include "gmock/gmock.h"
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
