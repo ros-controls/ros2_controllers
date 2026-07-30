@@ -82,7 +82,7 @@ bool Odometry::update_from_pos(const std::vector<double> & wheels_pos, double dt
     return false;
   }
   std::vector<double> wheels_vel(wheels_pos.size());
-  for (size_t i = 0; i < static_cast<size_t>(wheels_pos.size()); ++i)
+  for (size_t i = 0; i < wheels_pos.size(); ++i)
   {
     wheels_vel[i] = (wheels_pos[i] - wheels_old_pos_[i]) / dt;
     wheels_old_pos_[i] = wheels_pos[i];
