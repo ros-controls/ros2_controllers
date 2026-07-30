@@ -387,16 +387,7 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       const bool before_last_point = end_segment_itr != current_trajectory_->end();
-      auto active_tol_op = goal_tolerances_.try_get();
-      if (active_tol_op.has_value())
-      {
-        active_tol_ = active_tol_op.value();
-      }
-      else
-      {
-        // fallback if try_get fails
-        active_tol_ = default_tolerances_;
-      }
+      goal_tolerances_.try_get([&](const SegmentTolerances & tol) { active_tol_ = tol; });
 
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
@@ -450,7 +441,7 @@ controller_interface::return_type JointTrajectoryController::update(
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, active_tol->goal_state_tolerance[index],
+                state_error_, index, active_tol_.goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
@@ -1024,6 +1015,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
   goal_tolerances_.set(default_tolerances_);
+  active_tol_ = default_tolerances_;
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
