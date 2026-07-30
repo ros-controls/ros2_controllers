@@ -262,7 +262,7 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   // don't update goal after we sampled the trajectory to avoid any race condition
-  rt_active_goal_.try_get([&](const auto goal) { rt_active_goal_local_ = goal; });
+  rt_active_goal_.try_get([&](const auto & goal) { rt_active_goal_local_ = goal; });
 
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
