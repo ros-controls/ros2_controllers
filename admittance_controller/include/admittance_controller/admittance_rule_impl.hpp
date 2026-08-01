@@ -271,6 +271,11 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   auto R_ref = admittance_state.ref_trans_base_ft.rotation();
   auto R_desired = desired_trans_base_ft.rotation();
   auto R = R_desired * R_ref.transpose();
+
+  admittance_state.admittance_position.setIdentity();
+  admittance_state.admittance_position.translation() = X.head<3>();
+  admittance_state.admittance_position.linear() = R;
+
   auto angle_axis = Eigen::AngleAxisd(R);
   X.block<3, 1>(3, 0) = angle_axis.angle() * angle_axis.axis();
 
