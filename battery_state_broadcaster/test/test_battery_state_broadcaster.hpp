@@ -62,6 +62,7 @@ class FriendBatteryStateBroadcaster : public battery_state_broadcaster::BatteryS
   FRIEND_TEST(BatteryStateBroadcasterTest, all_parameters_set_configure_success);
   FRIEND_TEST(BatteryStateBroadcasterTest, no_interfaces_set_activate_fail);
   FRIEND_TEST(BatteryStateBroadcasterTest, activate_success);
+  FRIEND_TEST(BatteryStateBroadcasterTest, activate_success_legacy);
   FRIEND_TEST(BatteryStateBroadcasterTest, deactivate_success);
   FRIEND_TEST(BatteryStateBroadcasterTest, check_exported_interfaces);
   FRIEND_TEST(BatteryStateBroadcasterTest, update_success);

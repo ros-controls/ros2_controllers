@@ -21,6 +21,24 @@
 #include "rclcpp/rclcpp.hpp"
 #include "test_battery_state_broadcaster.hpp"
 
+// Test legacy config
+TEST_F(BatteryStateBroadcasterTest, activate_success_legacy)
+{
+  SetUpBatteryStateBroadcaster("test_battery_state_broadcaster_legacy");
+
+  ASSERT_TRUE(battery_state_broadcaster_->params_.batteries.empty());
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+
+  ASSERT_EQ(battery_state_broadcaster_->params_.batteries.size(), 1u);
+  ASSERT_EQ(battery_state_broadcaster_->params_.batteries.at(0), "battery_state");
+
+  auto properties = battery_state_broadcaster_->params_.batteries_map;
+  EXPECT_EQ(properties.at("battery_state").design_capacity, 100.0);
+  EXPECT_EQ(properties.at("battery_state").power_supply_technology, 2);
+
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
+}
+
 // Test correct broadcaster initialization
 TEST_F(BatteryStateBroadcasterTest, init_success) { SetUpBatteryStateBroadcaster(); }
 

@@ -36,3 +36,11 @@ test_battery_state_broadcaster:
       power_supply_technology: 3
       location: "slot1"
       serial_number: "serial_device_1"
+
+# [deprecated] do not use for new configurations
+test_battery_state_broadcaster_legacy:
+      ros__parameters:
+        batteries: ["battery_state"]
+        battery_state:
+          design_capacity: 100.0
+          power_supply_technology: 2
