@@ -36,7 +36,6 @@ namespace test
 
 // Type aliases for Eigen types to avoid comma issues in MOCK_METHOD
 using Vector6d = Eigen::Matrix<double, 6, 1>;
-using Vector7d = Eigen::Matrix<double, 7, 1>;
 using Jacobian6xN = Eigen::Matrix<double, 6, Eigen::Dynamic>;
 using JacobianNx6 = Eigen::Matrix<double, Eigen::Dynamic, 6>;
 
@@ -67,8 +66,6 @@ public:
   MOCK_METHOD(
     bool, calculate_jacobian_inverse, (const Eigen::VectorXd &, const std::string &, JacobianNx6 &),
     (override));
-  MOCK_METHOD(
-    bool, calculate_frame_difference, (Vector7d &, Vector7d &, double, Vector6d &), (override));
 };
 
 // Testable AdmittanceRule exposes protected members for direct testing
