@@ -263,7 +263,7 @@ protected:
   // the tolerances from the node parameter
   SegmentTolerances default_tolerances_;
   // the tolerances used for the current goal
-  realtime_tools::RealtimeThreadSafeBox<SegmentTolerances> goal_tolerances_;
+  realtime_tools::RealtimeThreadSafeBox<SegmentTolerances> rt_goal_tolerances_;
   // preallocated memory for tolerances used in RT loop
   SegmentTolerances active_tol_;
 

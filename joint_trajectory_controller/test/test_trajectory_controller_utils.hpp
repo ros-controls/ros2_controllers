@@ -176,7 +176,7 @@ public:
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
-    return goal_tolerances_.get();
+    return rt_goal_tolerances_.get();
   }
 
   std::vector<PidPtr> get_pids() const { return pids_; }
