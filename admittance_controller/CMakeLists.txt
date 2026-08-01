@@ -91,6 +91,15 @@ if(BUILD_TESTING)
     hardware_interface
     ros2_control_test_assets
   )
+
+  # test admittance rule implementation
+  ament_add_gmock(test_admittance_rule_impl
+    test/test_admittance_rule_impl.cpp
+  )
+  target_link_libraries(test_admittance_rule_impl
+    admittance_controller
+    Eigen3::Eigen
+    kinematics_interface::kinematics_interface)
 endif()
 
 install(
