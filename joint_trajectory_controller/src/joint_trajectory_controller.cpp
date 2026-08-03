@@ -100,7 +100,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
         }
         else if (urdf_joint)
         {
-          RCLCPP_WARN(
+          // Continuous joints may omit <limit>; velocity is only needed for
+          // decelerate_on_cancel (warned later if that feature cannot run).
+          RCLCPP_DEBUG(
             get_node()->get_logger(),
             "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
             params_.joints[i].c_str());
