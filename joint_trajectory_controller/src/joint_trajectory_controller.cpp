@@ -267,14 +267,60 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   auto new_external_msg = new_trajectory_msg_.readFromRT();
+
+  // A cancel (goal_cancelled_callback) asked us to drop any deferred trajectory.
+  if (rt_clear_pending_.exchange(false))
+  {
+    pending_traj_msg_ = nullptr;
+    rt_active_goal_deferred_ = false;
+  }
+
+  // The trajectory message to be installed into current_trajectory_ this cycle (if any).
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_to_install = nullptr;
+
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
+    current_trajectory_msg != *new_external_msg && *new_external_msg != pending_traj_msg_ &&
+    (rt_has_pending_goal_ && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    if (is_internal_hold(*new_external_msg))
+    {
+      // Internal hold/success/decelerate: install but never cancel a deferred trajectory.
+      traj_msg_to_install = *new_external_msg;
+    }
+    else if (
+      params_.allow_trajectory_replacement && has_active_trajectory() &&
+      rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type()) > time)
+    {
+      // Future-stamped: defer until its start time, keep old trajectory running.
+      pending_traj_msg_ = *new_external_msg;
+      pending_start_ = rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type());
+    }
+    else
+    {
+      // Immediate or blending off: install now, drop any previously deferred trajectory.
+      fill_partial_goal(*new_external_msg);
+      sort_to_local_joint_order(*new_external_msg);
+      traj_msg_to_install = *new_external_msg;
+      pending_traj_msg_ = nullptr;
+      rt_active_goal_deferred_ = false;
+    }
+  }
+
+  // FIRE: deferred trajectory's start time reached — install now.
+  if (pending_traj_msg_ && time >= pending_start_)
+  {
+    fill_partial_goal(pending_traj_msg_);
+    sort_to_local_joint_order(pending_traj_msg_);
+    traj_msg_to_install = pending_traj_msg_;
+    pending_traj_msg_ = nullptr;
+    rt_active_goal_deferred_ = false;
+  }
+
+  if (traj_msg_to_install)
+  {
     // TODO(denis): Add here integration of position and velocity
-    current_trajectory_->update(*new_external_msg);
+    current_trajectory_->update(traj_msg_to_install);
   }
 
   // current state update
@@ -395,7 +441,7 @@ controller_interface::return_type JointTrajectoryController::update(
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                state_error_, index, active_tol->goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
@@ -413,7 +459,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // If effort interface only, add desired effort as feed forward
             // If velocity interface, ignore desired effort
             size_t index_cmd_joint = map_cmd_to_joints_[i];
-            tmp_command_[index_cmd_joint] =
+            closed_loop_pid_command_[index_cmd_joint] =
               (command_next_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
               (has_effort_command_interface_ ? command_next_.effort[index_cmd_joint] : 0.0) +
               pids_[i]->compute_command(
@@ -429,14 +475,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[1],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities);
         }
         if (has_acceleration_command_interface_)
         {
@@ -444,15 +485,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            // If position and effort command interfaces, only pass desired effort
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[3],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort);
         }
 
         // store the previous command and time used in open-loop control mode
@@ -460,7 +495,9 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_time_ = time;
       }
 
-      if (active_goal)
+      // Do not report on an action goal whose trajectory is still deferred (blending): its real
+      // trajectory has not started yet, so the old trajectory's progress must not succeed/abort it.
+      if (active_goal && !rt_active_goal_deferred_)
       {
         // send feedback
         auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
@@ -893,7 +930,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
-  tmp_command_.resize(dof_, 0.0);
+  closed_loop_pid_command_.resize(dof_, 0.0);
 
   if (use_closed_loop_pid_adapter_)
   {
@@ -1198,6 +1235,10 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   current_trajectory_ = std::make_shared<Trajectory>();
   new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
+  pending_traj_msg_ = nullptr;
+  rt_active_goal_deferred_ = false;
+  rt_clear_pending_ = false;
+
   subscriber_is_active_ = true;
 
   // Initialize current state storage from hardware state interfaces
@@ -1342,6 +1383,10 @@ bool JointTrajectoryController::reset()
 
   current_trajectory_.reset();
 
+  pending_traj_msg_ = nullptr;
+  rt_active_goal_deferred_ = false;
+  rt_clear_pending_ = false;
+
   return true;
 }
 
@@ -1445,6 +1490,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       // hold current position
       add_new_trajectory_msg(set_hold_position());
     }
+    // Written after add_new_trajectory_msg so the hold is visible before RT clears pending.
+    rt_clear_pending_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1463,6 +1510,12 @@ void JointTrajectoryController::goal_accepted_callback(
 
     add_new_trajectory_msg(traj_msg);
     rt_is_holding_ = false;
+
+    // If blending is on, trajectory will be deferred by update(). Mark it so the result/feedback
+    // block does not judge the goal before it starts.
+    const auto now = get_node()->now();
+    rt_active_goal_deferred_ = params_.allow_trajectory_replacement && has_active_trajectory() &&
+                               rclcpp::Time(traj_msg->header.stamp, now.get_clock_type()) > now;
   }
 
   // Update the active goal

@@ -1,27 +1,25 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package gpio_controllers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package magnetometer_broadcaster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 6.8.0 (2026-07-01)
 ------------------
 * Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)
-* Contributors: Junius Santoso
+* fix(magnetometer_broadcaster): Refactor to avoid pluginlib in tests (`#2387 <https://github.com/ros-controls/ros2_controllers/issues/2387>`_)
+* Add broadcaster for magnetic field values from a magnetometer (`#2214 <https://github.com/ros-controls/ros2_controllers/issues/2214>`_)
+* Contributors: Christian Rauch, Christoph Fröhlich, Junius Santoso
 
 6.7.0 (2026-05-12)
 ------------------
 
 6.6.0 (2026-04-22)
 ------------------
-* Update controller tests to use configure/activate instead of on_configure/on_activate  (`#1682 <https://github.com/ros-controls/ros2_controllers/issues/1682>`_)
-* Contributors: Junius Santoso
 
 6.5.0 (2026-04-02)
 ------------------
 
 6.4.0 (2026-03-12)
 ------------------
-* fix(gpio_controllers): resolve build failure (`#2128 <https://github.com/ros-controls/ros2_controllers/issues/2128>`_)
-* Contributors: Ishan Pathak
 
 6.3.0 (2026-02-03)
 ------------------
@@ -34,15 +32,9 @@ Changelog for package gpio_controllers
 
 6.0.0 (2025-11-10)
 ------------------
-* Controller interface api update to ros2_controller packages (`#1973 <https://github.com/ros-controls/ros2_controllers/issues/1973>`_)
-* Fix integer literal for size_t (`#1986 <https://github.com/ros-controls/ros2_controllers/issues/1986>`_)
-* Contributors: Anand Vardhan, Christoph Fröhlich
 
 5.8.0 (2025-10-02)
 ------------------
-* Update API for realtime publisher (`#1830 <https://github.com/ros-controls/ros2_controllers/issues/1830>`_)
-* Remove deprecated methods from ros2_control (`#1936 <https://github.com/ros-controls/ros2_controllers/issues/1936>`_)
-* Contributors: Christoph Fröhlich
 
 5.7.0 (2025-09-12)
 ------------------
@@ -58,74 +50,48 @@ Changelog for package gpio_controllers
 
 5.4.0 (2025-07-23)
 ------------------
-* Use new handles API in ros2_controllers to fix deprecation warnings (`#1566 <https://github.com/ros-controls/ros2_controllers/issues/1566>`_)
-* Contributors: Sanjeev Kumar
 
 5.3.0 (2025-07-14)
 ------------------
-* Fix cmake deprecation (`#1780 <https://github.com/ros-controls/ros2_controllers/issues/1780>`_)
-* Update realtime containers (`#1721 <https://github.com/ros-controls/ros2_controllers/issues/1721>`_)
-* Contributors: Christoph Fröhlich, mosfet80
 
 5.2.0 (2025-06-23)
 ------------------
 
 5.1.0 (2025-06-11)
 ------------------
-* Add missing github_url to rst files (`#1717 <https://github.com/ros-controls/ros2_controllers/issues/1717>`_)
-* Contributors: Christoph Fröhlich
 
 5.0.2 (2025-05-26)
 ------------------
-* Fix JSB+GPIO CMakeLists and dependencies (`#1705 <https://github.com/ros-controls/ros2_controllers/issues/1705>`_)
-* Contributors: Christoph Fröhlich
 
 5.0.1 (2025-05-24)
 ------------------
-* Use target_link_libraries instead of ament_target_dependencies (`#1697 <https://github.com/ros-controls/ros2_controllers/issues/1697>`_)
-* Contributors: Sai Kishor Kothakota
 
 5.0.0 (2025-05-17)
 ------------------
 
 4.24.0 (2025-04-27)
 -------------------
-* Use smart pointer of ctrl in GpsSensor and GpioCommandController tests (`#1658 <https://github.com/ros-controls/ros2_controllers/issues/1658>`_)
-* Contributors: Junius Santoso
 
 4.23.0 (2025-04-10)
 -------------------
-* Use gmock instead of gtest (`#1625 <https://github.com/ros-controls/ros2_controllers/issues/1625>`_)
-* Use global cmake macros and fix gcc-10 build (`#1527 <https://github.com/ros-controls/ros2_controllers/issues/1527>`_)
-* Contributors: Christoph Fröhlich, Yassine Cherni
 
 4.22.0 (2025-03-17)
 -------------------
 
 4.21.0 (2025-03-01)
 -------------------
-* Cleanup wrong lifecycle transitions in tests and unnecessary checks (`#1534 <https://github.com/ros-controls/ros2_controllers/issues/1534>`_)
-* Contributors: Christoph Fröhlich
 
 4.20.0 (2025-01-29)
 -------------------
-* Update paths of GPL includes (`#1487 <https://github.com/ros-controls/ros2_controllers/issues/1487>`_)
-* Contributors: Christoph Fröhlich
 
 4.19.0 (2025-01-13)
 -------------------
-* Remove visibility macros (`#1451 <https://github.com/ros-controls/ros2_controllers/issues/1451>`_)
-* Contributors: Bence Magyar
 
 4.18.0 (2024-12-19)
 -------------------
 
 4.17.0 (2024-12-07)
 -------------------
-* Add missing dependency to gpio_controllers (`#1410 <https://github.com/ros-controls/ros2_controllers/issues/1410>`_)
-* Use the .hpp headers from `realtime_tools` package (`#1406 <https://github.com/ros-controls/ros2_controllers/issues/1406>`_)
-* Gpio command controller (`#1251 <https://github.com/ros-controls/ros2_controllers/issues/1251>`_)
-* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, Wiktor Bajor
 
 4.16.0 (2024-11-08)
 -------------------
