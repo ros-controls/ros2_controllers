@@ -565,18 +565,17 @@ controller_interface::return_type PidController::update_and_write_commands(
         gain_value_opt.value_or(std::numeric_limits<double>::quiet_NaN());
       if (std::isfinite(new_gain_value))
       {
-        const size_t gain_type = GAIN_TYPES_INDEX[j];
-        switch (gain_type)
+        switch (GAIN_INTERFACES[j][0])
         {
-          case 0:  // P gain
+          case 'p':  // P gain
             current_pid_gains.p_gain_ = new_gain_value;
             pids_[i]->set_gains(current_pid_gains);
             break;
-          case 1:  // I gain
+          case 'i':  // I gain
             current_pid_gains.i_gain_ = new_gain_value;
             pids_[i]->set_gains(current_pid_gains);
             break;
-          case 2:  // D gain
+          case 'd':  // D gain
             current_pid_gains.d_gain_ = new_gain_value;
             pids_[i]->set_gains(current_pid_gains);
             break;
