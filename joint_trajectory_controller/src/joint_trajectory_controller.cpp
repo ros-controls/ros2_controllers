@@ -93,9 +93,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        if (urdf_joint)
+        // Continuous joints are not required to declare <limit> in URDF; limits may be null.
+        if (urdf_joint && urdf_joint->limits)
         {
           max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
+        else if (urdf_joint)
+        {
+          RCLCPP_WARN(
+            get_node()->get_logger(),
+            "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
+            params_.joints[i].c_str());
         }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
