@@ -9,6 +9,10 @@ admittance_controller
 * Remove ``robot_description`` parameter from parameter YAML, because it is not used at all (`#963 <https://github.com/ros-controls/ros2_controllers/pull/963>`_).
 * Added ``~/wrench_reference`` input topic which allows to provide a force-torque offset as WrenchStamped (`#1249 <https://github.com/ros-controls/ros2_controllers/pull/1249>`_).
 
+battery_state_broadcaster
+*************************
+* 🚀 The battery_state_broadcaster was added 🎉 (`#1888 <https://github.com/ros-controls/ros2_controllers/pull/1888>`_).
+
 state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
