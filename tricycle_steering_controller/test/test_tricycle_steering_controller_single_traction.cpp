@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -169,10 +170,13 @@ TEST_F(TricycleSteeringControllerSingleTractionTest, test_update_logic)
     1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  EXPECT_EQ(
+    controller_->ordered_exported_reference_interfaces_.size(), reference_interface_names_.size());
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 }
 
@@ -187,8 +191,8 @@ TEST_F(TricycleSteeringControllerSingleTractionTest, test_update_logic_chained)
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
-  controller_->reference_interfaces_[0] = 0.1;
-  controller_->reference_interfaces_[1] = 0.2;
+  EXPECT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(0.1));
+  EXPECT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.2));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -203,10 +207,13 @@ TEST_F(TricycleSteeringControllerSingleTractionTest, test_update_logic_chained)
     1.4179821977774734, COMMON_THRESHOLD);
 
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
-  EXPECT_EQ(controller_->reference_interfaces_.size(), reference_interface_names_.size());
-  for (const auto & interface : controller_->reference_interfaces_)
+  EXPECT_EQ(
+    controller_->ordered_exported_reference_interfaces_.size(), reference_interface_names_.size());
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
   }
 }
 
