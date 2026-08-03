@@ -19,12 +19,16 @@
 #include <string>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 
 #include "chained_filter_controller/chained_filter.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::StateInterface;

@@ -55,7 +55,33 @@ public:
       min_velocity, max_velocity, max_acceleration_reverse, max_acceleration, max_deceleration,
       max_deceleration_reverse, min_jerk, max_jerk);
   }
-
+  /**
+   * \brief Update parameters at runtime
+   * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
+   * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
+   * \param [in] max_acceleration_reverse Maximum acceleration in reverse direction [m/s^2], usually
+   * <= 0
+   * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
+   * \param [in] max_deceleration Maximum deceleration [m/s^2], usually <= 0
+   * \param [in] max_deceleration_reverse Maximum deceleration in reverse direction [m/s^2], usually
+   * >= 0
+   * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
+   * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+   *
+   * \note
+   * If max_* values are NAN, the respective limit is deactivated
+   * If min_* values are NAN (unspecified), defaults to -max
+   * If min_first_derivative_pos/max_first_derivative_neg values are NAN, symmetric limits are used
+   */
+  void set_params(
+    double min_velocity, double max_velocity, double max_acceleration_reverse,
+    double max_acceleration, double max_deceleration, double max_deceleration_reverse,
+    double min_jerk, double max_jerk)
+  {
+    speed_limiter_.set_params(
+      min_velocity, max_velocity, max_acceleration_reverse, max_acceleration, max_deceleration,
+      max_deceleration_reverse, min_jerk, max_jerk);
+  }
   /**
    * \brief Limit the velocity, acceleration, and jerk
    * \param [in, out] v  Velocity [m/s]

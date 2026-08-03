@@ -214,11 +214,6 @@ public:
     const bool reduce_wheel_speed_until_steering_reached = false);
 
   /**
-   *  \brief Reset poses, heading, and accumulators
-   */
-  [[deprecated("Use set_odometry(0.0, 0.0, 0.0) instead")]] void reset_odometry();
-
-  /**
    *  \brief Set poses and heading with the given values and reset accumulators
    * \param x x position [m]
    * \param y y position [m]

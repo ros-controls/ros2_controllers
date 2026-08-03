@@ -56,9 +56,7 @@ TEST_F(PoseBroadcasterTest, Configure_Success)
   pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // Configure controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
 
   // Verify command interface configuration
   const auto command_interface_conf = pose_broadcaster_->command_interface_configuration();
@@ -81,12 +79,8 @@ TEST_F(PoseBroadcasterTest, Activate_Success)
   pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // Configure and activate controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
 
   // Verify command and state interface configuration
   {
@@ -102,9 +96,7 @@ TEST_F(PoseBroadcasterTest, Activate_Success)
   }
 
   // Deactivate controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_deactivate(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(pose_broadcaster_));
 
   // Verify command and state interface configuration
   {
@@ -129,12 +121,8 @@ TEST_F(PoseBroadcasterTest, Update_Success)
   pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // Configure and activate controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
 
   ASSERT_EQ(
     pose_broadcaster_->update(rclcpp::Time{0}, rclcpp::Duration::from_seconds(0.01)),
@@ -154,12 +142,8 @@ TEST_F(PoseBroadcasterTest, PublishSuccess)
   pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
 
   // Configure and activate controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
@@ -205,12 +189,8 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
 
   // Configure and activate controller
-  ASSERT_EQ(
-    pose_broadcaster_->on_configure(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
-  ASSERT_EQ(
-    pose_broadcaster_->on_activate(rclcpp_lifecycle::State{}),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
 
   ASSERT_TRUE(pose_position_x_->set_value(std::numeric_limits<double>::quiet_NaN()));
 

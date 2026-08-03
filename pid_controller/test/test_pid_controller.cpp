@@ -17,6 +17,7 @@
 
 #include "test_pid_controller.hpp"
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -35,7 +36,7 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_TRUE(controller_->params_.reference_and_state_interfaces.empty());
   ASSERT_FALSE(controller_->params_.use_external_measured_states);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   ASSERT_THAT(controller_->params_.dof_names, testing::ElementsAreArray(dof_names_));
   ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
@@ -60,7 +61,7 @@ TEST_F(PidControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), dof_command_values_.size());
@@ -128,8 +129,8 @@ TEST_F(PidControllerTest, activate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // check that the message is reset
   auto msg = controller_->input_ref_.get();
@@ -145,13 +146,16 @@ TEST_F(PidControllerTest, activate_success)
   }
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
                              dof_names_.size() * controller_->GAIN_INTERFACES.size();
-  EXPECT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  EXPECT_EQ(controller_->ordered_exported_reference_interfaces_.size(), expected_ref_size);
 
   // With set_current_state_as_first_setpoint=true, the first dof_state_values_.size() reference
   // interfaces are initialized to current state, and gain interfaces remain NaN
   for (size_t i = 0; i < dof_state_values_.size(); ++i)
   {
-    EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
+    EXPECT_EQ(
+      controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN()),
+      dof_state_values_[i]);
   }
 }
 
@@ -159,8 +163,8 @@ TEST_F(PidControllerTest, update_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -171,28 +175,37 @@ TEST_F(PidControllerTest, deactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
 TEST_F(PidControllerTest, reactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   // With set_current_state_as_first_setpoint=true (default), reference interfaces are set to
   // current state values (dof_state_values_[0] = 1.1) on each activation
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(
+    controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
+      std::numeric_limits<double>::quiet_NaN()),
+    dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_EQ(
+    controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
+      std::numeric_limits<double>::quiet_NaN()),
+    dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->reference_interfaces_[0], dof_state_values_[0]);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(
+    controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(
+      std::numeric_limits<double>::quiet_NaN()),
+    dof_state_values_[0]);
   ASSERT_TRUE(std::isnan(controller_->measured_state_values_[0]));
   ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 101.101);
 
@@ -212,15 +225,18 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
   EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[0]));
   size_t num_control_references = dof_names_.size() * state_interfaces_.size();
   for (size_t i = 0; i < num_control_references; ++i)
   {
-    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(
+      std::isfinite(
+        controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+          std::numeric_limits<double>::quiet_NaN())));
   }
 
   controller_->set_reference(dof_command_values_);
@@ -229,7 +245,10 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
   {
     EXPECT_FALSE(std::isnan(controller_->input_ref_.get().values[i]));
     EXPECT_EQ(controller_->input_ref_.get().values[i], dof_command_values_[i]);
-    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(
+      std::isfinite(
+        controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+          std::numeric_limits<double>::quiet_NaN())));
   }
 
   ASSERT_EQ(
@@ -237,8 +256,7 @@ TEST_F(PidControllerTest, test_update_logic_zero_feedforward_gain)
     controller_interface::return_type::OK);
   size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
                            dof_names_.size() * controller_->GAIN_INTERFACES.size();
-  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
+  EXPECT_EQ(controller_->ordered_exported_reference_interfaces_.size(), actual_ref_size);
   for (size_t i = 0; i < dof_command_values_.size(); ++i)
   {
     EXPECT_TRUE(std::isnan(controller_->input_ref_.get().values[i]));
@@ -270,22 +288,24 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   // set chain mode to true
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
   // feedforward mode is off as default, use this for convenience
 
   // update reference interface which will be used for calculation
   const double ref_interface_value = 5.0;
-  controller_->reference_interfaces_[0] = ref_interface_value;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(ref_interface_value);
 
   // publish a command message which should be ignored as chain mode is on
   publish_commands({10.0}, {0.0});
   controller_->wait_for_commands(executor);
 
   // check the reference interface is not updated as chain mode is on
-  EXPECT_EQ(controller_->reference_interfaces_[0], ref_interface_value);
+  EXPECT_EQ(
+    controller_->ordered_exported_reference_interfaces_[0]->get_optional<double>().value(),
+    ref_interface_value);
 
   // run update
   ASSERT_EQ(
@@ -295,8 +315,7 @@ TEST_F(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update)
   ASSERT_TRUE(controller_->is_in_chained_mode());
   size_t actual_ref_size = dof_names_.size() * state_interfaces_.size() +
                            dof_names_.size() * controller_->GAIN_INTERFACES.size();
-  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
-  EXPECT_EQ(controller_->reference_interfaces_.size(), actual_ref_size);
+  EXPECT_EQ(controller_->ordered_exported_reference_interfaces_.size(), actual_ref_size);
 
   // check the command value
   // ref = 5.0, state = 1.1, ds = 0.01, p_gain = 1.0, i_gain = 2.0, d_gain = 3.0
@@ -320,12 +339,12 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_off)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_names_[0]].angle_wraparound);
 
   // write reference interface so that the values would be wrapped
-  controller_->reference_interfaces_[0] = 10.0;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(10.0);
 
   // run update
   ASSERT_EQ(
@@ -353,16 +372,16 @@ TEST_F(PidControllerTest, test_update_logic_angle_wraparound_on)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(true);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // Check on wraparound is on
   ASSERT_TRUE(controller_->params_.gains.dof_names_map[dof_names_[0]].angle_wraparound);
 
   // Write reference interface with values that would wrap, state is 1.1
-  controller_->reference_interfaces_[0] = 10.0;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(10.0);
 
   // Run update
   ASSERT_EQ(
@@ -384,8 +403,8 @@ TEST_F(PidControllerTest, subscribe_and_get_messages_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -409,8 +428,8 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -430,7 +449,10 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   size_t num_control_references = dof_names_.size() * state_interfaces_.size();
   for (size_t i = 0; i < num_control_references; ++i)
   {
-    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(
+      std::isfinite(
+        controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+          std::numeric_limits<double>::quiet_NaN())));
   }
 
   publish_commands();
@@ -438,7 +460,10 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
 
   for (size_t i = 0; i < num_control_references; ++i)
   {
-    EXPECT_TRUE(std::isfinite(controller_->reference_interfaces_[i]));
+    EXPECT_TRUE(
+      std::isfinite(
+        controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+          std::numeric_limits<double>::quiet_NaN())));
   }
 
   ASSERT_EQ(
@@ -447,12 +472,17 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
 
   for (size_t i = 0; i < num_control_references; ++i)
   {
-    ASSERT_EQ(controller_->reference_interfaces_[i], 0.45);
+    ASSERT_EQ(
+      controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value(), 0.45);
   }
-  for (size_t i = num_control_references; i < controller_->reference_interfaces_.size(); ++i)
+  for (size_t i = num_control_references;
+       i < controller_->ordered_exported_reference_interfaces_.size(); ++i)
   {
     // Always check gain interfaces (P, I, D gains) are NaN
-    EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i]));
+    const auto gain_value =
+      controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN());
+    EXPECT_TRUE(std::isnan(gain_value));
   }
 
   subscribe_and_get_messages(msg);
@@ -478,7 +508,7 @@ TEST_F(PidControllerTest, test_update_chained_non_zero_feedforward_gain)
   const double expected_command_value = 6.95;
 
   SetUpController("test_pid_controller_with_feedforward_gain");
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
@@ -499,7 +529,7 @@ TEST_F(PidControllerTest, test_update_chained_non_zero_feedforward_gain)
   controller_->set_chained_mode(true);
 
   // activate controller
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // send a message to update reference interface
@@ -541,7 +571,7 @@ TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
                   .successful);
   }
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   // check on interfaces & pid gain parameters
   for (const auto & dof_name : dof_names_)
@@ -562,7 +592,7 @@ TEST_F(PidControllerTest, test_update_chained_changing_feedforward_gain)
   controller_->set_chained_mode(true);
 
   // activate controller
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(controller_->is_in_chained_mode());
 
   // send a message to update reference interface
@@ -616,9 +646,13 @@ TEST_F(PidControllerTest, test_update_gain_via_reference_interfaces)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    controller_->on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_EQ(
+    controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   // Verify initial gains from params yaml
@@ -628,16 +662,16 @@ TEST_F(PidControllerTest, test_update_gain_via_reference_interfaces)
   EXPECT_EQ(initial_gains.d_gain_, 3.0);
 
   // Set a known reference for the control interface
-  controller_->reference_interfaces_[0] = 5.0;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(5.0);
 
   const size_t dof_reference_size = dof_names_.size() * state_interfaces_.size();
   const size_t p_index = dof_reference_size;                          // P gain for joint1
   const size_t i_index = dof_reference_size + dof_names_.size();      // I gain for joint1
   const size_t d_index = dof_reference_size + 2 * dof_names_.size();  // D gain for joint1
 
-  controller_->reference_interfaces_[p_index] = 10.0;
-  controller_->reference_interfaces_[i_index] = 20.0;
-  controller_->reference_interfaces_[d_index] = 30.0;
+  controller_->ordered_exported_reference_interfaces_[p_index]->set_value(10.0);
+  controller_->ordered_exported_reference_interfaces_[i_index]->set_value(20.0);
+  controller_->ordered_exported_reference_interfaces_[d_index]->set_value(30.0);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -649,9 +683,18 @@ TEST_F(PidControllerTest, test_update_gain_via_reference_interfaces)
   EXPECT_EQ(updated_gains.d_gain_, 30.0);
 
   // check the gain reference interfaces are reset to NaN after being consumed
-  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[p_index]));
-  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[i_index]));
-  EXPECT_TRUE(std::isnan(controller_->reference_interfaces_[d_index]));
+  EXPECT_TRUE(
+    std::isnan(
+      controller_->ordered_exported_reference_interfaces_[p_index]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN())));
+  EXPECT_TRUE(
+    std::isnan(
+      controller_->ordered_exported_reference_interfaces_[i_index]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN())));
+  EXPECT_TRUE(
+    std::isnan(
+      controller_->ordered_exported_reference_interfaces_[d_index]->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN())));
 
   // check the command value computed using the new gains
   // ref = 5.0, state = 1.1, error = 3.9, error_dot = 3.9/0.01 = 390.0
@@ -672,13 +715,13 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
   for (const auto & dof_name : dof_names_)
   {
     ASSERT_FALSE(controller_->params_.gains.dof_names_map[dof_name].save_i_term);
   }
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   controller_->set_reference(dof_command_values_);
@@ -698,11 +741,11 @@ TEST_F(PidControllerTest, test_save_i_term_off)
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 
   // deactivate the controller and set command=state
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   controller_->set_reference(dof_state_values_);
 
   // reactivate the controller, the integral term should NOT be saved
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -722,13 +765,13 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   for (const auto & dof_name : dof_names_)
   {
     ASSERT_TRUE(controller_->params_.gains.dof_names_map[dof_name].save_i_term);
   }
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
   controller_->set_reference(dof_command_values_);
@@ -748,11 +791,11 @@ TEST_F(PidControllerTest, test_save_i_term_on)
   EXPECT_NEAR(actual_value, expected_command_value, 1e-5);
 
   // deactivate the controller and set command=state
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   controller_->set_reference(dof_state_values_);
 
   // reactivate the controller, the integral term should be saved
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -770,18 +813,20 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_true
   SetUpController();  // uses test_pid_controller: set_current_state_as_first_setpoint defaults to
                       // true
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(controller_->params_.set_current_state_as_first_setpoint);
 
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // reference interfaces must be initialized to the current state values (dof_state_values_)
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
                              dof_names_.size() * controller_->GAIN_INTERFACES.size();
-  ASSERT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
+  ASSERT_EQ(controller_->ordered_exported_reference_interfaces_.size(), expected_ref_size);
   for (size_t i = 0; i < dof_state_values_.size(); ++i)
   {
-    EXPECT_EQ(controller_->reference_interfaces_[i], dof_state_values_[i]);
+    const auto val = controller_->ordered_exported_reference_interfaces_[i]->get_optional<double>();
+    ASSERT_TRUE(val.has_value());
+    EXPECT_EQ(val.value(), dof_state_values_[i]);
   }
 }
 
@@ -793,18 +838,19 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_fals
 {
   SetUpController("test_pid_controller_no_first_setpoint");
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_FALSE(controller_->params_.set_current_state_as_first_setpoint);
 
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   // reference interfaces must remain NaN since set_current_state_as_first_setpoint is false
   size_t expected_ref_size = dof_names_.size() * state_interfaces_.size() +
                              dof_names_.size() * controller_->GAIN_INTERFACES.size();
-  ASSERT_EQ(controller_->reference_interfaces_.size(), expected_ref_size);
-  for (const auto & interface : controller_->reference_interfaces_)
+  ASSERT_EQ(controller_->ordered_exported_reference_interfaces_.size(), expected_ref_size);
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    const auto val = interface->get_optional<double>();
+    EXPECT_TRUE(!val.has_value() || std::isnan(val.value()));
   }
 }
 

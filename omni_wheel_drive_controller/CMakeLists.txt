@@ -35,7 +35,6 @@ add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}.cpp
   src/odometry.cpp
 )
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
@@ -84,6 +83,13 @@ if(BUILD_TESTING)
   target_link_libraries(test_load_${PROJECT_NAME}
     controller_manager::controller_manager
     ros2_control_test_assets::ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_odometry
+    test/test_odometry.cpp
+  )
+  target_link_libraries(test_odometry
+    omni_wheel_drive_controller
   )
 endif()
 

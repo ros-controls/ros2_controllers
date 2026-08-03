@@ -1,0 +1,29 @@
+magnetometer_broadcaster:
+  sensor_name: {
+    type: string,
+    default_value: "",
+    read_only: true,
+    description: "Defines sensor name used as prefix for its interfaces.
+    Interface names are: ``<sensor_name>/magnetic_field.x, <sensor_name>/magnetic_field.x, <sensor_name>/magnetic_field.z.``",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  frame_id: {
+    type: string,
+    default_value: "",
+    read_only: true,
+    description: "Sensor's frame_id in which values are published.",
+    validation: {
+      not_empty<>: null
+    }
+  }
+  static_covariance: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    read_only: true,
+    description: "Static covariance. Row major about x, y, z axes",
+    validation: {
+      fixed_size<>: [9],
+    }
+  }

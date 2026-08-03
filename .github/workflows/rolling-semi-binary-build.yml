@@ -3,12 +3,12 @@ name: Rolling Semi-Binary Build
 
 on:
   workflow_dispatch:
-  pull_request: &event
+  pull_request:
     branches:
       - master
       - '*feature*'
       - '*feature/**'
-    paths:
+    paths: &paths
       - '**.hpp'
       - '**.h'
       - '**.cpp'
@@ -18,9 +18,12 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
-      - 'ros2_controllers.kilted.repos'
+      - 'ros2_controllers.lyrical.repos'
       - '**.xml'
-  push: *event
+  push:
+    branches:
+      - master
+    paths: *paths
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '33 1 * * MON-FRI'
@@ -36,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [rolling]
+        ROS_DISTRO: [lyrical, rolling]
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: testing
@@ -47,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [rolling]
+        ROS_DISTRO: [lyrical, rolling]
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       ros_repo: testing

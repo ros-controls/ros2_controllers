@@ -30,9 +30,6 @@ generate_parameter_library(pose_broadcaster_parameters
 add_library(pose_broadcaster SHARED
   src/pose_broadcaster.cpp
 )
-target_compile_features(pose_broadcaster PUBLIC
-    cxx_std_17
-)
 target_include_directories(pose_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>

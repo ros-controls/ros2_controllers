@@ -186,13 +186,6 @@ void Odometry::setOdometry(double x, double y, double heading)
   heading_ = heading;
   resetAccumulators();
 }
-void Odometry::resetOdometry()
-{
-  x_ = 0.0;
-  y_ = 0.0;
-  heading_ = 0.0;
-  resetAccumulators();
-}
 
 void Odometry::setWheelParams(
   double wheel_separation, double left_wheel_radius, double right_wheel_radius)
