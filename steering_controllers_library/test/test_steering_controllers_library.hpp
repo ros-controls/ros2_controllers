@@ -69,6 +69,12 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, check_exported_interfaces);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+<<<<<<< HEAD
+=======
+  FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
+>>>>>>> 29dcfb3 (fix(steering_controllers): handle NaN/Inf values in odometry update (#2083))
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -80,7 +86,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces_list();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
   }
 

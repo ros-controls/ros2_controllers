@@ -163,6 +163,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
   msg.twist.angular.z = TEST_ANGULAR_VELOCITY_Z;
   controller_->input_ref_.set(msg);
 
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(controller_->input_ref_.get().twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -261,6 +264,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   age_of_last_command = controller_->get_node()->now() - controller_->input_ref_.get().header.stamp;
 
+  EXPECT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_GT(controller_->command_interfaces_[1].get_optional().value(), 0.0);
+
   // age_of_last_command > ref_timeout_
   ASSERT_FALSE(age_of_last_command <= controller_->ref_timeout_);
   ASSERT_EQ(controller_->input_ref_.get().twist.linear.x, TEST_LINEAR_VELOCITY_X);
@@ -284,6 +290,160 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
+{
+  // Setup Options
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", true);
+  node_options.append_parameter_override(
+    "traction_joints_names", std::vector<std::string>{"wheel_left", "wheel_right"});
+  node_options.append_parameter_override(
+    "steering_joints_names", std::vector<std::string>{"steer_left", "steer_right"});
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(false);
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  auto command_msg = ControllerReferenceMsg();
+  command_msg.header.stamp = controller_->get_node()->now();
+  command_msg.twist.linear.x = 1.5;
+  command_msg.twist.angular.z = 0.0;
+
+  controller_->input_ref_.set(command_msg);
+
+  controller_->update_reference_from_subscribers(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+  controller_->update_and_write_commands(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+
+  ASSERT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.1);
+
+  auto nan_msg = ControllerReferenceMsg();
+  nan_msg.header.stamp = controller_->get_node()->now();
+  nan_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
+  nan_msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
+
+  controller_->input_ref_.set(nan_msg);
+
+  controller_->update_reference_from_subscribers(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+  controller_->update_and_write_commands(
+    controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
+
+  // The wheel speed should have been reset to 0.0
+  EXPECT_DOUBLE_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+}
+
+TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
+{
+  // 1. SETUP WITH OPTIONS
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", true);
+  node_options.append_parameter_override("reference_timeout", 1.0);
+
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(false);  // We are testing standalone mode
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 5.0;
+  msg.twist.angular.z = 0.0;
+  controller_->input_ref_.set(msg);
+
+  // 1st update: consume new ref and update internal state
+  auto now = controller_->get_node()->now();
+  controller_->update(now, rclcpp::Duration::from_seconds(0.1));
+
+  // exact internal state check
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 5.0);
+
+  // 2nd update: lets published odom/twist catch up if there is one-cycle lag
+  now = now + rclcpp::Duration::from_seconds(0.1);
+  controller_->update(now, rclcpp::Duration::from_seconds(0.1));
+
+  // nonzero-before-timeout check
+  EXPECT_GT(controller_->odom_state_msg_.twist.twist.linear.x, 0.0);
+
+  // jump beyond timeout
+  rclcpp::Time future_time = now + rclcpp::Duration::from_seconds(2.0);
+  controller_->update(future_time, rclcpp::Duration::from_seconds(0.1));
+
+  // stale ref should zero out open-loop internal velocity
+  EXPECT_DOUBLE_EQ(controller_->last_linear_velocity_, 0.0);
+}
+
+TEST_F(SteeringControllersLibraryTest, odometry_set_service)
+{
+  // 0. Initialize and Activate
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE));
+
+  controller_->set_chained_mode(true);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  controller_->get_node()->trigger_transition(
+    rclcpp_lifecycle::Transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE));
+  ASSERT_EQ(
+    controller_->get_node()->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  const double dt = 0.02;  // 50Hz update
+  const rclcpp::Duration period = rclcpp::Duration::from_seconds(dt);
+  rclcpp::Time test_time = controller_->get_node()->now();
+
+  auto move_robot = [&](double vx, double wz)
+  {
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(vx));
+    ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(wz));
+
+    ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+    // Update wheel positions based on commands to simulate feedback
+    for (size_t i = 0; i < NR_CMD_ITFS; ++i)
+    {
+      joint_state_values_[i] = controller_->command_interfaces_[i].get_optional().value();
+    }
+    test_time += period;
+  };
+
+  // 1. Test robot movement initially
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);
+  ASSERT_GT(controller_->odometry_.get_x(), 0.0);
+
+  move_robot(0.0, 0.0);
+
+  // 2. Call the odometry set service
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;
+
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+  ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
+
+  // Validate the expected robot pose after service call
+  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_heading(), 1.57079632679, 1e-5);
+
+  // 3. Move forward again to verify
+  double start_y = controller_->odometry_.get_y();
+  for (int i = 0; i < 10; ++i) move_robot(1.0, 0.0);  // we are facing +Y now
+  EXPECT_GT(controller_->odometry_.get_y(), start_y);
+}
+
+>>>>>>> 29dcfb3 (fix(steering_controllers): handle NaN/Inf values in odometry update (#2083))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
