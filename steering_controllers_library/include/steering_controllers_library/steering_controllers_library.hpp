@@ -71,8 +71,6 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
-  void reset_buffers();
-
   controller_interface::CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
@@ -94,6 +92,7 @@ public:
   using SteeringControllerStateMsg = control_msgs::msg::SteeringControllerStatus;
 
 protected:
+  void reset_buffers();
   controller_interface::CallbackReturn set_interface_numbers(
     size_t nr_state_itfs, size_t nr_cmd_itfs, size_t nr_ref_itfs);
 
