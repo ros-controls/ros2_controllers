@@ -18,6 +18,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -47,6 +48,13 @@ void MultiInterfaceForwardCommandControllerTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<FriendMultiInterfaceForwardCommandController>();
+
+  joint_1_pos_cmd_ = std::make_shared<CommandInterface>(joint_name_, HW_IF_POSITION);
+  std::ignore = joint_1_pos_cmd_->set_value(pos_cmd_);
+  joint_1_vel_cmd_ = std::make_shared<CommandInterface>(joint_name_, HW_IF_VELOCITY);
+  std::ignore = joint_1_vel_cmd_->set_value(vel_cmd_);
+  joint_1_eff_cmd_ = std::make_shared<CommandInterface>(joint_name_, HW_IF_EFFORT);
+  std::ignore = joint_1_eff_cmd_->set_value(eff_cmd_);
 }
 
 void MultiInterfaceForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }
