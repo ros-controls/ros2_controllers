@@ -455,8 +455,7 @@ public:
     gpio_command_interfaces_.emplace_back(gpio_cmd_if);
     loaned_command_ifs.emplace_back(gpio_command_interfaces_.back(), nullptr);
 
-    traj_controller_->assign_interfaces(
-      std::move(loaned_command_ifs), std::move(loaned_state_ifs));
+    traj_controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
   void DeactivateTrajectoryController()
