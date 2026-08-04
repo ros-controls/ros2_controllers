@@ -67,7 +67,8 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
 
   // Parameters from ROS for omni_wheel_drive_controller
   std::shared_ptr<ParamListener> param_listener_;

@@ -163,8 +163,8 @@ controller_interface::InterfaceConfiguration AdmittanceController::state_interfa
     controller_interface::interface_configuration_type::INDIVIDUAL, state_interfaces_config_names};
 }
 
-std::vector<hardware_interface::CommandInterface>
-AdmittanceController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+AdmittanceController::on_export_reference_interfaces_list()
 {
   // create CommandInterface interfaces that other controllers will be able to chain with
   if (!admittance_)
@@ -172,36 +172,36 @@ AdmittanceController::on_export_reference_interfaces()
     return {};
   }
 
-  std::vector<hardware_interface::CommandInterface> chainable_command_interfaces;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> chainable_command_interfaces;
   const auto num_chainable_interfaces =
     admittance_->parameters_.chainable_command_interfaces.size() *
     admittance_->parameters_.joints.size();
 
   // allocate dynamic memory
   chainable_command_interfaces.reserve(num_chainable_interfaces);
-  reference_interfaces_.resize(num_chainable_interfaces, std::numeric_limits<double>::quiet_NaN());
-  position_reference_ = {};
-  velocity_reference_ = {};
 
-  // assign reference interfaces
-  auto index = 0ul;
+  // assign reference interfaces and track indices
+  int interface_index = 0;
   for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
   {
+    if (interface == hardware_interface::HW_IF_POSITION)
+    {
+      position_reference_index_ = interface_index;
+    }
+    else if (interface == hardware_interface::HW_IF_VELOCITY)
+    {
+      velocity_reference_index_ = interface_index;
+    }
+
     for (const auto & joint : admittance_->parameters_.joints)
     {
-      if (hardware_interface::HW_IF_POSITION == interface)
-        position_reference_.emplace_back(reference_interfaces_[index]);
-      else if (hardware_interface::HW_IF_VELOCITY == interface)
-      {
-        velocity_reference_.emplace_back(reference_interfaces_[index]);
-      }
       const auto exported_prefix = std::string(get_node()->get_name()) + "/" + joint;
-      chainable_command_interfaces.emplace_back(
-        hardware_interface::CommandInterface(
-          exported_prefix, interface, reference_interfaces_.data() + index));
-
-      index++;
+      auto cmd_interface =
+        std::make_shared<hardware_interface::CommandInterface>(exported_prefix, interface);
+      (void)cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+      chainable_command_interfaces.push_back(cmd_interface);
     }
+    ++interface_index;
   }
 
   return chainable_command_interfaces;
@@ -466,21 +466,22 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
   // if message exists, load values into references
   if (!joint_command_msg_.positions.empty() || !joint_command_msg_.velocities.empty())
   {
-    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
+    if (position_reference_index_ >= 0 && !joint_command_msg_.positions.empty())
     {
-      if (interface == hardware_interface::HW_IF_POSITION)
+      const size_t base_idx = static_cast<size_t>(position_reference_index_) * num_joints_;
+      for (size_t i = 0; i < joint_command_msg_.positions.size() && i < num_joints_; ++i)
       {
-        for (size_t i = 0; i < joint_command_msg_.positions.size(); ++i)
-        {
-          position_reference_[i].get() = joint_command_msg_.positions[i];
-        }
+        (void)ordered_exported_reference_interfaces_[base_idx + i]->set_value(
+          joint_command_msg_.positions[i]);
       }
-      else if (interface == hardware_interface::HW_IF_VELOCITY)
+    }
+    if (velocity_reference_index_ >= 0 && !joint_command_msg_.velocities.empty())
+    {
+      const size_t base_idx = static_cast<size_t>(velocity_reference_index_) * num_joints_;
+      for (size_t i = 0; i < joint_command_msg_.velocities.size() && i < num_joints_; ++i)
       {
-        for (size_t i = 0; i < joint_command_msg_.velocities.size(); ++i)
-        {
-          velocity_reference_[i].get() = joint_command_msg_.velocities[i];
-        }
+        (void)ordered_exported_reference_interfaces_[base_idx + i]->set_value(
+          joint_command_msg_.velocities[i]);
       }
     }
   }
@@ -541,12 +542,17 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
   // reset to prevent stale references
   for (size_t i = 0; i < num_joints_; i++)
   {
-    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
+    if (position_reference_index_ >= 0)
     {
-      if (interface == hardware_interface::HW_IF_POSITION)
-        position_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
-      else if (interface == hardware_interface::HW_IF_VELOCITY)
-        velocity_reference_[i].get() = std::numeric_limits<double>::quiet_NaN();
+      const size_t idx = static_cast<size_t>(position_reference_index_) * num_joints_ + i;
+      (void)ordered_exported_reference_interfaces_[idx]->set_value(
+        std::numeric_limits<double>::quiet_NaN());
+    }
+    if (velocity_reference_index_ >= 0)
+    {
+      const size_t idx = static_cast<size_t>(velocity_reference_index_) * num_joints_ + i;
+      (void)ordered_exported_reference_interfaces_[idx]->set_value(
+        std::numeric_limits<double>::quiet_NaN());
     }
   }
 
@@ -694,27 +700,32 @@ void AdmittanceController::read_state_reference_interfaces(
   // if any interface has nan values, assume state_reference is the last set reference
   for (size_t i = 0; i < num_joints_; ++i)
   {
-    for (const auto & interface : admittance_->parameters_.chainable_command_interfaces)
+    // update position
+    if (position_reference_index_ >= 0)
     {
-      // update position
-      if (interface == hardware_interface::HW_IF_POSITION)
+      const size_t idx = static_cast<size_t>(position_reference_index_) * num_joints_ + i;
+      auto pos_ref_opt = ordered_exported_reference_interfaces_[idx]->get_optional<double>();
+      double pos_ref = pos_ref_opt.value_or(std::numeric_limits<double>::quiet_NaN());
+      if (std::isnan(pos_ref))
       {
-        if (std::isnan(position_reference_[i]))
-        {
-          position_reference_[i].get() = last_reference_.positions[i];
-        }
-        state_reference.positions[i] = position_reference_[i];
+        pos_ref = last_reference_.positions[i];
+        (void)ordered_exported_reference_interfaces_[idx]->set_value(pos_ref);
       }
+      state_reference.positions[i] = pos_ref;
+    }
 
-      // update velocity
-      if (interface == hardware_interface::HW_IF_VELOCITY)
+    // update velocity
+    if (velocity_reference_index_ >= 0)
+    {
+      const size_t idx = static_cast<size_t>(velocity_reference_index_) * num_joints_ + i;
+      auto vel_ref_opt = ordered_exported_reference_interfaces_[idx]->get_optional<double>();
+      double vel_ref = vel_ref_opt.value_or(std::numeric_limits<double>::quiet_NaN());
+      if (std::isnan(vel_ref))
       {
-        if (std::isnan(velocity_reference_[i]))
-        {
-          velocity_reference_[i].get() = last_reference_.velocities[i];
-        }
-        state_reference.velocities[i] = velocity_reference_[i];
+        vel_ref = last_reference_.velocities[i];
+        (void)ordered_exported_reference_interfaces_[idx]->set_value(vel_ref);
       }
+      state_reference.velocities[i] = vel_ref;
     }
   }
 
