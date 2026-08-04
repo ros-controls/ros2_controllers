@@ -127,7 +127,14 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) override { return true; }
+  bool update_odometry(const rclcpp::Duration & period) override
+  {
+    return odometry_.update_from_velocity(
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(), period.seconds());
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -152,14 +159,16 @@ public:
   void TearDown() { controller_.reset(nullptr); }
 
 protected:
-  void SetUpController(const std::string controller_name = "test_steering_controllers_library")
+  void SetUpController(
+    const std::string controller_name = "test_steering_controllers_library",
+    const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions(), const std::string ns = "")
   {
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name;
     params.robot_description = "";
     params.update_rate = 0;
-    params.node_namespace = "";
-    params.node_options = controller_->define_custom_node_options();
+    params.node_namespace = ns;
+    params.node_options = node_options;
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
     if (position_feedback_ == true)
