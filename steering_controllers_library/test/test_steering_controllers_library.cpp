@@ -92,12 +92,14 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -125,9 +127,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -169,9 +171,9 @@ TEST_F(SteeringControllersLibraryTest, test_position_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -197,12 +199,14 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
+  // Call export_reference_interfaces() to populate ordered_exported_reference_interfaces_
+  controller_->export_reference_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_FALSE(controller_->is_in_chained_mode());
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
 
   // set command statically
@@ -231,9 +235,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_FALSE(std::isnan(controller_->input_ref_.get().twist.angular.z));
@@ -264,9 +268,9 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.linear.x));
   ASSERT_TRUE(std::isnan(controller_->input_ref_.get().twist.angular.z));
