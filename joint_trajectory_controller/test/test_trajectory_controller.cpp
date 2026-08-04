@@ -55,6 +55,16 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
     SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
 }
 
+// Continuous joints need not declare <limit>; on_init must not dereference null limits.
+TEST_P(TrajectoryControllerTestParameterized, continuous_joint_without_urdf_limits)
+{
+  ASSERT_EQ(
+    controller_interface::return_type::OK,
+    SetUpTrajectoryControllerLocal(
+      {}, test_trajectory_controllers::urdf_rrrbot_continuous_no_limits));
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+}
+
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
