@@ -21,6 +21,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 #include "controller_interface/test_utils.hpp"
@@ -176,8 +177,9 @@ protected:
     for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(wheel_names[i], HW_IF_POSITION, &wheels_pos_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+        std::make_shared<hardware_interface::StateInterface>(wheel_names[i], HW_IF_POSITION));
+      std::ignore = state_itfs_.back()->set_value(wheels_pos_states_[i]);
+      state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
@@ -186,8 +188,9 @@ protected:
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(wheel_names[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+        std::make_shared<hardware_interface::CommandInterface>(wheel_names[i], HW_IF_VELOCITY));
+      std::ignore = command_itfs_.back()->set_value(wheels_vel_cmds_[i]);
+      command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -201,9 +204,9 @@ protected:
     for (size_t i = 0; i < wheels_vel_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
-          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_states_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+        std::make_shared<hardware_interface::StateInterface>(wheel_names_[i], HW_IF_VELOCITY));
+      std::ignore = state_itfs_.back()->set_value(wheels_vel_states_[i]);
+      state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
@@ -212,9 +215,9 @@ protected:
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
-          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+        std::make_shared<hardware_interface::CommandInterface>(wheel_names_[i], HW_IF_VELOCITY));
+      std::ignore = command_itfs_.back()->set_value(wheels_vel_cmds_[i]);
+      command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -251,8 +254,8 @@ protected:
   std::vector<double> wheels_vel_states_ = {1, 1, 1, 1};
   std::vector<double> wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   std::vector<std::string> reference_interface_names = {"linear/x", "linear/y", "angular/z"};
 

@@ -20,6 +20,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -42,6 +43,19 @@ void ForceTorqueSensorBroadcasterTest::SetUp()
 {
   // initialize controller
   fts_broadcaster_ = std::make_unique<FriendForceTorqueSensorBroadcaster>();
+
+  fts_force_x_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.x");
+  std::ignore = fts_force_x_->set_value(sensor_values_[0]);
+  fts_force_y_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.y");
+  std::ignore = fts_force_y_->set_value(sensor_values_[1]);
+  fts_force_z_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "force.z");
+  std::ignore = fts_force_z_->set_value(sensor_values_[2]);
+  fts_torque_x_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.x");
+  std::ignore = fts_torque_x_->set_value(sensor_values_[3]);
+  fts_torque_y_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.y");
+  std::ignore = fts_torque_y_->set_value(sensor_values_[4]);
+  fts_torque_z_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "torque.z");
+  std::ignore = fts_torque_z_->set_value(sensor_values_[5]);
 }
 
 void ForceTorqueSensorBroadcasterTest::TearDown() { fts_broadcaster_.reset(nullptr); }

@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "control_msgs/msg/dynamic_interface_group_values.hpp"
@@ -101,16 +102,33 @@ public:
 
   ~GpioCommandControllerTestSuite() { rclcpp::shutdown(); }
 
-  void SetUp() { controller_ = std::make_unique<FriendGpioCommandController>(); }
+  void SetUp()
+  {
+    controller_ = std::make_unique<FriendGpioCommandController>();
+
+    gpio_1_1_dig_cmd = std::make_shared<CommandInterface>(gpio_names.at(0), "dig.1");
+    std::ignore = gpio_1_1_dig_cmd->set_value(gpio_commands.at(0));
+    gpio_1_2_dig_cmd = std::make_shared<CommandInterface>(gpio_names.at(0), "dig.2");
+    std::ignore = gpio_1_2_dig_cmd->set_value(gpio_commands.at(1));
+    gpio_2_ana_cmd = std::make_shared<CommandInterface>(gpio_names.at(1), "ana.1");
+    std::ignore = gpio_2_ana_cmd->set_value(gpio_commands.at(2));
+
+    gpio_1_1_dig_state = std::make_shared<StateInterface>(gpio_names.at(0), "dig.1");
+    std::ignore = gpio_1_1_dig_state->set_value(gpio_states.at(0));
+    gpio_1_2_dig_state = std::make_shared<StateInterface>(gpio_names.at(0), "dig.2");
+    std::ignore = gpio_1_2_dig_state->set_value(gpio_states.at(1));
+    gpio_2_ana_state = std::make_shared<StateInterface>(gpio_names.at(1), "ana.1");
+    std::ignore = gpio_2_ana_state->set_value(gpio_states.at(2));
+  }
 
   void TearDown() { controller_.reset(nullptr); }
 
   void setup_command_and_state_interfaces()
   {
     std::vector<LoanedCommandInterface> command_interfaces;
-    command_interfaces.emplace_back(gpio_1_1_dig_cmd);
-    command_interfaces.emplace_back(gpio_1_2_dig_cmd);
-    command_interfaces.emplace_back(gpio_2_ana_cmd);
+    command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
+    command_interfaces.emplace_back(gpio_1_2_dig_cmd, nullptr);
+    command_interfaces.emplace_back(gpio_2_ana_cmd, nullptr);
 
     std::vector<LoanedStateInterface> state_interfaces;
     state_interfaces.emplace_back(gpio_1_1_dig_state);
@@ -139,12 +157,12 @@ public:
 
   void assert_default_command_and_state_values()
   {
-    ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), gpio_commands.at(0));
-    ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), gpio_commands.at(1));
-    ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands.at(2));
-    ASSERT_EQ(gpio_1_1_dig_state.get_optional().value(), gpio_states.at(0));
-    ASSERT_EQ(gpio_1_2_dig_state.get_optional().value(), gpio_states.at(1));
-    ASSERT_EQ(gpio_2_ana_state.get_optional().value(), gpio_states.at(2));
+    ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), gpio_commands.at(0));
+    ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), gpio_commands.at(1));
+    ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), gpio_commands.at(2));
+    ASSERT_EQ(gpio_1_1_dig_state->get_optional().value(), gpio_states.at(0));
+    ASSERT_EQ(gpio_1_2_dig_state->get_optional().value(), gpio_states.at(1));
+    ASSERT_EQ(gpio_2_ana_state->get_optional().value(), gpio_states.at(2));
   }
 
   void update_controller_loop()
@@ -220,13 +238,13 @@ public:
   std::vector<double> gpio_commands{1.0, 0.0, 3.1};
   std::vector<double> gpio_states{1.0, 0.0, 3.1};
 
-  CommandInterface gpio_1_1_dig_cmd{gpio_names.at(0), "dig.1", &gpio_commands.at(0)};
-  CommandInterface gpio_1_2_dig_cmd{gpio_names.at(0), "dig.2", &gpio_commands.at(1)};
-  CommandInterface gpio_2_ana_cmd{gpio_names.at(1), "ana.1", &gpio_commands.at(2)};
+  CommandInterface::SharedPtr gpio_1_1_dig_cmd;
+  CommandInterface::SharedPtr gpio_1_2_dig_cmd;
+  CommandInterface::SharedPtr gpio_2_ana_cmd;
 
-  StateInterface gpio_1_1_dig_state{gpio_names.at(0), "dig.1", &gpio_states.at(0)};
-  StateInterface gpio_1_2_dig_state{gpio_names.at(0), "dig.2", &gpio_states.at(1)};
-  StateInterface gpio_2_ana_state{gpio_names.at(1), "ana.1", &gpio_states.at(2)};
+  StateInterface::SharedPtr gpio_1_1_dig_state;
+  StateInterface::SharedPtr gpio_1_2_dig_state;
+  StateInterface::SharedPtr gpio_2_ana_state;
   std::unique_ptr<rclcpp::Node> node;
 };
 
@@ -355,8 +373,8 @@ TEST_F(
   ASSERT_TRUE(configure_succeeds(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
-  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
-  command_interfaces.emplace_back(gpio_1_2_dig_cmd);
+  command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
+  command_interfaces.emplace_back(gpio_1_2_dig_cmd, nullptr);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(gpio_1_1_dig_state);
@@ -385,9 +403,9 @@ TEST_F(
   ASSERT_TRUE(configure_succeeds(controller_));
 
   std::vector<LoanedCommandInterface> command_interfaces;
-  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
-  command_interfaces.emplace_back(gpio_1_2_dig_cmd);
-  command_interfaces.emplace_back(gpio_2_ana_cmd);
+  command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
+  command_interfaces.emplace_back(gpio_1_2_dig_cmd, nullptr);
+  command_interfaces.emplace_back(gpio_2_ana_cmd, nullptr);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(gpio_1_1_dig_state);
@@ -489,9 +507,9 @@ TEST_F(
   controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), 30.0);
 }
 
 TEST_F(
@@ -512,9 +530,9 @@ TEST_F(
   controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), 30.0);
 }
 
 TEST_F(
@@ -534,9 +552,9 @@ TEST_F(
   controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands[2]);
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), gpio_commands[2]);
 }
 
 TEST_F(
@@ -557,9 +575,9 @@ TEST_F(
   controller_->rt_command_.set(command);
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), gpio_commands.at(0));
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), gpio_commands.at(1));
-  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), gpio_commands.at(2));
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), gpio_commands.at(0));
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), gpio_commands.at(1));
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), gpio_commands.at(2));
 }
 
 TEST_F(
@@ -583,9 +601,9 @@ TEST_F(
   wait_one_miliseconds_for_timeout();
   update_controller_loop();
 
-  ASSERT_EQ(gpio_1_1_dig_cmd.get_optional().value(), 0.0);
-  ASSERT_EQ(gpio_1_2_dig_cmd.get_optional().value(), 1.0);
-  ASSERT_EQ(gpio_2_ana_cmd.get_optional().value(), 30.0);
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), 30.0);
 }
 
 TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurrentValues)
@@ -629,7 +647,7 @@ TEST_F(
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1"}}});
 
   std::vector<LoanedCommandInterface> command_interfaces;
-  command_interfaces.emplace_back(gpio_1_1_dig_cmd);
+  command_interfaces.emplace_back(gpio_1_1_dig_cmd, nullptr);
 
   std::vector<LoanedStateInterface> state_interfaces;
   state_interfaces.emplace_back(gpio_1_1_dig_state);

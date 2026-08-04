@@ -20,6 +20,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "admittance_controller/admittance_rule_impl.hpp"
@@ -198,7 +199,7 @@ AdmittanceController::on_export_reference_interfaces_list()
       const auto exported_prefix = std::string(get_node()->get_name()) + "/" + joint;
       auto cmd_interface =
         std::make_shared<hardware_interface::CommandInterface>(exported_prefix, interface);
-      (void)cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+      std::ignore = cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
       chainable_command_interfaces.push_back(cmd_interface);
     }
     ++interface_index;
@@ -471,7 +472,7 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
       const size_t base_idx = static_cast<size_t>(position_reference_index_) * num_joints_;
       for (size_t i = 0; i < joint_command_msg_.positions.size() && i < num_joints_; ++i)
       {
-        (void)ordered_exported_reference_interfaces_[base_idx + i]->set_value(
+        std::ignore = ordered_exported_reference_interfaces_[base_idx + i]->set_value(
           joint_command_msg_.positions[i]);
       }
     }
@@ -480,7 +481,7 @@ controller_interface::return_type AdmittanceController::update_reference_from_su
       const size_t base_idx = static_cast<size_t>(velocity_reference_index_) * num_joints_;
       for (size_t i = 0; i < joint_command_msg_.velocities.size() && i < num_joints_; ++i)
       {
-        (void)ordered_exported_reference_interfaces_[base_idx + i]->set_value(
+        std::ignore = ordered_exported_reference_interfaces_[base_idx + i]->set_value(
           joint_command_msg_.velocities[i]);
       }
     }
@@ -545,13 +546,13 @@ controller_interface::CallbackReturn AdmittanceController::on_deactivate(
     if (position_reference_index_ >= 0)
     {
       const size_t idx = static_cast<size_t>(position_reference_index_) * num_joints_ + i;
-      (void)ordered_exported_reference_interfaces_[idx]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[idx]->set_value(
         std::numeric_limits<double>::quiet_NaN());
     }
     if (velocity_reference_index_ >= 0)
     {
       const size_t idx = static_cast<size_t>(velocity_reference_index_) * num_joints_ + i;
-      (void)ordered_exported_reference_interfaces_[idx]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[idx]->set_value(
         std::numeric_limits<double>::quiet_NaN());
     }
   }
@@ -709,7 +710,7 @@ void AdmittanceController::read_state_reference_interfaces(
       if (std::isnan(pos_ref))
       {
         pos_ref = last_reference_.positions[i];
-        (void)ordered_exported_reference_interfaces_[idx]->set_value(pos_ref);
+        std::ignore = ordered_exported_reference_interfaces_[idx]->set_value(pos_ref);
       }
       state_reference.positions[i] = pos_ref;
     }
@@ -723,7 +724,7 @@ void AdmittanceController::read_state_reference_interfaces(
       if (std::isnan(vel_ref))
       {
         vel_ref = last_reference_.velocities[i];
-        (void)ordered_exported_reference_interfaces_[idx]->set_value(vel_ref);
+        std::ignore = ordered_exported_reference_interfaces_[idx]->set_value(vel_ref);
       }
       state_reference.velocities[i] = vel_ref;
     }
