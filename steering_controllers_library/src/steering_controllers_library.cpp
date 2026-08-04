@@ -592,6 +592,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     }
     else
     {
+      RCLCPP_WARN(logger, "Unable to get linear velocity command, set to zero");
       last_linear_velocity_ = 0.0;
     }
     if (std::isfinite(ref_angular))
@@ -600,6 +601,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     }
     else
     {
+      RCLCPP_WARN(logger, "Unable to get angular velocity command, set to zero");
       last_angular_velocity_ = 0.0;
     }
     update_odometry(period);
