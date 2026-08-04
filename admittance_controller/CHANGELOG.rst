@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.53.3 (2026-08-04)
+-------------------
 * Fix admittance position state updates (backport `#2514 <https://github.com/ros-controls/ros2_controllers/issues/2514>`_) (`#2518 <https://github.com/ros-controls/ros2_controllers/issues/2518>`_)
 * admittance_controller userdoc: fix typo (backport `#2479 <https://github.com/ros-controls/ros2_controllers/issues/2479>`_) (`#2481 <https://github.com/ros-controls/ros2_controllers/issues/2481>`_)
 * fix: correct ASSERT_EQ to ASSERT_NE in admittance controller load test (backport `#2264 <https://github.com/ros-controls/ros2_controllers/issues/2264>`_) (`#2340 <https://github.com/ros-controls/ros2_controllers/issues/2340>`_)
