@@ -58,6 +58,7 @@ struct AdmittanceState
   {
     admittance_velocity.setZero();
     admittance_acceleration.setZero();
+    admittance_position.setIdentity();
     damping.setZero();
     mass.setOnes();
     mass_inv.setZero();
