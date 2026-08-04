@@ -411,33 +411,26 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
   controller_->set_chained_mode(false);
   ASSERT_TRUE(activate_succeeds(controller_));
 
-  struct Publicist : public TestableSteeringControllersLibrary
-  {
-    using controller_interface::ControllerInterfaceBase::command_interfaces_;
-    using steering_controllers_library::SteeringControllersLibrary::input_ref_;
-  };
-  auto * pub_controller = static_cast<Publicist *>(controller_.get());
-
   auto command_msg = ControllerReferenceMsg();
   command_msg.header.stamp = controller_->get_node()->now();
   command_msg.twist.linear.x = 1.5;
   command_msg.twist.angular.z = 0.0;
 
-  pub_controller->input_ref_.set(command_msg);
+  controller_->input_ref_.set(command_msg);
 
   controller_->update_reference_from_subscribers(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
   controller_->update_and_write_commands(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
-  ASSERT_GT(pub_controller->command_interfaces_[0].get_optional().value(), 0.1);
+  ASSERT_GT(controller_->command_interfaces_[0].get_optional().value(), 0.1);
 
   auto nan_msg = ControllerReferenceMsg();
   nan_msg.header.stamp = controller_->get_node()->now();
   nan_msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   nan_msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 
-  pub_controller->input_ref_.set(nan_msg);
+  controller_->input_ref_.set(nan_msg);
 
   controller_->update_reference_from_subscribers(
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
@@ -445,7 +438,7 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
     controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01));
 
   // The wheel speed should have been reset to 0.0
-  EXPECT_DOUBLE_EQ(pub_controller->command_interfaces_[0].get_optional().value(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
 }
 
 TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
