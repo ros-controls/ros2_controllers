@@ -15,12 +15,36 @@
 
 #include <cmath>
 #include <limits>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 using hardware_interface::LoanedStateInterface;
 
-void PoseBroadcasterTest::SetUp() { pose_broadcaster_ = std::make_unique<PoseBroadcaster>(); }
+void PoseBroadcasterTest::SetUp()
+{
+  pose_broadcaster_ = std::make_unique<PoseBroadcaster>();
+
+  pose_position_x_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.x");
+  pose_position_y_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.y");
+  pose_position_z_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.z");
+  pose_orientation_x_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.x");
+  pose_orientation_y_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.y");
+  pose_orientation_z_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.z");
+  pose_orientation_w_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.w");
+
+  std::ignore = pose_position_x_->set_value(pose_values_[0]);
+  std::ignore = pose_position_y_->set_value(pose_values_[1]);
+  std::ignore = pose_position_z_->set_value(pose_values_[2]);
+  std::ignore = pose_orientation_x_->set_value(pose_values_[3]);
+  std::ignore = pose_orientation_y_->set_value(pose_values_[4]);
+  std::ignore = pose_orientation_z_->set_value(pose_values_[5]);
+  std::ignore = pose_orientation_w_->set_value(pose_values_[6]);
+}
 
 void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
 
@@ -192,7 +216,7 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
   ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
 
-  ASSERT_TRUE(pose_position_x_.set_value(std::numeric_limits<double>::quiet_NaN()));
+  ASSERT_TRUE(pose_position_x_->set_value(std::numeric_limits<double>::quiet_NaN()));
 
   // Subscribe to pose topic
   geometry_msgs::msg::PoseStamped pose_msg;
@@ -215,11 +239,11 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 
   // Set valid position but invalid quaternion
-  ASSERT_TRUE(pose_position_x_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_x_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_y_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_z_.set_value(0.0));
-  ASSERT_TRUE(pose_orientation_w_.set_value(0.0));
+  ASSERT_TRUE(pose_position_x_->set_value(0.0));
+  ASSERT_TRUE(pose_orientation_x_->set_value(0.0));
+  ASSERT_TRUE(pose_orientation_y_->set_value(0.0));
+  ASSERT_TRUE(pose_orientation_z_->set_value(0.0));
+  ASSERT_TRUE(pose_orientation_w_->set_value(0.0));
 
   EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
   // Verify that no tf message was sent

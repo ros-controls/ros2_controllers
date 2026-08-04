@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -42,6 +43,16 @@ void GripperControllerTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<FriendGripperController>();
+
+  joint_1_pos_state_ = std::make_shared<hardware_interface::StateInterface>(
+    joint_name_, hardware_interface::HW_IF_POSITION);
+  std::ignore = joint_1_pos_state_->set_value(joint_states_[0]);
+  joint_1_vel_state_ = std::make_shared<hardware_interface::StateInterface>(
+    joint_name_, hardware_interface::HW_IF_VELOCITY);
+  std::ignore = joint_1_vel_state_->set_value(joint_states_[1]);
+  joint_1_cmd_ = std::make_shared<hardware_interface::CommandInterface>(
+    joint_name_, hardware_interface::HW_IF_POSITION);
+  std::ignore = joint_1_cmd_->set_value(joint_commands_[0]);
 }
 
 void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
@@ -61,7 +72,7 @@ void GripperControllerTest::SetUpController(
   ASSERT_EQ(result, expected_result);
 
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(this->joint_1_cmd_);
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(this->joint_1_pos_state_);
   state_ifs.emplace_back(this->joint_1_vel_state_);
@@ -132,7 +143,7 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
 
   // re-assign interfaces
   std::vector<LoanedCommandInterface> command_ifs;
-  command_ifs.emplace_back(this->joint_1_cmd_);
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(this->joint_1_pos_state_);
   state_ifs.emplace_back(this->joint_1_vel_state_);

@@ -194,10 +194,11 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
-          command_joint_names_[i], interface_name_, &joint_command_values_[i]));
-      command_ifs.emplace_back(command_itfs_.back());
+      auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
+        command_joint_names_[i], interface_name_);
+      std::ignore = cmd_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(cmd_itf);
+      command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
@@ -206,10 +207,11 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
-          command_joint_names_[i], interface_name_, &joint_state_values_[i]));
-      state_ifs.emplace_back(state_itfs_.back());
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        command_joint_names_[i], interface_name_);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
+      state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -320,8 +322,8 @@ protected:
   static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
   double command_lin_x = 111;
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   double ref_timeout_ = 0.1;
 
