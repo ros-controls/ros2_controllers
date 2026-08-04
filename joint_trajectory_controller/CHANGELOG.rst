@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(joint-trajectory-controller): use active tolerances in update step (backport `#2101 <https://github.com/ros-controls/ros2_controllers/issues/2101>`_) (`#2510 <https://github.com/ros-controls/ros2_controllers/issues/2510>`_)
+* Contributors: mergify[bot]
+
 2.53.2 (2026-07-01)
 -------------------
 * fix JTC userdoc YAML indentation and stray quote (backport `#2327 <https://github.com/ros-controls/ros2_controllers/issues/2327>`_) (`#2328 <https://github.com/ros-controls/ros2_controllers/issues/2328>`_)

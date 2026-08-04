@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix wrench transformer namespace test flake (backport `#2492 <https://github.com/ros-controls/ros2_controllers/issues/2492>`_) (`#2493 <https://github.com/ros-controls/ros2_controllers/issues/2493>`_)
+* Contributors: mergify[bot]
+
 2.53.2 (2026-07-01)
 -------------------
 
