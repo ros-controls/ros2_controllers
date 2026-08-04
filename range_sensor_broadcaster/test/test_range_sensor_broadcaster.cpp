@@ -16,6 +16,7 @@
  * Authors: flochre
  */
 
+#include <tuple>
 #include <utility>
 
 #include "test_range_sensor_broadcaster.hpp"
@@ -31,6 +32,8 @@ void RangeSensorBroadcasterTest::SetUp()
 {
   // initialize controller
   range_broadcaster_ = std::make_unique<range_sensor_broadcaster::RangeSensorBroadcaster>();
+  range_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "range");
+  std::ignore = range_->set_value(sensor_range_);
 }
 
 void RangeSensorBroadcasterTest::TearDown() { range_broadcaster_.reset(nullptr); }
@@ -226,6 +229,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
   sensor_msgs::msg::Range range_msg;
 
   sensor_range_ = 0.10f;
+  std::ignore = range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -239,6 +243,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_Bandaries_RangeBroadcaster_Success)
 #endif
 
   sensor_range_ = 4.0;
+  std::ignore = range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -262,6 +267,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
   sensor_msgs::msg::Range range_msg;
 
   sensor_range_ = 0.0;
+  std::ignore = range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);
@@ -276,6 +282,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
 #endif
 
   sensor_range_ = 6.0;
+  std::ignore = range_->set_value(sensor_range_);
   subscribe_and_get_message(range_msg);
 
   EXPECT_EQ(range_msg.header.frame_id, frame_id_);

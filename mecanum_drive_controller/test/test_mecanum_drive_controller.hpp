@@ -196,7 +196,7 @@ protected:
     {
       auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
         command_joint_names_[i], interface_name_);
-      (void)cmd_itf->set_value(joint_command_values_[i]);
+      std::ignore = cmd_itf->set_value(joint_command_values_[i]);
       command_itfs_.emplace_back(cmd_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
@@ -209,7 +209,7 @@ protected:
     {
       auto state_itf = std::make_shared<hardware_interface::StateInterface>(
         command_joint_names_[i], interface_name_);
-      (void)state_itf->set_value(joint_state_values_[i]);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
       state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
