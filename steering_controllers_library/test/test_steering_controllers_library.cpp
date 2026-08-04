@@ -478,7 +478,7 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
   now = now + rclcpp::Duration::from_seconds(0.1);
   controller_->update(now, rclcpp::Duration::from_seconds(0.1));
 
-  // reviewer-requested nonzero-before-timeout check
+  // nonzero-before-timeout check
   EXPECT_GT(controller_->odom_state_msg_.twist.twist.linear.x, 0.0);
 
   // jump beyond timeout
