@@ -526,7 +526,7 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
-    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y))
+    if (std::isfinite(current_ref_.twist.linear.x) && std::isfinite(current_ref_.twist.angular.z))
     {
       std::ignore =
         ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
