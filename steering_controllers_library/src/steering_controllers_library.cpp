@@ -304,24 +304,20 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  if (params_.publish_limited_velocity)
+  try
   {
-    try
-    {
-      limited_velocity_publisher_ = get_node()->create_publisher<ControllerTwistReferenceMsg>(
-        DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
-      rt_limited_velocity_publisher_ =
-        std::make_shared<realtime_tools::RealtimePublisher<ControllerTwistReferenceMsg>>(
-          limited_velocity_publisher_);
-    }
-    catch (const std::exception & e)
-    {
-      fprintf(
-        stderr,
-        "Exception thrown during publisher creation at configure stage with message : %s \n",
-        e.what());
-      return controller_interface::CallbackReturn::ERROR;
-    }
+    limited_velocity_publisher_ = get_node()->create_publisher<ControllerTwistReferenceMsg>(
+      DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+    rt_limited_velocity_publisher_ =
+      std::make_shared<realtime_tools::RealtimePublisher<ControllerTwistReferenceMsg>>(
+        limited_velocity_publisher_);
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr, "Exception thrown during publisher creation at configure stage with message : %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
   }
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
