@@ -88,7 +88,8 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     // export_reference_interfaces() populates ordered_exported_reference_interfaces_
-    auto ref_itfs = export_reference_interfaces();
+    export_reference_interfaces();
+    export_state_interfaces();
     return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
   }
 
