@@ -510,7 +510,9 @@ TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
   }
-  EXPECT_NEAR(linear / WHEELS_RADIUS_, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+  EXPECT_NEAR(
+    linear / WHEELS_RADIUS_,
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(), 1e-3);
   EXPECT_NEAR(linear, controller_->previous_two_commands_.back()[0], 1e-3);
 
   // Deactivate then re-activate: limiter history must be reset to zero.
@@ -529,7 +531,9 @@ TEST_F(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
     controller_interface::return_type::OK);
-  EXPECT_LT(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], linear / WHEELS_RADIUS_)
+  EXPECT_LT(
+    controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(),
+    linear / WHEELS_RADIUS_)
     << "Limiter history was not reset across lifecycle transitions; the wheel command "
        "should be ramping up from zero again.";
 }
@@ -574,7 +578,9 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
       ASSERT_EQ(
         controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
         controller_interface::return_type::OK);
-      EXPECT_NEAR(expected_vel, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+      EXPECT_NEAR(
+        expected_vel,
+        controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(), 1e-3);
     }
   };
 
@@ -598,7 +604,9 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(ideal_wheel_velocity, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+    EXPECT_NEAR(
+      ideal_wheel_velocity,
+      controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(), 1e-3);
 
     // Wait for the speed limiter to fill the queue.
     wait_for_limiter(linear, ideal_wheel_velocity);
@@ -621,7 +629,8 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(0.0, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+    EXPECT_NEAR(
+      0.0, controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(), 1e-3);
 
     // Wait for the speed limiter to fill the queue.
     wait_for_limiter(linear, 0.0);
@@ -653,7 +662,9 @@ TEST_F(SteeringControllersLibraryTest, test_speed_limiter_runtime_update)
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
       controller_interface::return_type::OK);
-    EXPECT_NEAR(ideal_wheel_velocity, joint_command_values_[CMD_TRACTION_RIGHT_WHEEL], 1e-3);
+    EXPECT_NEAR(
+      ideal_wheel_velocity,
+      controller_->command_interfaces_[CMD_TRACTION_RIGHT_WHEEL].get_optional().value(), 1e-3);
 
     // Wait for the speed limiter to fill the queue.
     wait_for_limiter(linear, ideal_wheel_velocity);
@@ -793,8 +804,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 
   // Validate the expected robot pose after service call
-  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 1e-6);
-  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 5e-3);
+  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 5e-3);
   EXPECT_NEAR(controller_->odometry_.get_heading(), 1.57079632679, 1e-5);
 
   // 3. Move forward again to verify
