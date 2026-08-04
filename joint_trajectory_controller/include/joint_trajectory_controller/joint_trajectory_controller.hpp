@@ -147,8 +147,8 @@ protected:
   // Configuration for every joint if it wraps around (ie. is continuous, position error is
   // normalized)
   std::vector<bool> joints_angle_wraparound_;
-  // reserved storage for result of the command when closed loop pid adapter is used
-  std::vector<double> tmp_command_;
+  // Preallocated storage for closed-loop PID command output.
+  std::vector<double> closed_loop_pid_command_;
 
   // If true, enable calculations to stop all joints using constant deceleration
   bool should_decelerate_on_cancel_ = false;
@@ -181,6 +181,14 @@ protected:
   std::shared_ptr<Trajectory> current_trajectory_ = nullptr;
   realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
     new_trajectory_msg_;
+
+  // Trajectory deferred until its future start time.
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> pending_traj_msg_ = nullptr;
+  rclcpp::Time pending_start_;
+  // Written by goal_cancelled_callback (non-RT), read in update() (RT) to drop pending.
+  std::atomic<bool> rt_clear_pending_{false};
+  // Suppresses feedback/tolerance/success for an action goal whose trajectory is still deferred.
+  std::atomic<bool> rt_active_goal_deferred_{false};
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -233,6 +241,12 @@ protected:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
+  // true if msg is one of the internally generated hold/success/decelerate trajectories.
+  bool is_internal_hold(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & msg) const
+  {
+    return msg == hold_position_msg_ptr_ ||
+           (stop_trajectory_ != nullptr && msg == stop_trajectory_);
+  }
   bool validate_trajectory_msg(const trajectory_msgs::msg::JointTrajectory & trajectory) const;
   void add_new_trajectory_msg(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg);

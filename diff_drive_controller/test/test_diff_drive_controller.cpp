@@ -28,7 +28,6 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 
-using CallbackReturn = controller_interface::CallbackReturn;
 using controller_interface::activate_succeeds;
 using controller_interface::cleanup_succeeds;
 using controller_interface::configure_succeeds;
@@ -84,7 +83,6 @@ public:
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace);
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_prefix_set_namespace);
   FRIEND_TEST(TestDiffDriveController, configure_succeeds_tf_tilde_prefix_set_namespace);
-  // Declare these tests as friends so we can access controller_->reference_interfaces_
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
   FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
@@ -176,6 +174,7 @@ protected:
     command_ifs.emplace_back(right_wheel_vel_cmd_, nullptr);
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->export_reference_interfaces();
   }
 
   void assignResourcesVelFeedback()
@@ -189,6 +188,7 @@ protected:
     command_ifs.emplace_back(right_wheel_vel_cmd_, nullptr);
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->export_reference_interfaces();
   }
 
   void assignResourcesNoFeedback()
@@ -198,6 +198,7 @@ protected:
     command_ifs.emplace_back(right_wheel_vel_cmd_, nullptr);
 
     controller_->assign_interfaces(std::move(command_ifs), {});
+    controller_->export_reference_interfaces();
   }
 
   controller_interface::return_type InitController(
@@ -461,9 +462,9 @@ TEST_F(TestDiffDriveController, activate_succeeds_with_open_loop_assigned)
       {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesNoFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, test_speed_limiter)
@@ -841,9 +842,9 @@ TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resou
        rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resources_assigned_2)
@@ -855,9 +856,9 @@ TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resou
        rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(TestDiffDriveController, cleanup)
@@ -996,11 +997,11 @@ TEST_F(TestDiffDriveController, chainable_controller_unchained_mode)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  // (Note: reference_interfaces_ is protected, but this is
+  // (Note: ordered_exported_reference_interfaces_ is protected, but this is
   // a FRIEND_TEST so we can use it)
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   // But NaNs should not propagate to command interfaces
   // (these are set to 0.1 and 0.2 in InitController)
@@ -1089,21 +1090,21 @@ TEST_F(TestDiffDriveController, chainable_controller_chained_mode)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   // But NaNs should not propagate to command interfaces
   // (these are set to 0.1 and 0.2 in InitController)
   ASSERT_FALSE(std::isnan(left_wheel_vel_cmd_->get_optional().value()));
   ASSERT_FALSE(std::isnan(right_wheel_vel_cmd_->get_optional().value()));
 
-  // Imitate preceding controllers by setting reference_interfaces_
-  // (Note: reference_interfaces_ is protected, but this is
+  // Imitate preceding controllers by setting ordered_exported_reference_interfaces_
+  // (Note: ordered_exported_reference_interfaces_ is protected, but this is
   // a FRIEND_TEST so we can use it)
   const double linear = 3.0;
-  controller_->reference_interfaces_[0] = linear;
-  controller_->reference_interfaces_[1] = 0.0;
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(linear);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
@@ -1190,11 +1191,11 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
   waitForSetup(executor);
 
   // Reference interfaces should be NaN on initialization
-  // (Note: reference_interfaces_ is protected, but this is
+  // (Note: ordered_exported_reference_interfaces_ is protected, but this is
   // a FRIEND_TEST so we can use it)
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface));
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()));
   }
   // But NaNs should not propagate to command interfaces
   // (these are set to 0.1 and 0.2 in InitController)
@@ -1231,13 +1232,14 @@ TEST_F(TestDiffDriveController, deactivate_then_activate)
 
   waitForSetup(executor);
 
-  // (Note: reference_interfaces_ is protected, but this is
+  // (Note: ordered_exported_reference_interfaces_ is protected, but this is
   // a FRIEND_TEST so we can use it)
-  for (const auto & interface : controller_->reference_interfaces_)
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
   {
-    EXPECT_TRUE(std::isnan(interface))
+    EXPECT_TRUE(std::isnan(interface->get_optional().value()))
       << "Reference interfaces should initially be NaN on activation";
   }
+
   EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
     << "Wheels should still have the same command as when they were last set (on deactivation)";
   EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value())
@@ -1313,15 +1315,13 @@ TEST_F(TestDiffDriveController, odometry_set_service)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
+  ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesPosFeedback();
 
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
   EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
   EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
   rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
@@ -1366,10 +1366,9 @@ TEST_F(TestDiffDriveController, odometry_set_service)
 
   // 4. Deactivate and cleanup
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_INACTIVE);
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(state.id(), State::PRIMARY_STATE_UNCONFIGURED);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+
   executor.cancel();
 }
 
@@ -1390,13 +1389,11 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   assignResourcesNoFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -1432,10 +1429,8 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
 
   // Safely spin down the lifecycle
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 
@@ -1451,13 +1446,11 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  auto state = controller_->configure();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   assignResourcesNoFeedback();
 
-  state = controller_->get_node()->activate();
-  ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   waitForSetup(executor);
 
@@ -1493,10 +1486,8 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
 
   // Safely spin down the lifecycle
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  state = controller_->get_node()->deactivate();
-  ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  state = controller_->get_node()->cleanup();
-  ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
 }
 

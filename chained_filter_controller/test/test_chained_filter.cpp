@@ -25,7 +25,6 @@
 #include "chained_filter_controller/chained_filter.hpp"
 
 using chained_filter_controller::ChainedFilter;
-using controller_interface::CallbackReturn;
 using testing::SizeIs;
 
 using hardware_interface::LoanedStateInterface;
@@ -125,6 +124,9 @@ TEST_F(ChainedFilterTest, UpdateFilter)
 {
   SetUpController();
   ASSERT_TRUE(configure_succeeds(controller_));
+  // export_state_interfaces must be called to populate ordered_exported_state_interfaces_
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
@@ -133,8 +135,6 @@ TEST_F(ChainedFilterTest, UpdateFilter)
   // input state interface should not change
   EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   // output should be the same
-  auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 
   ASSERT_TRUE(joint_1_pos_->set_value(2.0));

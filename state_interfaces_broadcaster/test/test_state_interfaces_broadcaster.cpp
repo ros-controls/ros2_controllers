@@ -41,12 +41,6 @@ using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-
 void StateInterfacesBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
 void StateInterfacesBroadcasterTest::TearDownTestCase() { rclcpp::shutdown(); }
@@ -163,11 +157,9 @@ void StateInterfacesBroadcasterTest::assign_state_interfaces(
 void StateInterfacesBroadcasterTest::activate_and_get_state_message(
   const std::string & topic, control_msgs::msg::Float64Values & msg)
 {
-  auto node_state = state_broadcaster_->configure();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
 
-  node_state = state_broadcaster_->get_node()->activate();
-  ASSERT_EQ(node_state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
   control_msgs::msg::Float64Values::SharedPtr received_msg;
   rclcpp::Node test_node("test_node");
@@ -228,7 +220,7 @@ TEST_F(StateInterfacesBroadcasterTest, ConfigureOnValidInterfaceListTest)
   };
   ASSERT_EQ(SetUpStateBroadcaster(interfaces), controller_interface::return_type::OK);
   // configure ok
-  ASSERT_EQ(state_broadcaster_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
   ASSERT_TRUE(state_broadcaster_->names_publisher_);
   ASSERT_TRUE(state_broadcaster_->values_publisher_);
 
@@ -238,7 +230,7 @@ TEST_F(StateInterfacesBroadcasterTest, ConfigureOnValidInterfaceListTest)
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[2]));
   ASSERT_THAT(state_broadcaster_->names_msg_.keys, ElementsAreArray(interfaces));
 
-  ASSERT_EQ(state_broadcaster_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
   ASSERT_EQ(state_broadcaster_->values_msg_.values.size(), 3);
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[0]));
   ASSERT_TRUE(std::isnan(state_broadcaster_->values_msg_.values[1]));
