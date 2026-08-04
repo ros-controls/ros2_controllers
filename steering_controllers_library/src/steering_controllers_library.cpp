@@ -586,8 +586,22 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   else
   {
     // store current ref (for open loop odometry) and update odometry
-    last_linear_velocity_ = ref_linear;
-    last_angular_velocity_ = ref_angular;
+    if (std::isfinite(ref_linear))
+    {
+      last_linear_velocity_ = ref_linear;
+    }
+    else
+    {
+      last_linear_velocity_ = 0.0;
+    }
+    if (std::isfinite(ref_angular))
+    {
+      last_angular_velocity_ = ref_angular;
+    }
+    else
+    {
+      last_angular_velocity_ = 0.0;
+    }
     update_odometry(period);
   }
 
@@ -738,25 +752,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     }
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
-
-  // store current ref (for open loop odometry) and update odometry
-  if (std::isfinite(reference_interfaces_[0]))
-  {
-    last_linear_velocity_ = reference_interfaces_[0];
-  }
-  else
-  {
-    last_linear_velocity_ = 0.0;
-  }
-  if (std::isfinite(reference_interfaces_[1]))
-  {
-    last_angular_velocity_ = reference_interfaces_[1];
-  }
-  else
-  {
-    last_angular_velocity_ = 0.0;
-  }
-  update_odometry(period);
 
   std::ignore =
     ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
