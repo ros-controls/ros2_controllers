@@ -20,6 +20,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -83,7 +84,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return tricycle_steering_controller::TricycleSteeringController::on_activate(previous_state);
   }
 
@@ -160,20 +163,21 @@ protected:
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], steering_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_LEFT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_DUAL_TRACTION_STEER_WHEEL]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore =
+      command_itfs_.back()->set_value(joint_command_values_[CMD_DUAL_TRACTION_STEER_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
@@ -182,20 +186,21 @@ protected:
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[1], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_LEFT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_DUAL_TRACTION_STEER_AXIS]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore =
+      state_itfs_.back()->set_value(joint_state_values_[STATE_DUAL_TRACTION_STEER_AXIS]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
