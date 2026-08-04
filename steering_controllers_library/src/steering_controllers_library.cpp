@@ -451,12 +451,12 @@ SteeringControllersLibrary::on_export_reference_interfaces_list()
 
   auto linear_interface = std::make_shared<hardware_interface::CommandInterface>(
     get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY);
-  linear_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore = linear_interface->set_value(std::numeric_limits<double>::quiet_NaN());
   reference_interfaces.push_back(linear_interface);
 
   auto angular_interface = std::make_shared<hardware_interface::CommandInterface>(
     get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY);
-  angular_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore = angular_interface->set_value(std::numeric_limits<double>::quiet_NaN());
   reference_interfaces.push_back(angular_interface);
 
   return reference_interfaces;
@@ -528,8 +528,10 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   {
     if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y))
     {
-      ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
-      ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.angular.z);
+      std::ignore =
+        ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
+      std::ignore =
+        ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.angular.z);
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
@@ -544,9 +546,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   {
     if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.angular.z))
     {
-      ordered_exported_reference_interfaces_[0]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[0]->set_value(
         std::numeric_limits<double>::quiet_NaN());
-      ordered_exported_reference_interfaces_[1]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[1]->set_value(
         std::numeric_limits<double>::quiet_NaN());
 
       current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
@@ -756,8 +758,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   }
   update_odometry(period);
 
-  ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
-  ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore =
+    ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore =
+    ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
 
   return controller_interface::return_type::OK;
 }
