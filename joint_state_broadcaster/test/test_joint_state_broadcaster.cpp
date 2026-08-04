@@ -20,6 +20,7 @@
 #include <shared_mutex>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -52,6 +53,38 @@ void JointStateBroadcasterTest::SetUp()
 {
   // initialize broadcaster
   state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
+
+  joint_1_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[0]);
+  std::ignore = joint_1_pos_state_->set_value(joint_values_[0]);
+  joint_2_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[0]);
+  std::ignore = joint_2_pos_state_->set_value(joint_values_[1]);
+  joint_3_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[0]);
+  std::ignore = joint_3_pos_state_->set_value(joint_values_[2]);
+  joint_1_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[1]);
+  std::ignore = joint_1_vel_state_->set_value(joint_values_[0]);
+  joint_2_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[1]);
+  std::ignore = joint_2_vel_state_->set_value(joint_values_[1]);
+  joint_3_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[1]);
+  std::ignore = joint_3_vel_state_->set_value(joint_values_[2]);
+  joint_1_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[2]);
+  std::ignore = joint_1_eff_state_->set_value(joint_values_[0]);
+  joint_2_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[2]);
+  std::ignore = joint_2_eff_state_->set_value(joint_values_[1]);
+  joint_3_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[2]);
+  std::ignore = joint_3_eff_state_->set_value(joint_values_[2]);
+
+  joint_X_custom_state =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], custom_interface_name_);
+  std::ignore = joint_X_custom_state->set_value(custom_joint_value_);
 }
 
 void JointStateBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }
@@ -832,71 +865,87 @@ TEST_F(JointStateBroadcasterTest, UpdatePerformanceTest)
     const auto joint_name = "joint_" + std::to_string(joint);
 
     // standard
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "position", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "velocity", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "effort", &custom_joint_value_));
+    auto state_position =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "position");
+    std::ignore = state_position->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_position);
+    auto state_velocity =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "velocity");
+    std::ignore = state_velocity->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_velocity);
+    auto state_effort = std::make_shared<hardware_interface::StateInterface>(joint_name, "effort");
+    std::ignore = state_effort->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_effort);
 
     // non standard
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "mode", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "absolute_position", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "acceleration", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "current", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "torque", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "force", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "temperature_board", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "temperature_motor", &custom_joint_value_));
+    auto state_mode = std::make_shared<hardware_interface::StateInterface>(joint_name, "mode");
+    std::ignore = state_mode->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_mode);
+    auto state_absolute_position =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "absolute_position");
+    std::ignore = state_absolute_position->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_absolute_position);
+    auto state_acceleration =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "acceleration");
+    std::ignore = state_acceleration->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_acceleration);
+    auto state_current =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "current");
+    std::ignore = state_current->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_current);
+    auto state_torque = std::make_shared<hardware_interface::StateInterface>(joint_name, "torque");
+    std::ignore = state_torque->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_torque);
+    auto state_force = std::make_shared<hardware_interface::StateInterface>(joint_name, "force");
+    std::ignore = state_force->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_force);
+    auto state_temperature_board =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "temperature_board");
+    std::ignore = state_temperature_board->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_temperature_board);
+    auto state_temperature_motor =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "temperature_motor");
+    std::ignore = state_temperature_motor->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_temperature_motor);
 
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "position.kd", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "position.ki", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "position.kp", &custom_joint_value_));
+    auto state_position_kd =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "position.kd");
+    std::ignore = state_position_kd->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_position_kd);
+    auto state_position_ki =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "position.ki");
+    std::ignore = state_position_ki->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_position_ki);
+    auto state_position_kp =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "position.kp");
+    std::ignore = state_position_kp->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_position_kp);
 
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "velocity.kd", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "velocity.ki", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "velocity.kp", &custom_joint_value_));
+    auto state_velocity_kd =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "velocity.kd");
+    std::ignore = state_velocity_kd->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_velocity_kd);
+    auto state_velocity_ki =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "velocity.ki");
+    std::ignore = state_velocity_ki->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_velocity_ki);
+    auto state_velocity_kp =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "velocity.kp");
+    std::ignore = state_velocity_kp->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_velocity_kp);
 
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "current.kd", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "current.ki", &custom_joint_value_));
-    test_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        joint_name, "current.kp", &custom_joint_value_));
+    auto state_current_kd =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "current.kd");
+    std::ignore = state_current_kd->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_current_kd);
+    auto state_current_ki =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "current.ki");
+    std::ignore = state_current_ki->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_current_ki);
+    auto state_current_kp =
+      std::make_shared<hardware_interface::StateInterface>(joint_name, "current.kp");
+    std::ignore = state_current_kp->set_value(custom_joint_value_);
+    test_interfaces_.emplace_back(state_current_kp);
   }
 
   RCLCPP_INFO(

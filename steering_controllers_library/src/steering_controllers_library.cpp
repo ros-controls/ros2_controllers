@@ -14,10 +14,12 @@
 
 #include "steering_controllers_library/steering_controllers_library.hpp"
 
+#include <cmath>
 #include <deque>
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -491,12 +493,12 @@ SteeringControllersLibrary::on_export_reference_interfaces_list()
 
   auto linear_interface = std::make_shared<hardware_interface::CommandInterface>(
     get_node()->get_name() + std::string("/linear"), hardware_interface::HW_IF_VELOCITY);
-  linear_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore = linear_interface->set_value(std::numeric_limits<double>::quiet_NaN());
   reference_interfaces.push_back(linear_interface);
 
   auto angular_interface = std::make_shared<hardware_interface::CommandInterface>(
     get_node()->get_name() + std::string("/angular"), hardware_interface::HW_IF_VELOCITY);
-  angular_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore = angular_interface->set_value(std::numeric_limits<double>::quiet_NaN());
   reference_interfaces.push_back(angular_interface);
 
   return reference_interfaces;
@@ -583,10 +585,12 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   // accept message only if there is no timeout
   if (age_of_last_command <= ref_timeout_ || ref_timeout_ == rclcpp::Duration::from_seconds(0))
   {
-    if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y))
+    if (std::isfinite(current_ref_.twist.linear.x) && std::isfinite(current_ref_.twist.angular.z))
     {
-      ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
-      ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.angular.z);
+      std::ignore =
+        ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
+      std::ignore =
+        ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.angular.z);
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
@@ -601,9 +605,9 @@ controller_interface::return_type SteeringControllersLibrary::update_reference_f
   {
     if (!std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.angular.z))
     {
-      ordered_exported_reference_interfaces_[0]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[0]->set_value(
         std::numeric_limits<double>::quiet_NaN());
-      ordered_exported_reference_interfaces_[1]->set_value(
+      std::ignore = ordered_exported_reference_interfaces_[1]->set_value(
         std::numeric_limits<double>::quiet_NaN());
 
       current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
@@ -661,13 +665,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       set_odom_requested_.store(false);
     }
   }
-  else
-  {
-    // store current ref (for open loop odometry) and update odometry
-    last_linear_velocity_ = ref_linear;
-    last_angular_velocity_ = ref_angular;
-    update_odometry(period);
-  }
 
   // MOVE ROBOT
 
@@ -688,6 +685,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     previous_two_commands_.pop();
     previous_two_commands_.push({{linear_command, angular_command}});
 
+    // store current ref (for open loop odometry)
     last_linear_velocity_ = linear_command;
     last_angular_velocity_ = angular_command;
 
@@ -720,13 +718,18 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   {
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
-      if (!command_interfaces_[i].set_value(0.0))
+      if (!command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max()))
       {
         RCLCPP_WARN(logger, "Unable to set command interface to value 0.0");
         return controller_interface::return_type::OK;
       }
     }
+
+    // reset for open_loop odometry
+    last_linear_velocity_ = 0.0;
+    last_angular_velocity_ = 0.0;
   }
+  update_odometry(period);
 
   // Publish odometry message
   // Compute and store orientation info
@@ -829,7 +832,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
         controller_state_msg_.steering_angle_command.push_back(command_interface_value_op.value());
       }
     }
-
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
 
@@ -846,8 +848,10 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     rt_limited_velocity_publisher_->try_publish(limited_velocity_message_);
   }
 
-  ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
-  ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore =
+    ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
+  std::ignore =
+    ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
 
   return controller_interface::return_type::OK;
 }

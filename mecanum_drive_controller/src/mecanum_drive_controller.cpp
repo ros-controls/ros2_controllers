@@ -310,8 +310,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Allocate reference interfaces and reset their values to NaN to catch uninitialized usage.
-  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
+  // Reset the reference interfaces to NaN to catch uninitialized usage.
   reset_buffers();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
@@ -438,9 +437,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 
 void MecanumDriveController::reset_buffers()
 {
-  std::fill(
-    reference_interfaces_.begin(), reference_interfaces_.end(),
-    std::numeric_limits<double>::quiet_NaN());
+  for (auto & ref_itf : ordered_exported_reference_interfaces_)
+  {
+    if (!ref_itf->set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to reset reference interface to NaN");
+    }
+  }
 
   // Replace the queue with one initialized to two zero entries.
   previous_two_commands_ = std::queue<std::array<double, 3>>(
@@ -669,10 +672,11 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
   else
   {
-    const bool value_set_error = command_interfaces_[FRONT_LEFT].set_value(0.0) &&
-                                 command_interfaces_[FRONT_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_LEFT].set_value(0.0);
+    const bool value_set_error =
+      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
     RCLCPP_ERROR_EXPRESSION(
       get_node()->get_logger(), !value_set_error,
       "Setting values to command interfaces has failed! "
