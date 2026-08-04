@@ -854,8 +854,8 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   ASSERT_EQ(controller_->update(test_time, period), controller_interface::return_type::OK);
 
   // Validate the expected robot pose after service call
-  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 5e-3);
-  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 5e-3);
+  EXPECT_NEAR(controller_->odometry_.get_x(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_y(), -2.0, 1e-6);
   EXPECT_NEAR(controller_->odometry_.get_heading(), 1.57079632679, 1e-5);
 
   // 3. Move forward again to verify

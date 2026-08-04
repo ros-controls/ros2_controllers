@@ -654,18 +654,6 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   const double ref_linear = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
   const double ref_angular = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
 
-  // check if odometry set was requested by non-RT thread
-  if (set_odom_requested_.load())
-  {
-    auto param_op = requested_odom_params_.try_get();
-    if (param_op.has_value())
-    {
-      auto params = param_op.value();
-      odometry_.set_odometry(params.x, params.y, params.yaw);
-      set_odom_requested_.store(false);
-    }
-  }
-
   // MOVE ROBOT
 
   if (!std::isnan(ref_linear) && !std::isnan(ref_angular))
@@ -729,8 +717,22 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
     last_linear_velocity_ = 0.0;
     last_angular_velocity_ = 0.0;
   }
-  update_odometry(period);
 
+  // check if odometry set was requested by non-RT thread
+  if (set_odom_requested_.load())
+  {
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.set_odometry(params.x, params.y, params.yaw);
+      set_odom_requested_.store(false);
+    }
+  }
+  else
+  {
+    update_odometry(period);
+  }
   // Publish odometry message
   // Compute and store orientation info
   tf2::Quaternion orientation;
