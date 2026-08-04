@@ -797,9 +797,12 @@ bool SteeringControllersLibrary::reset()
 
   last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
   last_angular_velocity_ = std::numeric_limits<double>::quiet_NaN();
-  for (auto & interface : reference_interfaces_)
+  for (auto & interface : ordered_exported_reference_interfaces_)
   {
-    interface = std::numeric_limits<double>::quiet_NaN();
+    if (!interface->set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to reset reference interface to NaN");
+    }
   }
 
   ref_subscriber_twist_.reset();
