@@ -407,9 +407,9 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
     "steering_joints_names", std::vector<std::string>{"steer_left", "steer_right"});
   SetUpController("test_steering_controllers_library", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   struct Publicist : public TestableSteeringControllersLibrary
   {
@@ -457,9 +457,9 @@ TEST_F(SteeringControllersLibraryTest, test_open_loop_update_timeout)
 
   SetUpController("test_steering_controllers_library", node_options);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   controller_->set_chained_mode(false);  // We are testing standalone mode
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   ControllerReferenceMsg msg;
   msg.header.stamp = controller_->get_node()->now();
