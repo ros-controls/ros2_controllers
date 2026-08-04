@@ -443,6 +443,56 @@ TEST_F(SteeringControllersLibraryTest, applies_velocity_limits_to_references)
     std::get<1>(expected_commands)[1], 1e-6);
 }
 
+TEST_F(SteeringControllersLibraryTest, open_loop_odometry_uses_limited_references)
+{
+  auto node_options = controller_->define_custom_node_options();
+  node_options.append_parameter_override("open_loop", rclcpp::ParameterValue(true));
+  node_options.append_parameter_override("linear.x.max_velocity", rclcpp::ParameterValue(0.1));
+  node_options.append_parameter_override("angular.z.max_velocity", rclcpp::ParameterValue(0.1));
+  SetUpController("test_steering_controllers_library", node_options);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(false);
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ControllerReferenceMsg msg;
+  msg.header.stamp = controller_->get_node()->now();
+  msg.twist.linear.x = 1.5;
+  msg.twist.angular.z = 0.0;
+  controller_->input_ref_.set(msg);
+
+  const double dt = 0.1;
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  const double limited_linear = 0.1;
+  const double limited_angular = 0.0;
+
+  EXPECT_NEAR(controller_->last_linear_velocity_, limited_linear, 1e-9);
+  EXPECT_NEAR(controller_->last_angular_velocity_, limited_angular, 1e-9);
+
+  // In open-loop mode odometry twist must reflect limited commands, not raw refs.
+  EXPECT_NEAR(controller_->odom_state_msg_.twist.twist.linear.x, limited_linear, 1e-6);
+  EXPECT_NEAR(controller_->odom_state_msg_.twist.twist.angular.z, limited_angular, 1e-6);
+
+  // Position integration should use limited open-loop velocity.
+  EXPECT_NEAR(controller_->odometry_.get_x(), limited_linear * dt, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.get_y(), 0.0, 1e-6);
+
+  EXPECT_GT(msg.twist.linear.x, controller_->odom_state_msg_.twist.twist.linear.x);
+  EXPECT_DOUBLE_EQ(msg.twist.angular.z, controller_->odom_state_msg_.twist.twist.angular.z);
+
+  msg.header.stamp = controller_->get_node()->now();
+  controller_->input_ref_.set(msg);
+  const auto now = controller_->get_node()->now();
+  ASSERT_EQ(
+    controller_->update(now, rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+  EXPECT_NEAR(controller_->odometry_.get_x(), 2.0 * limited_linear * dt, 1e-6);
+}
+
 TEST_F(SteeringControllersLibraryTest, test_reset_buffers_clears_limiter_state)
 {
   SetUpController("test_steering_controllers_library");

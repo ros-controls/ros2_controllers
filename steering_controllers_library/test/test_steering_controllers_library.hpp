@@ -80,6 +80,7 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, test_lifecycle_transitions_reset_limiter_buffers);
   FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals);
   FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, open_loop_odometry_uses_limited_references);
   FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
 
 public:
@@ -140,6 +141,12 @@ public:
   // Manual integration of odometry based on wheel states
   bool update_odometry(const rclcpp::Duration & period) override
   {
+    if (params_.open_loop)
+    {
+      odometry_.update_open_loop(last_linear_velocity_, last_angular_velocity_, period.seconds());
+      return true;
+    }
+
     return odometry_.update_from_velocity(
       state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
       state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
