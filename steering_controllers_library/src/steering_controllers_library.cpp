@@ -520,44 +520,24 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   const double ref_linear = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
   const double ref_angular = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
 
-<<<<<<< HEAD
-  last_linear_velocity_ = ref_linear;
-  last_angular_velocity_ = ref_angular;
-  update_odometry(period);
-=======
-  // check if odometry set was requested by non-RT thread
-  if (set_odom_requested_.load())
+  // store current ref (for open loop odometry) and update odometry
+  if (std::isfinite(ref_linear))
   {
-    auto param_op = requested_odom_params_.try_get();
-    if (param_op.has_value())
-    {
-      auto params = param_op.value();
-      odometry_.set_odometry(params.x, params.y, params.yaw);
-      set_odom_requested_.store(false);
-    }
+    last_linear_velocity_ = ref_linear;
   }
   else
   {
-    // store current ref (for open loop odometry) and update odometry
-    if (std::isfinite(ref_linear))
-    {
-      last_linear_velocity_ = ref_linear;
-    }
-    else
-    {
-      last_linear_velocity_ = 0.0;
-    }
-    if (std::isfinite(ref_angular))
-    {
-      last_angular_velocity_ = ref_angular;
-    }
-    else
-    {
-      last_angular_velocity_ = 0.0;
-    }
-    update_odometry(period);
+    last_linear_velocity_ = 0.0;
   }
->>>>>>> 29dcfb3 (fix(steering_controllers): handle NaN/Inf values in odometry update (#2083))
+  if (std::isfinite(ref_angular))
+  {
+    last_angular_velocity_ = ref_angular;
+  }
+  else
+  {
+    last_angular_velocity_ = 0.0;
+  }
+  update_odometry(period);
 
   // MOVE ROBOT
 

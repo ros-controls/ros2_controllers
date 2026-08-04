@@ -290,8 +290,6 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
-<<<<<<< HEAD
-=======
 TEST_F(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals)
 {
   // Setup Options
@@ -443,7 +441,6 @@ TEST_F(SteeringControllersLibraryTest, odometry_set_service)
   EXPECT_GT(controller_->odometry_.get_y(), start_y);
 }
 
->>>>>>> 29dcfb3 (fix(steering_controllers): handle NaN/Inf values in odometry update (#2083))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
