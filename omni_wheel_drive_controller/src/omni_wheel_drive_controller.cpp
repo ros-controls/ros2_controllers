@@ -556,15 +556,15 @@ controller_interface::CallbackReturn OmniWheelDriveController::configure_wheel_h
 
 void OmniWheelDriveController::halt()
 {
-  bool set_command_result = true;
+  bool set_command_error = false;
   for (const WheelHandle & wheel_handle : registered_wheel_handles_)
   {
-    set_command_result |=
-      wheel_handle.velocity.get().set_value(0.0, std::numeric_limits<unsigned int>::max());
+    set_command_error |=
+      !wheel_handle.velocity.get().set_value(0.0, std::numeric_limits<unsigned int>::max());
   }
   rclcpp::Logger logger = get_node()->get_logger();
   RCLCPP_DEBUG_EXPRESSION(
-    logger, !set_command_result, "Unable to set the command to one of the command handles!");
+    logger, set_command_error, "Unable to set the command to one of the command handles!");
 }
 
 void OmniWheelDriveController::reset_buffers()
