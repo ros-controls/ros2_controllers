@@ -654,8 +654,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       }
     }
     RCLCPP_WARN_EXPRESSION(
-      logger, !set_command_result,
-      "One or more command interfaces failed to halt.");
+      logger, !set_command_result, "One or more command interfaces failed to halt.");
   }
 
   // Publish odometry message
