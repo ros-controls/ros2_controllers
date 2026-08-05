@@ -458,10 +458,11 @@ bool TricycleController::reset()
 
 void TricycleController::halt()
 {
-  bool set_command_error = !traction_joint_[0].velocity_command.get().set_value(
-                             0.0, std::numeric_limits<unsigned int>::max()) ||
-                           !steering_joint_[0].position_command.get().set_value(
-                             0.0, std::numeric_limits<unsigned int>::max());
+  bool set_command_error = false;
+  set_command_error |= !traction_joint_[0].velocity_command.get().set_value(
+    0.0, std::numeric_limits<unsigned int>::max());
+  set_command_error |= !steering_joint_[0].position_command.get().set_value(
+    0.0, std::numeric_limits<unsigned int>::max());
   RCLCPP_WARN_EXPRESSION(
     get_node()->get_logger(), set_command_error,
     "Unable to set halt commands for one or more joints.");

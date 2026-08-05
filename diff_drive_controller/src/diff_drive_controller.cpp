@@ -333,7 +333,7 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   }
 
   RCLCPP_DEBUG_EXPRESSION(
-    logger, !set_command_error, "Unable to set the command to one of the command handles!");
+    logger, set_command_error, "Unable to set the command to one of the command handles!");
 
   return controller_interface::return_type::OK;
 }
