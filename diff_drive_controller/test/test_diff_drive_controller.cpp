@@ -1234,6 +1234,135 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   executor.cancel();
 }
 
+<<<<<<< HEAD
+=======
+// Regression test for https://github.com/ros-controls/ros2_controllers/issues/440
+// A cmd_vel_timeout of 0.0 disables the timeout: an arbitrarily old command must be
+// preserved instead of being overridden with zero.
+TEST_F(TestDiffDriveController, zero_cmd_vel_timeout_disables_timeout)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0),
+       rclcpp::Parameter("cmd_vel_timeout", rclcpp::ParameterValue(0.0))}),
+    controller_interface::return_type::OK);
+  // choose radius = 1 so that the command values (rev/s) are the same as the linear velocity (m/s)
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(controller_->set_chained_mode(false));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesPosFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  // before any command arrives the stored command is NaN: this update exercises the
+  // NaN-warning path with its finite throttle period while the timeout is disabled
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // publish a command with an explicit old nonzero timestamp, so its age at update time is
+  // deterministic and would be far expired for any positive cmd_vel_timeout
+  const double linear = 1.0;
+  const rclcpp::Time command_stamp(1, 0, RCL_ROS_TIME);
+  publish_timestamped(linear, 0.0, command_stamp);
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(
+      command_stamp + rclcpp::Duration::from_seconds(10.0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should not halt when cmd_vel_timeout is disabled";
+  EXPECT_EQ(linear, right_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should not halt when cmd_vel_timeout is disabled";
+
+  // Deactivate and cleanup
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, odometry_set_service)
+{
+  // 0. Initialize and activate the controller
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  assignResourcesPosFeedback();
+
+  EXPECT_EQ(0.01, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.02, right_wheel_vel_cmd_->get_optional().value());
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
+
+  // 1. Move the robot first
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+  controller_->update(test_time, period);
+  test_time += period;
+
+  // verify initial movement
+  ASSERT_GT(controller_->odometry_.getX(), 0.0);
+
+  // 2. Stop and call odom set service
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+  auto set_request = std::make_shared<control_msgs::srv::SetOdometry::Request>();
+  auto set_response = std::make_shared<control_msgs::srv::SetOdometry::Response>();
+  set_request->x = 5.0;
+  set_request->y = -2.0;
+  set_request->yaw = 1.57079632679;  // 90 degrees
+  controller_->set_odometry(nullptr, set_request, set_response);
+  EXPECT_TRUE(set_response->success);
+
+  // run update to process and verify odom values
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_NEAR(controller_->odometry_.getX(), 5.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getY(), -2.0, 1e-6);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 1.57079632679, 1e-5);  // 90 deg
+
+  // 3. Move again to ensure it still works
+  publish(1.0, 0.0);  // we move in Y now
+  controller_->wait_for_twist(executor);
+
+  // simulate the movement by updating the position feedback
+  position_values_[0] += 0.1;  // left wheel moved
+  position_values_[1] += 0.1;  // right wheel moved
+  std::ignore = left_wheel_pos_state_->set_value(position_values_[0]);
+  std::ignore = right_wheel_pos_state_->set_value(position_values_[1]);
+  controller_->update(test_time, period);
+  test_time += period;
+  EXPECT_GT(controller_->odometry_.getY(), -2.0);
+
+  // 4. Deactivate and cleanup
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+
+  executor.cancel();
+}
+
+>>>>>>> 4d3aa44 (Allow disabling diff drive command timeout (#2503))
 TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
 {
   const double max_linear_vel = 0.5;
