@@ -122,8 +122,10 @@ controller_interface::return_type DiffDriveController::update(
   }
 
   const auto age_of_last_command = time - last_command_msg->header.stamp;
-  // Brake if cmd_vel has timeout, override the stored command
-  if (age_of_last_command > cmd_vel_timeout_)
+  // Brake if cmd_vel has timeout, override the stored command.
+  // A cmd_vel_timeout of 0.0 disables the timeout.
+  const bool cmd_vel_timeout_disabled = cmd_vel_timeout_ == std::chrono::milliseconds::zero();
+  if (!cmd_vel_timeout_disabled && age_of_last_command > cmd_vel_timeout_)
   {
     last_command_msg->twist.linear.x = 0.0;
     last_command_msg->twist.angular.z = 0.0;
