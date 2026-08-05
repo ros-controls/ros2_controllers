@@ -115,12 +115,19 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     command_msg_ = current_ref_op.value();
   }
 
+  constexpr rcutils_duration_value_t warning_throttle_ms = 1000;
+
   const auto age_of_last_command = time - command_msg_.header.stamp;
-  // Brake if cmd_vel has timeout, override the stored command
-  if (age_of_last_command > cmd_vel_timeout_)
+  const bool cmd_vel_timeout_disabled = cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0);
+  // Brake if cmd_vel has timeout, override the stored command.
+  // A cmd_vel_timeout of 0.0 disables the timeout.
+  if (!cmd_vel_timeout_disabled && age_of_last_command > cmd_vel_timeout_)
   {
     ordered_exported_reference_interfaces_[0]->set_value(0.0);
     ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    RCLCPP_WARN_THROTTLE(
+      logger, *get_node()->get_clock(), warning_throttle_ms,
+      "Velocity command timed out. Braking.");
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
@@ -131,8 +138,7 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
-      logger, *get_node()->get_clock(),
-      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.seconds() * 1000),
+      logger, *get_node()->get_clock(), warning_throttle_ms,
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
