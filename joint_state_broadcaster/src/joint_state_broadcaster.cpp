@@ -435,38 +435,13 @@ bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  if (realtime_dynamic_joint_state_publisher_)
+  // Optimized path: use pre-computed pointers to avoid map lookups
+  for (size_t i = 0; i < joint_state_interface_indices_.size(); ++i)
   {
-    // Update all interfaces for dynamic joint state publishing
-    size_t map_index = 0u;
-    for (auto i = 0u; i < state_interfaces_.size(); ++i)
+    const auto & opt = state_interfaces_[joint_state_interface_indices_[i]].get_optional(0);
+    if (opt.has_value())
     {
-      if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
-      {
-        // no retries, just try to get the latest value once
-        const auto & opt = state_interfaces_[i].get_optional(0);
-        if (opt.has_value())
-        {
-          *mapped_values_[map_index++] = opt.value();
-        }
-      }
-    }
-  }
-  else
-  {
-    // Optimized path: use pre-computed pointers to avoid map lookups
-    for (size_t i = 0; i < joint_state_interface_indices_.size(); ++i)
-    {
-      const auto & opt = state_interfaces_[joint_state_interface_indices_[i]].get_optional(0);
-      if (opt.has_value())
-      {
-        *joint_state_mapped_values_[map_index] = opt.value();
-      }
-      // Always advance map_index for every DOUBLE interface, regardless of whether the read
-      // succeeded. If we only advance on success, a temporary read failure (e.g. lock contention
-      // on a chained interface) causes all subsequent interfaces to be written into the wrong
-      // mapped_values_ slots, corrupting the published joint states.
-      ++map_index;
+      *joint_state_mapped_values_[i] = opt.value();
     }
   }
 
