@@ -509,7 +509,7 @@ controller_interface::return_type JointTrajectoryController::update(
       // trajectory has not started yet, so the old trajectory's progress must not succeed/abort it.
       if (active_goal && !rt_active_goal_deferred_)
       {
-        // send feedback, reusing the goal handle's preallocated message to avoid allocating here
+        // send feedback
         const auto & feedback = active_goal->preallocated_feedback_;
         feedback->header.stamp = time;
         feedback->actual = state_current_;
