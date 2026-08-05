@@ -350,7 +350,6 @@ bool JointStateBroadcaster::init_joint_data()
 void JointStateBroadcaster::init_auxiliary_data()
 {
   // save the mapping of state interfaces to joint states
-  mapped_values_.clear();
   joint_state_interface_indices_.clear();
   joint_state_mapped_values_.clear();
 
@@ -370,7 +369,6 @@ void JointStateBroadcaster::init_auxiliary_data()
     }
     double * value_ptr =
       &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name];
-    mapped_values_.push_back(value_ptr);
 
     // Track indices and pre-computed pointers for joint state interfaces only
     if (
