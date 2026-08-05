@@ -41,3 +41,36 @@ omni_wheel_drive_controller
 *****************************
 * Instead of using ``tf_frame_prefix_enable:=false``, set an empty ``tf_frame_prefix:=""`` parameter instead. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
 * For using node namespace as tf prefix: Set ``tf_frame_prefix:="~"``, where the ("~") character is substituted with node namespace. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
+
+tricycle_steering_controller
+*****************************
+* Use tricycle_steering_controller instead of tricycle_controller for single-drive tricycle steering (`#1695 <https://github.com/ros-controls/ros2_controllers/pull/1695>`_).
+  Necessary changes can be found `here <https://github.com/ros-controls/gz_ros2_control/pull/865/changes>`_ and are summarized in the following:
+
+  * ROS parameters
+
+  .. code:: yaml
+
+    # parameters to be changed from tricycle_controller
+    traction_joint_name: traction_joint
+    steering_joint_name: steering_joint
+    wheel_radius: 0.3
+    cmd_vel_timeout: 500
+
+    # to tricycle_steering_controller
+    traction_joints_names: ["traction_joint"]
+    steering_joints_names: ["steering_joint"]
+    traction_wheels_radius: 0.3
+    reference_timeout: 0.5 # In seconds.
+    reduce_wheel_speed_until_steering_reached: true # is default false
+
+    # remove parameters
+    odom_only_twist: false
+    publish_ackermann_command: true
+
+  * ROS command topic changed from ``/tricycle_controller/cmd_vel`` to ``/tricycle_controller/reference``.
+  * Limiters: While tricycle_controller had limiters of the command interfaces does tricycle_steering_controller instead have limiters for the reference velocity. Update the URDF to enforce command limits from the ressource_manager, and add ``limits.angular.z`` and ``limits.linear.x`` if necessary.
+
+tricycle_controller
+*****************************
+See tricycle_steering_controller above.
