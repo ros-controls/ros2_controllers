@@ -660,25 +660,39 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     // Set wheels velocities - The joint names are sorted according to the order documented in the
     // header file!
+    // NOTE: each set_value() call is evaluated into its own local first, then combined --
+    // combining them directly with && short-circuits on the first failure and would skip
+    // commanding the remaining wheels entirely.
+    const bool front_left_set = command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel);
+    const bool front_right_set = command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel);
+    const bool rear_right_set = command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel);
+    const bool rear_left_set = command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
     const bool value_set_error =
-      command_interfaces_[FRONT_LEFT].set_value(wheel_front_left_vel) &&
-      command_interfaces_[FRONT_RIGHT].set_value(wheel_front_right_vel) &&
-      command_interfaces_[REAR_RIGHT].set_value(wheel_rear_right_vel) &&
-      command_interfaces_[REAR_LEFT].set_value(wheel_rear_left_vel);
+      !(front_left_set && front_right_set && rear_right_set && rear_left_set);
     RCLCPP_ERROR_EXPRESSION(
-      get_node()->get_logger(), !value_set_error,
+      get_node()->get_logger(), value_set_error,
       "Setting values to command interfaces has failed! "
       "This means that you are maybe blocking the interface in your hardware for too long.");
   }
   else
   {
-    const bool value_set_error =
-      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
-      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
-      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+    // Halt path: every wheel must be commanded to zero regardless of whether an earlier
+    // one failed. The previous implementation combined the four set_value() calls with ||,
+    // which both short-circuits (skipping the remaining wheels as soon as one succeeds) and
+    // only reports an error if ALL FOUR failed -- far too lenient for a safety-relevant halt,
+    // where a single wheel failing to stop should be surfaced.
+    const bool front_left_set =
+      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    const bool front_right_set =
+      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    const bool rear_right_set =
+      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    const bool rear_left_set =
       command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    const bool value_set_error =
+      !(front_left_set && front_right_set && rear_right_set && rear_left_set);
     RCLCPP_ERROR_EXPRESSION(
-      get_node()->get_logger(), !value_set_error,
+      get_node()->get_logger(), value_set_error,
       "Setting values to command interfaces has failed! "
       "This means that you are maybe blocking the interface in your hardware for too long.");
   }
