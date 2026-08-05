@@ -1235,6 +1235,61 @@ TEST_F(TestDiffDriveController, command_with_zero_timestamp_is_accepted_with_war
   executor.cancel();
 }
 
+// Regression test for https://github.com/ros-controls/ros2_controllers/issues/440
+// A cmd_vel_timeout of 0.0 disables the timeout: an arbitrarily old command must be
+// preserved instead of being overridden with zero.
+TEST_F(TestDiffDriveController, zero_cmd_vel_timeout_disables_timeout)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0),
+       rclcpp::Parameter("cmd_vel_timeout", rclcpp::ParameterValue(0.0))}),
+    controller_interface::return_type::OK);
+  // choose radius = 1 so that the command values (rev/s) are the same as the linear velocity (m/s)
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(controller_->set_chained_mode(false));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesPosFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  // before any command arrives the stored command is NaN: this update exercises the
+  // NaN-warning path with its finite throttle period while the timeout is disabled
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // publish a command with an explicit old nonzero timestamp, so its age at update time is
+  // deterministic and would be far expired for any positive cmd_vel_timeout
+  const double linear = 1.0;
+  const rclcpp::Time command_stamp(1, 0, RCL_ROS_TIME);
+  publish_timestamped(linear, 0.0, command_stamp);
+  // wait for msg is be published to the system
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(
+      command_stamp + rclcpp::Duration::from_seconds(10.0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(linear, left_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should not halt when cmd_vel_timeout is disabled";
+  EXPECT_EQ(linear, right_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should not halt when cmd_vel_timeout is disabled";
+
+  // Deactivate and cleanup
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
 TEST_F(TestDiffDriveController, test_open_loop_odometry_with_clamped_input)
 {
   const double max_linear_vel = 0.5;
