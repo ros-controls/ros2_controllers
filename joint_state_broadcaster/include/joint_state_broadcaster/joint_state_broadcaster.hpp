@@ -117,10 +117,9 @@ protected:
   Params params_;
   std::unordered_map<std::string, std::string> map_interface_to_joint_state_;
 
-  // Optional source for header.stamp and the last timestamp read successfully from it.
+  // Optional source for header.stamp.
   std::optional<std::size_t> timestamp_sec_index_;
   std::optional<std::size_t> timestamp_nsec_index_;
-  std::optional<rclcpp::Time> last_valid_measurement_time_;
 
   std::string frame_id_;
 

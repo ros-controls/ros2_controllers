@@ -70,12 +70,13 @@ joint_state_broadcaster:
       default_value: "",
       read_only: true,
       description: "[Optional] Full name of a state interface (e.g. 'measurement_clock/measurement_time_sec')
-      whose value is seconds of measurement time. The interface may be of type double,
-      int32 or uint32 and must contain an integer from 1 through INT32_MAX. Zero means that no
-      measurement time is available. Both timestamp interface parameters must be set together.
-      When the interfaces are available, the published header.stamp
-      is sourced from them instead of the controller manager time. Empty (default) keeps the standard
-      behavior (header.stamp = controller time)."
+      whose value is seconds of measurement time. When set, header.stamp is sourced from it instead of
+      the controller manager time. Empty (default) keeps the standard behavior. Must be set together
+      with nsec. The interface may be of type double, int32 or uint32 and must hold an integer.
+      An all-zero stamp, and only that, means no measurement time is available. Negative values are
+      rejected with an error. A cycle with no measurement time is not published at all, since no stamp
+      would describe its data. Hardware that wants the cycle published regardless can write any
+      timestamp it considers valid for it, including the controller time."
     }
     nsec: {
       type: string,
