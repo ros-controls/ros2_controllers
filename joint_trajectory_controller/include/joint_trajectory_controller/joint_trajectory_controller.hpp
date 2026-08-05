@@ -242,7 +242,7 @@ protected:
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
-  /// Validate a trajectory message. Returns an empty expected if valid, or an
+  /// Validate a trajectory message. Returns success (`{}`) if valid, or an
   /// unexpected with a human-readable error description if the trajectory should be rejected.
   tl::expected<void, std::string> validate_trajectory_msg(
     const trajectory_msgs::msg::JointTrajectory & trajectory) const;
