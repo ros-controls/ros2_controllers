@@ -436,6 +436,7 @@ controller_interface::return_type JointStateBroadcaster::update(
   // Optimized path: use pre-computed pointers to avoid map lookups
   for (size_t i = 0; i < joint_state_interface_indices_.size(); ++i)
   {
+    // no retries, just try to get the latest value once
     const auto & opt = state_interfaces_[joint_state_interface_indices_[i]].get_optional(0);
     if (opt.has_value())
     {
