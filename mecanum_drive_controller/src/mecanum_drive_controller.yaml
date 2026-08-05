@@ -100,7 +100,7 @@ mecanum_drive_controller:
       type: double,
       default_value: 0.0,
       description: "Wheel's radius.",
-      read_only: false,
+      read_only: true,
       validation: {
         gt<>: [0.0]
       }
@@ -110,30 +110,32 @@ mecanum_drive_controller:
       type: double,
       default_value: 0.0,
       description: "Wheels geometric param used in mecanum wheels' IK. lx and ly represent the distance from the robot's center to the wheels projected on the x and y axis with origin at robots center respectively, sum_of_robot_center_projection_on_X_Y_axis = lx+ly",
-      read_only: false,
+      read_only: true,
     }
 
   tf_frame_prefix_enable: {
     type: bool,
     default_value: true,
     description:  "Deprecated: this parameter will be removed in a future release. Use 'tf_frame_prefix' instead.",
+    read_only: true,
   }
   tf_frame_prefix: {
     type: string,
     default_value: "",
     description:  "(optional) Prefix to be appended to the tf frames, will be added to odom_frame_id and base_frame_id before publishing. If the parameter is empty, controller's namespace will be used.",
+    read_only: true,
   }
   base_frame_id: {
     type: string,
     default_value: "base_link",
     description: "Base frame_id set to value of base_frame_id.",
-    read_only: false,
+    read_only: true,
   }
   odom_frame_id: {
     type: string,
     default_value: "odom",
     description: "Odometry frame_id set to value of odom_frame_id.",
-    read_only: false,
+    read_only: true,
   }
   enable_odom_tf: {
     type: bool,
@@ -146,12 +148,198 @@ mecanum_drive_controller:
     type: double_array,
     default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "Diagonal values of twist covariance matrix.",
-    read_only: false,
+    read_only: true,
   }
 
   pose_covariance_diagonal: {
     type: double_array,
     default_value: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
     description: "Diagonal values of pose covariance matrix.",
-    read_only: false,
+    read_only: true,
   }
+
+  linear:
+    x:
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in forward direction.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in forward direction.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+    y:
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in forward direction.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in forward direction.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in reverse direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in reverse direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+  angular:
+    z:
+      max_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_velocity: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in positive direction.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in positive direction.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_acceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum acceleration in negative direction. If not set, -max_acceleration will be used.",
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_deceleration_reverse: {
+        type: double,
+        default_value: .NAN,
+        description: "Maximum deceleration in negative direction. If not set, -max_deceleration will be used.",
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      max_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::gt_eq_or_nan<>": [0.0]
+        }
+      }
+      min_jerk: {
+        type: double,
+        default_value: .NAN,
+        validation: {
+          "control_filters::lt_eq_or_nan<>": [0.0]
+        }
+      }

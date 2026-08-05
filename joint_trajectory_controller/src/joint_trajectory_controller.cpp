@@ -35,6 +35,7 @@
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "urdf/model.hpp"
 #else
@@ -43,6 +44,18 @@
 
 namespace joint_trajectory_controller
 {
+
+auto interface_has_values = [](const auto & joint_interface) -> bool
+{
+  return std::find_if(
+           joint_interface.begin(), joint_interface.end(),
+           [](const auto & interface)
+           {
+             auto interface_op = interface.get().get_optional();
+             return !interface_op.has_value() || !std::isfinite(interface_op.value());
+           }) == joint_interface.end();
+};
+
 JointTrajectoryController::JointTrajectoryController()
 : controller_interface::ControllerInterface(), dof_(0), num_cmd_joints_(0)
 {
@@ -80,7 +93,20 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        max_joint_vel[i] = urdf_joint->limits->velocity;
+        // Continuous joints are not required to declare <limit> in URDF; limits may be null.
+        if (urdf_joint && urdf_joint->limits)
+        {
+          max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
+        else if (urdf_joint)
+        {
+          // Continuous joints may omit <limit>; velocity is only needed for
+          // decelerate_on_cancel (warned later if that feature cannot run).
+          RCLCPP_DEBUG(
+            get_node()->get_logger(),
+            "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
+            params_.joints[i].c_str());
+        }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
           RCLCPP_DEBUG(
@@ -251,14 +277,60 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   auto new_external_msg = new_trajectory_msg_.readFromRT();
+
+  // A cancel (goal_cancelled_callback) asked us to drop any deferred trajectory.
+  if (rt_clear_pending_.exchange(false))
+  {
+    pending_traj_msg_ = nullptr;
+    rt_active_goal_deferred_ = false;
+  }
+
+  // The trajectory message to be installed into current_trajectory_ this cycle (if any).
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_to_install = nullptr;
+
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
+    current_trajectory_msg != *new_external_msg && *new_external_msg != pending_traj_msg_ &&
+    (rt_has_pending_goal_ && !active_goal) == false)
   {
-    fill_partial_goal(*new_external_msg);
-    sort_to_local_joint_order(*new_external_msg);
+    if (is_internal_hold(*new_external_msg))
+    {
+      // Internal hold/success/decelerate: install but never cancel a deferred trajectory.
+      traj_msg_to_install = *new_external_msg;
+    }
+    else if (
+      params_.allow_trajectory_replacement && has_active_trajectory() &&
+      rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type()) > time)
+    {
+      // Future-stamped: defer until its start time, keep old trajectory running.
+      pending_traj_msg_ = *new_external_msg;
+      pending_start_ = rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type());
+    }
+    else
+    {
+      // Immediate or blending off: install now, drop any previously deferred trajectory.
+      fill_partial_goal(*new_external_msg);
+      sort_to_local_joint_order(*new_external_msg);
+      traj_msg_to_install = *new_external_msg;
+      pending_traj_msg_ = nullptr;
+      rt_active_goal_deferred_ = false;
+    }
+  }
+
+  // FIRE: deferred trajectory's start time reached — install now.
+  if (pending_traj_msg_ && time >= pending_start_)
+  {
+    fill_partial_goal(pending_traj_msg_);
+    sort_to_local_joint_order(pending_traj_msg_);
+    traj_msg_to_install = pending_traj_msg_;
+    pending_traj_msg_ = nullptr;
+    rt_active_goal_deferred_ = false;
+  }
+
+  if (traj_msg_to_install)
+  {
     // TODO(denis): Add here integration of position and velocity
-    current_trajectory_->update(*new_external_msg);
+    current_trajectory_->update(traj_msg_to_install);
   }
 
   // current state update
@@ -379,7 +451,7 @@ controller_interface::return_type JointTrajectoryController::update(
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                state_error_, index, active_tol->goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
@@ -397,7 +469,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // If effort interface only, add desired effort as feed forward
             // If velocity interface, ignore desired effort
             size_t index_cmd_joint = map_cmd_to_joints_[i];
-            tmp_command_[index_cmd_joint] =
+            closed_loop_pid_command_[index_cmd_joint] =
               (command_next_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
               (has_effort_command_interface_ ? command_next_.effort[index_cmd_joint] : 0.0) +
               pids_[i]->compute_command(
@@ -413,14 +485,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[1],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities);
         }
         if (has_acceleration_command_interface_)
         {
@@ -428,15 +495,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            // If position and effort command interfaces, only pass desired effort
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[3],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort);
         }
 
         // store the previous command and time used in open-loop control mode
@@ -444,13 +505,13 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_time_ = time;
       }
 
-      if (active_goal)
+      // Do not report on an action goal whose trajectory is still deferred (blending): its real
+      // trajectory has not started yet, so the old trajectory's progress must not succeed/abort it.
+      if (active_goal && !rt_active_goal_deferred_)
       {
         // send feedback
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+        const auto & feedback = active_goal->preallocated_feedback_;
         feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
-
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -595,27 +656,6 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
       }
     }
   };
-  auto assign_point_from_command_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    std::fill(
-      trajectory_point_interface.begin(), trajectory_point_interface.end(),
-      std::numeric_limits<double>::quiet_NaN());
-    for (size_t index = 0; index < num_cmd_joints_; ++index)
-    {
-      const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
-      if (!joint_command_interface_value_op.has_value())
-      {
-        RCLCPP_DEBUG(
-          logger, "Unable to retrieve joint command interface value for joint at index %zu", index);
-      }
-      else
-      {
-        trajectory_point_interface[map_cmd_to_joints_[index]] =
-          joint_command_interface_value_op.value();
-      }
-    }
-  };
 
   // Assign values from the hardware
   // Position states always exist
@@ -648,101 +688,41 @@ void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectory
   }
 }
 
-bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajectoryPoint & state)
+void JointTrajectoryController::update_state_from_command_interfaces(JointTrajectoryPoint & state)
 {
-  bool has_values = true;
-
-  auto assign_point_from_interface =
-    [&](std::vector<double> & trajectory_point_interface, const auto & joint_interface)
-  {
-    for (size_t index = 0; index < num_cmd_joints_; ++index)
-    {
-      const auto joint_interface_value_op = joint_interface[index].get().get_optional();
-      if (!joint_interface_value_op.has_value())
-      {
-        RCLCPP_DEBUG(
-          get_node()->get_logger(),
-          "Unable to retrieve value of joint interface for joint at index %zu", index);
-      }
-      else
-      {
-        trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_value_op.value();
-      }
-    }
-  };
-
-  auto interface_has_values = [](const auto & joint_interface)
-  {
-    return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
-             {
-               auto interface_op = interface.get().get_optional();
-               return !interface_op.has_value() || std::isnan(interface_op.value());
-             }) == joint_interface.end();
-  };
-
-  // Assign values from the command interfaces as state. Therefore needs check for both.
-  // Position state interface has to exist always
+  // Assign values from the command interfaces as state
+  // Position state interface has to exist always, so no need to check for it
   if (has_position_command_interface_ && interface_has_values(joint_command_interface_[0]))
   {
-    assign_point_from_interface(state.positions, joint_command_interface_[0]);
+    assign_point_from_command_interface(state.positions, joint_command_interface_[0]);
   }
-  else
-  {
-    state.positions.clear();
-    has_values = false;
-  }
+
   // velocity and acceleration states are optional
-  if (has_velocity_state_interface_)
+  if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
   {
-    if (has_velocity_command_interface_ && interface_has_values(joint_command_interface_[1]))
+    // If no state interface exists, then our velocities vector will be empty, and we must resize
+    // before assigning.
+    if (!has_velocity_state_interface_)
     {
-      assign_point_from_interface(state.velocities, joint_command_interface_[1]);
+      state.velocities.resize(dof_, std::numeric_limits<double>::quiet_NaN());
     }
-    else
-    {
-      state.velocities.clear();
-      has_values = false;
-    }
-  }
-  else
-  {
-    state.velocities.clear();
-  }
-  // Acceleration is used only in combination with velocity
-  if (has_acceleration_state_interface_)
-  {
-    if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2]))
-    {
-      assign_point_from_interface(state.accelerations, joint_command_interface_[2]);
-    }
-    else
-    {
-      state.accelerations.clear();
-      has_values = false;
-    }
-  }
-  else
-  {
-    state.accelerations.clear();
+    assign_point_from_command_interface(state.velocities, joint_command_interface_[1]);
   }
 
-  // Effort state always comes from last command
-  if (has_effort_command_interface_)
+  if (has_acceleration_command_interface_ && interface_has_values(joint_command_interface_[2]))
   {
-    if (interface_has_values(joint_command_interface_[3]))
+    if (!has_acceleration_state_interface_)
     {
-      assign_point_from_interface(state.effort, joint_command_interface_[3]);
+      state.accelerations.resize(dof_, std::numeric_limits<double>::quiet_NaN());
     }
-    else
-    {
-      state.effort.clear();
-      has_values = false;
-    }
+    assign_point_from_command_interface(state.accelerations, joint_command_interface_[2]);
   }
 
-  return has_values;
+  if (has_effort_command_interface_ && interface_has_values(joint_command_interface_[3]))
+  {
+    state.effort.resize(dof_, std::numeric_limits<double>::quiet_NaN());
+    assign_point_from_command_interface(state.effort, joint_command_interface_[3]);
+  }
 }
 
 bool JointTrajectoryController::read_commands_from_command_interfaces(
@@ -765,17 +745,6 @@ bool JointTrajectoryController::read_commands_from_command_interfaces(
       }
       trajectory_point_interface[map_cmd_to_joints_[index]] = joint_interface_op.value();
     }
-  };
-
-  auto interface_has_values = [](const auto & joint_interface)
-  {
-    return std::find_if(
-             joint_interface.begin(), joint_interface.end(),
-             [](const auto & interface)
-             {
-               auto interface_op = interface.get().get_optional();
-               return !interface_op.has_value() || std::isnan(interface_op.value());
-             }) == joint_interface.end();
   };
 
   // Assign values from the command interfaces as command.
@@ -969,7 +938,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
-  tmp_command_.resize(dof_, 0.0);
+  closed_loop_pid_command_.resize(dof_, 0.0);
 
   if (use_closed_loop_pid_adapter_)
   {
@@ -1274,30 +1243,26 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   current_trajectory_ = std::make_shared<Trajectory>();
   new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
+  pending_traj_msg_ = nullptr;
+  rt_active_goal_deferred_ = false;
+  rt_clear_pending_ = false;
+
   subscriber_is_active_ = true;
 
-  // Handle restart of controller by reading from commands if those are not NaN (a controller was
-  // running already)
-  trajectory_msgs::msg::JointTrajectoryPoint state;
-  resize_joint_trajectory_point(state, dof_);
-  // read from cmd joints only if all joints have command interface
-  // otherwise it leaves the entries of joints without command interface NaN.
-  // if no interpolate_from_desired_state, state_current_ is then used for
-  // `set_point_before_trajectory_msg` and future trajectory sampling will always give NaN for these
-  // joints
-  if (
-    params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_ &&
-    read_state_from_command_interfaces(state))
+  // Initialize current state storage from hardware state interfaces
+  read_state_from_state_interfaces(state_current_);
+  read_state_from_state_interfaces(last_commanded_state_);
+
+  if (params_.set_last_command_interface_value_as_state_on_activation && dof_ == num_cmd_joints_)
   {
-    state_current_ = state;
-    last_commanded_state_ = state;
+    // Handle restart of controller by reading from commands if those are not NaN (a controller was
+    // running already)
+    // The function checks if all joints have values on the command interfaces.
+    // otherwise it will not update them, leaving them based on the state interfaces.
+    update_state_from_command_interfaces(state_current_);
+    update_state_from_command_interfaces(last_commanded_state_);
   }
-  else
-  {
-    // Initialize current state storage from hardware
-    read_state_from_state_interfaces(state_current_);
-    read_state_from_state_interfaces(last_commanded_state_);
-  }
+
   // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
   for (auto & pid : pids_)
   {
@@ -1426,6 +1391,10 @@ bool JointTrajectoryController::reset()
 
   current_trajectory_.reset();
 
+  pending_traj_msg_ = nullptr;
+  rt_active_goal_deferred_ = false;
+  rt_clear_pending_ = false;
+
   return true;
 }
 
@@ -1516,6 +1485,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       // hold current position
       add_new_trajectory_msg(set_hold_position());
     }
+    // Written after add_new_trajectory_msg so the hold is visible before RT clears pending.
+    rt_clear_pending_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1559,11 +1530,20 @@ void JointTrajectoryController::goal_accepted_callback(
 
     add_new_trajectory_msg(traj_msg);
     rt_is_holding_ = false;
+
+    // If blending is on, trajectory will be deferred by update(). Mark it so the result/feedback
+    // block does not judge the goal before it starts.
+    const auto now = get_node()->now();
+    rt_active_goal_deferred_ = params_.allow_trajectory_replacement && has_active_trajectory() &&
+                               rclcpp::Time(traj_msg->header.stamp, now.get_clock_type()) > now;
   }
 
   // Update the active goal
   RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
   rt_goal->preallocated_feedback_->joint_names = params_.joints;
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
@@ -1949,8 +1929,10 @@ void JointTrajectoryController::preempt_active_goal()
   {
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
-    action_res->set__error_string("Current goal cancelled due to new incoming action.");
-    active_goal->setCanceled(action_res);
+    action_res->set__error_string("Current goal preempted by new incoming action.");
+    active_goal->setAborted(action_res);
+    // Deliver result now; the old goal_handle_timer_ is destroyed after this returns.
+    active_goal->runNonRealtime();
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
   }
 }
@@ -2201,6 +2183,31 @@ void JointTrajectoryController::init_hold_position_msg()
   if (has_effort_command_interface_)
   {
     hold_position_msg_ptr_->points[0].effort.resize(dof_, 0.0);
+  }
+}
+
+void JointTrajectoryController::assign_point_from_command_interface(
+  std::vector<double> & trajectory_point_interface,
+  const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> &
+    joint_interface)
+{
+  std::fill(
+    trajectory_point_interface.begin(), trajectory_point_interface.end(),
+    std::numeric_limits<double>::quiet_NaN());
+  for (size_t index = 0; index < num_cmd_joints_; ++index)
+  {
+    const auto joint_command_interface_value_op = joint_interface[index].get().get_optional();
+    if (!joint_command_interface_value_op.has_value())
+    {
+      RCLCPP_DEBUG(
+        get_node()->get_logger(),
+        "Unable to retrieve joint command interface value for joint at index %zu", index);
+    }
+    else
+    {
+      trajectory_point_interface.at(map_cmd_to_joints_[index]) =
+        joint_command_interface_value_op.value();
+    }
   }
 }
 

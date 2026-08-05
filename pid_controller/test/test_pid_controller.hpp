@@ -24,9 +24,11 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "pid_controller/pid_controller.hpp"
@@ -36,16 +38,13 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using ControllerStateMsg = pid_controller::PidController::ControllerStateMsg;
 using ControllerCommandMsg = pid_controller::PidController::ControllerReferenceMsg;
 using ControllerModeSrvType = pid_controller::PidController::ControllerModeSrvType;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestablePidController : public pid_controller::PidController
@@ -77,8 +76,8 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
-    auto state_itfs = on_export_state_interfaces();
+    export_reference_interfaces();
+    export_state_interfaces();
     return pid_controller::PidController::on_activate(previous_state);
   }
 
@@ -167,9 +166,10 @@ protected:
 
     for (size_t i = 0; i < dof_names_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          dof_names_[i], command_interface_, &dof_command_values_[i]));
+      auto command_itf =
+        std::make_shared<hardware_interface::CommandInterface>(dof_names_[i], command_interface_);
+      std::ignore = command_itf->set_value(dof_command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -181,9 +181,9 @@ protected:
     {
       for (const auto & dof_name : dof_names_)
       {
-        state_itfs_.emplace_back(
-          std::make_shared<hardware_interface::StateInterface>(
-            dof_name, interface, &dof_state_values_[index]));
+        auto state_itf = std::make_shared<hardware_interface::StateInterface>(dof_name, interface);
+        std::ignore = state_itf->set_value(dof_state_values_[index]);
+        state_itfs_.emplace_back(state_itf);
         loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
         ++index;
       }

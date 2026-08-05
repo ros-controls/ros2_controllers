@@ -21,8 +21,10 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -34,13 +36,16 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp/utilities.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
 namespace
 {
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 std::vector<std::string> wheel_names_ = {
   "front_wheel_joint", "left_wheel_joint", "back_wheel_joint", "right_wheel_joint"};
 }  // namespace
@@ -171,8 +176,8 @@ protected:
     for (size_t i = 0; i < wheels_pos_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          wheel_names[i], HW_IF_POSITION, &wheels_pos_states_[i]));
+        std::make_shared<hardware_interface::StateInterface>(wheel_names[i], HW_IF_POSITION));
+      std::ignore = state_itfs_.back()->set_value(wheels_pos_states_[i]);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -182,8 +187,8 @@ protected:
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          wheel_names[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+        std::make_shared<hardware_interface::CommandInterface>(wheel_names[i], HW_IF_VELOCITY));
+      std::ignore = command_itfs_.back()->set_value(wheels_vel_cmds_[i]);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -198,8 +203,8 @@ protected:
     for (size_t i = 0; i < wheels_vel_states_.size(); ++i)
     {
       state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_states_[i]));
+        std::make_shared<hardware_interface::StateInterface>(wheel_names_[i], HW_IF_VELOCITY));
+      std::ignore = state_itfs_.back()->set_value(wheels_vel_states_[i]);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -209,8 +214,8 @@ protected:
     for (size_t i = 0; i < wheels_vel_cmds_.size(); ++i)
     {
       command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          wheel_names_[i], HW_IF_VELOCITY, &wheels_vel_cmds_[i]));
+        std::make_shared<hardware_interface::CommandInterface>(wheel_names_[i], HW_IF_VELOCITY));
+      std::ignore = command_itfs_.back()->set_value(wheels_vel_cmds_[i]);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 

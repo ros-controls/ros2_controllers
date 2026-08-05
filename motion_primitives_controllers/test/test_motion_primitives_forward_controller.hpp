@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
@@ -44,14 +45,12 @@
 #include "control_msgs/action/execute_motion_primitive_sequence.hpp"
 #include "control_msgs/msg/motion_primitive.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using MotionPrimitive = control_msgs::msg::MotionPrimitive;
 using ExecuteMotion = control_msgs::action::ExecuteMotionPrimitiveSequence;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
 
 // subclassing and friending so we can access member variables
 class TestableMotionPrimitivesForwardController
@@ -124,9 +123,10 @@ protected:
 
     for (size_t i = 0; i < command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          interface_namespace_, command_interface_names_[i], &command_values_[i]));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        interface_namespace_, command_interface_names_[i]);
+      std::ignore = command_itf->set_value(command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -136,9 +136,10 @@ protected:
 
     for (size_t i = 0; i < state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          interface_namespace_, state_interface_names_[i], &state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        interface_namespace_, state_interface_names_[i]);
+      std::ignore = state_itf->set_value(state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
