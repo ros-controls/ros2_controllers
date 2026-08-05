@@ -23,6 +23,7 @@
 #include <limits>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "builtin_interfaces/msg/duration.hpp"
@@ -52,6 +53,16 @@ TEST_P(TrajectoryControllerTestParameterized, invalid_robot_description)
   ASSERT_EQ(
     controller_interface::return_type::ERROR,
     SetUpTrajectoryControllerLocal({}, "<invalid_robot_description/>"));
+}
+
+// Continuous joints need not declare <limit>; on_init must not dereference null limits.
+TEST_P(TrajectoryControllerTestParameterized, continuous_joint_without_urdf_limits)
+{
+  ASSERT_EQ(
+    controller_interface::return_type::OK,
+    SetUpTrajectoryControllerLocal(
+      {}, test_trajectory_controllers::urdf_rrrbot_continuous_no_limits));
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
 }
 
 TEST_P(TrajectoryControllerTestParameterized, check_interface_names)
@@ -195,9 +206,9 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
 
   AssignInterfaces();
   ASSERT_TRUE(activate_succeeds(traj_controller_));
-  EXPECT_EQ(INITIAL_POS_JOINT1, joint_pos_[0]);
-  EXPECT_EQ(INITIAL_POS_JOINT2, joint_pos_[1]);
-  EXPECT_EQ(INITIAL_POS_JOINT3, joint_pos_[2]);
+  EXPECT_EQ(INITIAL_POS_JOINT1, pos_cmd_interfaces_[0]->get_optional().value());
+  EXPECT_EQ(INITIAL_POS_JOINT2, pos_cmd_interfaces_[1]->get_optional().value());
+  EXPECT_EQ(INITIAL_POS_JOINT3, pos_cmd_interfaces_[2]->get_optional().value());
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -223,13 +234,18 @@ TEST_P(TrajectoryControllerTestParameterized, correct_initialization_using_param
   EXPECT_TRUE(traj_controller_->has_active_traj());
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(points.at(0).at(0), joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points.at(0).at(1), joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points.at(0).at(2), joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points.at(0).at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points.at(0).at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points.at(0).at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   // deactivate
-  std::vector<double> deactivated_positions{joint_pos_[0], joint_pos_[1], joint_pos_[2]};
+  std::vector<double> deactivated_positions{
+    pos_cmd_interfaces_[0]->get_optional().value(), pos_cmd_interfaces_[1]->get_optional().value(),
+    pos_cmd_interfaces_[2]->get_optional().value()};
   DeactivateTrajectoryController();
 
   // it should be holding the current point
@@ -800,9 +816,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
   {
     // check command interface
     // One step before the first point, the target should hit the setpoint
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][2], pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   // Propagate to actual setpoint time
@@ -839,22 +855,22 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {
       // we expect u = k_p * (s_d-s) for positions
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]),
+        vel_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]),
+        vel_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]), joint_vel_[2],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]),
+        vel_cmd_interfaces_[2]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
     else
     {
       // interpolated points_velocities only
       // check command interface
-      EXPECT_LT(0.0, joint_vel_[0]);
-      EXPECT_LT(0.0, joint_vel_[1]);
-      EXPECT_LT(0.0, joint_vel_[2]);
+      EXPECT_LT(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_LT(0.0, vel_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_LT(0.0, vel_cmd_interfaces_[2]->get_optional().value());
     }
   }
 
@@ -864,9 +880,15 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
     {
       // with position and effort command interface, we expect u = ff for feed forward effort,
       // positions are passed directly to the position command interface (no PID is done)
-      EXPECT_NEAR(state_reference.effort[0], joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort[1], joint_eff_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort[2], joint_eff_[2], COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[0], eff_cmd_interfaces_[0]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[1], eff_cmd_interfaces_[1]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[2], eff_cmd_interfaces_[2]->get_optional().value(),
+        COMMON_THRESHOLD);
     }
     else
     {
@@ -874,13 +896,13 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_not_angle_wraparoun
       // we expect u = k_p * (s_d-s) + ff for positions and feed forward effort
       EXPECT_NEAR(
         k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + command_next.effort[0],
-        joint_eff_[0], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
         k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + command_next.effort[1],
-        joint_eff_[1], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
         k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2]) + command_next.effort[2],
-        joint_eff_[2], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[2]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
   }
 
@@ -926,9 +948,9 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
   {
     // check command interface
     // One step before the first point, the target should hit the setpoint
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][2], joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][2], pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   // Propagate to actual setpoint time
@@ -966,24 +988,26 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
     {
       // we expect u = k_p * (s_d-s) for joint0 and joint1
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]),
+        vel_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]),
+        vel_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
       // is error of positions[2] wrapped around?
-      EXPECT_GT(0.0, joint_vel_[2]);  // direction change because of angle wrap
+      EXPECT_GT(
+        0.0,
+        vel_cmd_interfaces_[2]->get_optional().value());  // direction change because of angle wrap
       EXPECT_NEAR(
-        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI), joint_vel_[2],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI),
+        vel_cmd_interfaces_[2]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
     else
     {
       // interpolated points_velocities only
       // check command interface
-      EXPECT_LT(0.0, joint_vel_[0]);
-      EXPECT_LT(0.0, joint_vel_[1]);
-      EXPECT_LT(0.0, joint_vel_[2]);
+      EXPECT_LT(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_LT(0.0, vel_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_LT(0.0, vel_cmd_interfaces_[2]->get_optional().value());
     }
   }
 
@@ -993,9 +1017,15 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
     {
       // with position and effort command interface, we expect u = ff for feed forward effort,
       // positions are passed directly to the position command interface (no PID is done)
-      EXPECT_NEAR(state_reference.effort[0], joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort[1], joint_eff_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort[2], joint_eff_[2], COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[0], eff_cmd_interfaces_[0]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[1], eff_cmd_interfaces_[1]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort[2], eff_cmd_interfaces_[2]->get_optional().value(),
+        COMMON_THRESHOLD);
     }
     else
     {
@@ -1003,16 +1033,16 @@ TEST_P(TrajectoryControllerTestParameterized, position_error_angle_wraparound)
       // we expect u = k_p * (s_d-s) + ff for positions and feed forward effort
       EXPECT_NEAR(
         k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]) + command_next.effort[0],
-        joint_eff_[0], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
         k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]) + command_next.effort[1],
-        joint_eff_[1], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
       // is error of positions[2] wrapped around?
-      EXPECT_GT(0.0, joint_eff_[2]);
+      EXPECT_GT(0.0, eff_cmd_interfaces_[2]->get_optional().value());
       EXPECT_NEAR(
         k_p * (state_reference.positions[2] - INITIAL_POS_JOINTS[2] - 2 * M_PI) +
           command_next.effort[2],
-        joint_eff_[2], k_p * COMMON_THRESHOLD);
+        eff_cmd_interfaces_[2]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
   }
 
@@ -1060,8 +1090,8 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   {
     // check command interface
     // One step before the first point, the target should hit the setpoint
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
     EXPECT_TRUE(std::isnan(traj_controller_->get_current_command().positions[2]));
   }
 
@@ -1095,8 +1125,8 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   if (traj_controller_->has_velocity_command_interface())
   {
     // check command interface
-    EXPECT_LT(0.0, joint_vel_[0]);
-    EXPECT_LT(0.0, joint_vel_[1]);
+    EXPECT_LT(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_LT(0.0, vel_cmd_interfaces_[1]->get_optional().value());
     EXPECT_TRUE(std::isnan(current_command.velocities[2]));
 
     // use_closed_loop_pid_adapter_
@@ -1104,11 +1134,11 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
     {
       // we expect u = k_p * (s_d-s)
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]),
+        vel_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]),
+        vel_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
   }
 
@@ -1116,15 +1146,19 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   {
     if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_NEAR(state_reference.effort.at(0), joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort.at(1), joint_eff_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort.at(0), eff_cmd_interfaces_[0]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort.at(1), eff_cmd_interfaces_[1]->get_optional().value(),
+        COMMON_THRESHOLD);
       EXPECT_TRUE(std::isnan(current_command.effort[2]));
     }
     else
     {
       // effort should be nonzero, because we use PID with feedforward term
-      EXPECT_LT(points_effort[0].at(0), joint_eff_[0]);
-      EXPECT_LT(points_effort[0].at(1), joint_eff_[1]);
+      EXPECT_LT(points_effort[0].at(0), eff_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_LT(points_effort[0].at(1), eff_cmd_interfaces_[1]->get_optional().value());
       EXPECT_TRUE(std::isnan(current_command.effort[2]));
     }
   }
@@ -1174,8 +1208,8 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   {
     // check command interface
     // One step before the first point, the target should hit the setpoint
-    EXPECT_NEAR(points[0][0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points[0][1], joint_pos_[1], COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(points[0][1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
     EXPECT_TRUE(std::isnan(traj_controller_->get_current_command().positions[2]));
   }
 
@@ -1209,8 +1243,8 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   if (traj_controller_->has_velocity_command_interface())
   {
     // check command interface
-    EXPECT_LT(0.0, joint_vel_[0]);
-    EXPECT_LT(0.0, joint_vel_[1]);
+    EXPECT_LT(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_LT(0.0, vel_cmd_interfaces_[1]->get_optional().value());
     EXPECT_TRUE(std::isnan(current_command.velocities[2]));
 
     // use_closed_loop_pid_adapter_
@@ -1218,11 +1252,11 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
     {
       // we expect u = k_p * (s_d-s)
       EXPECT_NEAR(
-        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]), joint_vel_[0],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[0] - INITIAL_POS_JOINTS[0]),
+        vel_cmd_interfaces_[0]->get_optional().value(), k_p * COMMON_THRESHOLD);
       EXPECT_NEAR(
-        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]), joint_vel_[1],
-        k_p * COMMON_THRESHOLD);
+        k_p * (state_reference.positions[1] - INITIAL_POS_JOINTS[1]),
+        vel_cmd_interfaces_[1]->get_optional().value(), k_p * COMMON_THRESHOLD);
     }
   }
 
@@ -1230,15 +1264,19 @@ TEST_P(TrajectoryControllerTestParameterized, trajectory_error_command_joints_le
   {
     if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_NEAR(state_reference.effort.at(0), joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(state_reference.effort.at(1), joint_eff_[1], COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort.at(0), eff_cmd_interfaces_[0]->get_optional().value(),
+        COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        state_reference.effort.at(1), eff_cmd_interfaces_[1]->get_optional().value(),
+        COMMON_THRESHOLD);
       EXPECT_TRUE(std::isnan(current_command.effort[2]));
     }
     else
     {
       // effort should be nonzero, because we use PID with feedforward term
-      EXPECT_LT(points_effort[0].at(0), joint_eff_[0]);
-      EXPECT_LT(points_effort[0].at(1), joint_eff_[1]);
+      EXPECT_LT(points_effort[0].at(0), eff_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_LT(points_effort[0].at(1), eff_cmd_interfaces_[1]->get_optional().value());
       EXPECT_TRUE(std::isnan(current_command.effort[2]));
     }
   }
@@ -1508,9 +1546,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     for (size_t dof = 0; dof < 3; dof++)
     {
       traj_msg.points[0].velocities[dof] =
-        (traj_msg.points[0].positions[dof] - joint_pos_[jumble_map[dof]]) / dt;
+        (traj_msg.points[0].positions[dof] -
+         pos_cmd_interfaces_[jumble_map[dof]]->get_optional().value()) /
+        dt;
       traj_msg.points[0].accelerations[dof] =
-        (traj_msg.points[0].velocities[dof] - joint_vel_[jumble_map[dof]]) / dt;
+        (traj_msg.points[0].velocities[dof] -
+         vel_cmd_interfaces_[jumble_map[dof]]->get_optional().value()) /
+        dt;
     }
 
     trajectory_publisher_->publish(traj_msg);
@@ -1521,9 +1563,12 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(points_positions.at(0), joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(points_positions.at(1), joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(points_positions.at(2), joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points_positions.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points_positions.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      points_positions.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   if (traj_controller_->has_velocity_command_interface())
@@ -1531,32 +1576,35 @@ TEST_P(TrajectoryControllerTestParameterized, test_jumbled_joint_order)
     // if use_closed_loop_pid_adapter_==false: we expect desired velocities from direct sampling
     // if use_closed_loop_pid_adapter_==true: we expect desired velocities, because we use PID with
     // feedforward term only
-    EXPECT_GT(0.0, joint_vel_[0]);
-    EXPECT_GT(0.0, joint_vel_[1]);
-    EXPECT_GT(0.0, joint_vel_[2]);
+    EXPECT_GT(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_GT(0.0, vel_cmd_interfaces_[1]->get_optional().value());
+    EXPECT_GT(0.0, vel_cmd_interfaces_[2]->get_optional().value());
   }
 
   if (traj_controller_->has_acceleration_command_interface())
   {
-    EXPECT_GT(0.0, joint_acc_[0]);
-    EXPECT_GT(0.0, joint_acc_[1]);
-    EXPECT_GT(0.0, joint_acc_[2]);
+    EXPECT_GT(0.0, acc_cmd_interfaces_[0]->get_optional().value());
+    EXPECT_GT(0.0, acc_cmd_interfaces_[1]->get_optional().value());
+    EXPECT_GT(0.0, acc_cmd_interfaces_[2]->get_optional().value());
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
     if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_NEAR(points_effort.at(0), joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(points_effort.at(1), joint_eff_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(points_effort.at(2), joint_eff_[2], COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        points_effort.at(0), eff_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        points_effort.at(1), eff_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(
+        points_effort.at(2), eff_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
     }
     else
     {
       // effort should be nonzero, because we use PID with feedforward term
-      EXPECT_GT(points_effort.at(0), joint_eff_[0]);
-      EXPECT_GT(points_effort.at(1), joint_eff_[1]);
-      EXPECT_GT(points_effort.at(2), joint_eff_[2]);
+      EXPECT_GT(points_effort.at(0), eff_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_GT(points_effort.at(1), eff_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_GT(points_effort.at(2), eff_cmd_interfaces_[2]->get_optional().value());
     }
   }
 }
@@ -1572,9 +1620,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
-  const double initial_joint1_cmd = joint_pos_[0];
-  const double initial_joint2_cmd = joint_pos_[1];
-  const double initial_joint3_cmd = joint_pos_[2];
+  const double initial_joint1_cmd = pos_cmd_interfaces_[0]->get_optional().value();
+  const double initial_joint2_cmd = pos_cmd_interfaces_[1]->get_optional().value();
+  const double initial_joint3_cmd = pos_cmd_interfaces_[2]->get_optional().value();
   const double dt = 0.25;
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
@@ -1595,9 +1643,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
     for (size_t dof = 0; dof < 2; dof++)
     {
       traj_msg.points[0].velocities[dof] =
-        (traj_msg.points[0].positions[dof] - joint_pos_[jumble_map[dof]]) / dt;
+        (traj_msg.points[0].positions[dof] -
+         pos_cmd_interfaces_[jumble_map[dof]]->get_optional().value()) /
+        dt;
       traj_msg.points[0].accelerations[dof] =
-        (traj_msg.points[0].velocities[dof] - joint_vel_[jumble_map[dof]]) / dt;
+        (traj_msg.points[0].velocities[dof] -
+         vel_cmd_interfaces_[jumble_map[dof]]->get_optional().value()) /
+        dt;
     }
 
     trajectory_publisher_->publish(traj_msg);
@@ -1608,9 +1660,14 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(traj_msg.points[0].positions[1], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(traj_msg.points[0].positions[0], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(initial_joint3_cmd, joint_pos_[2], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      traj_msg.points[0].positions[1], pos_cmd_interfaces_[0]->get_optional().value(),
+      COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      traj_msg.points[0].positions[0], pos_cmd_interfaces_[1]->get_optional().value(),
+      COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      initial_joint3_cmd, pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "Joint 3 command should be current position";
   }
 
@@ -1618,11 +1675,13 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the velocity
     // joint rotates forward
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_vel_[0]));
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_vel_[1]));
-    EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD)
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.points[0].positions[0] - initial_joint2_cmd,
+      vel_cmd_interfaces_[0]->get_optional().value()));
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.points[0].positions[1] - initial_joint1_cmd,
+      vel_cmd_interfaces_[1]->get_optional().value()));
+    EXPECT_NEAR(0.0, vel_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "Joint 3 velocity should be 0.0 since it's not in the goal";
   }
 
@@ -1630,15 +1689,17 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     // estimate the sign of the acceleration
     // joint rotates forward
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_acc_[0]))
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.points[0].positions[0] - initial_joint2_cmd,
+      acc_cmd_interfaces_[0]->get_optional().value()))
       << "Joint1: " << traj_msg.points[0].positions[0] - initial_joint2_cmd << " vs. "
-      << joint_acc_[0];
-    EXPECT_TRUE(
-      is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_acc_[1]))
+      << acc_cmd_interfaces_[0]->get_optional().value();
+    EXPECT_TRUE(is_same_sign_or_zero(
+      traj_msg.points[0].positions[1] - initial_joint1_cmd,
+      acc_cmd_interfaces_[1]->get_optional().value()))
       << "Joint2: " << traj_msg.points[0].positions[1] - initial_joint1_cmd << " vs. "
-      << joint_acc_[1];
-    EXPECT_NEAR(0.0, joint_acc_[2], COMMON_THRESHOLD)
+      << acc_cmd_interfaces_[1]->get_optional().value();
+    EXPECT_NEAR(0.0, acc_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "Joint 3 acc should be 0.0 since it's not in the goal";
   }
 
@@ -1646,20 +1707,22 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list)
   {
     if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_NEAR(0.0, joint_eff_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(0.0, joint_eff_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(0.0, joint_eff_[2], COMMON_THRESHOLD)
+      EXPECT_NEAR(0.0, eff_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(0.0, eff_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(0.0, eff_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
         << "Joint 3 effort should be 0.0 since it's not in the goal";
     }
     else
     {
       // estimate the sign of the effort
       // joint rotates forward
-      EXPECT_TRUE(
-        is_same_sign_or_zero(traj_msg.points[0].positions[0] - initial_joint2_cmd, joint_eff_[0]));
-      EXPECT_TRUE(
-        is_same_sign_or_zero(traj_msg.points[0].positions[1] - initial_joint1_cmd, joint_eff_[1]));
-      EXPECT_NEAR(0.0, joint_eff_[2], COMMON_THRESHOLD)
+      EXPECT_TRUE(is_same_sign_or_zero(
+        traj_msg.points[0].positions[0] - initial_joint2_cmd,
+        eff_cmd_interfaces_[0]->get_optional().value()));
+      EXPECT_TRUE(is_same_sign_or_zero(
+        traj_msg.points[0].positions[1] - initial_joint1_cmd,
+        eff_cmd_interfaces_[1]->get_optional().value()));
+      EXPECT_NEAR(0.0, eff_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
         << "Joint 3 effort should be 0.0 since it's not in the goal";
     }
   }
@@ -1678,9 +1741,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
 
-  const double initial_joint1_cmd = joint_pos_[0];
-  const double initial_joint2_cmd = joint_pos_[1];
-  const double initial_joint3_cmd = joint_pos_[2];
+  const double initial_joint1_cmd = pos_cmd_interfaces_[0]->get_optional().value();
+  const double initial_joint2_cmd = pos_cmd_interfaces_[1]->get_optional().value();
+  const double initial_joint3_cmd = pos_cmd_interfaces_[2]->get_optional().value();
   trajectory_msgs::msg::JointTrajectory traj_msg;
 
   {
@@ -1706,41 +1769,53 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(initial_joint1_cmd, joint_pos_[0], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      initial_joint1_cmd, pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints command should be current position because goal was rejected";
-    EXPECT_NEAR(initial_joint2_cmd, joint_pos_[1], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      initial_joint2_cmd, pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints command should be current position because goal was rejected";
-    EXPECT_NEAR(initial_joint3_cmd, joint_pos_[2], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      initial_joint3_cmd, pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints command should be current position because goal was rejected";
   }
 
   if (traj_controller_->has_velocity_command_interface())
   {
-    EXPECT_NEAR(INITIAL_VEL_JOINTS[0], joint_vel_[0], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_VEL_JOINTS[0], vel_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints velocities should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_VEL_JOINTS[1], joint_vel_[1], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_VEL_JOINTS[1], vel_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints velocities should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_VEL_JOINTS[2], joint_vel_[2], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_VEL_JOINTS[2], vel_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints velocities should be 0.0 because goal was rejected";
   }
 
   if (traj_controller_->has_acceleration_command_interface())
   {
-    EXPECT_NEAR(INITIAL_ACC_JOINTS[0], joint_acc_[0], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_ACC_JOINTS[0], acc_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints accelerations should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_ACC_JOINTS[1], joint_acc_[1], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_ACC_JOINTS[1], acc_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints accelerations should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_ACC_JOINTS[2], joint_acc_[2], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_ACC_JOINTS[2], acc_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints accelerations should be 0.0 because goal was rejected";
   }
 
   if (traj_controller_->has_effort_command_interface())
   {
-    EXPECT_NEAR(INITIAL_EFF_JOINTS[0], joint_eff_[0], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_EFF_JOINTS[0], eff_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints efforts should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_EFF_JOINTS[1], joint_eff_[1], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_EFF_JOINTS[1], eff_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints efforts should be 0.0 because goal was rejected";
-    EXPECT_NEAR(INITIAL_EFF_JOINTS[2], joint_eff_[2], COMMON_THRESHOLD)
+    EXPECT_NEAR(
+      INITIAL_EFF_JOINTS[2], eff_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
       << "All joints efforts should be 0.0 because goal was rejected";
   }
 
@@ -2064,15 +2139,9 @@ TEST_P(TrajectoryControllerTestParameterized, test_ignore_partial_old_trajectory
 TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_future)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters});
-
-  RCLCPP_WARN(
-    traj_controller_->get_node()->get_logger(),
-    "Test disabled until current_trajectory is taken into account when adding a new trajectory.");
-  // https://github.com/ros-controls/ros_controllers/blob/melodic-devel/
-  // joint_trajectory_controller/include/joint_trajectory_controller/init_joint_trajectory.h#L149
-  return;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
 
   // *INDENT-OFF*
   std::vector<std::vector<double>> full_traj{{{2., 3., 4.}, {4., 6., 8.}}};
@@ -2082,24 +2151,24 @@ TEST_P(TrajectoryControllerTestParameterized, test_execute_partial_traj_in_futur
   // *INDENT-ON*
   const auto delay = std::chrono::milliseconds(500);
   builtin_interfaces::msg::Duration points_delay{rclcpp::Duration(delay)};
-  // Send full trajectory
+
+  // Use node clock so future-stamped publish and controller update() share the same time base.
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
   publish(points_delay, full_traj, rclcpp::Time(), {}, full_traj_velocities);
-  // Sleep until first waypoint of full trajectory
 
   trajectory_msgs::msg::JointTrajectoryPoint expected_actual, expected_desired;
   expected_actual.positions = {full_traj[0].begin(), full_traj[0].end()};
   expected_desired = expected_actual;
-  //  Check that we reached end of points_old[0]trajectory and are starting points_old[1]
-  auto end_time =
-    waitAndCompareState(expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1);
+  auto end_time = waitAndCompareState(
+    expected_actual, expected_desired, executor, rclcpp::Duration(delay), 0.1, start_time);
 
-  // Send partial trajectory starting after full trajecotry is complete
   RCLCPP_INFO(traj_controller_->get_node()->get_logger(), "Sending new trajectory in the future");
   publish(
-    points_delay, partial_traj, rclcpp::Clock(RCL_STEADY_TIME).now() + delay * 2, {},
+    points_delay, partial_traj, end_time + rclcpp::Duration(delay * 2), {},
     partial_traj_velocities);
-  // Wait until the end start and end of partial traj
 
+  // joints 0 and 1 follow partial_traj; joint 2 holds at full_traj's last position
   expected_actual.positions = {partial_traj.back()[0], partial_traj.back()[1], full_traj.back()[2]};
   expected_desired = expected_actual;
 
@@ -2145,10 +2214,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
   joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
+  std::ignore = pos_state_interfaces_[0]->set_value(joint_state_pos_[0]);
 
   // Move joint further in the same direction as before (to the second goal)
   points = {{second_goal}};
@@ -2157,29 +2227,30 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 
   // One the first update(s) there should be a "jump" in opposite direction from command
   // (towards the state value)
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
   end_time = updateControllerAsync(controller_period, end_time);
   // Expect backward commands at first, consider advancement of the trajectory
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
   EXPECT_NEAR(
-    joint_state_pos_[0] + (second_goal[0] - joint_state_pos_[0]) * trajectory_frac, joint_pos_[0],
-    0.1);
-  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_LT(joint_pos_[0], first_goal[0]);
+    joint_state_pos_[0] + (second_goal[0] - joint_state_pos_[0]) * trajectory_frac,
+    pos_cmd_interfaces_[0]->get_optional().value(), 0.1);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_LT(joint_pos_[0], first_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_LT(joint_pos_[0], first_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
 
   // Finally the second goal will be commanded/reached
   end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
-  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(second_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
   joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
+  std::ignore = pos_state_interfaces_[0]->set_value(joint_state_pos_[0]);
 
   // Move joint back to the first goal
   points = {{first_goal}};
@@ -2188,26 +2259,26 @@ TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_erro
 
   // One the first update(s) there should be a "jump" in the goal direction from command
   // (towards the state value)
-  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(second_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
   end_time = updateControllerAsync(controller_period);
   // Expect backward commands at first, consider advancement of the trajectory
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
   EXPECT_NEAR(
-    joint_state_pos_[0] + (first_goal[0] - joint_state_pos_[0]) * trajectory_frac, joint_pos_[0],
-    0.1);
-  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
+    joint_state_pos_[0] + (first_goal[0] - joint_state_pos_[0]) * trajectory_frac,
+    pos_cmd_interfaces_[0]->get_optional().value(), 0.1);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_LT(joint_pos_[0], joint_state_pos_[0]);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), joint_state_pos_[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
 
   // Finally the first goal will be commanded/reached
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   executor.cancel();
 }
@@ -2249,10 +2320,11 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
   // - internal state does not have to be updated (in this test-case it shouldn't)
   // - internal command is updated
   EXPECT_NEAR(INITIAL_POS_JOINT1, joint_state_pos_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
   joint_state_pos_[0] = first_goal[0] - state_from_command_offset;
+  std::ignore = pos_state_interfaces_[0]->set_value(joint_state_pos_[0]);
 
   // Move joint further in the same direction as before (to the second goal)
   points = {{second_goal}};
@@ -2261,28 +2333,30 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
   // One the first update(s) there **should not** be a "jump" in opposite direction from
   // command (towards the state value)
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
   end_time = updateControllerAsync(controller_period, end_time);
   // There should not be backward commands
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
   EXPECT_NEAR(
-    first_goal[0] + (second_goal[0] - first_goal[0]) * trajectory_frac, joint_pos_[0], 0.1);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
+    first_goal[0] + (second_goal[0] - first_goal[0]) * trajectory_frac,
+    pos_cmd_interfaces_[0]->get_optional().value(), 0.1);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
 
   // Finally the second goal will be commanded/reached
   end_time = updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
-  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(second_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   // State interface should have offset from the command before starting a new trajectory
   joint_state_pos_[0] = second_goal[0] - state_from_command_offset;
+  std::ignore = pos_state_interfaces_[0]->set_value(joint_state_pos_[0]);
 
   // Move joint back to the first goal
   points = {{first_goal}};
@@ -2291,25 +2365,26 @@ TEST_P(TrajectoryControllerTestParameterized, test_no_jump_when_state_tracking_e
 
   // One the first update(s) there **should not** be a "jump" in the goal direction from
   // command (towards the state value)
-  EXPECT_NEAR(second_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(second_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
   end_time = updateControllerAsync(controller_period, end_time);
   // There should not be a jump toward commands
   // exact value is not directly predictable, because of the spline interpolation -> increase
   // tolerance
   EXPECT_NEAR(
-    second_goal[0] + (first_goal[0] - second_goal[0]) * trajectory_frac, joint_pos_[0], 0.1);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
+    second_goal[0] + (first_goal[0] - second_goal[0]) * trajectory_frac,
+    pos_cmd_interfaces_[0]->get_optional().value(), 0.1);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
   end_time = updateControllerAsync(controller_period, end_time);
-  EXPECT_GT(joint_pos_[0], first_goal[0]);
-  EXPECT_LT(joint_pos_[0], second_goal[0]);
+  EXPECT_GT(pos_cmd_interfaces_[0]->get_optional().value(), first_goal[0]);
+  EXPECT_LT(pos_cmd_interfaces_[0]->get_optional().value(), second_goal[0]);
 
   // Finally the first goal will be commanded/reached
   updateControllerAsync(rclcpp::Duration::from_seconds(1.1), end_time);
-  EXPECT_NEAR(first_goal[0], joint_pos_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(first_goal[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
 
   executor.cancel();
 }
@@ -3197,6 +3272,9 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
   joint_state_vel_[0] = initial_vel[0];
   joint_state_vel_[1] = initial_vel[1];
   joint_state_vel_[2] = initial_vel[2];
+  std::ignore = vel_state_interfaces_[0]->set_value(joint_state_vel_[0]);
+  std::ignore = vel_state_interfaces_[1]->set_value(joint_state_vel_[1]);
+  std::ignore = vel_state_interfaces_[2]->set_value(joint_state_vel_[2]);
 
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
   builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
@@ -3216,9 +3294,9 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
   updateController(rclcpp::Duration::from_seconds(0.1));
 
   // Velocity commands (joint_vel_) must have been driven to zero
-  EXPECT_NEAR(0.0, joint_vel_[0], COMMON_THRESHOLD);
-  EXPECT_NEAR(0.0, joint_vel_[1], COMMON_THRESHOLD);
-  EXPECT_NEAR(0.0, joint_vel_[2], COMMON_THRESHOLD);
+  EXPECT_NEAR(0.0, vel_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(0.0, vel_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(0.0, vel_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
 
   // Position commands (joint_pos_) must equal the analytical hold position.
   // p0 = joint_state_pos_ = INITIAL_POS_JOINTS (unchanged by separate-mode commands)
@@ -3229,10 +3307,81 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
 
   if (traj_controller_->has_position_command_interface())
   {
-    EXPECT_NEAR(expected_hold[0], joint_pos_[0], COMMON_THRESHOLD);
-    EXPECT_NEAR(expected_hold[1], joint_pos_[1], COMMON_THRESHOLD);
-    EXPECT_NEAR(expected_hold[2], joint_pos_[2], COMMON_THRESHOLD);
+    EXPECT_NEAR(expected_hold[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(expected_hold[1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+    EXPECT_NEAR(expected_hold[2], pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
   }
 
   executor.cancel();
+}
+
+// ===========================================================================
+// Trajectory deferral tests (allow_trajectory_replacement)
+// ===========================================================================
+
+/**
+ * @brief A stamp=0 trajectory arriving while a deferred trajectory is pending must drop the
+ * pending one and install itself immediately, even well past the pending's fire time.
+ */
+TEST_F(TrajectoryControllerTest, blend_stamp0_preempts_pending)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+  const builtin_interfaces::msg::Duration step{rclcpp::Duration::from_seconds(0.5)};
+
+  std::vector<std::vector<double>> traj_a{{{2., 3., 4.}}};
+  publish(step, traj_a, start_time + rclcpp::Duration::from_seconds(2.0));
+  traj_controller_->wait_for_trajectory(executor);
+  auto t1 = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), start_time);
+
+  std::vector<std::vector<double>> traj_b{{{5., 6., 7.}}};
+  publish(step, traj_b, rclcpp::Time());
+
+  trajectory_msgs::msg::JointTrajectoryPoint expected;
+  expected.positions = {5., 6., 7.};
+  waitAndCompareState(expected, expected, executor, rclcpp::Duration::from_seconds(3.0), 0.1, t1);
+}
+
+/**
+ * @brief fill_partial_goal() for a deferred partial trajectory is called at FIRE time,
+ * not at receive time. The omitted joint holds the position it had when the trajectory fired.
+ */
+TEST_F(TrajectoryControllerTest, blend_partial_goal_fill_uses_fire_time_state)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
+               rclcpp::Parameter("allow_partial_joints_goal", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint3: initial 3.1 → 6.0 over 1 s. Cubic spline values used in assertions:
+  //   t=0.3 s (receive time): ≈ 3.73
+  //   t=0.5 s (FIRE time):    ≈ 4.55
+  const builtin_interfaces::msg::Duration one_s{rclcpp::Duration::from_seconds(1.0)};
+  std::vector<std::vector<double>> old_traj{{{4.0, 5.0, 6.0}}};
+  publish(one_s, old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+
+  auto t_receive = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  const builtin_interfaces::msg::Duration half_s{rclcpp::Duration::from_seconds(0.5)};
+  std::vector<std::vector<double>> partial_traj{{{2.0, 2.5}}};
+  publish(half_s, partial_traj, start_time + rclcpp::Duration::from_seconds(0.5));
+  traj_controller_->wait_for_trajectory(executor);
+
+  auto t_parked = updateControllerAsync(rclcpp::Duration::from_seconds(0.01), t_receive);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t_parked);
+
+  // joint3 must be near FIRE-time value (≈4.55), not receive-time value (≈3.73).
+  if (traj_controller_->has_position_command_interface())
+  {
+    auto state = traj_controller_->get_state_reference();
+    EXPECT_NEAR(2.0, state.positions[0], 0.15);
+    EXPECT_NEAR(2.5, state.positions[1], 0.15);
+    EXPECT_NEAR(4.55, state.positions[2], 0.25);
+  }
 }

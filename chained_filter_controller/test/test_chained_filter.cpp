@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <tuple>
 #include <utility>
 
 #include "controller_interface/controller_interface.hpp"
@@ -37,6 +38,9 @@ void ChainedFilterTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<ChainedFilter>();
+
+  joint_1_pos_ = std::make_shared<StateInterface>(joint_names_[0], HW_IF_POSITION);
+  std::ignore = joint_1_pos_->set_value(joint_states_[0]);
 }
 
 void ChainedFilterTest::TearDown() { controller_.reset(nullptr); }
@@ -124,6 +128,9 @@ TEST_F(ChainedFilterTest, UpdateFilter)
 {
   SetUpController();
   ASSERT_TRUE(configure_succeeds(controller_));
+  // export_state_interfaces must be called to populate ordered_exported_state_interfaces_
+  auto state_if_exported_conf = controller_->export_state_interfaces();
+  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   ASSERT_TRUE(activate_succeeds(controller_));
 
   ASSERT_EQ(
@@ -132,8 +139,6 @@ TEST_F(ChainedFilterTest, UpdateFilter)
   // input state interface should not change
   EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
   // output should be the same
-  auto state_if_exported_conf = controller_->export_state_interfaces();
-  ASSERT_THAT(state_if_exported_conf, SizeIs(1u));
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
 
   ASSERT_TRUE(joint_1_pos_->set_value(2.0));
@@ -141,13 +146,13 @@ TEST_F(ChainedFilterTest, UpdateFilter)
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // input and output should have changed
-  EXPECT_EQ(joint_1_pos_->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(joint_1_pos_->get_optional().value(), 2.0);
   EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 1.55);
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(), rclcpp::Duration::from_seconds(0.1)),
     controller_interface::return_type::OK);
   // output should have reached steady state (mean filter)
-  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), joint_states_[0]);
+  EXPECT_EQ(state_if_exported_conf[0]->get_optional().value(), 2.0);
 }
 
 TEST_F(ChainedFilterTest, DeactivateSucceeds)

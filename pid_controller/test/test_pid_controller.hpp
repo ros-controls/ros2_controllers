@@ -24,6 +24,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -75,8 +76,8 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
-    auto state_itfs = on_export_state_interfaces();
+    export_reference_interfaces();
+    export_state_interfaces();
     return pid_controller::PidController::on_activate(previous_state);
   }
 
@@ -165,9 +166,10 @@ protected:
 
     for (size_t i = 0; i < dof_names_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          dof_names_[i], command_interface_, &dof_command_values_[i]));
+      auto command_itf =
+        std::make_shared<hardware_interface::CommandInterface>(dof_names_[i], command_interface_);
+      std::ignore = command_itf->set_value(dof_command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -179,9 +181,9 @@ protected:
     {
       for (const auto & dof_name : dof_names_)
       {
-        state_itfs_.emplace_back(
-          std::make_shared<hardware_interface::StateInterface>(
-            dof_name, interface, &dof_state_values_[index]));
+        auto state_itf = std::make_shared<hardware_interface::StateInterface>(dof_name, interface);
+        std::ignore = state_itf->set_value(dof_state_values_[index]);
+        state_itfs_.emplace_back(state_itf);
         loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
         ++index;
       }

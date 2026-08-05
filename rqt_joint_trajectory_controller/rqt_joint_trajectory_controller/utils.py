@@ -47,6 +47,15 @@ cm_services = {
 }
 
 
+def is_shutdown_context_error(exc):
+    message = str(exc)
+    return (
+        "context is not valid" in message
+        or "context is invalid" in message
+        or "destruction was requested" in message
+    )
+
+
 def get_controller_managers(namespace="/", initial_guess=None):
     """
     Get list of active controller manager namespaces.
@@ -189,7 +198,17 @@ class ControllerManagerLister:
 
     def __call__(self):
         """Get list of running controller managers."""
-        self._cm_list = get_controller_managers(self._ns, self._cm_list)
+        if not rclpy.ok():
+            return self._cm_list
+
+        try:
+            self._cm_list = get_controller_managers(self._ns, self._cm_list)
+        except rclpy.executors.ExternalShutdownException:
+            return self._cm_list
+        except Exception as e:
+            if is_shutdown_context_error(e):
+                return self._cm_list
+            raise
         return self._cm_list
 
 
@@ -231,7 +250,7 @@ class ControllerLister:
         except rclpy.executors.ExternalShutdownException:
             return []
         except Exception as e:
-            if "context is not valid" in str(e) or "destruction was requested" in str(e):
+            if is_shutdown_context_error(e):
                 return []
             raise
 
