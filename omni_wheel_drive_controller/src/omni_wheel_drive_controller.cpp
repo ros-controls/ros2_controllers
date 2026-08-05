@@ -441,7 +441,7 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_error(
 
 void OmniWheelDriveController::compute_and_set_wheel_velocities()
 {
-  bool set_command_result = true;
+  bool set_command_error = false;
 
   const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
   const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
@@ -453,7 +453,7 @@ void OmniWheelDriveController::compute_and_set_wheel_velocities()
   double angle_bw_wheels = (2 * M_PI) / static_cast<double>(registered_wheel_handles_.size());
   for (size_t i = 0; i < static_cast<size_t>(registered_wheel_handles_.size()); ++i)
   {
-    set_command_result &= registered_wheel_handles_[i].velocity.get().set_value(
+    set_command_error |= !registered_wheel_handles_[i].velocity.get().set_value(
       ((std::sin((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
         ref_linear_x) -
        (std::cos((angle_bw_wheels * static_cast<double>(i)) + params_.wheel_offset) *
@@ -464,7 +464,7 @@ void OmniWheelDriveController::compute_and_set_wheel_velocities()
 
   rclcpp::Logger logger = get_node()->get_logger();
   RCLCPP_DEBUG_EXPRESSION(
-    logger, !set_command_result, "Unable to set the command to one of the command handles!");
+    logger, set_command_error, "Unable to set the command to one of the command handles!");
 }
 
 void OmniWheelDriveController::set_odometry(

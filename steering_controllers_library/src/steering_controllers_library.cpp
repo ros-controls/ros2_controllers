@@ -479,7 +479,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  bool set_command_result = true;
+  bool set_command_error = false;
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
     if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
@@ -488,11 +488,11 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
         get_node()->get_logger(),
         "Failed to set NaN value for command interface '%s' (index %zu) during deactivation.",
         command_interfaces_[i].get_name().c_str(), i);
-      set_command_result = false;
+      set_command_error = true;
     }
   }
   RCLCPP_WARN_EXPRESSION(
-    get_node()->get_logger(), !set_command_result,
+    get_node()->get_logger(), set_command_error,
     "One or more command interfaces failed to halt during deactivation.");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -644,17 +644,17 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
   }
   else
   {
-    bool set_command_result = true;
+    bool set_command_error = false;
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
       if (!command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max()))
       {
         RCLCPP_WARN(logger, "Unable to set command interface to value 0.0");
-        set_command_result = false;
+        set_command_error = true;
       }
     }
     RCLCPP_WARN_EXPRESSION(
-      logger, !set_command_result, "One or more command interfaces failed to halt.");
+      logger, set_command_error, "One or more command interfaces failed to halt.");
   }
 
   // Publish odometry message
