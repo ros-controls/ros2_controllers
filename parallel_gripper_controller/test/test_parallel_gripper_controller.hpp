@@ -21,9 +21,14 @@
 
 #include "gmock/gmock.h"
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "parallel_gripper_controller/parallel_gripper_action_controller.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
@@ -54,15 +59,9 @@ protected:
   std::vector<double> joint_states_ = {1.1, 2.1};
   std::vector<double> joint_commands_ = {3.1};
 
-  hardware_interface::StateInterface::SharedPtr joint_1_pos_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      joint_name_, hardware_interface::HW_IF_POSITION, &joint_states_[0]);
-  hardware_interface::StateInterface::SharedPtr joint_1_vel_state_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      joint_name_, hardware_interface::HW_IF_VELOCITY, &joint_states_[1]);
-  hardware_interface::CommandInterface::SharedPtr joint_1_cmd_ =
-    std::make_shared<hardware_interface::CommandInterface>(
-      joint_name_, hardware_interface::HW_IF_POSITION, &joint_commands_[0]);
+  hardware_interface::StateInterface::SharedPtr joint_1_pos_state_;
+  hardware_interface::StateInterface::SharedPtr joint_1_vel_state_;
+  hardware_interface::CommandInterface::SharedPtr joint_1_cmd_;
 };
 
 }  // anonymous namespace

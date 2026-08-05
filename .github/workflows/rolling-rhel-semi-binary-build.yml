@@ -4,7 +4,9 @@ on:
   pull_request:
     branches:
       - master
-    paths:
+      - '*feature*'
+      - '*feature/**'
+    paths: &paths
       - '**.hpp'
       - '**.h'
       - '**.cpp'
@@ -14,11 +16,12 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers.rolling.repos'
-      - 'ros2_controllers.kilted.repos'
+      - 'ros2_controllers.lyrical.repos'
       - '**.xml'
-  schedule:
-    # Run every day to detect flakiness and broken dependencies
-    - cron: '03 1 * * MON-FRI'
+  push:
+    branches:
+      - master
+    paths: *paths
 
 concurrency:
   # cancel previous runs of the same workflow, except for pushes on given branches
@@ -31,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [rolling]
+        ROS_DISTRO: [lyrical, rolling]
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}
       upstream_workspace: ros2_controllers.${{ matrix.ROS_DISTRO }}.repos

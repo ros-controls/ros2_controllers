@@ -41,7 +41,6 @@ add_library(diff_drive_controller SHARED
   src/diff_drive_controller.cpp
   src/odometry.cpp
 )
-target_compile_features(diff_drive_controller PUBLIC cxx_std_17)
 target_include_directories(diff_drive_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/diff_drive_controller>
@@ -82,6 +81,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_load_diff_drive_controller
     controller_manager::controller_manager
     ros2_control_test_assets::ros2_control_test_assets
+  )
+
+  ament_add_gmock(test_odometry
+    test/test_odometry.cpp
+    src/odometry.cpp
+  )
+  target_link_libraries(test_odometry
+    diff_drive_controller
   )
 endif()
 

@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <cmath>
 #include <memory>
 
 #include "angles/angles.h"
@@ -204,7 +209,34 @@ bool Trajectory::sample(
   start_segment_itr = --end();
   end_segment_itr = end();
   last_sample_idx_ = last_idx;
+
+  // If the last segment was never entered (e.g. sample_time jumped past a very
+  // short last segment because the controller rate is slower than the segment
+  // duration), the last trajectory point's positions may have never been
+  // deduced from velocities. Recover by deducing them from the previous point
+  // if that point has positions; otherwise return false so the caller does not
+  // dereference an empty positions vector downstream. See #2282.
+  if (trajectory_msg_->points[last_idx].positions.empty() && last_idx > 0)
+  {
+    auto & prev_point = trajectory_msg_->points[last_idx - 1];
+    auto & last_point = trajectory_msg_->points[last_idx];
+    if (!prev_point.positions.empty())
+    {
+      const rclcpp::Time t_prev = trajectory_start_time_ + prev_point.time_from_start;
+      const rclcpp::Time t_last = trajectory_start_time_ + last_point.time_from_start;
+      deduce_from_derivatives(
+        prev_point, last_point, state_before_traj_msg_.positions.size(),
+        (t_last - t_prev).seconds());
+    }
+  }
+
   output_state = (*start_segment_itr);
+  if (output_state.positions.empty())
+  {
+    start_segment_itr = end();
+    end_segment_itr = end();
+    return false;
+  }
   // the trajectories in msg may have empty velocities/accel, so resize them
   if (output_state.velocities.empty())
   {

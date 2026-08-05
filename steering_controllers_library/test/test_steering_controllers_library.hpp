@@ -20,9 +20,11 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/executor.hpp"
@@ -30,6 +32,9 @@
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "steering_controllers_library/steering_controllers_library.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
@@ -58,13 +63,6 @@ static constexpr double WHEELBASE_ = 3.24644;
 static constexpr double WHEELS_TRACK_ = 2.12321;
 static constexpr double WHEELS_RADIUS_ = 0.45;
 
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
-
 // subclassing and friending so we can access member variables
 class TestableSteeringControllersLibrary
 : public steering_controllers_library::SteeringControllersLibrary
@@ -76,6 +74,9 @@ class TestableSteeringControllersLibrary
   FRIEND_TEST(SteeringControllersLibraryTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SteeringControllersLibraryTest, test_position_feedback_ref_timeout);
   FRIEND_TEST(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_ignore_nan_vals);
+  FRIEND_TEST(SteeringControllersLibraryTest, test_open_loop_update_timeout);
+  FRIEND_TEST(SteeringControllersLibraryTest, odometry_set_service);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -87,7 +88,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return steering_controllers_library::SteeringControllersLibrary::on_activate(previous_state);
   }
 
@@ -130,7 +133,15 @@ public:
     return controller_interface::CallbackReturn::SUCCESS;
   }
 
-  bool update_odometry(const rclcpp::Duration & /*period*/) override { return true; }
+  // Manual integration of odometry based on wheel states
+  bool update_odometry(const rclcpp::Duration & period) override
+  {
+    return odometry_.update_from_velocity(
+      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_RIGHT_WHEEL].get_optional().value(),
+      state_interfaces_[STATE_STEER_LEFT_WHEEL].get_optional().value(), period.seconds());
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -182,26 +193,26 @@ protected:
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[1], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], traction_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_LEFT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_RIGHT_WHEEL]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_STEER_RIGHT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_LEFT_WHEEL]));
+        steering_joints_names_[1], steering_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_STEER_LEFT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
@@ -210,26 +221,26 @@ protected:
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[1], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_LEFT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_RIGHT_WHEEL]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_STEER_RIGHT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[1], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_LEFT_WHEEL]));
+        steering_joints_names_[1], steering_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_STEER_LEFT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));

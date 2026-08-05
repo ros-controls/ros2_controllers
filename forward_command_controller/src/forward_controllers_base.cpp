@@ -142,9 +142,10 @@ controller_interface::return_type ForwardControllersBase::update(
   }
 
   // no command received yet
-  if (std::all_of(
-        joint_commands_.data.cbegin(), joint_commands_.data.cend(),
-        [](const auto & value) { return std::isnan(value); }))
+  if (
+    std::all_of(
+      joint_commands_.data.cbegin(), joint_commands_.data.cend(),
+      [](const auto & value) { return std::isnan(value); }))
   {
     return controller_interface::return_type::OK;
   }

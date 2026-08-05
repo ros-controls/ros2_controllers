@@ -9,6 +9,7 @@ steering_controllers_library
 .. _odometry_msg: https://github.com/ros2/common_interfaces/blob/{DISTRO}/nav_msgs/msg/Odometry.msg
 .. _twist_msg: https://github.com/ros2/common_interfaces/blob/{DISTRO}/geometry_msgs/msg/TwistStamped.msg
 .. _tf_msg: https://github.com/ros2/geometry2/blob/{DISTRO}/tf2_msgs/msg/TFMessage.msg
+.. _set_odometry_srv: https://github.com/ros-controls/control_msgs/blob/master/control_msgs/srv/SetOdometry.srv
 
 Library with shared functionalities for mobile robot controllers with steering drives (2 degrees of freedom), with so-called non-holonomic constraints.
 
@@ -92,6 +93,10 @@ Publishers
 - ``<controller_name>/odometry``          [`nav_msgs/msg/Odometry <odometry_msg_>`_]
 - ``<controller_name>/tf_odometry``       [`tf2_msgs/msg/TFMessage <tf_msg_>`_]
 - ``<controller_name>/controller_state``  [`control_msgs/msg/SteeringControllerStatus <steering_controller_status_msg_>`_]
+
+Services
+,,,,,,,,,,,
+- ``~/set_odometry`` [`control_msgs/srv/SetOdometry <set_odometry_srv_>`_]
 
 Parameters
 ,,,,,,,,,,,

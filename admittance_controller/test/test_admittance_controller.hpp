@@ -31,17 +31,19 @@
 
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
 #include "rclcpp/node_interfaces/node_interfaces.hpp"
 #endif
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "ros2_control_test_assets/test_asset_6d_robot_description.hpp"
 #include "semantic_components/force_torque_sensor.hpp"
-#include "test_asset_6d_robot_description.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
 // TODO(anyone): replace the state and command message types
@@ -50,16 +52,14 @@ using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 namespace
 {
 const double COMMON_THRESHOLD = 0.001;
-
-constexpr auto NODE_SUCCESS =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
-constexpr auto NODE_FAILURE =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-constexpr auto NODE_ERROR =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 }  // namespace
 
 // subclassing and friending so we can access member variables
@@ -191,9 +191,10 @@ protected:
 
     for (auto i = 0u; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], command_interface_types_[0]);
+      std::ignore = command_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -207,9 +208,10 @@ protected:
 
     for (auto i = 0u; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        joint_names_[i], state_interface_types_[0]);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -218,9 +220,10 @@ protected:
 
     for (auto i = 0u; i < fts_state_names_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
+      auto fts_state_itf =
+        std::make_shared<hardware_interface::StateInterface>(ft_sensor_name_, fts_itf_names[i]);
+      std::ignore = fts_state_itf->set_value(fts_state_values_[i]);
+      state_itfs_.emplace_back(fts_state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -229,6 +232,7 @@ protected:
 
   void broadcast_tfs()
   {
+// cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
     static tf2_ros::TransformBroadcaster br(
       rclcpp::node_interfaces::NodeInterfaces(
