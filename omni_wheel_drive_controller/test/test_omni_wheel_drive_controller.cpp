@@ -14,6 +14,10 @@
 
 #include "test_omni_wheel_drive_controller.hpp"
 #include <gtest/gtest.h>
+
+#include <mutex>
+#include <shared_mutex>
+
 #include "controller_interface/controller_interface_base.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
@@ -451,6 +455,38 @@ TEST_F(OmniWheelDriveControllerTest, chainable_controller_chained_mode)
 
   EXPECT_TRUE(configure_succeeds(controller_));
   executor.cancel();
+}
+
+TEST_F(OmniWheelDriveControllerTest, normal_update_set_value_failure_still_updates_other_wheels)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->export_reference_interfaces();
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(1.0);
+
+  {
+    std::unique_lock<std::shared_mutex> failing_interface_lock(command_itfs_[1]->get_mutex());
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  // Wheel 1 stays unchanged because its write attempt failed.
+  EXPECT_DOUBLE_EQ(command_itfs_[1]->get_optional().value(), 0.2);
+
+  // Other wheels are still updated in the same cycle.
+  EXPECT_DOUBLE_EQ(command_itfs_[0]->get_optional().value(), -15.0);
+  EXPECT_DOUBLE_EQ(command_itfs_[2]->get_optional().value(), 5.0);
+  EXPECT_DOUBLE_EQ(command_itfs_[3]->get_optional().value(), -15.0);
 }
 
 // Make sure that the controller is properly reset when deactivated
