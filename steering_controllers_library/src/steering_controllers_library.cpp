@@ -36,7 +36,7 @@ using ControllerTwistReferenceMsg =
 void reset_controller_reference_msg(
   ControllerTwistReferenceMsg & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0, 0, node->get_clock()->get_clock_type());
   msg.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
   msg.twist.linear.z = std::numeric_limits<double>::quiet_NaN();
@@ -788,7 +788,7 @@ bool SteeringControllersLibrary::reset()
 {
   odometry_.set_odometry(0.0, 0.0, 0.0);
 
-  reset_controller_reference_msg(current_ref_, get_node());
+  reset_controller_reference_msg(current_ref_);
   input_ref_.set(current_ref_);
 
   last_linear_velocity_ = std::numeric_limits<double>::quiet_NaN();
