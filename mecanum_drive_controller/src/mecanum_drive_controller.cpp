@@ -14,12 +14,14 @@
 
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 
+#include <deque>
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "controller_interface/helpers.hpp"
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2/transform_datatypes.hpp"
@@ -44,6 +46,7 @@ void reset_controller_reference_msg(
   msg.twist.angular.z = std::numeric_limits<double>::quiet_NaN();
 }
 
+constexpr auto DEFAULT_SET_ODOM_SERVICE = "~/set_odometry";
 }  // namespace
 
 namespace mecanum_drive_controller
@@ -131,6 +134,17 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
   reset_controller_reference_msg(current_ref_, get_node());
   input_ref_.set(current_ref_);
 
+  // deprecation warning if tf_frame_prefix_enable set to non-default value
+  const bool default_tf_frame_prefix_enable = true;
+  if (params_.tf_frame_prefix_enable != default_tf_frame_prefix_enable)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Parameter 'tf_frame_prefix_enable' is DEPRECATED and set to a non-default value (%s). "
+      "Please migrate to 'tf_frame_prefix'.",
+      params_.tf_frame_prefix_enable ? "true" : "false");
+  }
+
   try
   {
     // Odom state publisher
@@ -146,24 +160,34 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Append the tf prefix if there is one
+  // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
   if (params_.tf_frame_prefix_enable)
   {
-    tf_prefix = params_.tf_frame_prefix != "" ? params_.tf_frame_prefix
-                                              : std::string(get_node()->get_namespace());
-
-    // Make sure prefix does not start with '/' and always ends with '/'
-    if (tf_prefix.back() != '/')
+    if (params_.tf_frame_prefix != "")
     {
-      tf_prefix = tf_prefix + "/";
+      tf_prefix = controller_interface::resolve_tf_prefix(
+        params_.tf_frame_prefix, get_node()->get_namespace());
     }
-    if (tf_prefix.front() == '/')
+    else
     {
-      tf_prefix.erase(0, 1);
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Please use tilde ('~') character in 'tf_frame_prefix' as it replaced with node namespace");
+
+      tf_prefix = std::string(get_node()->get_namespace());
+      if (tf_prefix.back() != '/')
+      {
+        tf_prefix = tf_prefix + "/";
+      }
+      if (tf_prefix.front() == '/')
+      {
+        tf_prefix.erase(0, 1);
+      }
     }
   }
 
+  // prepend resolved TF prefix to frame ids
   const auto odom_frame_id = tf_prefix + params_.odom_frame_id;
   const auto base_frame_id = tf_prefix + params_.base_frame_id;
 
@@ -223,6 +247,71 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
 
   controller_state_msg_.header.stamp = get_node()->now();
   controller_state_msg_.header.frame_id = odom_frame_id;
+
+  try
+  {
+    set_odom_service_ = get_node()->create_service<control_msgs::srv::SetOdometry>(
+      DEFAULT_SET_ODOM_SERVICE,
+      std::bind(
+        &MecanumDriveController::set_odometry, this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3));
+  }
+  catch (const std::exception & e)
+  {
+    fprintf(
+      stderr,
+      "Exception thrown during service creation at configure stage "
+      "with message : %s \n",
+      e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // Configure speed limiters
+  try
+  {
+    limiter_linear_x_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+      params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+      params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+      params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear x speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_linear_y_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.linear.y.min_velocity, params_.linear.y.max_velocity,
+      params_.linear.y.max_acceleration_reverse, params_.linear.y.max_acceleration,
+      params_.linear.y.max_deceleration, params_.linear.y.max_deceleration_reverse,
+      params_.linear.y.min_jerk, params_.linear.y.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure linear y speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  try
+  {
+    limiter_angular_z_ = std::make_unique<control_toolbox::RateLimiter<double>>(
+      params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+      params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+      params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+      params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+  }
+  catch (const std::invalid_argument & e)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Failed to configure angular z speed limiter: %s", e.what());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // Reset the reference interfaces to NaN to catch uninitialized usage.
+  reset_buffers();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
 
@@ -292,23 +381,20 @@ controller_interface::InterfaceConfiguration MecanumDriveController::state_inter
   return state_interfaces_config;
 }
 
-std::vector<hardware_interface::CommandInterface>
-MecanumDriveController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+MecanumDriveController::on_export_reference_interfaces_list()
 {
-  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
-
-  std::vector<hardware_interface::CommandInterface> reference_interfaces;
-
-  reference_interfaces.reserve(reference_interfaces_.size());
+  std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
+  reference_interfaces.reserve(NR_REF_ITFS);
 
   std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
 
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  for (size_t i = 0; i < NR_REF_ITFS; ++i)
   {
-    reference_interfaces.push_back(
-      hardware_interface::CommandInterface(
-        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-        &reference_interfaces_[i]));
+    auto cmd_interface = std::make_shared<hardware_interface::CommandInterface>(
+      get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY);
+    cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+    reference_interfaces.push_back(cmd_interface);
   }
 
   return reference_interfaces;
@@ -319,11 +405,9 @@ bool MecanumDriveController::on_set_chained_mode(bool /*chained_mode*/) { return
 controller_interface::CallbackReturn MecanumDriveController::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // Try to set default value in command.
-  // If this fails, then another command will be received soon anyways.
-  ControllerReferenceMsg emtpy_msg;
-  reset_controller_reference_msg(emtpy_msg, get_node());
-  input_ref_.try_set(emtpy_msg);
+  // Reset limiter history and reference buffers so a previous activation cannot
+  // influence the behavior of the controller after a deactivate->activate cycle.
+  reset_buffers();
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -346,7 +430,28 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
     return controller_interface::CallbackReturn::FAILURE;
   }
 
+  reset_buffers();
+
   return controller_interface::CallbackReturn::SUCCESS;
+}
+
+void MecanumDriveController::reset_buffers()
+{
+  for (auto & ref_itf : ordered_exported_reference_interfaces_)
+  {
+    if (!ref_itf->set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to reset reference interface to NaN");
+    }
+  }
+
+  // Replace the queue with one initialized to two zero entries.
+  previous_two_commands_ = std::queue<std::array<double, 3>>(
+    std::deque<std::array<double, 3>>{{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});
+
+  // Reset the latest received reference back to NaN so no stale command is applied.
+  reset_controller_reference_msg(current_ref_, get_node());
+  input_ref_.set(current_ref_);
 }
 
 controller_interface::return_type MecanumDriveController::update_reference_from_subscribers(
@@ -367,9 +472,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
       !std::isnan(current_ref_.twist.angular.z))
     {
-      reference_interfaces_[0] = current_ref_.twist.linear.x;
-      reference_interfaces_[1] = current_ref_.twist.linear.y;
-      reference_interfaces_[2] = current_ref_.twist.angular.z;
+      ordered_exported_reference_interfaces_[0]->set_value(current_ref_.twist.linear.x);
+      ordered_exported_reference_interfaces_[1]->set_value(current_ref_.twist.linear.y);
+      ordered_exported_reference_interfaces_[2]->set_value(current_ref_.twist.angular.z);
 
       if (ref_timeout_ == rclcpp::Duration::from_seconds(0))
       {
@@ -387,9 +492,9 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
       !std::isnan(current_ref_.twist.linear.x) && !std::isnan(current_ref_.twist.linear.y) &&
       !std::isnan(current_ref_.twist.angular.z))
     {
-      reference_interfaces_[0] = 0.0;
-      reference_interfaces_[1] = 0.0;
-      reference_interfaces_[2] = 0.0;
+      ordered_exported_reference_interfaces_[0]->set_value(0.0);
+      ordered_exported_reference_interfaces_[1]->set_value(0.0);
+      ordered_exported_reference_interfaces_[2]->set_value(0.0);
 
       current_ref_.twist.linear.x = std::numeric_limits<double>::quiet_NaN();
       current_ref_.twist.linear.y = std::numeric_limits<double>::quiet_NaN();
@@ -405,6 +510,34 @@ controller_interface::return_type MecanumDriveController::update_reference_from_
 controller_interface::return_type MecanumDriveController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  if (param_listener_->try_update_params(params_))
+  {
+    ref_timeout_ = rclcpp::Duration::from_seconds(params_.reference_timeout);
+    try
+    {
+      limiter_linear_x_->set_params(
+        params_.linear.x.min_velocity, params_.linear.x.max_velocity,
+        params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
+        params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
+        params_.linear.x.min_jerk, params_.linear.x.max_jerk);
+      limiter_linear_y_->set_params(
+        params_.linear.y.min_velocity, params_.linear.y.max_velocity,
+        params_.linear.y.max_acceleration_reverse, params_.linear.y.max_acceleration,
+        params_.linear.y.max_deceleration, params_.linear.y.max_deceleration_reverse,
+        params_.linear.y.min_jerk, params_.linear.y.max_jerk);
+      limiter_angular_z_->set_params(
+        params_.angular.z.min_velocity, params_.angular.z.max_velocity,
+        params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
+        params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
+        params_.angular.z.min_jerk, params_.angular.z.max_jerk);
+    }
+    catch (const std::invalid_argument & e)
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to update speed limiter parameters: %s", e.what());
+    }
+  }
+
   // FORWARD KINEMATICS (odometry).
   const auto wheel_front_left_state_vel_op = state_interfaces_[FRONT_LEFT].get_optional();
   const auto wheel_front_right_state_vel_op = state_interfaces_[FRONT_RIGHT].get_optional();
@@ -427,23 +560,63 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   const double wheel_rear_right_state_vel = wheel_rear_right_state_vel_op.value();
   const double wheel_rear_left_state_vel = wheel_rear_left_state_vel_op.value();
 
-  if (
-    !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
-    !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
+  // check if odometry set or reset was requested by non-RT thread
+  if (set_odom_requested_.load())
   {
-    // Estimate twist (using joint information) and integrate
-    odometry_.update(
-      wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
-      wheel_front_right_state_vel, period.seconds());
+    auto param_op = requested_odom_params_.try_get();
+    if (param_op.has_value())
+    {
+      auto params = param_op.value();
+      odometry_.setOdometry(params.x, params.y, params.yaw);
+      set_odom_requested_.store(false);
+    }
+  }
+  else
+  {
+    if (
+      !std::isnan(wheel_front_left_state_vel) && !std::isnan(wheel_rear_left_state_vel) &&
+      !std::isnan(wheel_rear_right_state_vel) && !std::isnan(wheel_front_right_state_vel))
+    {
+      // Estimate twist (using joint information) and integrate
+      odometry_.update(
+        wheel_front_left_state_vel, wheel_rear_left_state_vel, wheel_rear_right_state_vel,
+        wheel_front_right_state_vel, period.seconds());
+    }
   }
 
   // INVERSE KINEMATICS (move robot).
   // Compute wheels velocities (this is the actual ik):
   // NOTE: the input desired twist (from topic `~/reference`) is a body twist.
-  if (
-    !std::isnan(reference_interfaces_[0]) && !std::isnan(reference_interfaces_[1]) &&
-    !std::isnan(reference_interfaces_[2]))
+  const auto ref_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+  const auto ref_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+  const auto ref_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+  const double ref_linear_x = ref_0.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_linear_y = ref_1.value_or(std::numeric_limits<double>::quiet_NaN());
+  const double ref_angular_z = ref_2.value_or(std::numeric_limits<double>::quiet_NaN());
+  if (!std::isnan(ref_linear_x) && !std::isnan(ref_linear_y) && !std::isnan(ref_angular_z))
   {
+    // Apply speed limits before inverse kinematics
+    double linear_x_command = ref_linear_x;
+    double linear_y_command = ref_linear_y;
+    double angular_z_command = ref_angular_z;
+
+    double & last_linear_x = previous_two_commands_.back()[0];
+    double & second_to_last_linear_x = previous_two_commands_.front()[0];
+    double & last_linear_y = previous_two_commands_.back()[1];
+    double & second_to_last_linear_y = previous_two_commands_.front()[1];
+    double & last_angular_z = previous_two_commands_.back()[2];
+    double & second_to_last_angular_z = previous_two_commands_.front()[2];
+
+    limiter_linear_x_->limit(
+      linear_x_command, last_linear_x, second_to_last_linear_x, period.seconds());
+    limiter_linear_y_->limit(
+      linear_y_command, last_linear_y, second_to_last_linear_y, period.seconds());
+    limiter_angular_z_->limit(
+      angular_z_command, last_angular_z, second_to_last_angular_z, period.seconds());
+
+    previous_two_commands_.pop();
+    previous_two_commands_.push({{linear_x_command, linear_y_command, angular_z_command}});
+
     tf2::Quaternion quaternion;
     quaternion.setRPY(0.0, 0.0, params_.kinematics.base_frame_offset.theta);
     /// \note The variables meaning:
@@ -454,18 +627,15 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
 
     tf2::Matrix3x3 rotation_from_base_to_center = tf2::Matrix3x3((quaternion));
     tf2::Vector3 velocity_in_base_frame_w_r_t_center_frame_ =
-      rotation_from_base_to_center *
-      tf2::Vector3(reference_interfaces_[0], reference_interfaces_[1], 0.0);
+      rotation_from_base_to_center * tf2::Vector3(linear_x_command, linear_y_command, 0.0);
     tf2::Vector3 linear_trans_from_base_to_center = tf2::Vector3(
       params_.kinematics.base_frame_offset.x, params_.kinematics.base_frame_offset.y, 0.0);
 
-    velocity_in_center_frame_linear_x_ =
-      velocity_in_base_frame_w_r_t_center_frame_.x() +
-      linear_trans_from_base_to_center.y() * reference_interfaces_[2];
-    velocity_in_center_frame_linear_y_ =
-      velocity_in_base_frame_w_r_t_center_frame_.y() -
-      linear_trans_from_base_to_center.x() * reference_interfaces_[2];
-    velocity_in_center_frame_angular_z_ = reference_interfaces_[2];
+    velocity_in_center_frame_linear_x_ = velocity_in_base_frame_w_r_t_center_frame_.x() +
+                                         linear_trans_from_base_to_center.y() * angular_z_command;
+    velocity_in_center_frame_linear_y_ = velocity_in_base_frame_w_r_t_center_frame_.y() -
+                                         linear_trans_from_base_to_center.x() * angular_z_command;
+    velocity_in_center_frame_angular_z_ = angular_z_command;
 
     const double wheel_front_left_vel =
       1.0 / params_.kinematics.wheels_radius *
@@ -502,10 +672,11 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
   else
   {
-    const bool value_set_error = command_interfaces_[FRONT_LEFT].set_value(0.0) &&
-                                 command_interfaces_[FRONT_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_RIGHT].set_value(0.0) &&
-                                 command_interfaces_[REAR_LEFT].set_value(0.0);
+    const bool value_set_error =
+      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
+      command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
     RCLCPP_ERROR_EXPRESSION(
       get_node()->get_logger(), !value_set_error,
       "Setting values to command interfaces has failed! "
@@ -549,17 +720,45 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     controller_state_msg_.back_right_wheel_velocity = wheel_rear_right_state_vel;
     controller_state_msg_.back_left_wheel_velocity = wheel_rear_left_state_vel;
 
-    controller_state_msg_.reference_velocity.linear.x = reference_interfaces_[0];
-    controller_state_msg_.reference_velocity.linear.y = reference_interfaces_[1];
-    controller_state_msg_.reference_velocity.angular.z = reference_interfaces_[2];
+    const auto ref_state_0 = ordered_exported_reference_interfaces_[0]->get_optional<double>();
+    const auto ref_state_1 = ordered_exported_reference_interfaces_[1]->get_optional<double>();
+    const auto ref_state_2 = ordered_exported_reference_interfaces_[2]->get_optional<double>();
+    controller_state_msg_.reference_velocity.linear.x =
+      ref_state_0.value_or(std::numeric_limits<double>::quiet_NaN());
+    controller_state_msg_.reference_velocity.linear.y =
+      ref_state_1.value_or(std::numeric_limits<double>::quiet_NaN());
+    controller_state_msg_.reference_velocity.angular.z =
+      ref_state_2.value_or(std::numeric_limits<double>::quiet_NaN());
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
 
-  reference_interfaces_[0] = std::numeric_limits<double>::quiet_NaN();
-  reference_interfaces_[1] = std::numeric_limits<double>::quiet_NaN();
-  reference_interfaces_[2] = std::numeric_limits<double>::quiet_NaN();
+  ordered_exported_reference_interfaces_[0]->set_value(std::numeric_limits<double>::quiet_NaN());
+  ordered_exported_reference_interfaces_[1]->set_value(std::numeric_limits<double>::quiet_NaN());
+  ordered_exported_reference_interfaces_[2]->set_value(std::numeric_limits<double>::quiet_NaN());
 
   return controller_interface::return_type::OK;
+}
+
+void MecanumDriveController::set_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<control_msgs::srv::SetOdometry::Request> req,
+  std::shared_ptr<control_msgs::srv::SetOdometry::Response> res)
+{
+  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    res->success = false;
+    res->message = "Controller is not active";
+    return;
+  }
+
+  // put requested odom params into RealtimeThreadSafeBox
+  requested_odom_params_.set(*req);
+
+  // flip the flag for thread-safe odom set in the control loop
+  set_odom_requested_.store(true);
+
+  res->success = true;
+  res->message = "Odometry set request accepted";
 }
 
 }  // namespace mecanum_drive_controller

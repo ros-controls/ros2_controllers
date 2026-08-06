@@ -1,5 +1,6 @@
 constraints:
     Default values for tolerances if no explicit values are set in the ``JointTrajectory`` message.
+    Also contains the ``decelerate_on_cancel`` option and per-joint ``max_deceleration_on_cancel`` values for smooth stopping behavior (see :ref:`joint_trajectory_controller_decelerate_on_cancel`).
 
 gains: |
   The parameters are used to configure PID loops for the ``velocity`` or ``effort``-only command interfaces. This structure contains the controller gains for every joint with following the control laws

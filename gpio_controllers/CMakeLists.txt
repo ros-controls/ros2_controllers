@@ -62,7 +62,6 @@ if(BUILD_TESTING)
     test/test_load_gpio_command_controller.cpp
   )
 
-  target_include_directories(test_load_gpio_command_controller PRIVATE include)
   target_link_libraries(test_load_gpio_command_controller
     controller_manager::controller_manager
     hardware_interface::hardware_interface

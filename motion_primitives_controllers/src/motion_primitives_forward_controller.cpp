@@ -15,6 +15,9 @@
 // Authors: Mathias Fuhrer
 
 #include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
+
+#include <tuple>
+
 #include "lifecycle_msgs/msg/state.hpp"
 
 namespace motion_primitives_controllers
@@ -78,7 +81,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
     cancel_requested_ = false;
     reset_command_interfaces();
     // send stop command immediately to the hw-interface
-    (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
+    std::ignore =
+      command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
     // clear the queue (ignore return value)
     static_cast<void>(moprim_queue_.get_latest(current_moprim_));
     robot_stop_requested_ = true;
@@ -151,7 +155,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
         // If the robot was stopped by a stop command, reset the command interfaces
         // to allow new motion primitives to be sent.
         reset_command_interfaces();
-        (void)command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::RESET_STOP));
+        std::ignore =
+          command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::RESET_STOP));
         robot_stop_requested_ = false;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
@@ -224,7 +229,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
   RCLCPP_INFO(get_node()->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_lifecycle_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new trajectories. Controller is not running.");

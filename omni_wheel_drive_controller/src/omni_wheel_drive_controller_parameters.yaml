@@ -30,7 +30,7 @@ omni_wheel_drive_controller:
     {
       type: bool,
       default_value: true,
-      description: "Enables or disables appending tf_prefix to tf frame id's.",
+      description: "Deprecated: this parameter will be removed in a future release. Use 'tf_frame_prefix' instead.",
       read_only: true,
     }
   tf_frame_prefix:

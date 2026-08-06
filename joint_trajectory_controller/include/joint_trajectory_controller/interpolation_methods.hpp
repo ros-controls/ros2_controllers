@@ -68,18 +68,6 @@ enum class InterpolationMethod
 const InterpolationMethod DEFAULT_INTERPOLATION = InterpolationMethod::VARIABLE_DEGREE_SPLINE;
 
 /**
- * @brief Maps string representations to their corresponding InterpolationMethod enum values.
- *
- * @deprecated This map is deprecated. Use the direct lookup methods instead.
- * (Original use: Converting strings into the InterpolationMethod).
- */
-[[deprecated(
-  "InterpolationMethodMap will be removed in future releases. "
-  "Instead, use the direct lookup methods.")]]
-const std::unordered_map<std::string, InterpolationMethod> InterpolationMethodMap(
-  {{"none", InterpolationMethod::NONE}, {"splines", InterpolationMethod::VARIABLE_DEGREE_SPLINE}});
-
-/**
  * \brief Returns corresponding string value for the `InterpolationMethod`.
  * This function uses simple switch-case lookup to directly assign string value to
  * `InterpolationMethod`.

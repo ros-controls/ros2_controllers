@@ -72,12 +72,10 @@ INSTANTIATE_TEST_SUITE_P(
     // wrong length selected axes
     std::make_tuple(
       std::string("admittance.selected_axes"),
-      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3}))
+      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3})),
     // invalid robot description.
-    // TODO(anyone): deactivated, because SetUpController returns SUCCESS here?
-    // ,std::make_tuple(
-    //   std::string("robot_description"), rclcpp::ParameterValue(std::string() = "bad_robot")))
-    ));
+    std::make_tuple(
+      std::string("robot_description"), rclcpp::ParameterValue(std::string() = "bad_robot"))));
 
 // Test on_init returns ERROR when a parameter is invalid
 TEST_P(AdmittanceControllerTestParameterizedInvalidParameters, invalid_parameters)
@@ -91,7 +89,7 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.joints.empty());
   ASSERT_TRUE(controller_->admittance_->parameters_.joints.size() == joint_names_.size());
@@ -171,7 +169,7 @@ TEST_F(AdmittanceControllerTest, check_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto command_interfaces = controller_->command_interface_configuration();
   ASSERT_EQ(command_interfaces.names.size(), joint_command_values_.size());
@@ -215,17 +213,17 @@ TEST_F(AdmittanceControllerTest, activate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_EQ(
     controller_->command_interfaces_.size(), command_interface_types_.size() * joint_names_.size());
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, missing_pos_state_interface)
 {
   auto overrides = {rclcpp::Parameter("state_interfaces", std::vector<std::string>{"velocity"})};
   SetUpController("test_admittance_controller", overrides);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_FAILURE);
+  ASSERT_FALSE(configure_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, only_vel_command_interface)
@@ -233,8 +231,8 @@ TEST_F(AdmittanceControllerTest, only_vel_command_interface)
   command_interface_types_ = {"velocity"};
   auto overrides = {rclcpp::Parameter("command_interfaces", std::vector<std::string>{"velocity"})};
   SetUpController("test_admittance_controller", overrides);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(
     controller_->update_and_write_commands(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
@@ -245,7 +243,7 @@ TEST_F(AdmittanceControllerTest, only_pos_reference_interface)
   auto overrides = {
     rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"position"})};
   SetUpController("test_admittance_controller", overrides);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, only_vel_reference_interface)
@@ -253,7 +251,7 @@ TEST_F(AdmittanceControllerTest, only_vel_reference_interface)
   auto overrides = {
     rclcpp::Parameter("chainable_command_interfaces", std::vector<std::string>{"velocity"})};
   SetUpController("test_admittance_controller", overrides);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, invalid_reference_interface)
@@ -261,15 +259,15 @@ TEST_F(AdmittanceControllerTest, invalid_reference_interface)
   auto overrides = {rclcpp::Parameter(
     "chainable_command_interfaces", std::vector<std::string>{"invalid_interface"})};
   SetUpController("test_admittance_controller", overrides);
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_ERROR);
+  ASSERT_FALSE(configure_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, update_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   broadcast_tfs();
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -280,20 +278,20 @@ TEST_F(AdmittanceControllerTest, deactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
 TEST_F(AdmittanceControllerTest, reactivate_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_deactivate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
   assign_interfaces();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(activate_succeeds(controller_));
   broadcast_tfs();
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -304,8 +302,8 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   broadcast_tfs();
   ASSERT_EQ(
@@ -376,8 +374,8 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   broadcast_tfs();
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -386,7 +384,9 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   // After first update state, commanded position should be near the start state
   for (auto i = 0ul; i < joint_state_values_.size(); i++)
   {
-    ASSERT_NEAR(joint_state_values_[i], joint_command_values_[i], COMMON_THRESHOLD);
+    ASSERT_NEAR(
+      joint_state_values_[i], controller_->command_interfaces_[i].get_optional().value(),
+      COMMON_THRESHOLD);
   }
 
   ControllerStateMsg msg;
@@ -404,7 +404,9 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 
   for (auto i = 0ul; i < joint_state_values_.size(); i++)
   {
-    EXPECT_NEAR(joint_state_values_[i], joint_command_values_[i], COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      controller_->command_interfaces_[i].get_optional().value(), joint_state_values_[i],
+      COMMON_THRESHOLD);
   }
 
   subscribe_and_get_messages(msg);
@@ -414,8 +416,8 @@ TEST_F(AdmittanceControllerTest, check_frame_ids_in_controller_state)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
 
   broadcast_tfs();  // force torque sensor
 

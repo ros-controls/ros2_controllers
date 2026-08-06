@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 
 #include "control_msgs/msg/joint_trajectory_controller_state.hpp"
@@ -29,6 +30,11 @@
 #include "joint_trajectory_controller/tolerances.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 namespace
 {
@@ -272,7 +278,7 @@ public:
     const std::vector<rclcpp::Parameter> & parameters = {},
     const std::string & urdf = ros2_control_test_assets::minimal_robot_urdf)
   {
-    traj_controller_ = std::make_shared<TestableJointTrajectoryController>();
+    traj_controller_ = std::make_unique<TestableJointTrajectoryController>();
 
     auto node_options = rclcpp::NodeOptions();
     std::vector<rclcpp::Parameter> parameter_overrides;
@@ -335,20 +341,23 @@ public:
 
     // set pid parameters before configure
     SetPidParameters(k_p, ff);
-    traj_controller_->configure();
+    ASSERT_TRUE(configure_succeeds(traj_controller_));
 
-    ActivateTrajectoryController(
+    AssignInterfaces(
       separate_cmd_and_state_values, initial_pos_joints, initial_vel_joints, initial_acc_joints,
       initial_eff_joints);
+
+    ASSERT_TRUE(activate_succeeds(traj_controller_));
   }
 
-  rclcpp_lifecycle::State ActivateTrajectoryController(
+  void AssignInterfaces(
     bool separate_cmd_and_state_values = false,
     const std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS,
     const std::vector<double> initial_vel_joints = INITIAL_VEL_JOINTS,
     const std::vector<double> initial_acc_joints = INITIAL_ACC_JOINTS,
     const std::vector<double> initial_eff_joints = INITIAL_EFF_JOINTS)
   {
+    separate_cmd_and_state_values_ = separate_cmd_and_state_values;
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     pos_cmd_interfaces_.reserve(joint_names_.size());
@@ -360,47 +369,60 @@ public:
     acc_state_interfaces_.reserve(joint_names_.size());
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
-      pos_cmd_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], hardware_interface::HW_IF_POSITION, &joint_pos_[i]));
-      vel_cmd_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], hardware_interface::HW_IF_VELOCITY, &joint_vel_[i]));
-      acc_cmd_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], hardware_interface::HW_IF_ACCELERATION, &joint_acc_[i]));
-      eff_cmd_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], hardware_interface::HW_IF_EFFORT, &joint_eff_[i]));
+      auto pos_cmd_if = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], hardware_interface::HW_IF_POSITION);
+      std::ignore = pos_cmd_if->set_value(joint_pos_[i]);
+      pos_cmd_interfaces_.emplace_back(pos_cmd_if);
+      auto vel_cmd_if = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], hardware_interface::HW_IF_VELOCITY);
+      std::ignore = vel_cmd_if->set_value(joint_vel_[i]);
+      vel_cmd_interfaces_.emplace_back(vel_cmd_if);
+      auto acc_cmd_if = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], hardware_interface::HW_IF_ACCELERATION);
+      std::ignore = acc_cmd_if->set_value(joint_acc_[i]);
+      acc_cmd_interfaces_.emplace_back(acc_cmd_if);
+      auto eff_cmd_if = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], hardware_interface::HW_IF_EFFORT);
+      std::ignore = eff_cmd_if->set_value(joint_eff_[i]);
+      eff_cmd_interfaces_.emplace_back(eff_cmd_if);
 
-      pos_state_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          joint_names_[i], hardware_interface::HW_IF_POSITION,
-          separate_cmd_and_state_values ? &joint_state_pos_[i] : &joint_pos_[i]));
-      vel_state_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          joint_names_[i], hardware_interface::HW_IF_VELOCITY,
-          separate_cmd_and_state_values ? &joint_state_vel_[i] : &joint_vel_[i]));
-      acc_state_interfaces_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          joint_names_[i], hardware_interface::HW_IF_ACCELERATION,
-          separate_cmd_and_state_values ? &joint_state_acc_[i] : &joint_acc_[i]));
+      auto pos_state_if = std::make_shared<hardware_interface::StateInterface>(
+        joint_names_[i], hardware_interface::HW_IF_POSITION);
+      std::ignore = pos_state_if->set_value(
+        separate_cmd_and_state_values ? joint_state_pos_[i] : joint_pos_[i]);
+      pos_state_interfaces_.emplace_back(pos_state_if);
+      auto vel_state_if = std::make_shared<hardware_interface::StateInterface>(
+        joint_names_[i], hardware_interface::HW_IF_VELOCITY);
+      std::ignore = vel_state_if->set_value(
+        separate_cmd_and_state_values ? joint_state_vel_[i] : joint_vel_[i]);
+      vel_state_interfaces_.emplace_back(vel_state_if);
+      auto acc_state_if = std::make_shared<hardware_interface::StateInterface>(
+        joint_names_[i], hardware_interface::HW_IF_ACCELERATION);
+      std::ignore = acc_state_if->set_value(
+        separate_cmd_and_state_values ? joint_state_acc_[i] : joint_acc_[i]);
+      acc_state_interfaces_.emplace_back(acc_state_if);
 
       // Add to export lists and set initial values (explicitly discarding return value)
       loaned_command_ifs.emplace_back(pos_cmd_interfaces_.back(), nullptr);
-      (void)loaned_command_ifs.back().set_value(initial_pos_joints[i]);
+      std::ignore = loaned_command_ifs.back().set_value(initial_pos_joints[i]);
       loaned_command_ifs.emplace_back(vel_cmd_interfaces_.back(), nullptr);
-      (void)loaned_command_ifs.back().set_value(initial_vel_joints[i]);
+      std::ignore = loaned_command_ifs.back().set_value(initial_vel_joints[i]);
       loaned_command_ifs.emplace_back(acc_cmd_interfaces_.back(), nullptr);
-      (void)loaned_command_ifs.back().set_value(initial_acc_joints[i]);
+      std::ignore = loaned_command_ifs.back().set_value(initial_acc_joints[i]);
       loaned_command_ifs.emplace_back(eff_cmd_interfaces_.back(), nullptr);
-      (void)loaned_command_ifs.back().set_value(initial_eff_joints[i]);
+      std::ignore = loaned_command_ifs.back().set_value(initial_eff_joints[i]);
       if (separate_cmd_and_state_values)
       {
         joint_state_pos_[i] = INITIAL_POS_JOINTS[i];
         joint_state_vel_[i] = INITIAL_VEL_JOINTS[i];
         joint_state_acc_[i] = INITIAL_ACC_JOINTS[i];
       }
+      std::ignore = pos_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_pos_[i] : initial_pos_joints[i]);
+      std::ignore = vel_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_vel_[i] : initial_vel_joints[i]);
+      std::ignore = acc_state_interfaces_.back()->set_value(
+        separate_cmd_and_state_values ? joint_state_acc_[i] : initial_acc_joints[i]);
       loaned_state_ifs.emplace_back(pos_state_interfaces_.back(), nullptr);
       loaned_state_ifs.emplace_back(vel_state_interfaces_.back(), nullptr);
       loaned_state_ifs.emplace_back(acc_state_interfaces_.back(), nullptr);
@@ -408,32 +430,29 @@ public:
 
     speed_scaling_factor_ = 1.0;
     target_speed_scaling_factor_ = 1.0;
-    gpio_state_interfaces.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        "speed_scaling", "speed_scaling_factor",
-        separate_cmd_and_state_values ? &speed_scaling_factor_ : &target_speed_scaling_factor_));
+    auto gpio_state_if =
+      std::make_shared<hardware_interface::StateInterface>("speed_scaling", "speed_scaling_factor");
+    std::ignore = gpio_state_if->set_value(
+      separate_cmd_and_state_values ? speed_scaling_factor_ : target_speed_scaling_factor_);
+    gpio_state_interfaces.emplace_back(gpio_state_if);
     loaned_state_ifs.emplace_back(gpio_state_interfaces.back(), nullptr);
 
-    gpio_command_interfaces_.emplace_back(
-      std::make_shared<hardware_interface::CommandInterface>(
-        "speed_scaling", "target_speed_fraction_cmd", &target_speed_scaling_factor_));
+    auto gpio_cmd_if = std::make_shared<hardware_interface::CommandInterface>(
+      "speed_scaling", "target_speed_fraction_cmd");
+    std::ignore = gpio_cmd_if->set_value(target_speed_scaling_factor_);
+    gpio_command_interfaces_.emplace_back(gpio_cmd_if);
     loaned_command_ifs.emplace_back(gpio_command_interfaces_.back(), nullptr);
 
     traj_controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
-    return traj_controller_->get_node()->activate();
   }
 
   void DeactivateTrajectoryController()
   {
     if (traj_controller_)
     {
-      if (
-        traj_controller_->get_lifecycle_state().id() ==
-        lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (traj_controller_->get_lifecycle_id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
-        EXPECT_EQ(
-          traj_controller_->get_node()->deactivate().id(),
-          lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+        ASSERT_TRUE(deactivate_succeeds(traj_controller_));
         traj_controller_->release_interfaces();
       }
     }
@@ -558,6 +577,41 @@ public:
    * @note use the faster updateControllerAsync() if no subscriptions etc.
    * have to be used from the waitSet/executor
    */
+  /**
+   * @brief Mirrors the command interfaces' current values into the paired state interfaces.
+   * With ideal (non-separate) hardware, the state is expected to instantaneously reflect
+   * whatever was last commanded, so this simulates that loopback after every update() cycle.
+   */
+  void mirrorCommandToStateIfNotSeparate()
+  {
+    if (separate_cmd_and_state_values_)
+    {
+      return;
+    }
+    for (size_t i = 0; i < pos_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        pos_state_interfaces_[i]->set_value(pos_cmd_interfaces_[i]->get_optional().value());
+    }
+    for (size_t i = 0; i < vel_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        vel_state_interfaces_[i]->set_value(vel_cmd_interfaces_[i]->get_optional().value());
+    }
+    for (size_t i = 0; i < acc_state_interfaces_.size(); ++i)
+    {
+      std::ignore =
+        acc_state_interfaces_[i]->set_value(acc_cmd_interfaces_[i]->get_optional().value());
+    }
+    // the speed scaling GPIO pair is always aliased in the ideal-hardware simulation, regardless
+    // of separate_cmd_and_state_values_
+    for (size_t i = 0; i < gpio_state_interfaces.size(); ++i)
+    {
+      std::ignore =
+        gpio_state_interfaces[i]->set_value(gpio_command_interfaces_[i]->get_optional().value());
+    }
+  }
+
   void updateController(
     rclcpp::Duration wait_time = rclcpp::Duration::from_seconds(0.2),
     const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
@@ -571,6 +625,7 @@ public:
     {
       auto now = clock.now();
       traj_controller_->update(now, now - previous_time);
+      mirrorCommandToStateIfNotSeparate();
       previous_time = now;
       std::this_thread::sleep_for(update_rate.to_chrono<std::chrono::milliseconds>());
     }
@@ -591,7 +646,7 @@ public:
     rclcpp::Time start_time = rclcpp::Time(0, 0, RCL_STEADY_TIME),
     const rclcpp::Duration update_rate = rclcpp::Duration::from_seconds(0.01))
   {
-    if (start_time == rclcpp::Time(0, 0, RCL_STEADY_TIME))
+    if (start_time.nanoseconds() == 0)
     {
       start_time = rclcpp::Clock(RCL_STEADY_TIME).now();
     }
@@ -600,6 +655,7 @@ public:
     while (time_counter <= end_time)
     {
       traj_controller_->update(time_counter, update_rate);
+      mirrorCommandToStateIfNotSeparate();
       time_counter += update_rate;
     }
     return end_time;
@@ -653,40 +709,43 @@ public:
 
   void expectCommandPoint(
     std::vector<double> position, std::vector<double> velocity = {0.0, 0.0, 0.0},
-    std::vector<double> effort = {0.0, 0.0, 0.0})
+    std::vector<double> effort = {0.0, 0.0, 0.0}, bool expect_trivial_traj = true)
   {
-    // it should be holding the given point
-    // i.e., active but trivial trajectory (one point only)
-    EXPECT_TRUE(traj_controller_->has_trivial_traj());
+    // Check if controllers trajectory matches the expected
+    // i.e. expect_trivial_traj=true has single point
+    ASSERT_EQ(traj_controller_->has_trivial_traj(), expect_trivial_traj);
 
     if (traj_controller_->use_closed_loop_pid_adapter() == false)
     {
       if (traj_controller_->has_position_command_interface())
       {
-        EXPECT_NEAR(position.at(0), joint_pos_[0], COMMON_THRESHOLD);
-        EXPECT_NEAR(position.at(1), joint_pos_[1], COMMON_THRESHOLD);
-        EXPECT_NEAR(position.at(2), joint_pos_[2], COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+        EXPECT_NEAR(
+          position.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
       }
 
       if (traj_controller_->has_velocity_command_interface())
       {
-        EXPECT_EQ(velocity.at(0), joint_vel_[0]);
-        EXPECT_EQ(velocity.at(1), joint_vel_[1]);
-        EXPECT_EQ(velocity.at(2), joint_vel_[2]);
+        EXPECT_EQ(velocity.at(0), vel_cmd_interfaces_[0]->get_optional().value());
+        EXPECT_EQ(velocity.at(1), vel_cmd_interfaces_[1]->get_optional().value());
+        EXPECT_EQ(velocity.at(2), vel_cmd_interfaces_[2]->get_optional().value());
       }
 
       if (traj_controller_->has_acceleration_command_interface())
       {
-        EXPECT_EQ(0.0, joint_acc_[0]);
-        EXPECT_EQ(0.0, joint_acc_[1]);
-        EXPECT_EQ(0.0, joint_acc_[2]);
+        EXPECT_EQ(0.0, acc_cmd_interfaces_[0]->get_optional().value());
+        EXPECT_EQ(0.0, acc_cmd_interfaces_[1]->get_optional().value());
+        EXPECT_EQ(0.0, acc_cmd_interfaces_[2]->get_optional().value());
       }
 
       if (traj_controller_->has_effort_command_interface())
       {
-        EXPECT_EQ(effort.at(0), joint_eff_[0]);
-        EXPECT_EQ(effort.at(1), joint_eff_[1]);
-        EXPECT_EQ(effort.at(2), joint_eff_[2]);
+        EXPECT_EQ(effort.at(0), eff_cmd_interfaces_[0]->get_optional().value());
+        EXPECT_EQ(effort.at(1), eff_cmd_interfaces_[1]->get_optional().value());
+        EXPECT_EQ(effort.at(2), eff_cmd_interfaces_[2]->get_optional().value());
       }
     }
     else  // traj_controller_->use_closed_loop_pid_adapter() == true
@@ -698,10 +757,11 @@ public:
         for (size_t i = 0; i < 3; i++)
         {
           EXPECT_TRUE(is_same_sign_or_zero(
-            position.at(i) - pos_state_interfaces_[i]->get_optional().value(), joint_vel_[i]))
+            position.at(i) - pos_state_interfaces_[i]->get_optional().value(),
+            vel_cmd_interfaces_[i]->get_optional().value()))
             << "test position point " << position.at(i) << ", position state is "
             << pos_state_interfaces_[i]->get_optional().value() << ", velocity command is "
-            << joint_vel_[i];
+            << vel_cmd_interfaces_[i]->get_optional().value();
         }
       }
       if (traj_controller_->has_effort_command_interface())
@@ -710,10 +770,10 @@ public:
         {
           EXPECT_TRUE(is_same_sign_or_zero(
             position.at(i) - pos_state_interfaces_[i]->get_optional().value() + effort.at(i),
-            joint_eff_[i]))
+            eff_cmd_interfaces_[i]->get_optional().value()))
             << "test position point " << position.at(i) << ", position state is "
             << pos_state_interfaces_[i]->get_optional().value() << ", effort command is "
-            << joint_eff_[i];
+            << eff_cmd_interfaces_[i]->get_optional().value();
         }
       }
     }
@@ -726,30 +786,30 @@ public:
 
     if (traj_controller_->has_position_command_interface())
     {
-      EXPECT_NEAR(point.at(0), joint_pos_[0], COMMON_THRESHOLD);
-      EXPECT_NEAR(point.at(1), joint_pos_[1], COMMON_THRESHOLD);
-      EXPECT_NEAR(point.at(2), joint_pos_[2], COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(1), pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
+      EXPECT_NEAR(point.at(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD);
     }
 
     if (traj_controller_->has_velocity_command_interface())
     {
-      EXPECT_EQ(0.0, joint_vel_[0]);
-      EXPECT_EQ(0.0, joint_vel_[1]);
-      EXPECT_EQ(0.0, joint_vel_[2]);
+      EXPECT_EQ(0.0, vel_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_EQ(0.0, vel_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_EQ(0.0, vel_cmd_interfaces_[2]->get_optional().value());
     }
 
     if (traj_controller_->has_acceleration_command_interface())
     {
-      EXPECT_EQ(0.0, joint_acc_[0]);
-      EXPECT_EQ(0.0, joint_acc_[1]);
-      EXPECT_EQ(0.0, joint_acc_[2]);
+      EXPECT_EQ(0.0, acc_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_EQ(0.0, acc_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_EQ(0.0, acc_cmd_interfaces_[2]->get_optional().value());
     }
 
     if (traj_controller_->has_effort_command_interface())
     {
-      EXPECT_EQ(0.0, joint_eff_[0]);
-      EXPECT_EQ(0.0, joint_eff_[1]);
-      EXPECT_EQ(0.0, joint_eff_[2]);
+      EXPECT_EQ(0.0, eff_cmd_interfaces_[0]->get_optional().value());
+      EXPECT_EQ(0.0, eff_cmd_interfaces_[1]->get_optional().value());
+      EXPECT_EQ(0.0, eff_cmd_interfaces_[2]->get_optional().value());
     }
   }
 
@@ -804,7 +864,7 @@ public:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_publisher_;
 
-  std::shared_ptr<TestableJointTrajectoryController> traj_controller_;
+  std::unique_ptr<TestableJointTrajectoryController> traj_controller_;
   rclcpp::Subscription<control_msgs::msg::JointTrajectoryControllerState>::SharedPtr
     state_subscriber_;
   mutable std::mutex state_mutex_;
@@ -828,6 +888,7 @@ public:
   std::vector<hardware_interface::StateInterface::SharedPtr> vel_state_interfaces_;
   std::vector<hardware_interface::StateInterface::SharedPtr> acc_state_interfaces_;
   std::vector<hardware_interface::StateInterface::SharedPtr> gpio_state_interfaces;
+  bool separate_cmd_and_state_values_ = false;
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest

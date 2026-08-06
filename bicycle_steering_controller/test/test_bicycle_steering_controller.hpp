@@ -20,16 +20,22 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "bicycle_steering_controller/bicycle_steering_controller.hpp"
+#include "controller_interface/test_utils.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 using ControllerStateMsg =
   steering_controllers_library::SteeringControllersLibrary::SteeringControllerStateMsg;
@@ -46,12 +52,9 @@ using bicycle_steering_controller::CMD_TRACTION_WHEEL;
 
 namespace
 {
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
 const double COMMON_THRESHOLD = 1e-6;
 
 }  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableBicycleSteeringController
@@ -78,7 +81,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return bicycle_steering_controller::BicycleSteeringController::on_activate(previous_state);
   }
 
@@ -152,32 +157,32 @@ protected:
     command_itfs_.reserve(joint_command_values_.size());
     loaned_command_ifs.reserve(joint_command_values_.size());
 
-    command_itfs_.emplace_back(
-      std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_WHEEL]));
+    auto traction_command_interface = std::make_shared<hardware_interface::CommandInterface>(
+      traction_joints_names_[0], traction_interface_name_);
+    std::ignore = traction_command_interface->set_value(joint_command_values_[CMD_TRACTION_WHEEL]);
+    command_itfs_.emplace_back(traction_command_interface);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
-    command_itfs_.emplace_back(
-      std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_WHEEL]));
+    auto steering_command_interface = std::make_shared<hardware_interface::CommandInterface>(
+      steering_joints_names_[0], steering_interface_name_);
+    std::ignore = steering_command_interface->set_value(joint_command_values_[CMD_STEER_WHEEL]);
+    command_itfs_.emplace_back(steering_command_interface);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
     state_itfs_.reserve(joint_state_values_.size());
     loaned_state_ifs.reserve(joint_state_values_.size());
 
-    state_itfs_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_WHEEL]));
+    auto traction_state_interface = std::make_shared<hardware_interface::StateInterface>(
+      traction_joints_names_[0], traction_interface_name_);
+    std::ignore = traction_state_interface->set_value(joint_state_values_[STATE_TRACTION_WHEEL]);
+    state_itfs_.emplace_back(traction_state_interface);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
-    state_itfs_.emplace_back(
-      std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_AXIS]));
+    auto steering_state_interface = std::make_shared<hardware_interface::StateInterface>(
+      steering_joints_names_[0], steering_interface_name_);
+    std::ignore = steering_state_interface->set_value(joint_state_values_[STATE_STEER_AXIS]);
+    state_itfs_.emplace_back(steering_state_interface);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));

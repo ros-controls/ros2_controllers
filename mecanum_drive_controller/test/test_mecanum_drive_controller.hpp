@@ -23,11 +23,14 @@
 #include <utility>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 #include "mecanum_drive_controller/mecanum_drive_controller.hpp"
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
@@ -36,18 +39,15 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+
 using ControllerStateMsg = mecanum_drive_controller::MecanumDriveController::ControllerStateMsg;
 using ControllerReferenceMsg =
   mecanum_drive_controller::MecanumDriveController::ControllerReferenceMsg;
 using TfStateMsg = mecanum_drive_controller::MecanumDriveController::TfStateMsg;
 using OdomStateMsg = mecanum_drive_controller::MecanumDriveController::OdomStateMsg;
-
-namespace
-{
-constexpr auto NODE_SUCCESS = controller_interface::CallbackReturn::SUCCESS;
-constexpr auto NODE_ERROR = controller_interface::CallbackReturn::ERROR;
-}  // namespace
-// namespace
 
 // subclassing and friending so we can access member variables
 class TestableMecanumDriveController : public mecanum_drive_controller::MecanumDriveController
@@ -83,13 +83,21 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     MecanumDriveControllerTest,
     when_ref_timeout_zero_for_reference_callback_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(MecanumDriveControllerTest, SideToSideAndRotationOdometryTest);
+  FRIEND_TEST(MecanumDriveControllerTest, odometry_set_service);
 
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_false_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_test_prefix_true_set_namespace);
-  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_false_covariance_test);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(MecanumDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
+
+  FRIEND_TEST(MecanumDriveControllerTest, test_no_speed_limiter_when_not_configured);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_x);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_linear_y);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_angular_z);
+  FRIEND_TEST(MecanumDriveControllerTest, test_speed_limiter_runtime_update);
+  FRIEND_TEST(MecanumDriveControllerTest, test_reset_buffers_clears_limiter_state);
+  FRIEND_TEST(MecanumDriveControllerTest, test_lifecycle_transitions_reset_limiter_buffers);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -101,7 +109,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = on_export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return mecanum_drive_controller::MecanumDriveController::on_activate(previous_state);
   }
 
@@ -187,9 +197,10 @@ protected:
 
     for (size_t i = 0; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          command_joint_names_[i], interface_name_, &joint_command_values_[i]));
+      auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
+        command_joint_names_[i], interface_name_);
+      std::ignore = cmd_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(cmd_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -199,9 +210,10 @@ protected:
 
     for (size_t i = 0; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          command_joint_names_[i], interface_name_, &joint_state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        command_joint_names_[i], interface_name_);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
