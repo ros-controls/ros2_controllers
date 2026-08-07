@@ -117,11 +117,12 @@ Joint trajectory messages allow to specify the time at which a new trajectory sh
 
 .. note::
   This behavior is implemented in ROS 2 via the ``allow_trajectory_replacement`` parameter
-  (default ``true``; see `#84 <https://github.com/ros-controls/ros2_controllers/issues/84>`__).
+  (default ``true``).
   When enabled, a newly arriving trajectory is spliced into the active one exactly as described below,
-  rather than discarding it. The handoff anchor is sampled from the active trajectory at its internal
-  scaled cursor (``traj_time_``) instead of wall-clock time, so the transition is velocity-continuous
-  and free of position jumps even under ``speed_scaling``.
+  rather than discarding it. ``speed_scaling`` continues to govern how fast the trajectory is
+  executed, while the header timestamp still selects *when* the handoff occurs: it is honoured as a
+  wall-clock instant whatever the scaling factor. The handoff anchor is sampled from the active
+  trajectory at that instant, so the transition is velocity-continuous and free of position jumps.
 
 .. warning::
   One difference from ROS 1 remains: because ROS 2 uses a single monolithic trajectory, joints
