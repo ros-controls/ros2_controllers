@@ -238,7 +238,7 @@ protected:
   // Fills omitted joints by sampling the active trajectory so they keep their old motion.
   void fill_omitted_joints_from_old(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
-    const rclcpp::Time & time);
+    const rclcpp::Time & new_start);
   // Blends a new trajectory into the active one in place (Merge-at-Arrival: prefix+bridge+suffix).
   void blend_with_active_trajectory(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,

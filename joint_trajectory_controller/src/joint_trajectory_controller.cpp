@@ -1602,17 +1602,11 @@ void JointTrajectoryController::fill_partial_goal(
 
 void JointTrajectoryController::fill_omitted_joints_from_old(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
-  const rclcpp::Time & time)
+  const rclcpp::Time & new_start)
 {
   if (dof_ == trajectory_msg->joint_names.size() || !has_active_trajectory())
   {
     return;
-  }
-
-  rclcpp::Time new_start(trajectory_msg->header.stamp, time.get_clock_type());
-  if (new_start.seconds() == 0.0)
-  {
-    new_start = time;
   }
 
   TrajectoryPointConstIter start_it, end_it;
@@ -1672,12 +1666,14 @@ void JointTrajectoryController::blend_with_active_trajectory(
   // clamp to old_start: traj_time_ may be unset if the old trajectory was never sampled
   const rclcpp::Time cursor = std::max(traj_time_, old_start);
 
-  rclcpp::Time new_start(trajectory_msg->header.stamp, time.get_clock_type());
-  if (new_start.seconds() == 0.0)
+  rclcpp::Time stamp(trajectory_msg->header.stamp, time.get_clock_type());
+  if (stamp.seconds() == 0.0)
   {
-    new_start = time;
+    stamp = time;
   }
-  const rclcpp::Time handoff = std::max(new_start, cursor);
+  const rclcpp::Time new_start =
+    (stamp > time) ? cursor + (stamp - time) * scaling_factor_.load() : cursor;
+  const rclcpp::Time handoff = new_start;
 
   bool has_omitted = false;
   for (size_t j = 0; j < dof_; ++j)
@@ -1688,7 +1684,7 @@ void JointTrajectoryController::blend_with_active_trajectory(
     has_omitted = has_omitted || !blend_commanded_[j];
   }
 
-  fill_omitted_joints_from_old(trajectory_msg, time);
+  fill_omitted_joints_from_old(trajectory_msg, new_start);
   sort_to_local_joint_order(trajectory_msg);
   const auto new_last = trajectory_msg->points.back();
   const rclcpp::Time new_end =
