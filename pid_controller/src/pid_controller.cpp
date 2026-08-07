@@ -347,9 +347,10 @@ controller_interface::InterfaceConfiguration PidController::state_interface_conf
 std::vector<hardware_interface::CommandInterface::SharedPtr>
 PidController::on_export_reference_interfaces_list()
 {
+  const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
+  const size_t total_reference_size = dof_reference_size + dof_ * GAIN_INTERFACES.size();
   std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
-  const size_t num_interfaces = dof_ * params_.reference_and_state_interfaces.size();
-  reference_interfaces.reserve(num_interfaces);
+  reference_interfaces.reserve(total_reference_size);
 
   for (const auto & interface : params_.reference_and_state_interfaces)
   {
@@ -359,6 +360,18 @@ PidController::on_export_reference_interfaces_list()
         std::string(get_node()->get_name()) + "/" + dof_name, interface);
       cmd_interface->set_value(std::numeric_limits<double>::quiet_NaN());
       reference_interfaces.push_back(cmd_interface);
+    }
+  }
+
+  // Always export gain reference interfaces
+  for (const auto & gain_name : GAIN_INTERFACES)
+  {
+    for (const auto & dof_name : reference_and_state_dof_names_)
+    {
+      auto gain_interface = std::make_shared<hardware_interface::CommandInterface>(
+        std::string(get_node()->get_name()) + "/" + dof_name, gain_name);
+      gain_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+      reference_interfaces.push_back(gain_interface);
     }
   }
 
@@ -408,6 +421,7 @@ controller_interface::CallbackReturn PidController::on_activate(
 
   measured_state_values_.assign(
     measured_state_values_.size(), std::numeric_limits<double>::quiet_NaN());
+  const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
 
   // Initialize reference interfaces from current state so initial reference equals current state
   for (auto & ref_interface : ordered_exported_reference_interfaces_)
@@ -434,8 +448,8 @@ controller_interface::CallbackReturn PidController::on_activate(
             ordered_exported_reference_interfaces_[i]->set_value(state.values[i]);
           }
           if (
-            ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
-            i < state.values_dot.size() && !std::isnan(state.values_dot[i]))
+            dof_reference_size == 2 * dof_ && i < state.values_dot.size() &&
+            !std::isnan(state.values_dot[i]))
           {
             ordered_exported_reference_interfaces_[dof_ + i]->set_value(state.values_dot[i]);
           }
@@ -477,9 +491,8 @@ controller_interface::return_type PidController::update_reference_from_subscribe
     if (!std::isnan(current_ref_.values[i]))
     {
       ordered_exported_reference_interfaces_[i]->set_value(current_ref_.values[i]);
-      if (
-        ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
-        !std::isnan(current_ref_.values_dot[i]))
+      const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
+      if (dof_reference_size == 2 * dof_ && !std::isnan(current_ref_.values_dot[i]))
       {
         ordered_exported_reference_interfaces_[dof_ + i]->set_value(current_ref_.values_dot[i]);
       }
@@ -536,6 +549,43 @@ controller_interface::return_type PidController::update_and_write_commands(
     ordered_exported_state_interfaces_[i]->set_value(measured_state_values_[i]);
   }
 
+  // Calculate size of DOF references for indexing
+  const size_t dof_reference_size = dof_ * params_.reference_and_state_interfaces.size();
+
+  size_t gains_start_index = dof_reference_size;
+  for (size_t i = 0; i < dof_; ++i)
+  {
+    auto current_pid_gains = pids_[i]->get_gains();
+    for (size_t j = 0; j < GAIN_INTERFACES.size(); ++j)
+    {
+      const size_t buffer_index = gains_start_index + (j * dof_) + i;
+      const auto gain_value_opt =
+        ordered_exported_reference_interfaces_[buffer_index]->get_optional<double>();
+      const double new_gain_value =
+        gain_value_opt.value_or(std::numeric_limits<double>::quiet_NaN());
+      if (std::isfinite(new_gain_value))
+      {
+        switch (GAIN_INTERFACES[j][0])
+        {
+          case 'p':  // P gain
+            current_pid_gains.p_gain_ = new_gain_value;
+            pids_[i]->set_gains(current_pid_gains);
+            break;
+          case 'i':  // I gain
+            current_pid_gains.i_gain_ = new_gain_value;
+            pids_[i]->set_gains(current_pid_gains);
+            break;
+          case 'd':  // D gain
+            current_pid_gains.d_gain_ = new_gain_value;
+            pids_[i]->set_gains(current_pid_gains);
+            break;
+        }
+        ordered_exported_reference_interfaces_[buffer_index]->set_value(
+          std::numeric_limits<double>::quiet_NaN());
+      }
+    }
+  }
+
   // Iterate through all the dofs to calculate the output command
   for (size_t i = 0; i < dof_; ++i)
   {
@@ -546,7 +596,7 @@ controller_interface::return_type PidController::update_and_write_commands(
     if (std::isfinite(ref_i) && std::isfinite(measured_state_values_[i]))
     {
       // calculate feed-forward
-      if (ordered_exported_reference_interfaces_.size() == 2 * dof_)
+      if (dof_reference_size == 2 * dof_)
       {
         const auto ref_value_dof_i =
           ordered_exported_reference_interfaces_[dof_ + i]->get_optional<double>();
@@ -571,9 +621,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       }
 
       // checking if there are two interfaces
-      if (
-        ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
-        measured_state_values_.size() == 2 * dof_)
+      if (dof_reference_size == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         const auto ref_value_dof_i =
           ordered_exported_reference_interfaces_[dof_ + i]->get_optional<double>();
@@ -616,9 +664,7 @@ controller_interface::return_type PidController::update_and_write_commands(
       const double ref_i = ref_value_i.value_or(std::numeric_limits<double>::quiet_NaN());
       state_msg_.dof_states[i].reference = ref_i;
       state_msg_.dof_states[i].feedback = measured_state_values_[i];
-      if (
-        ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
-        measured_state_values_.size() == 2 * dof_)
+      if (dof_reference_size == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         state_msg_.dof_states[i].feedback_dot = measured_state_values_[dof_ + i];
       }
@@ -629,9 +675,7 @@ controller_interface::return_type PidController::update_and_write_commands(
         state_msg_.dof_states[i].error =
           angles::shortest_angular_distance(measured_state_values_[i], ref_i);
       }
-      if (
-        ordered_exported_reference_interfaces_.size() == 2 * dof_ &&
-        measured_state_values_.size() == 2 * dof_)
+      if (dof_reference_size == 2 * dof_ && measured_state_values_.size() == 2 * dof_)
       {
         const auto ref_value_dof_i =
           ordered_exported_reference_interfaces_[dof_ + i]->get_optional<double>();
