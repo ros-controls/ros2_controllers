@@ -14,6 +14,8 @@
 
 #include <limits>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -393,6 +395,37 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
+}
+
+TEST_F(
+  SteeringControllersLibraryTest, normal_update_set_value_failure_still_updates_other_interfaces)
+{
+  SetUpController();
+  controller_->params_.position_feedback = false;
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(1.5));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.3));
+
+  {
+    std::unique_lock<std::shared_mutex> failing_interface_lock(command_itfs_[2]->get_mutex());
+    ASSERT_EQ(
+      controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  // Traction commands are still updated.
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[1].get_optional().value(), 3.333333, 1e-6);
+
+  // One steering interface remains unchanged due to injected write failure,
+  // while the other steering interface is still updated in the same cycle.
+  EXPECT_DOUBLE_EQ(controller_->command_interfaces_[2].get_optional().value(), 2.2);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
