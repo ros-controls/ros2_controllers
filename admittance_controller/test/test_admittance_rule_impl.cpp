@@ -77,7 +77,9 @@ class TestableAdmittanceRule : public AdmittanceRule
 public:
   explicit TestableAdmittanceRule(
     const std::shared_ptr<admittance_controller::ParamListener> & parameter_handler)
-  : AdmittanceRule(parameter_handler)
+  : AdmittanceRule(
+      parameter_handler, std::make_shared<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+                           "geometry_msgs::msg::WrenchStamped"))
   {
   }
 

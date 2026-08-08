@@ -337,8 +337,8 @@ TEST_F(AdmittanceControllerTest, compensation_success)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
   // set the force on the force torque sensor to simulate gravity pulling
   fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
   broadcast_tfs();
