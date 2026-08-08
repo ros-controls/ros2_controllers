@@ -24,7 +24,7 @@
 
 namespace joint_trajectory_controller
 {
-inline tl::expected<void, std::string> command_interface_type_combinations(
+tl::expected<void, std::string> command_interface_type_combinations(
   rclcpp::Parameter const & parameter)
 {
   auto const & interface_types = parameter.as_string_array();
@@ -68,7 +68,7 @@ inline tl::expected<void, std::string> command_interface_type_combinations(
   return {};
 }
 
-inline tl::expected<void, std::string> state_interface_type_combinations(
+tl::expected<void, std::string> state_interface_type_combinations(
   rclcpp::Parameter const & parameter)
 {
   auto const & interface_types = parameter.as_string_array();

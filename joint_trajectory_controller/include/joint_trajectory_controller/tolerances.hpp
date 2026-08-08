@@ -92,7 +92,7 @@ struct SegmentTolerances
  * \param params The ROS Parameters
  * \return Trajectory segment tolerances.
  */
-inline SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Params & params)
+SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Params & params)
 {
   auto const & constraints = params.constraints;
   auto const n_joints = params.joints.size();
@@ -126,7 +126,7 @@ inline SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, con
   return tolerances;
 }
 
-inline double resolve_tolerance_source(const double default_value, const double goal_value)
+double resolve_tolerance_source(const double default_value, const double goal_value)
 {
   // from
   // https://github.com/ros-controls/control_msgs/blob/master/control_msgs/msg/JointTolerance.msg
@@ -162,7 +162,7 @@ inline double resolve_tolerance_source(const double default_value, const double 
  * \param joints The joints configured by ROS parameters
  * \return Trajectory segment tolerances.
  */
-inline SegmentTolerances get_segment_tolerances(
+SegmentTolerances get_segment_tolerances(
   rclcpp::Logger & jtc_logger, const SegmentTolerances & default_tolerances,
   const control_msgs::action::FollowJointTrajectory::Goal & goal,
   const std::vector<std::string> & joints)

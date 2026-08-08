@@ -211,7 +211,7 @@ protected:
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
-  virtual void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+  void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
   // Non-RT hook run on every incoming trajectory before validation. Currently upsamples
   // positions-only chunks to a C2 spline when spline_upsampling is enabled; no-op otherwise.
