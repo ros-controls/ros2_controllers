@@ -93,9 +93,19 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        if (urdf_joint)
+        // Continuous joints are not required to declare <limit> in URDF; limits may be null.
+        if (urdf_joint && urdf_joint->limits)
         {
           max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
+        else if (urdf_joint)
+        {
+          // Continuous joints may omit <limit>; velocity is only needed for
+          // decelerate_on_cancel (warned later if that feature cannot run).
+          RCLCPP_DEBUG(
+            get_node()->get_logger(),
+            "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
+            params_.joints[i].c_str());
         }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
@@ -464,10 +474,8 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal)
       {
         // send feedback
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+        const auto & feedback = active_goal->preallocated_feedback_;
         feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
-
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -1472,6 +1480,9 @@ void JointTrajectoryController::goal_accepted_callback(
   // Update the active goal
   RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
   rt_goal->preallocated_feedback_->joint_names = params_.joints;
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 

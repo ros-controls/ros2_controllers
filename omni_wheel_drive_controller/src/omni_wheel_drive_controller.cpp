@@ -344,9 +344,8 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
     // Update odometry
     if (params_.open_loop)
     {
-      odometry_updated = odometry_.try_update_open_loop(
-        reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2],
-        period.seconds());
+      odometry_updated =
+        odometry_.try_update_open_loop(ref_linear_x, ref_linear_y, ref_angular_z, period.seconds());
     }
     else
     {
