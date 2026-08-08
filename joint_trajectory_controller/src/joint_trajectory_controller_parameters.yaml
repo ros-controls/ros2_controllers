@@ -130,7 +130,7 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
-  spline_upsampling:
+  positions_upsampling:
     enable: {
       type: bool,
       default_value: false,
@@ -146,7 +146,7 @@ joint_trajectory_controller:
       description: "Frequency in Hz at which an AI policy emits action-chunk waypoints. When greater
         than zero, ``time_from_start = i / policy_frequency`` is synthesized for positions-only chunks
         that arrive without timing. When zero, incoming chunks must already carry strictly-increasing
-        ``time_from_start``. Only used when ``spline_upsampling.enable`` is true.",
+        ``time_from_start``. Only used when ``positions_upsampling.enable`` is true.",
       validation: {
         gt_eq: [0.0],
       }

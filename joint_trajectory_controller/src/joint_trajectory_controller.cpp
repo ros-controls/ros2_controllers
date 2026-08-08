@@ -1039,22 +1039,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
 
-  if (params_.spline_upsampling.enable)
+  if (params_.positions_upsampling.enable)
   {
     RCLCPP_INFO(
-      logger, "Spline upsampling enabled (policy_frequency=%.2f Hz).",
-      params_.spline_upsampling.policy_frequency);
-    if (interpolation_method_ == interpolation_methods::InterpolationMethod::NONE)
-    {
-      RCLCPP_WARN(logger, "spline_upsampling has no effect when interpolation_method is 'none'.");
-    }
-    if (params_.spline_upsampling.policy_frequency == 0.0)
-    {
-      RCLCPP_WARN(
-        logger,
-        "spline_upsampling.policy_frequency is 0: chunks without their own timing will be "
-        "rejected.");
-    }
+      logger, "Positions upsampling enabled (policy_frequency=%.2f Hz).",
+      params_.positions_upsampling.policy_frequency);
+    RCLCPP_WARN_EXPRESSION(
+      logger, interpolation_method_ == interpolation_methods::InterpolationMethod::NONE,
+      "positions_upsampling has no effect when interpolation_method is 'none'.");
+    RCLCPP_WARN_EXPRESSION(
+      logger, params_.positions_upsampling.policy_frequency == 0.0,
+      "positions_upsampling.policy_frequency is 0: chunks without their own timing will be rejected.");
   }
 
   // prepare hold_position_msg
@@ -1456,7 +1451,7 @@ void JointTrajectoryController::publish_state(
 void JointTrajectoryController::preprocess_incoming_trajectory(
   trajectory_msgs::msg::JointTrajectory & msg) const
 {
-  if (!params_.spline_upsampling.enable)
+  if (!params_.positions_upsampling.enable)
   {
     return;
   }
@@ -1497,7 +1492,7 @@ bool JointTrajectoryController::is_positions_only(
 void JointTrajectoryController::synthesize_timing(
   trajectory_msgs::msg::JointTrajectory & traj) const
 {
-  const double policy_frequency = params_.spline_upsampling.policy_frequency;
+  const double policy_frequency = params_.positions_upsampling.policy_frequency;
   if (policy_frequency <= 0.0)
   {
     return;  // no rate configured: chunks must carry their own timing
@@ -1557,11 +1552,11 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (params_.spline_upsampling.enable && is_positions_only(goal->trajectory))
+  if (params_.positions_upsampling.enable && is_positions_only(goal->trajectory))
   {
     RCLCPP_WARN_ONCE(
       get_node()->get_logger(),
-      "spline_upsampling upsamples the ~/joint_trajectory topic only, not action goals.");
+      "positions_upsampling upsamples the ~/joint_trajectory topic only, not action goals.");
   }
 
   RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");

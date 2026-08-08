@@ -138,6 +138,10 @@ bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
     point.velocities.assign(n_joints, 0.0);
   }
 
+  // Coefficients of the cubic-spline continuity equation which come from the 2nd derivative
+  constexpr double diagonal_coefficient = 2.0;
+  constexpr double rhs_coefficient = 3.0;
+
   for (size_t joint = 0; joint < n_joints; ++joint)
   {
     // Rest boundary conditions: velocity is zero at both ends.
@@ -159,10 +163,10 @@ bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
       const double pos_next = traj.points[i + 1].positions[joint];
 
       lower_diagonal[i] = 1.0 / duration_prev;
-      diagonal[i] = 2.0 * (1.0 / duration_prev + 1.0 / duration_next);
+      diagonal[i] = diagonal_coefficient * (1.0 / duration_prev + 1.0 / duration_next);
       upper_diagonal[i] = 1.0 / duration_next;
-      rhs[i] = 3.0 * ((pos_next - pos_curr) / (duration_next * duration_next) +
-                      (pos_curr - pos_prev) / (duration_prev * duration_prev));
+      rhs[i] = rhs_coefficient * ((pos_next - pos_curr) / (duration_next * duration_next) +
+                                  (pos_curr - pos_prev) / (duration_prev * duration_prev));
     }
 
     // Thomas algorithm: forward sweep ...

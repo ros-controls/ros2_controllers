@@ -119,14 +119,14 @@ positions-only waypoints with no velocities and often no timing. Fed positions-o
 interpolates linearly (C0), yielding discontinuous velocities at every waypoint (see :ref:`trajectory
 representation <joint_trajectory_controller_trajectory_representation>`).
 
-When ``spline_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
+When ``positions_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
 are upsampled in place: the knot velocities of a global cubic spline (rest boundary conditions,
 ``v0 = v_{N-1} = 0``) are solved and written into the trajectory, so the existing sampler reproduces a
 smooth C2 motion. Messages that already carry velocities are passed through unchanged, so the feature
 is a strict superset of the default behaviour (it is off by default). It has no effect when
 ``interpolation_method`` is ``none``.
 
-``spline_upsampling.policy_frequency`` (double, Hz) is used to synthesize
+``positions_upsampling.policy_frequency`` (double, Hz) is used to synthesize
 ``time_from_start = i / policy_frequency`` for chunks that arrive without timing; when it is ``0`` the
 chunks must carry their own strictly-increasing ``time_from_start``.
 
@@ -141,7 +141,7 @@ chunks must carry their own strictly-increasing ``time_from_start``.
             - position
           state_interfaces:
             - position
-          spline_upsampling:
+          positions_upsampling:
             enable: true
             policy_frequency: 30.0
 

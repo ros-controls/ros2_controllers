@@ -30,7 +30,7 @@ using test_trajectory_controllers::TrajectoryControllerTest;
 namespace
 {
 // Exposes JTC's protected upsampling helpers and lets a test set the
-// spline_upsampling.* parameters directly, without a node or lifecycle.
+// positions_upsampling.* parameters directly, without a node or lifecycle.
 class UpsamplingHelpers : public joint_trajectory_controller::JointTrajectoryController
 {
 public:
@@ -40,8 +40,8 @@ public:
 
   void configure_upsampling(bool enabled, double policy_frequency)
   {
-    params_.spline_upsampling.enable = enabled;
-    params_.spline_upsampling.policy_frequency = policy_frequency;
+    params_.positions_upsampling.enable = enabled;
+    params_.positions_upsampling.policy_frequency = policy_frequency;
   }
 };
 
@@ -214,8 +214,8 @@ TEST_F(TrajectoryControllerTest, upsampling_enabled_accepts_untimed_positions_on
 {
   rclcpp::executors::MultiThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
-    executor, {rclcpp::Parameter("spline_upsampling.enable", true),
-               rclcpp::Parameter("spline_upsampling.policy_frequency", 30.0)});
+    executor, {rclcpp::Parameter("positions_upsampling.enable", true),
+               rclcpp::Parameter("positions_upsampling.policy_frequency", 30.0)});
 
   const builtin_interfaces::msg::Duration zero_delay;  // -> untimed chunk
   const std::vector<std::vector<double>> points{
