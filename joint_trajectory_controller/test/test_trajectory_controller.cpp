@@ -2126,7 +2126,7 @@ TEST_F(TrajectoryControllerTest, blend_no_position_jump_under_speed_scaling)
 
   for (size_t i = 0; i < ref_before.positions.size(); ++i)
   {
-    EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 2.0)
+    EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 0.3)
       << "reference jumped forward on blend install under speed scaling, joint " << i;
   }
 }
@@ -2284,6 +2284,42 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
     EXPECT_NEAR(7.0, state.positions[1], 0.2);
     EXPECT_NEAR(7.0, state.positions[2], 0.2);
   }
+}
+
+// Needs all three to be visible: a partial goal, a new trajectory outlasting the old one, and a
+// handoff between old waypoints so the state there differs from the old trajectory's last point.
+TEST_F(TrajectoryControllerTest, blend_partial_goal_outlasting_old_trajectory)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
+               rclcpp::Parameter("allow_partial_joints_goal", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // waypoints at 1.0 s and 2.0 s
+  std::vector<std::vector<double>> old_traj{{{5.0, 5.0, 5.0}, {50.0, 50.0, 50.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  // joint3 omitted; hands off at 1.5 s and runs to 4.5 s, past the old trajectory's end
+  std::vector<std::vector<double>> new_traj{{{-5.0, -5.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(3.0), new_traj,
+    start_time + rclcpp::Duration::from_seconds(1.5));
+  traj_controller_->wait_for_trajectory(executor);
+
+  double peak = -std::numeric_limits<double>::max();
+  for (int i = 0; i < 13; ++i)
+  {
+    t = updateControllerAsync(rclcpp::Duration::from_seconds(0.1), t);
+    peak = std::max(peak, traj_controller_->get_state_reference().positions[0]);
+  }
+
+  // the old trajectory is half way from 5.0 to 50.0 at the handoff
+  EXPECT_NEAR(27.5, peak, 2.0)
+    << "blend anchored on the wrong point of the active trajectory (final waypoint is 50.0)";
 }
 
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)

@@ -271,13 +271,14 @@ controller_interface::return_type JointTrajectoryController::update(
   if (
     current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !active_goal) == false)
   {
+    bool blended = false;
     if (
       params_.allow_trajectory_replacement && has_active_trajectory() &&
       current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
     {
-      blend_with_active_trajectory(*new_external_msg, time);
+      blended = blend_with_active_trajectory(*new_external_msg, time);
     }
-    else
+    if (!blended)
     {
       // legacy behavior: joints omitted from the new message hold at the current position
       fill_partial_goal(*new_external_msg);
@@ -817,9 +818,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   // get degrees of freedom
   dof_ = params_.joints.size();
   blend_commanded_.assign(dof_, false);
-  blend_sample_.positions.resize(dof_);
-  blend_sample_.velocities.resize(dof_);
-  blend_sample_.accelerations.resize(dof_);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
@@ -1609,32 +1607,55 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
     return;
   }
 
-  TrajectoryPointConstIter start_it, end_it;
   trajectory_msg->joint_names.reserve(dof_);
-
   for (size_t index = 0; index < dof_; ++index)
   {
-    if (
-      std::find(
-        trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
-        params_.joints[index]) != trajectory_msg->joint_names.end())
+    if (!blend_commanded_[index])
     {
-      continue;
+      trajectory_msg->joint_names.push_back(params_.joints[index]);
     }
-    trajectory_msg->joint_names.push_back(params_.joints[index]);
+  }
 
-    for (auto & point : trajectory_msg->points)
+  TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+  for (auto & point : trajectory_msg->points)
+  {
+    // points are time-ordered, so let the search advance incrementally instead of rescanning
+    const bool sampled = current_trajectory_->sample(
+      new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
+      start_segment_itr, end_segment_itr, true);
+
+    for (size_t index = 0; index < dof_; ++index)
     {
-      // search_monotonically_increasing=false: off-cursor sampling must not disturb the RT cursor
-      const bool sampled = current_trajectory_->sample(
-        new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
-        start_it, end_it, false);
-
+      if (blend_commanded_[index])
+      {
+        continue;
+      }
       if (!point.positions.empty())
       {
-        point.positions.push_back(
-          (sampled && index < blend_sample_.positions.size()) ? blend_sample_.positions[index]
-                                                              : 0.0);
+        if (sampled && index < blend_sample_.positions.size())
+        {
+          point.positions.push_back(blend_sample_.positions[index]);
+        }
+        // the old trajectory could not be sampled, so hold the joint
+        else if (has_position_command_interface_)
+        {
+          const auto position_command_value_op =
+            joint_command_interface_[0][index].get().get_optional();
+          if (
+            position_command_value_op.has_value() && !std::isnan(position_command_value_op.value()))
+          {
+            point.positions.push_back(position_command_value_op.value());
+          }
+        }
+        else if (has_position_state_interface_)
+        {
+          const auto position_state_value_op =
+            joint_state_interface_[0][index].get().get_optional();
+          if (position_state_value_op.has_value() && !std::isnan(position_state_value_op.value()))
+          {
+            point.positions.push_back(position_state_value_op.value());
+          }
+        }
       }
       if (!point.velocities.empty())
       {
@@ -1657,7 +1678,7 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
   }
 }
 
-void JointTrajectoryController::blend_with_active_trajectory(
+bool JointTrajectoryController::blend_with_active_trajectory(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
   const rclcpp::Time & time)
 {
@@ -1673,7 +1694,6 @@ void JointTrajectoryController::blend_with_active_trajectory(
   }
   const rclcpp::Time new_start =
     (stamp > time) ? cursor + (stamp - time) * scaling_factor_.load() : cursor;
-  const rclcpp::Time handoff = new_start;
 
   bool has_omitted = false;
   for (size_t j = 0; j < dof_; ++j)
@@ -1683,6 +1703,17 @@ void JointTrajectoryController::blend_with_active_trajectory(
                             params_.joints[j]) != trajectory_msg->joint_names.end();
     has_omitted = has_omitted || !blend_commanded_[j];
   }
+
+  // the suffix must hold commanded joints at a position, which a velocity-only goal lacks
+  if (has_omitted && trajectory_msg->points.back().positions.empty())
+  {
+    return false;
+  }
+
+  // sample the bridge anchor before the sweep below advances the trajectory's search cursor
+  TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+  const bool have_bridge = current_trajectory_->sample(
+    new_start, interpolation_method_, blend_bridge_, start_segment_itr, end_segment_itr, false);
 
   fill_omitted_joints_from_old(trajectory_msg, new_start);
   sort_to_local_joint_order(trajectory_msg);
@@ -1694,28 +1725,27 @@ void JointTrajectoryController::blend_with_active_trajectory(
     point.time_from_start = new_start + rclcpp::Duration(point.time_from_start) - old_start;
   }
 
-  // prefix: old waypoints in (cursor, handoff)
+  // prefix: old waypoints in (cursor, new_start)
   std::vector<JointTrajectoryPoint> prefix;
   for (const auto & op : old_msg->points)
   {
     const rclcpp::Time t = old_start + rclcpp::Duration(op.time_from_start);
-    if (t > cursor && t < handoff)
+    if (t > cursor && t < new_start)
     {
       prefix.push_back(op);
     }
   }
-  // bridge anchor: sample old trajectory at handoff for velocity-continuous entry into new
-  TrajectoryPointConstIter s_it, e_it;
-  if (current_trajectory_->sample(handoff, interpolation_method_, blend_sample_, s_it, e_it, false))
+  // bridge anchor: velocity-continuous entry into the new trajectory
+  if (have_bridge)
   {
-    blend_sample_.time_from_start = handoff - old_start;
+    blend_bridge_.time_from_start = new_start - old_start;
     // drop if not strictly before first new point (would break monotonic time)
     if (
       trajectory_msg->points.empty() ||
-      rclcpp::Duration(blend_sample_.time_from_start) <
+      rclcpp::Duration(blend_bridge_.time_from_start) <
         rclcpp::Duration(trajectory_msg->points.front().time_from_start))
     {
-      prefix.push_back(blend_sample_);
+      prefix.push_back(blend_bridge_);
     }
   }
 
@@ -1756,6 +1786,7 @@ void JointTrajectoryController::blend_with_active_trajectory(
     point.time_from_start = rclcpp::Duration(point.time_from_start) - cursor_offset;
   }
   trajectory_msg->header.stamp = rclcpp::Time(0, 0, time.get_clock_type());
+  return true;
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(

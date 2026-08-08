@@ -95,6 +95,7 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
   trajectory_msgs::msg::JointTrajectoryPoint blend_sample_;
+  trajectory_msgs::msg::JointTrajectoryPoint blend_bridge_;
   // Tracks which controller joints are commanded by a new blended trajectory
   std::vector<bool> blend_commanded_;
   // Number of points prepended during a blend (prefix + bridge); used to offset action feedback
@@ -240,7 +241,8 @@ protected:
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & new_start);
   // Blends a new trajectory into the active one in place (Merge-at-Arrival: prefix+bridge+suffix).
-  void blend_with_active_trajectory(
+  // Returns false, leaving the message untouched, if it cannot be blended.
+  bool blend_with_active_trajectory(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
     const rclcpp::Time & time);
   // sorts the joints of the incoming message to our local order
