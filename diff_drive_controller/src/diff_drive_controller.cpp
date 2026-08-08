@@ -174,8 +174,8 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     catch (const std::invalid_argument & e)
     {
       RCLCPP_ERROR_THROTTLE(
-        logger, *get_node()->get_clock(), 1000,
-        "Failed to update speed limiter parameters: %s", e.what());
+        logger, *get_node()->get_clock(), 1000, "Failed to update speed limiter parameters: %s",
+        e.what());
     }
   }
 
