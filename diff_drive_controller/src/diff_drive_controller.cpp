@@ -152,33 +152,6 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
 {
   auto logger = get_node()->get_logger();
 
-<<<<<<< HEAD
-=======
-  if (param_listener_->try_update_params(params_))
-  {
-    cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
-    try
-    {
-      limiter_linear_->set_params(
-        params_.linear.x.min_velocity, params_.linear.x.max_velocity,
-        params_.linear.x.max_acceleration_reverse, params_.linear.x.max_acceleration,
-        params_.linear.x.max_deceleration, params_.linear.x.max_deceleration_reverse,
-        params_.linear.x.min_jerk, params_.linear.x.max_jerk);
-      limiter_angular_->set_params(
-        params_.angular.z.min_velocity, params_.angular.z.max_velocity,
-        params_.angular.z.max_acceleration_reverse, params_.angular.z.max_acceleration,
-        params_.angular.z.max_deceleration, params_.angular.z.max_deceleration_reverse,
-        params_.angular.z.min_jerk, params_.angular.z.max_jerk);
-    }
-    catch (const std::invalid_argument & e)
-    {
-      RCLCPP_ERROR_THROTTLE(
-        logger, *get_node()->get_clock(), 1000, "Failed to update speed limiter parameters: %s",
-        e.what());
-    }
-  }
-
->>>>>>> 4c4bb27 (Throttle speed limiter parameter error logs (#2546))
   // command may be limited further by SpeedLimit,
   // without affecting the stored twist command
   const auto linear_ref = ordered_exported_reference_interfaces_[0]->get_optional<double>();
