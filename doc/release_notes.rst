@@ -57,6 +57,7 @@ joint_trajectory_controller
   continues executing until the start time arrives, then the new trajectory is executed.
   This is a partial port of the ROS 1 trajectory replacement behavior.
   (`#2401 <https://github.com/ros-controls/ros2_controllers/pull/2401>`_)
+* Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2443 <https://github.com/ros-controls/ros2_controllers/pull/2443>`_)
 
 pid_controller
 **************
