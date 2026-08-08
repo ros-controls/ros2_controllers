@@ -69,11 +69,19 @@ class JointTrajectoryController(Plugin):
           in monitor mode for safety reasons.
 
         2. B{Control mode} Joint displays update the control command that is
-        sent to the controller. Commands are sent periodically evan if the
-        displays are not being updated by the user.
+        sent to the controller.
 
     To control the aggressiveness of the motions, the maximum speed of the
     sent commands can be scaled down using the C{Speed scaling control}
+
+    While in control mode (armed via the enable button), commands are
+    I{not} sent automatically. Continuous sending only starts once the
+    C{continuous send} checkbox is turned on (off by default), at the rate
+    set by C{pub freq}. Independently of that checkbox, the C{Send Once}
+    button publishes a single command on demand. The time to reach the
+    target position (C{start time}) can also be adjusted manually from the
+    UI; when set to 0 the duration is auto-computed from the joint velocity
+    limits and speed scaling.
 
     This plugin is able to detect and keep track of all active controller
     managers, as well as the JointTrajectoryControllers that are I{running}
@@ -92,10 +100,10 @@ class JointTrajectoryController(Plugin):
     available in the C{joint_trajectory_controller} ROS package.
     """
 
-    _cmd_pub_freq = 10.0  # Hz
+    _default_cmd_pub_freq = 10.0  # Hz
     _widget_update_freq = 30.0  # Hz
     _ctrlrs_update_freq = 1  # Hz
-    _min_traj_dur = 5.0 / _cmd_pub_freq  # Minimum trajectory duration
+    _min_traj_dur = 5.0 / _default_cmd_pub_freq  # Minimum trajectory duration
 
     jointStateChanged = Signal([dict])
 
@@ -158,6 +166,10 @@ class JointTrajectoryController(Plugin):
         self._joint_names = []  # Ordered list of selected controller joints
         self._robot_joint_limits = {}  # Lazily evaluated on first use
 
+        # Manually adjustable trajectory / publish settings
+        self._cmd_pub_freq = self._widget.pub_freq_spin.value()
+        self._start_time_override_ms = self._widget.start_time_spin.value()
+
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
         self._update_cmd_timer.setInterval(int(1000.0 / self._cmd_pub_freq))
@@ -189,6 +201,15 @@ class JointTrajectoryController(Plugin):
         w.enable_button.toggled.connect(self._on_jtc_enabled)
         w.jtc_combo.currentTextChanged.connect(self._on_jtc_change)
         w.cm_combo.currentTextChanged.connect(self._on_cm_change)
+        w.pub_freq_spin.valueChanged.connect(self._on_pub_freq_change)
+        w.start_time_spin.valueChanged.connect(self._on_start_time_change)
+        w.auto_send_checkbox.toggled.connect(self._on_auto_send_toggled)
+        w.send_once_button.clicked.connect(self._on_send_once)
+
+        # Sending (continuous or single-shot) requires the controller to be
+        # enabled (armed) first
+        w.auto_send_checkbox.setEnabled(False)
+        w.send_once_button.setEnabled(False)
 
         self._cmd_pub = None  # Controller command publisher
         self._state_sub = None  # Controller state subscriber
@@ -296,6 +317,36 @@ class JointTrajectoryController(Plugin):
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
+    def _on_pub_freq_change(self, val):
+        self._cmd_pub_freq = val
+        if self._update_cmd_timer.isActive():
+            self._update_cmd_timer.setInterval(int(1000.0 / self._cmd_pub_freq))
+
+    def _on_start_time_change(self, val):
+        self._start_time_override_ms = val
+
+    def _on_auto_send_toggled(self, val):
+        if val and self._widget.enable_button.isChecked():
+            self._update_cmd_timer.setInterval(int(1000.0 / self._cmd_pub_freq))
+            self._update_cmd_timer.start()
+        else:
+            self._update_cmd_timer.stop()
+
+    def _on_send_once(self):
+        # Nothing selected, or ROS interfaces not set up yet
+        if not self._jtc_name or self._cmd_pub is None or not rclpy.ok():
+            return
+        traj = self._build_trajectory_msg()
+        if traj is None:
+            return
+        try:
+            self._cmd_pub.publish(traj)
+        except Exception as e:
+            # Ignore teardown races on Ctrl+C where context/publisher may vanish mid-callback.
+            if "context is not valid" in str(e) or "destruction was requested" in str(e):
+                return
+            raise
+
     def _on_joint_state_change(self, current_pos):
         assert len(current_pos) == len(self._joint_pos)
         for name in current_pos.keys():
@@ -359,13 +410,22 @@ class JointTrajectoryController(Plugin):
         # Enable/disable speed scaling
         self._speed_scaling_widget.setEnabled(val)
 
+        # Sending (continuous or single-shot) is only allowed while armed.
+        # Enabling does NOT start continuous sending by itself -- the user
+        # has to explicitly turn on "continuous send" (default off), or use
+        # "Send Once" to publish a single command on demand. This avoids the
+        # erratic joint movement reported in #1579, which was caused by
+        # repeatedly republishing a trajectory with a fixed time_from_start.
+        self._widget.auto_send_checkbox.setEnabled(val)
+        self._widget.send_once_button.setEnabled(val)
+
         if val:
-            # Widgets send reference position commands to controller
+            # Widgets accept reference position commands from the user
             self._update_act_pos_timer.stop()
-            self._update_cmd_timer.start()
         else:
             # Controller updates widgets with feedback position
             self._update_cmd_timer.stop()
+            self._widget.auto_send_checkbox.setChecked(False)
             self._update_act_pos_timer.start()
 
     def _load_jtc(self):
@@ -496,10 +556,16 @@ class JointTrajectoryController(Plugin):
     def _update_single_cmd_cb(self, val, name):
         self._joint_pos[name]["command"] = val
 
-    def _update_cmd_cb(self):
-        # Timer events can still arrive during shutdown after publishers are destroyed.
-        if self._cmd_pub is None or not self._joint_names or not rclpy.ok():
-            return
+    def _build_trajectory_msg(self):
+        """Build a JointTrajectory message from the current joint targets.
+
+        The time to reach the target (time_from_start) is either the
+        user-specified start time override (if > 0), or auto-computed from
+        the joint velocity limits and speed scaling, same as the upstream
+        rqt_joint_trajectory_controller.
+        """
+        if not self._joint_names:
+            return None
 
         dur = []
         traj = JointTrajectory()
@@ -515,9 +581,24 @@ class JointTrajectoryController(Plugin):
             max_vel = self._robot_joint_limits[name]["max_velocity"]
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
             point.positions.append(cmd)
-        duration = rclpy.duration.Duration(seconds=(max(dur) / self._speed_scale))
+
+        if self._start_time_override_ms > 0.0:
+            duration = rclpy.duration.Duration(seconds=self._start_time_override_ms / 1000.0)
+        else:
+            duration = rclpy.duration.Duration(seconds=(max(dur) / self._speed_scale))
         point.time_from_start = duration.to_msg()
         traj.points.append(point)
+
+        return traj
+
+    def _update_cmd_cb(self):
+        # Timer events can still arrive during shutdown after publishers are destroyed.
+        if self._cmd_pub is None or not self._joint_names or not rclpy.ok():
+            return
+
+        traj = self._build_trajectory_msg()
+        if traj is None:
+            return
 
         try:
             self._cmd_pub.publish(traj)
