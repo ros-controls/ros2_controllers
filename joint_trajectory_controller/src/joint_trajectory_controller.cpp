@@ -1049,7 +1049,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "positions_upsampling has no effect when interpolation_method is 'none'.");
     RCLCPP_WARN_EXPRESSION(
       logger, params_.positions_upsampling.policy_frequency == 0.0,
-      "positions_upsampling.policy_frequency is 0: chunks without their own timing will be rejected.");
+      "positions_upsampling.policy_frequency is 0: chunks without their own timing will be "
+      "rejected.");
   }
 
   // prepare hold_position_msg
@@ -1507,7 +1508,7 @@ void JointTrajectoryController::synthesize_timing(
     }
   }
 
-  // TODO: point 0 is at t=0, so a fresh chunk steps to points[0] from the live state
+  // TODO(vedh1234): point 0 is at t=0, so a fresh chunk steps to points[0] from the live state
   // instead of ramping in; a live-state lead-in belongs with cross-chunk continuity.
   const double dt = 1.0 / policy_frequency;
   for (size_t i = 0; i < traj.points.size(); ++i)

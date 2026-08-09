@@ -145,7 +145,8 @@ bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
   for (size_t joint = 0; joint < n_joints; ++joint)
   {
     // Rest boundary conditions: velocity is zero at both ends.
-    // TODO: accept a non-zero start velocity to stitch chunks (cross-chunk C2 continuity).
+    // TODO(vedh1234): accept a non-zero start velocity to stitch chunks (cross-chunk C2
+    // continuity).
     diagonal[0] = 1.0;
     upper_diagonal[0] = 0.0;
     rhs[0] = 0.0;
