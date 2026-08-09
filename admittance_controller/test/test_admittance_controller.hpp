@@ -191,9 +191,10 @@ protected:
 
     for (auto i = 0u; i < joint_command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          joint_names_[i], command_interface_types_[0], &joint_command_values_[i]));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        joint_names_[i], command_interface_types_[0]);
+      std::ignore = command_itf->set_value(joint_command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -207,9 +208,10 @@ protected:
 
     for (auto i = 0u; i < joint_state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          joint_names_[i], state_interface_types_[0], &joint_state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        joint_names_[i], state_interface_types_[0]);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -218,9 +220,10 @@ protected:
 
     for (auto i = 0u; i < fts_state_names_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          ft_sensor_name_, fts_itf_names[i], &fts_state_values_[i]));
+      auto fts_state_itf =
+        std::make_shared<hardware_interface::StateInterface>(ft_sensor_name_, fts_itf_names[i]);
+      std::ignore = fts_state_itf->set_value(fts_state_values_[i]);
+      state_itfs_.emplace_back(fts_state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 

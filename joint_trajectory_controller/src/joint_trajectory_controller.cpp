@@ -93,9 +93,19 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        if (urdf_joint)
+        // Continuous joints are not required to declare <limit> in URDF; limits may be null.
+        if (urdf_joint && urdf_joint->limits)
         {
           max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
+        else if (urdf_joint)
+        {
+          // Continuous joints may omit <limit>; velocity is only needed for
+          // decelerate_on_cancel (warned later if that feature cannot run).
+          RCLCPP_DEBUG(
+            get_node()->get_logger(),
+            "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
+            params_.joints[i].c_str());
         }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
@@ -441,7 +451,7 @@ controller_interface::return_type JointTrajectoryController::update(
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, default_tolerances_.goal_state_tolerance[index],
+                state_error_, index, active_tol->goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
@@ -459,7 +469,7 @@ controller_interface::return_type JointTrajectoryController::update(
             // If effort interface only, add desired effort as feed forward
             // If velocity interface, ignore desired effort
             size_t index_cmd_joint = map_cmd_to_joints_[i];
-            tmp_command_[index_cmd_joint] =
+            closed_loop_pid_command_[index_cmd_joint] =
               (command_next_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
               (has_effort_command_interface_ ? command_next_.effort[index_cmd_joint] : 0.0) +
               pids_[i]->compute_command(
@@ -475,14 +485,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_velocity_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[1], tmp_command_);
-          }
-          else
-          {
-            assign_interface_from_point(joint_command_interface_[1], command_next_.velocities);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[1],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : command_next_.velocities);
         }
         if (has_acceleration_command_interface_)
         {
@@ -490,15 +495,9 @@ controller_interface::return_type JointTrajectoryController::update(
         }
         if (has_effort_command_interface_)
         {
-          if (use_closed_loop_pid_adapter_)
-          {
-            assign_interface_from_point(joint_command_interface_[3], tmp_command_);
-          }
-          else
-          {
-            // If position and effort command interfaces, only pass desired effort
-            assign_interface_from_point(joint_command_interface_[3], state_desired_.effort);
-          }
+          assign_interface_from_point(
+            joint_command_interface_[3],
+            use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : state_desired_.effort);
         }
 
         // store the previous command and time used in open-loop control mode
@@ -511,10 +510,8 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal && !rt_active_goal_deferred_)
       {
         // send feedback
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+        const auto & feedback = active_goal->preallocated_feedback_;
         feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
-
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
@@ -941,7 +938,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     (has_velocity_command_interface_ && params_.command_interfaces.size() == 1) ||
     (has_effort_command_interface_ && params_.command_interfaces.size() == 1);
 
-  tmp_command_.resize(dof_, 0.0);
+  closed_loop_pid_command_.resize(dof_, 0.0);
 
   if (use_closed_loop_pid_adapter_)
   {
@@ -1623,6 +1620,9 @@ void JointTrajectoryController::goal_accepted_callback(
   // Update the active goal
   RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
   rt_goal->preallocated_feedback_->joint_names = params_.joints;
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
+  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 

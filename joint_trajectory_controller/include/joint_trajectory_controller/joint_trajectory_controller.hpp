@@ -147,8 +147,8 @@ protected:
   // Configuration for every joint if it wraps around (ie. is continuous, position error is
   // normalized)
   std::vector<bool> joints_angle_wraparound_;
-  // reserved storage for result of the command when closed loop pid adapter is used
-  std::vector<double> tmp_command_;
+  // Preallocated storage for closed-loop PID command output.
+  std::vector<double> closed_loop_pid_command_;
 
   // If true, enable calculations to stop all joints using constant deceleration
   bool should_decelerate_on_cancel_ = false;
