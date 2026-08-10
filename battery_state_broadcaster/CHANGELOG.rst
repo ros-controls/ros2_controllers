@@ -6,6 +6,11 @@ Changelog for package battery_state_broadcaster
 The entries below refer to the standalone `ipa320/ros_battery_monitoring <https://github.com/ipa320/ros_battery_monitoring>`_ package,
 from which this broadcaster originates.
 
+Forthcoming
+-----------
+* Add battery_state_broadcaster (backport `#2086 <https://github.com/ros-controls/ros2_controllers/issues/2086>`_) (`#2521 <https://github.com/ros-controls/ros2_controllers/issues/2521>`_)
+* Contributors: mergify[bot]
+
 1.1.0 (2025-09-26)
 ------------------
 * address deprecations in ros2_control for kilted

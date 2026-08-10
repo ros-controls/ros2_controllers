@@ -2,6 +2,14 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(steering_controllers): handle NaN/Inf values in odometry update (backport `#2083 <https://github.com/ros-controls/ros2_controllers/issues/2083>`_) (`#2535 <https://github.com/ros-controls/ros2_controllers/issues/2535>`_)
+* Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2532 <https://github.com/ros-controls/ros2_controllers/issues/2532>`_)
+* Use new chainable controller exports API (backport `#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_) (`#2453 <https://github.com/ros-controls/ros2_controllers/issues/2453>`_)
+* Fix safety concerns with halt logic across controllers (backport `#2326 <https://github.com/ros-controls/ros2_controllers/issues/2326>`_) (`#2458 <https://github.com/ros-controls/ros2_controllers/issues/2458>`_)
+* Contributors: mergify[bot]
+
 4.41.0 (2026-07-01)
 -------------------
 * Simplify reduce_wheel_speed_until_steering_reached logic (backport `#2396 <https://github.com/ros-controls/ros2_controllers/issues/2396>`_) (`#2427 <https://github.com/ros-controls/ros2_controllers/issues/2427>`_)

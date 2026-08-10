@@ -2,6 +2,13 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(steering_controllers): handle NaN/Inf values in odometry update (backport `#2083 <https://github.com/ros-controls/ros2_controllers/issues/2083>`_) (`#2535 <https://github.com/ros-controls/ros2_controllers/issues/2535>`_)
+* Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2532 <https://github.com/ros-controls/ros2_controllers/issues/2532>`_)
+* Use new chainable controller exports API (backport `#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_) (`#2453 <https://github.com/ros-controls/ros2_controllers/issues/2453>`_)
+* Contributors: mergify[bot]
+
 4.41.0 (2026-07-01)
 -------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: pid, motion_primitives, state_interfaces_broadcaster, ackermann_steering (backport `#2399 <https://github.com/ros-controls/ros2_controllers/issues/2399>`_) (`#2402 <https://github.com/ros-controls/ros2_controllers/issues/2402>`_)
