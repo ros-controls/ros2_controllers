@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.42.0 (2026-08-10)
+-------------------
 * Throttle speed limiter parameter error logs (backport `#2546 <https://github.com/ros-controls/ros2_controllers/issues/2546>`_) (`#2547 <https://github.com/ros-controls/ros2_controllers/issues/2547>`_)
 * Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2532 <https://github.com/ros-controls/ros2_controllers/issues/2532>`_)
 * fix: Remove unused variable assignments in mecanum tests (backport `#2534 <https://github.com/ros-controls/ros2_controllers/issues/2534>`_) (`#2537 <https://github.com/ros-controls/ros2_controllers/issues/2537>`_)
