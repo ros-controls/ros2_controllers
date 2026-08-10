@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Allow disabling diff drive command timeout (backport `#2503 <https://github.com/ros-controls/ros2_controllers/issues/2503>`_) (`#2543 <https://github.com/ros-controls/ros2_controllers/issues/2543>`_)
+* Contributors: mergify[bot]
+
 2.53.3 (2026-08-04)
 -------------------
 

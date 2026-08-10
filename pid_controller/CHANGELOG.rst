@@ -2,6 +2,9 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.53.3 (2026-08-04)
 -------------------
 * fix: correct test_load_controller tests for motion_primitives and pid_controller (backport `#2445 <https://github.com/ros-controls/ros2_controllers/issues/2445>`_) (`#2450 <https://github.com/ros-controls/ros2_controllers/issues/2450>`_)
