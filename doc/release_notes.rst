@@ -5,6 +5,10 @@ Release Notes: Kilted Kaiju to Lyrical Luth
 
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
 
+admittance_controller
+**********************
+* Add filter capability (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`__).
+
 battery_state_broadcaster
 *************************
 * 🚀 The battery_state_broadcaster was added 🎉 (`#1888 <https://github.com/ros-controls/ros2_controllers/pull/1888>`_).
