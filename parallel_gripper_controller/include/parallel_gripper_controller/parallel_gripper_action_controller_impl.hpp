@@ -346,14 +346,32 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
 
   for (auto & interface : command_interfaces_)
   {
-    if (interface.get_interface_name() == "set_gripper_max_effort")
+    if (
+      !params_.max_effort_interface.empty() && interface.get_name() == params_.max_effort_interface)
     {
       joint_effort_command_interface_ = interface;
     }
-    else if (interface.get_interface_name() == "set_gripper_max_velocity")
+    else if (
+      !params_.max_velocity_interface.empty() &&
+      interface.get_name() == params_.max_velocity_interface)
     {
       joint_speed_command_interface_ = interface;
     }
+  }
+
+  if (!params_.max_effort_interface.empty() && !joint_effort_command_interface_.has_value())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected max effort command interface `%s` not found",
+      params_.max_effort_interface.c_str());
+    return controller_interface::CallbackReturn::FAILURE;
+  }
+  if (!params_.max_velocity_interface.empty() && !joint_speed_command_interface_.has_value())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected max velocity command interface `%s` not found",
+      params_.max_velocity_interface.c_str());
+    return controller_interface::CallbackReturn::FAILURE;
   }
 
   // Command - non RT version
@@ -395,6 +413,8 @@ controller_interface::CallbackReturn GripperActionController::on_deactivate(
   joint_position_command_interface_ = std::nullopt;
   joint_position_state_interface_ = std::nullopt;
   joint_velocity_state_interface_ = std::nullopt;
+  joint_effort_command_interface_ = std::nullopt;
+  joint_speed_command_interface_ = std::nullopt;
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
