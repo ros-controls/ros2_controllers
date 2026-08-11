@@ -2361,6 +2361,30 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
   }
 }
 
+// A goal that starts now and commands every joint has no old path left to follow, so it must be
+// installed as-is: prepending points would shift the index reported in the action feedback.
+TEST_F(TrajectoryControllerTest, blend_skipped_for_immediate_full_goal)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> old_traj{{{5.0, 5.0, 5.0}, {50.0, 50.0, 50.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  std::vector<std::vector<double>> new_traj{{{-5.0, -5.0, -5.0}, {-9.0, -9.0, -9.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.1), t);
+
+  EXPECT_EQ(0u, traj_controller_->get_blend_prefix_size())
+    << "an immediate goal for all joints was blended";
+}
+
 // Needs all three to be visible: a partial goal, a new trajectory outlasting the old one, and a
 // handoff between old waypoints so the state there differs from the old trajectory's last point.
 TEST_F(TrajectoryControllerTest, blend_partial_goal_outlasting_old_trajectory)

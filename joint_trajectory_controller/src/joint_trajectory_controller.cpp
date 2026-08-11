@@ -1643,9 +1643,11 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
       }
       if (!point.positions.empty())
       {
+        // every joint must contribute exactly one value, the suffix below indexes these by joint
+        double position = state_current_.positions[index];
         if (sampled && index < blend_sample_.positions.size())
         {
-          point.positions.push_back(blend_sample_.positions[index]);
+          position = blend_sample_.positions[index];
         }
         // the old trajectory could not be sampled, so hold the joint
         else if (has_position_command_interface_)
@@ -1655,7 +1657,7 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
           if (
             position_command_value_op.has_value() && !std::isnan(position_command_value_op.value()))
           {
-            point.positions.push_back(position_command_value_op.value());
+            position = position_command_value_op.value();
           }
         }
         else if (has_position_state_interface_)
@@ -1664,9 +1666,10 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
             joint_state_interface_[0][index].get().get_optional();
           if (position_state_value_op.has_value() && !std::isnan(position_state_value_op.value()))
           {
-            point.positions.push_back(position_state_value_op.value());
+            position = position_state_value_op.value();
           }
         }
+        point.positions.push_back(position);
       }
       if (!point.velocities.empty())
       {
@@ -1698,13 +1701,7 @@ bool JointTrajectoryController::blend_with_active_trajectory(
   // clamp to old_start: traj_time_ may be unset if the old trajectory was never sampled
   const rclcpp::Time cursor = std::max(traj_time_, old_start);
 
-  rclcpp::Time stamp(trajectory_msg->header.stamp, time.get_clock_type());
-  if (stamp.seconds() == 0.0)
-  {
-    stamp = time;
-  }
-  const rclcpp::Time new_start =
-    (stamp > time) ? cursor + (stamp - time) * scaling_factor_.load() : cursor;
+  const rclcpp::Time stamp(trajectory_msg->header.stamp, time.get_clock_type());
 
   bool has_omitted = false;
   for (size_t j = 0; j < dof_; ++j)
@@ -1715,11 +1712,20 @@ bool JointTrajectoryController::blend_with_active_trajectory(
     has_omitted = has_omitted || !blend_commanded_[j];
   }
 
+  // Immediate full-joint goals replace the path entirely. Skip blending to avoid index shifts.
+  if (stamp <= time && !has_omitted)
+  {
+    return false;
+  }
+
   // the suffix must hold commanded joints at a position, which a velocity-only goal lacks
   if (has_omitted && trajectory_msg->points.back().positions.empty())
   {
     return false;
   }
+
+  const rclcpp::Time new_start =
+    (stamp > time) ? cursor + (stamp - time) * scaling_factor_.load() : cursor;
 
   // sample the bridge anchor before the sweep below advances the trajectory's search cursor
   TrajectoryPointConstIter start_segment_itr, end_segment_itr;
