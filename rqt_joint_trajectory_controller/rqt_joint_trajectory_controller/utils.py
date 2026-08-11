@@ -79,7 +79,10 @@ def get_controller_managers(namespace="/", initial_guess=None):
         ns_list = initial_guess[:]  # force copy
 
     # Get list of (potential) currently running controller managers
-    node = rclpy.node.Node("get_controller_managers_node")
+    node = rclpy.node.Node(
+        "get_controller_managers_node",
+        cli_args=["--ros-args", "-r", "__node:=get_controller_managers_node"],
+    )
     try:
         ns_list_curr = _sloppy_get_controller_managers(node, namespace)
 
@@ -232,7 +235,10 @@ class ControllerLister:
 
         @type namespace str
         """
-        self._node = rclpy.node.Node("controller_lister")
+        self._node = rclpy.node.Node(
+            "controller_lister",
+            cli_args=["--ros-args", "-r", "__node:=controller_lister"],
+        )
         self._srv_name = namespace + "/" + _LIST_CONTROLLERS_STR
         self._srv_client = self._create_client()
 

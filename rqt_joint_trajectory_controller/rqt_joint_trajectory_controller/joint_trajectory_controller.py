@@ -102,7 +102,10 @@ class JointTrajectoryController(Plugin):
     def __init__(self, context):
         super().__init__(context)
         self.setObjectName("JointTrajectoryController")
-        self._node = rclpy.node.Node("rqt_joint_trajectory_controller")
+        self._node = rclpy.node.Node(
+            "rqt_joint_trajectory_controller",
+            cli_args=["--ros-args", "-r", "__node:=rqt_joint_trajectory_controller"],
+        )
         self._executor = None
         self._executor_thread = None
 
