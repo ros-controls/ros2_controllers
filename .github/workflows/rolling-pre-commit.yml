@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - master
+      - '*feature*'
+      - '*feature/**'
   push:
     branches:
       - master

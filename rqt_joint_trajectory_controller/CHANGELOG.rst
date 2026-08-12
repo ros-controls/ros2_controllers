@@ -2,10 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
-* rqt-jtc: Make continuous sending opt-in and add Send Once button, adjustable ``time_from_start`` and publish frequency (`#1579 <https://github.com/ros-controls/ros2_controllers/issues/1579>`_)
-* Contributors: Shaochang TAN
+6.9.0 (2026-08-12)
+------------------
+* Fix another shutdown race with rqt_jtc (`#2467 <https://github.com/ros-controls/ros2_controllers/issues/2467>`_)
+* [RQT-JTC] Allow incomplete joint limits (`#2404 <https://github.com/ros-controls/ros2_controllers/issues/2404>`_)
+* Contributors: Christoph Fröhlich
 
 6.8.0 (2026-07-01)
 ------------------

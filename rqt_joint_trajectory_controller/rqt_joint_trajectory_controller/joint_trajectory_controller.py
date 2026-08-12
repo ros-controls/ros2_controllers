@@ -224,6 +224,17 @@ class JointTrajectoryController(Plugin):
         self._unregister_state_sub()
         self._unregister_cmd_pub()
         self._unregister_executor()
+        self._destroy_node()
+
+    def _destroy_node(self):
+        if self._node is not None:
+            try:
+                self._node.destroy_node()
+            except Exception as e:
+                if not is_shutdown_context_error(e):
+                    raise
+            finally:
+                self._node = None
 
     def save_settings(self, plugin_settings, instance_settings):
         instance_settings.set_value("cm_ns", self._cm_ns)
