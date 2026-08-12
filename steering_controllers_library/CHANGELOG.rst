@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.9.0 (2026-08-12)
+------------------
 * fix(steering_controllers): handle NaN/Inf values in odometry update (`#2083 <https://github.com/ros-controls/ros2_controllers/issues/2083>`_)
 * Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
 * Fix safety concerns with halt logic across controllers (`#2326 <https://github.com/ros-controls/ros2_controllers/issues/2326>`_)

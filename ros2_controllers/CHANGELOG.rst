@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.9.0 (2026-08-12)
+------------------
 * Add battery_state_broadcaster (`#2086 <https://github.com/ros-controls/ros2_controllers/issues/2086>`_)
 * docs: update dead control.ros.org master routes to rolling (`#2409 <https://github.com/ros-controls/ros2_controllers/issues/2409>`_)
 * Contributors: Christoph Fröhlich, Ishan Pathak
