@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.17.0 (2026-08-12)
+-------------------
 * Use preallocated feedback from JTC to avoid heap allocation (backport `#2160 <https://github.com/ros-controls/ros2_controllers/issues/2160>`_) (`#2542 <https://github.com/ros-controls/ros2_controllers/issues/2542>`_)
 * Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2533 <https://github.com/ros-controls/ros2_controllers/issues/2533>`_)
 * fix: prevent JTC segfault when continuous joint has no URDF limits (backport `#2523 <https://github.com/ros-controls/ros2_controllers/issues/2523>`_) (`#2530 <https://github.com/ros-controls/ros2_controllers/issues/2530>`_)

@@ -2,8 +2,8 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.17.0 (2026-08-12)
+-------------------
 * Add battery_state_broadcaster (backport `#2086 <https://github.com/ros-controls/ros2_controllers/issues/2086>`_) (`#2522 <https://github.com/ros-controls/ros2_controllers/issues/2522>`_)
 * Contributors: mergify[bot]
 

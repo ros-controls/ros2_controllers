@@ -2,8 +2,8 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.17.0 (2026-08-12)
+-------------------
 * Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2533 <https://github.com/ros-controls/ros2_controllers/issues/2533>`_)
 * Use new chainable controller exports API (backport `#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_) (`#2454 <https://github.com/ros-controls/ros2_controllers/issues/2454>`_)
 * Fix admittance position state updates (backport `#2514 <https://github.com/ros-controls/ros2_controllers/issues/2514>`_) (`#2520 <https://github.com/ros-controls/ros2_controllers/issues/2520>`_)
