@@ -6,8 +6,8 @@ Changelog for package battery_state_broadcaster
 The entries below refer to the standalone `ipa320/ros_battery_monitoring <https://github.com/ipa320/ros_battery_monitoring>`_ package,
 from which this broadcaster originates.
 
-Forthcoming
------------
+4.42.1 (2026-08-12)
+-------------------
 
 4.42.0 (2026-08-10)
 -------------------
