@@ -2,6 +2,12 @@
 Changelog for package motion_primitives_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2533 <https://github.com/ros-controls/ros2_controllers/issues/2533>`_)
+* fix: correct test_load_controller tests for motion_primitives and pid_controller (backport `#2445 <https://github.com/ros-controls/ros2_controllers/issues/2445>`_) (`#2452 <https://github.com/ros-controls/ros2_controllers/issues/2452>`_)
+* Contributors: mergify[bot]
+
 5.16.0 (2026-07-01)
 -------------------
 * fix: update dead documentation links (backport `#2398 <https://github.com/ros-controls/ros2_controllers/issues/2398>`_) (`#2412 <https://github.com/ros-controls/ros2_controllers/issues/2412>`_)

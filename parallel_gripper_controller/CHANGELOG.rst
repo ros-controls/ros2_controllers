@@ -2,6 +2,12 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(parallel_gripper): fix effort and velocity interface lookup (backport `#2318 <https://github.com/ros-controls/ros2_controllers/issues/2318>`_) (`#2557 <https://github.com/ros-controls/ros2_controllers/issues/2557>`_)
+* Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2533 <https://github.com/ros-controls/ros2_controllers/issues/2533>`_)
+* Contributors: mergify[bot]
+
 5.16.0 (2026-07-01)
 -------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (backport `#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_) (`#2394 <https://github.com/ros-controls/ros2_controllers/issues/2394>`_)

@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use preallocated feedback from JTC to avoid heap allocation (backport `#2160 <https://github.com/ros-controls/ros2_controllers/issues/2160>`_) (`#2542 <https://github.com/ros-controls/ros2_controllers/issues/2542>`_)
+* Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2533 <https://github.com/ros-controls/ros2_controllers/issues/2533>`_)
+* fix: prevent JTC segfault when continuous joint has no URDF limits (backport `#2523 <https://github.com/ros-controls/ros2_controllers/issues/2523>`_) (`#2530 <https://github.com/ros-controls/ros2_controllers/issues/2530>`_)
+* fix(joint-trajectory-controller): use active tolerances in update step (backport `#2101 <https://github.com/ros-controls/ros2_controllers/issues/2101>`_) (`#2512 <https://github.com/ros-controls/ros2_controllers/issues/2512>`_)
+* Refactor JTC command assignment for Kilted (`#2504 <https://github.com/ros-controls/ros2_controllers/issues/2504>`_)
+* Contributors: Dennis Lanov, mergify[bot]
+
 5.16.0 (2026-07-01)
 -------------------
 * Deliver abort action result before destroying goal handle on preemption (backport `#2422 <https://github.com/ros-controls/ros2_controllers/issues/2422>`_) (`#2424 <https://github.com/ros-controls/ros2_controllers/issues/2424>`_)
