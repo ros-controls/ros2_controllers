@@ -210,6 +210,7 @@ bool CartesianTrajectoryController::solve_ik_along_path(
   joint_traj.joint_names = params_.joints;
   Eigen::Vector3d target_position;
   Eigen::Quaterniond target_orientation;
+  double t_prev = 0.0;  // previous sample time, for the per-segment velocity below
   for (size_t k = 1; k <= steps; ++k)
   {
     const double t = std::min(static_cast<double>(k) * dt, path.duration());
@@ -246,8 +247,16 @@ bool CartesianTrajectoryController::solve_ik_along_path(
 
     trajectory_msgs::msg::JointTrajectoryPoint jp;
     jp.positions.assign(q.data(), q.data() + dof_);
+    // Fill joint velocities so JTC cubic-interpolates
+    const double seg_dt = t - t_prev;
+    if (seg_dt > 1e-9)
+    {
+      const Eigen::VectorXd q_dot = delta_q / seg_dt;
+      jp.velocities.assign(q_dot.data(), q_dot.data() + dof_);
+    }
     jp.time_from_start = rclcpp::Duration::from_seconds(t);
     joint_traj.points.push_back(std::move(jp));
+    t_prev = t;
   }
 
   return !joint_traj.points.empty();
