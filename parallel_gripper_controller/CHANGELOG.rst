@@ -2,6 +2,11 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(parallel_gripper): fix effort and velocity interface lookup (backport `#2318 <https://github.com/ros-controls/ros2_controllers/issues/2318>`_) (`#2556 <https://github.com/ros-controls/ros2_controllers/issues/2556>`_)
+* Contributors: mergify[bot]
+
 4.42.0 (2026-08-10)
 -------------------
 * Use new Command/State Interfaces API for tests (backport `#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_) (`#2532 <https://github.com/ros-controls/ros2_controllers/issues/2532>`_)
