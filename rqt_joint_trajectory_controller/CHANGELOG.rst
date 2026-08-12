@@ -2,6 +2,12 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix another shutdown race with rqt_jtc (`#2467 <https://github.com/ros-controls/ros2_controllers/issues/2467>`_)
+* [RQT-JTC] Allow incomplete joint limits (`#2404 <https://github.com/ros-controls/ros2_controllers/issues/2404>`_)
+* Contributors: Christoph Fröhlich
+
 6.8.0 (2026-07-01)
 ------------------
 * rqt-jtc: Fix more shutdown races (`#2431 <https://github.com/ros-controls/ros2_controllers/issues/2431>`_)
