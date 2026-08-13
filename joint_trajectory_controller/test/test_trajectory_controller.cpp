@@ -2199,6 +2199,9 @@ TEST_F(TrajectoryControllerTest, blend_no_position_jump_under_speed_scaling)
   t = updateControllerAsync(rclcpp::Duration::from_seconds(0.03), t);
   const auto ref_after = traj_controller_->get_state_reference();
 
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "installed via the legacy path, so this test does not cover blending";
+
   for (size_t i = 0; i < ref_before.positions.size(); ++i)
   {
     EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 0.3)
@@ -2344,13 +2347,19 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
   publish(
     rclcpp::Duration::from_seconds(0.5), traj_b, start_time + rclcpp::Duration::from_seconds(0.6));
   traj_controller_->wait_for_trajectory(executor);
-  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), t);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.05), t);
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "B was installed via the legacy path, so the first blend is not covered";
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.45), t);
 
   // second blend: C arrives stamp=0 while B-blend is active
   std::vector<std::vector<double>> traj_c{{{7.0, 7.0, 7.0}}};
   publish(rclcpp::Duration::from_seconds(0.5), traj_c, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(0.8), t);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.05), t);
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "C was installed via the legacy path, so the second blend is not covered";
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.75), t);
 
   if (traj_controller_->has_position_command_interface())
   {
