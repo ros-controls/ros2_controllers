@@ -2421,6 +2421,48 @@ TEST_F(TrajectoryControllerTest, blend_partial_goal_outlasting_old_trajectory)
     << "blend anchored on the wrong point of the active trajectory (final waypoint is 50.0)";
 }
 
+// The active trajectory is itself future-stamped, so its start time is still ahead of the play
+// cursor. The bridge must be sampled where the reference will actually be at the handoff, not at
+// the same offset measured on the old trajectory's own not-yet-started timeline.
+TEST_F(TrajectoryControllerTest, blend_onto_not_yet_started_trajectory_holds_the_reference)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // A starts in 5 s with waypoints at 6 s and 7 s, so it spends the whole test in its lead-in ramp
+  // from INITIAL_POS_JOINTS towards 10.0
+  std::vector<std::vector<double>> traj_a{{{10.0, 10.0, 10.0}, {20.0, 20.0, 20.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(1.0), traj_a,
+    start_time + rclcpp::Duration::from_seconds(5.0));
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), start_time);
+  const double ref_at_arrival = traj_controller_->get_state_reference().positions[0];
+
+  // B arrives at 0.5 s, hands off at 1.0 s and reaches -5.0 at 1.5 s
+  std::vector<std::vector<double>> traj_b{{{-5.0, -5.0, -5.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), traj_b,
+    start_time + rclcpp::Duration::from_seconds(1.0));
+  traj_controller_->wait_for_trajectory(executor);
+
+  double peak = -std::numeric_limits<double>::max();
+  for (int i = 0; i < 22; ++i)
+  {
+    t = updateControllerAsync(rclcpp::Duration::from_seconds(0.05), t);
+    peak = std::max(peak, traj_controller_->get_state_reference().positions[0]);
+  }
+
+  // A's lead-in ramp is at ~2.6 at the 1.0 s handoff. Sampling A 0.5 s past its own start instead
+  // lands at ~9.3, which the merged trajectory then has to reach within that same 0.5 s.
+  EXPECT_LT(peak, 4.0) << "blend bridged onto the old trajectory's un-started timeline, driving the"
+                          " reference far past it (reference was "
+                       << ref_at_arrival << " when the new trajectory arrived)";
+}
+
 TEST_P(TrajectoryControllerTestParameterized, test_jump_when_state_tracking_error_updated)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
