@@ -1698,8 +1698,9 @@ bool JointTrajectoryController::blend_with_active_trajectory(
 {
   const auto old_msg = current_trajectory_->get_trajectory_msg();
   const rclcpp::Time old_start = current_trajectory_->time_from_start();
-  // clamp to old_start: traj_time_ may be unset if the old trajectory was never sampled
-  const rclcpp::Time cursor = std::max(traj_time_, old_start);
+  // playback position in the old trajectory's time base. It precedes old_start while a
+  // future-stamped trajectory is still ramping in, so it must not be clamped to it.
+  const rclcpp::Time cursor = traj_time_;
 
   const rclcpp::Time stamp(trajectory_msg->header.stamp, time.get_clock_type());
 
