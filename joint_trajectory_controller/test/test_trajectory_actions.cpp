@@ -760,6 +760,10 @@ TEST_F(TestTrajectoryActions, blend_action_preempt_aborts_old_goal)
     points[0].positions = {1.0, 2.0, 3.0};
     sendActionGoal(points, 1.0, goal_options_);
   }
+  // sample while B is still executing: the prefix count is reset by the hold installed afterwards
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "B was installed via the legacy path, so this test does not cover the blend";
 
   controller_hw_thread_.join();
 

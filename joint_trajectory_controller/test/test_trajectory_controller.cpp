@@ -2370,9 +2370,9 @@ TEST_F(TrajectoryControllerTest, blend_successive_blends)
   }
 }
 
-// A goal that starts now and commands every joint has no old path left to follow, so it must be
-// installed as-is: prepending points would shift the index reported in the action feedback.
-TEST_F(TrajectoryControllerTest, blend_skipped_for_immediate_full_goal)
+// A goal that starts now and commands every joint is blended like any other: the bridge anchors it
+// at the current reference so the handoff stays velocity-continuous instead of stepping.
+TEST_F(TrajectoryControllerTest, blend_immediate_full_goal)
 {
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
@@ -2384,14 +2384,22 @@ TEST_F(TrajectoryControllerTest, blend_skipped_for_immediate_full_goal)
   publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
   auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+  const auto ref_before = traj_controller_->get_state_reference();
 
   std::vector<std::vector<double>> new_traj{{{-5.0, -5.0, -5.0}, {-9.0, -9.0, -9.0}}};
   publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
-  updateControllerAsync(rclcpp::Duration::from_seconds(0.1), t);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.03), t);
+  const auto ref_after = traj_controller_->get_state_reference();
 
-  EXPECT_EQ(0u, traj_controller_->get_blend_prefix_size())
-    << "an immediate goal for all joints was blended";
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "an immediate goal for all joints took the legacy path instead of blending";
+
+  for (size_t i = 0; i < ref_before.positions.size(); ++i)
+  {
+    EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 0.3)
+      << "reference stepped on install instead of bridging from the current state, joint " << i;
+  }
 }
 
 // Needs all three to be visible: a partial goal, a new trajectory outlasting the old one, and a
@@ -2445,8 +2453,7 @@ TEST_F(TrajectoryControllerTest, blend_onto_not_yet_started_trajectory_holds_the
   // from INITIAL_POS_JOINTS towards 10.0
   std::vector<std::vector<double>> traj_a{{{10.0, 10.0, 10.0}, {20.0, 20.0, 20.0}}};
   publish(
-    rclcpp::Duration::from_seconds(1.0), traj_a,
-    start_time + rclcpp::Duration::from_seconds(5.0));
+    rclcpp::Duration::from_seconds(1.0), traj_a, start_time + rclcpp::Duration::from_seconds(5.0));
   traj_controller_->wait_for_trajectory(executor);
   auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), start_time);
   const double ref_at_arrival = traj_controller_->get_state_reference().positions[0];
@@ -2454,8 +2461,7 @@ TEST_F(TrajectoryControllerTest, blend_onto_not_yet_started_trajectory_holds_the
   // B arrives at 0.5 s, hands off at 1.0 s and reaches -5.0 at 1.5 s
   std::vector<std::vector<double>> traj_b{{{-5.0, -5.0, -5.0}}};
   publish(
-    rclcpp::Duration::from_seconds(0.5), traj_b,
-    start_time + rclcpp::Duration::from_seconds(1.0));
+    rclcpp::Duration::from_seconds(0.5), traj_b, start_time + rclcpp::Duration::from_seconds(1.0));
   traj_controller_->wait_for_trajectory(executor);
 
   double peak = -std::numeric_limits<double>::max();

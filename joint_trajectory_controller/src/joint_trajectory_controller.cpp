@@ -1713,12 +1713,6 @@ bool JointTrajectoryController::blend_with_active_trajectory(
     has_omitted = has_omitted || !blend_commanded_[j];
   }
 
-  // Immediate full-joint goals replace the path entirely. Skip blending to avoid index shifts.
-  if (stamp <= time && !has_omitted)
-  {
-    return false;
-  }
-
   // the suffix must hold commanded joints at a position, which a velocity-only goal lacks
   if (has_omitted && trajectory_msg->points.back().positions.empty())
   {
