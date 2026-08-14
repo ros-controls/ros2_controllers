@@ -771,6 +771,78 @@ TEST_F(TestTrajectoryActions, blend_action_preempt_aborts_old_goal)
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
+// A future-stamped goal is the headline case of the feature and no other action test covers it:
+// with stamp > time the handoff offset runs through scaling_factor_ and the prefix carries old
+// waypoints rather than only the bridge. Goal A needs two points so has_nontrivial_msg() holds and
+// the blend actually fires, and its first waypoint sits inside the handoff window so it is spliced
+// in. The exact prefix composition is left to the controller-level tests, where time is simulated;
+// here it can shift with thread scheduling.
+TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
+{
+  SetUpExecutor({rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  // the goal stamp comes from the node clock, so update() must run on the same time source.
+  // SetUpControllerHardware() drives it with RCL_STEADY_TIME, which would place the stamp decades
+  // in the future and stall the handoff.
+  setup_controller_hw_ = true;
+  controller_hw_thread_ = std::thread(
+    [&]()
+    {
+      auto clock = rclcpp::Clock(RCL_ROS_TIME);
+      auto last_time = clock.now();
+      const auto end_time = last_time + rclcpp::Duration::from_seconds(3.0);
+      while (clock.now() < end_time)
+      {
+        const auto now_time = clock.now();
+        traj_controller_->update(now_time, now_time - last_time);
+        mirrorCommandToStateIfNotSeparate();
+        last_time = now_time;
+      }
+    });
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points(2);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.6);
+    points[0].positions = {2.0, 3.0, 4.0};
+    points[1].time_from_start = rclcpp::Duration::from_seconds(2.0);
+    points[1].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a](const GoalHandle::WrappedResult & r)
+    { result_a = r.code; };
+    sendActionGoal(points, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  rclcpp_action::ResultCode result_b = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.4);
+    points[0].positions = {7.0, 8.0, 9.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_b;
+    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_b.trajectory.joint_names = joint_names_;
+    goal_b.trajectory.points = points;
+    goal_b.trajectory.header.stamp =
+      traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(1.0);
+    GoalOptions opts_b;
+    opts_b.result_callback = [&result_b](const GoalHandle::WrappedResult & r)
+    { result_b = r.code; };
+    action_client_->async_send_goal(goal_b, opts_b);
+  }
+
+  // sample while B is still executing: the prefix count is reset by the hold installed afterwards
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "the future-stamped goal took the legacy path, so this test does not cover the blend";
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, result_b);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 {
   // set joint tolerance parameters
