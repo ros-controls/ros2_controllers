@@ -41,6 +41,7 @@
 #include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -113,6 +114,9 @@ protected:
   // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   rclcpp::Time last_commanded_time_;
+  // Thread-safe snapshot of last_commanded_state_ for non-RT readers.
+  realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
+    rt_last_commanded_state_;
   /// Specify interpolation method. Default to splines.
   interpolation_methods::InterpolationMethod interpolation_method_{
     interpolation_methods::DEFAULT_INTERPOLATION};
