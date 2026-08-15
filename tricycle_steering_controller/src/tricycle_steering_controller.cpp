@@ -37,8 +37,6 @@ controller_interface::CallbackReturn TricycleSteeringController::configure_odome
   odometry_.set_wheel_params(traction_wheels_radius, wheelbase, traction_track_width);
   odometry_.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
 
-  set_interface_numbers(NR_STATE_ITFS, NR_CMD_ITFS, NR_REF_ITFS);
-
   RCLCPP_INFO(get_node()->get_logger(), "tricycle odom configure successful");
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -51,41 +49,75 @@ bool TricycleSteeringController::update_odometry(const rclcpp::Duration & period
   }
   else
   {
-    const auto traction_right_wheel_value_op =
-      state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional();
-    const auto traction_left_wheel_value_op =
-      state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional();
-    const auto steering_position_op = state_interfaces_[STATE_STEER_AXIS].get_optional();
+    if (odometry_.get_tricycle_nr_traction_wheels() == 2)
+    {
+      const auto traction_right_wheel_value_op =
+        state_interfaces_[STATE_TRACTION_RIGHT_WHEEL].get_optional();
+      const auto traction_left_wheel_value_op =
+        state_interfaces_[STATE_TRACTION_LEFT_WHEEL].get_optional();
+      const auto steering_position_op =
+        state_interfaces_[STATE_DUAL_TRACTION_STEER_AXIS].get_optional();
 
-    if (
-      !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
-      !steering_position_op.has_value())
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(),
-        "Unable to retrieve the data from right wheel or left wheel or steering position");
-      return true;
-    }
-    const double traction_right_wheel_value = traction_right_wheel_value_op.value();
-    const double traction_left_wheel_value = traction_left_wheel_value_op.value();
-    const double steering_position = steering_position_op.value();
-    if (
-      std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
-      std::isfinite(steering_position))
-    {
-      if (params_.position_feedback)
+      if (
+        !traction_right_wheel_value_op.has_value() || !traction_left_wheel_value_op.has_value() ||
+        !steering_position_op.has_value())
       {
-        // Estimate linear and angular velocity using joint information
-        odometry_.update_from_position(
-          traction_right_wheel_value, traction_left_wheel_value, steering_position,
-          period.seconds());
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Unable to retrieve the data from right wheel or left wheel or steering position");
+        return true;
       }
-      else
+      const double traction_right_wheel_value = traction_right_wheel_value_op.value();
+      const double traction_left_wheel_value = traction_left_wheel_value_op.value();
+      const double steering_position = steering_position_op.value();
+      if (
+        std::isfinite(traction_right_wheel_value) && std::isfinite(traction_left_wheel_value) &&
+        std::isfinite(steering_position))
       {
-        // Estimate linear and angular velocity using joint information
-        odometry_.update_from_velocity(
-          traction_right_wheel_value, traction_left_wheel_value, steering_position,
-          period.seconds());
+        if (params_.position_feedback)
+        {
+          // Estimate linear and angular velocity using joint information
+          odometry_.update_from_position(
+            traction_right_wheel_value, traction_left_wheel_value, steering_position,
+            period.seconds());
+        }
+        else
+        {
+          // Estimate linear and angular velocity using joint information
+          odometry_.update_from_velocity(
+            traction_right_wheel_value, traction_left_wheel_value, steering_position,
+            period.seconds());
+        }
+      }
+    }
+    else if (odometry_.get_tricycle_nr_traction_wheels() == 1)
+    {
+      const auto traction_wheel_value_op =
+        state_interfaces_[STATE_TRACTION_SINGLE_WHEEL].get_optional();
+      const auto steering_position_op =
+        state_interfaces_[STATE_SINGLE_TRACTION_STEER_AXIS].get_optional();
+
+      if (!traction_wheel_value_op.has_value() || !steering_position_op.has_value())
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Unable to retrieve the data from traction wheel or steering position");
+        return true;
+      }
+      const double traction_wheel_value = traction_wheel_value_op.value();
+      const double steering_position = steering_position_op.value();
+      if (std::isfinite(traction_wheel_value) && std::isfinite(steering_position))
+      {
+        if (params_.position_feedback)
+        {
+          // Estimate linear and angular velocity using joint information
+          odometry_.update_from_position(traction_wheel_value, steering_position, period.seconds());
+        }
+        else
+        {
+          // Estimate linear and angular velocity using joint information
+          odometry_.update_from_velocity(traction_wheel_value, steering_position, period.seconds());
+        }
       }
     }
   }

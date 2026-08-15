@@ -67,10 +67,18 @@ if(BUILD_TESTING)
   )
 
   add_rostest_with_parameters_gmock(
-    test_tricycle_steering_controller test/test_tricycle_steering_controller.cpp
+    test_tricycle_steering_controller_dual_traction
+    test/test_tricycle_steering_controller_dual_traction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_params.yaml)
-  target_include_directories(test_tricycle_steering_controller PRIVATE include)
-  target_link_libraries(test_tricycle_steering_controller tricycle_steering_controller)
+  target_include_directories(test_tricycle_steering_controller_dual_traction PRIVATE include)
+  target_link_libraries(test_tricycle_steering_controller_dual_traction tricycle_steering_controller)
+
+  add_rostest_with_parameters_gmock(
+    test_tricycle_steering_controller_single_traction
+    test/test_tricycle_steering_controller_single_traction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/tricycle_steering_controller_params.yaml)
+  target_include_directories(test_tricycle_steering_controller_single_traction PRIVATE include)
+  target_link_libraries(test_tricycle_steering_controller_single_traction tricycle_steering_controller)
 
   add_rostest_with_parameters_gmock(
     test_tricycle_steering_controller_preceding test/test_tricycle_steering_controller_preceding.cpp

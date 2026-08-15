@@ -98,6 +98,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for bicycle or tricycle config with single traction
+   *
    * \param traction_wheel_vel  Traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
    * \param dt      time difference to last call
@@ -108,6 +111,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for tricycle config with dual traction
+   *
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param steer_pos Steer wheel position [rad]
@@ -120,6 +126,9 @@ public:
 
   /**
    * \brief Updates the SteeringKinematics class with latest wheels position
+   *
+   * for ackermann config
+   *
    * \param right_traction_wheel_vel  Right traction wheel velocity [rad/s]
    * \param left_traction_wheel_vel  Left traction wheel velocity [rad/s]
    * \param right_steer_pos Right steer wheel position [rad]
@@ -220,6 +229,20 @@ public:
    * \param heading heading [rad]
    */
   void set_odometry(const double & x, const double & y, const double & heading);
+  /**
+   * \brief Set tricycle config
+   * \param nr_traction_wheels number of traction wheels
+   */
+  void set_tricycle_nr_traction_wheels(const size_t nr_traction_wheels)
+  {
+    tricycle_nr_traction_wheels_ = nr_traction_wheels;
+  }
+
+  /**
+   * \brief Get tricycle config
+   * \return number of traction wheels
+   */
+  size_t get_tricycle_nr_traction_wheels() const { return tricycle_nr_traction_wheels_; }
 
 private:
   /**
@@ -296,6 +319,7 @@ private:
 
   /// Configuration type used for the forward kinematics
   int config_type_ = -1;
+  size_t tricycle_nr_traction_wheels_ = 1;
 
   /// Previous wheel position/state [rad]:
   double traction_wheel_old_pos_;
