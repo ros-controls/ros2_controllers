@@ -114,7 +114,6 @@ protected:
   // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   rclcpp::Time last_commanded_time_;
-  // Thread-safe snapshot of last_commanded_state_ for non-RT readers.
   realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
     rt_last_commanded_state_;
   /// Specify interpolation method. Default to splines.
