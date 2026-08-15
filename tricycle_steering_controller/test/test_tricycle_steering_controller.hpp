@@ -146,20 +146,7 @@ protected:
     params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
-<<<<<<< HEAD
-    if (position_feedback_ == true)
-    {
-      traction_interface_name_ = "position";
-    }
-    else
-    {
-      traction_interface_name_ = "velocity";
-    }
-
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-=======
-    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
->>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
@@ -288,16 +275,9 @@ protected:
   const std::vector<std::string> steering_joints_preceding_names_ = {
     "pid_controller/steering_axis_joint"};
 
-<<<<<<< HEAD
-  double wheelbase_ = 3.24644;
-  double wheel_track_ = 1.212121;
-
-  double traction_wheels_radius_ = 0.45;
-=======
   const double wheelbase_ = 3.24644;
-  const double traction_track_width_ = 1.212121;
+  const double wheel_track_ = 1.212121;
   const double traction_wheels_radius_ = 0.45;
->>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
 
   const std::array<double, 3> joint_state_values_{{0.5, 0.5, 0.0}};
   const std::array<double, 3> joint_command_values_{{1.1, 3.3, 2.2}};

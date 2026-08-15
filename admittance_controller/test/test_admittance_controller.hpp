@@ -194,13 +194,8 @@ protected:
     }
 
     auto sc_fts = semantic_components::ForceTorqueSensor(ft_sensor_name_);
-<<<<<<< HEAD
-    fts_state_names_ = sc_fts.get_state_interface_names();
-    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
-=======
     const auto fts_state_names = sc_fts.get_state_interface_names();
-    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
->>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
+    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
 
     const size_t num_state_ifs = joint_state_values_.size() + fts_state_names.size();
     state_itfs_.reserve(num_state_ifs);

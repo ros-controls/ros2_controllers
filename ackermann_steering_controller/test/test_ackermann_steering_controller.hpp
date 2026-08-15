@@ -147,20 +147,7 @@ protected:
     params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
-<<<<<<< HEAD
-    if (position_feedback_ == true)
-    {
-      traction_interface_name_ = "position";
-    }
-    else
-    {
-      traction_interface_name_ = "velocity";
-    }
-
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
-=======
-    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
->>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
