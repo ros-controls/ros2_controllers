@@ -119,7 +119,7 @@ protected:
   const std::string frame_id_ = "magnetometer_frame";
   const rclcpp::Parameter frame_id_param_ = rclcpp::Parameter("frame_id", frame_id_);
 
-  std::array<double, 3> sensor_values_ = {{20e-6, 30e-6, 40e-6}};
+  const std::array<double, 3> sensor_values_ = {{20e-6, 30e-6, 40e-6}};
   hardware_interface::StateInterface::SharedPtr magnetic_field_x;
   hardware_interface::StateInterface::SharedPtr magnetic_field_y;
   hardware_interface::StateInterface::SharedPtr magnetic_field_z;
