@@ -533,8 +533,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     }
     catch (const std::invalid_argument & e)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Failed to update speed limiter parameters: %s", e.what());
+      RCLCPP_ERROR_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Failed to update speed limiter parameters: %s", e.what());
     }
   }
 

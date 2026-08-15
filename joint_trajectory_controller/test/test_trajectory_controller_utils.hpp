@@ -227,6 +227,8 @@ public:
     return has_active_trajectory() && current_trajectory_->has_nontrivial_msg();
   }
 
+  size_t get_blend_prefix_size() const { return blend_prefix_size_; }
+
   double get_cmd_timeout() { return cmd_timeout_; }
 
   void set_node_options(const rclcpp::NodeOptions & node_options) { node_options_ = node_options; }
