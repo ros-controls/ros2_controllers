@@ -197,8 +197,8 @@ protected:
   const std::string controller_name = "test_tricycle_controller";
   std::unique_ptr<TestableTricycleController> controller_;
 
-  double position_ = 0.1;
-  double velocity_ = 0.2;
+  const double position_ = 0.1;
+  const double velocity_ = 0.2;
 
   hardware_interface::StateInterface::SharedPtr steering_joint_pos_state_;
   hardware_interface::StateInterface::SharedPtr traction_joint_vel_state_;
