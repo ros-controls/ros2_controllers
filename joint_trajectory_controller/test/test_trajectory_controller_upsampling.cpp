@@ -14,7 +14,9 @@
 
 #include <gmock/gmock.h>
 
+#include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "test_trajectory_controller_utils.hpp"
@@ -36,12 +38,24 @@ class UpsamplingHelpers : public joint_trajectory_controller::JointTrajectoryCon
 public:
   using JointTrajectoryController::is_positions_only;
   using JointTrajectoryController::preprocess_incoming_trajectory;
+  using JointTrajectoryController::start_velocity_for;
   using JointTrajectoryController::synthesize_timing;
 
   void configure_upsampling(bool enabled, double policy_frequency)
   {
     params_.positions_upsampling.enable = enabled;
     params_.positions_upsampling.policy_frequency = policy_frequency;
+  }
+
+  // Stand in for an active controller that has already commanded a velocity.
+  void configure_commanded_velocities(
+    const std::vector<std::string> & joints, const std::vector<double> & velocities)
+  {
+    params_.joints = joints;
+    dof_ = joints.size();
+    trajectory_msgs::msg::JointTrajectoryPoint commanded;
+    commanded.velocities = velocities;
+    rt_last_commanded_state_.set(commanded);
   }
 };
 
@@ -65,6 +79,33 @@ double time_at(const trajectory_msgs::msg::JointTrajectory & traj, size_t i)
   return rclcpp::Duration(traj.points[i].time_from_start).seconds();
 }
 }  // namespace
+
+// The start velocity follows the sender's joint order: the message is not sorted until install.
+TEST(JtcUpsamplingHelpers, start_velocity_follows_the_message_joint_order)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_velocities({"joint1", "joint2", "joint3"}, {0.1, 0.2, 0.3});
+
+  trajectory_msgs::msg::JointTrajectory traj;
+  traj.joint_names = {"joint3", "joint1", "joint2"};  // reordered
+  const auto start_velocity = c.start_velocity_for(traj);
+  ASSERT_EQ(start_velocity.size(), 3u);
+  EXPECT_NEAR(start_velocity[0], 0.3, 1e-12);
+  EXPECT_NEAR(start_velocity[1], 0.1, 1e-12);
+  EXPECT_NEAR(start_velocity[2], 0.2, 1e-12);
+}
+
+// NaN velocities must fall back to rest rather than poison the solve.
+TEST(JtcUpsamplingHelpers, start_velocity_falls_back_to_rest_when_not_finite)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_velocities(
+    {"joint1", "joint2"}, {0.1, std::numeric_limits<double>::quiet_NaN()});
+
+  trajectory_msgs::msg::JointTrajectory traj;
+  traj.joint_names = {"joint1", "joint2"};
+  EXPECT_TRUE(c.start_velocity_for(traj).empty());
+}
 
 // Untimed chunks get time_from_start = (i + 1) / policy_frequency.
 TEST(JtcUpsamplingHelpers, synthesizes_timing_from_policy_frequency)

@@ -120,10 +120,13 @@ interpolates linearly (C0), yielding discontinuous velocities at every waypoint 
 representation <joint_trajectory_controller_trajectory_representation>`).
 
 When ``positions_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
-are upsampled in place: the knot velocities of a global cubic spline (rest boundary conditions,
-``v0 = v_{N-1} = 0``) are solved and written into the trajectory, so the existing sampler reproduces a
-motion that is continuous in acceleration across the chunk's waypoints (see :ref:`the plotted
-comparison <joint_trajectory_controller_trajectory_representation>`). Messages that already carry
+are upsampled in place: the knot velocities of a global cubic spline are solved and written into the
+trajectory, so the existing sampler reproduces a motion that is continuous in acceleration across the
+chunk's waypoints (see :ref:`the plotted comparison
+<joint_trajectory_controller_trajectory_representation>`). The spline ends at rest
+(``v_{N-1} = 0``) and starts from the velocity the controller last commanded, so a chunk arriving
+while the robot is already moving continues that motion instead of braking to a stop first. Until
+the controller has commanded a velocity, the start is at rest as well. Messages that already carry
 velocities are passed through unchanged, so the feature
 is a strict superset of the default behaviour (it is off by default). It has no effect when
 ``interpolation_method`` is ``none``.
@@ -150,9 +153,8 @@ current state instead of stepping to it.
             policy_frequency: 30.0
 
    .. note::
-      Only the topic interface (``~/joint_trajectory``) is upsampled. Each chunk uses rest boundary
-      conditions, so streaming chunks decelerate to a stop at each chunk boundary; cross-chunk C2
-      continuity and ``FollowJointTrajectory`` action-goal upsampling are future work.
+      Only the topic interface (``~/joint_trajectory``) is upsampled. ``FollowJointTrajectory``
+      action goals bypass this path and are not upsampled.
 
 
 Preemption policy [#f1]_

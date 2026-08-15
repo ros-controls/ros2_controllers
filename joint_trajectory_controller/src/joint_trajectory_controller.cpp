@@ -15,7 +15,9 @@
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -1425,7 +1427,34 @@ void JointTrajectoryController::preprocess_incoming_trajectory(
     return;
   }
   synthesize_timing(msg);
-  fill_cubic_spline_velocities(msg);
+  fill_cubic_spline_velocities(msg, start_velocity_for(msg));
+}
+
+std::vector<double> JointTrajectoryController::start_velocity_for(
+  const trajectory_msgs::msg::JointTrajectory & traj) const
+{
+  const auto commanded = rt_last_commanded_state_.get();
+  if (commanded.velocities.size() != dof_)
+  {
+    return {};
+  }
+  // not sorted into the controller's joint order until install, so index by the sender's order
+  const auto joint_map = mapping(traj.joint_names, params_.joints);
+  if (joint_map.size() != traj.joint_names.size())
+  {
+    return {};
+  }
+  std::vector<double> start_velocity(joint_map.size());
+  for (size_t i = 0; i < joint_map.size(); ++i)
+  {
+    // NaN before the first update(), and while the hardware exposes no velocity state
+    if (!std::isfinite(commanded.velocities[joint_map[i]]))
+    {
+      return {};
+    }
+    start_velocity[i] = commanded.velocities[joint_map[i]];
+  }
+  return start_velocity;
 }
 
 bool JointTrajectoryController::is_positions_only(

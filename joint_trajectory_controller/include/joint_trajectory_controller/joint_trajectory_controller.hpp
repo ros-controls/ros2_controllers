@@ -220,6 +220,8 @@ protected:
   bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;
   // fill time_from_start from positions_upsampling.policy_frequency when timing is absent
   void synthesize_timing(trajectory_msgs::msg::JointTrajectory & traj) const;
+  // last commanded velocity in the message's joint order; empty keeps the rest condition
+  std::vector<double> start_velocity_for(const trajectory_msgs::msg::JointTrajectory & traj) const;
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_received_callback(
