@@ -110,7 +110,8 @@ public:
     const rclcpp_lifecycle::State & previous_state) override
   {
     // export_reference_interfaces() populates ordered_exported_reference_interfaces_
-    auto ref_itfs = export_reference_interfaces();
+    export_reference_interfaces();
+    export_state_interfaces();
     return mecanum_drive_controller::MecanumDriveController::on_activate(previous_state);
   }
 
@@ -198,7 +199,7 @@ protected:
     {
       auto cmd_itf = std::make_shared<hardware_interface::CommandInterface>(
         command_joint_names_[i], interface_name_);
-      (void)cmd_itf->set_value(joint_command_values_[i]);
+      std::ignore = cmd_itf->set_value(joint_command_values_[i]);
       command_itfs_.emplace_back(cmd_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
@@ -211,7 +212,7 @@ protected:
     {
       auto state_itf = std::make_shared<hardware_interface::StateInterface>(
         command_joint_names_[i], interface_name_);
-      (void)state_itf->set_value(joint_state_values_[i]);
+      std::ignore = state_itf->set_value(joint_state_values_[i]);
       state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }

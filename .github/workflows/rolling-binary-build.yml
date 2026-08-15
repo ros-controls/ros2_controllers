@@ -4,12 +4,12 @@ name: Rolling Binary Build
 
 on:
   workflow_dispatch:
-  pull_request: &event
+  pull_request:
     branches:
       - master
       - '*feature*'
       - '*feature/**'
-    paths:
+    paths: &paths
       - '**.hpp'
       - '**.h'
       - '**.cpp'
@@ -21,7 +21,10 @@ on:
       - 'ros2_controllers-not-released.rolling.repos'
       - 'ros2_controllers-not-released.lyrical.repos'
       - '**.xml'
-  push: *event
+  push:
+    branches:
+      - master
+    paths: *paths
   schedule:
     # Run every morning to detect flakiness and broken dependencies
     - cron: '03 1 * * MON-FRI'

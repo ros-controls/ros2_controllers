@@ -22,6 +22,7 @@
 
 #include <cmath>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -48,6 +49,37 @@ void IMUSensorBroadcasterTest::SetUp()
 {
   // initialize controller
   imu_broadcaster_ = std::make_unique<FriendIMUSensorBroadcaster>();
+
+  imu_orientation_x_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "orientation.x");
+  std::ignore = imu_orientation_x_->set_value(sensor_values_[0]);
+  imu_orientation_y_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "orientation.y");
+  std::ignore = imu_orientation_y_->set_value(sensor_values_[1]);
+  imu_orientation_z_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "orientation.z");
+  std::ignore = imu_orientation_z_->set_value(sensor_values_[2]);
+  imu_orientation_w_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "orientation.w");
+  std::ignore = imu_orientation_w_->set_value(sensor_values_[3]);
+  imu_angular_velocity_x_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "angular_velocity.x");
+  std::ignore = imu_angular_velocity_x_->set_value(sensor_values_[4]);
+  imu_angular_velocity_y_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "angular_velocity.y");
+  std::ignore = imu_angular_velocity_y_->set_value(sensor_values_[5]);
+  imu_angular_velocity_z_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "angular_velocity.z");
+  std::ignore = imu_angular_velocity_z_->set_value(sensor_values_[6]);
+  imu_linear_acceleration_x_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "linear_acceleration.x");
+  std::ignore = imu_linear_acceleration_x_->set_value(sensor_values_[7]);
+  imu_linear_acceleration_y_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "linear_acceleration.y");
+  std::ignore = imu_linear_acceleration_y_->set_value(sensor_values_[8]);
+  imu_linear_acceleration_z_ =
+    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "linear_acceleration.z");
+  std::ignore = imu_linear_acceleration_z_->set_value(sensor_values_[9]);
 }
 
 void IMUSensorBroadcasterTest::TearDown() { imu_broadcaster_.reset(nullptr); }
