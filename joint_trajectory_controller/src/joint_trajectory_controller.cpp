@@ -468,6 +468,8 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // store the previous command and time used in open-loop control mode
         last_commanded_state_ = command_next_;
+        rt_last_commanded_state_.try_set([this](trajectory_msgs::msg::JointTrajectoryPoint & state)
+                                         { state = last_commanded_state_; });
         last_commanded_time_ = time;
       }
 
@@ -1225,6 +1227,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     update_state_from_command_interfaces(state_current_);
     update_state_from_command_interfaces(last_commanded_state_);
   }
+  rt_last_commanded_state_.set(last_commanded_state_);
 
   // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
   for (auto & pid : pids_)
