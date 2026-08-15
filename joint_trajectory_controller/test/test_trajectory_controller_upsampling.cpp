@@ -66,7 +66,7 @@ double time_at(const trajectory_msgs::msg::JointTrajectory & traj, size_t i)
 }
 }  // namespace
 
-// Untimed chunks get time_from_start = i / policy_frequency.
+// Untimed chunks get time_from_start = (i + 1) / policy_frequency.
 TEST(JtcUpsamplingHelpers, synthesizes_timing_from_policy_frequency)
 {
   UpsamplingHelpers c;
@@ -83,9 +83,10 @@ TEST(JtcUpsamplingHelpers, synthesizes_timing_from_policy_frequency)
 
   c.synthesize_timing(traj);
 
+  // the first waypoint is one policy step ahead, leaving [start, dt) for the lead-in
   for (int i = 0; i < 5; ++i)
   {
-    EXPECT_NEAR(time_at(traj, static_cast<size_t>(i)), i / 30.0, 1e-9);
+    EXPECT_NEAR(time_at(traj, static_cast<size_t>(i)), (i + 1) / 30.0, 1e-9);
   }
 }
 
@@ -151,7 +152,7 @@ TEST(JtcUpsamplingHelpers, preprocess_upsamples_when_enabled)
   for (size_t i = 0; i < traj.points.size(); ++i)
   {
     ASSERT_EQ(traj.points[i].velocities.size(), 1u);
-    EXPECT_NEAR(time_at(traj, i), static_cast<double>(i) / 30.0, 1e-9);
+    EXPECT_NEAR(time_at(traj, i), static_cast<double>(i + 1) / 30.0, 1e-9);
   }
   // rest boundary conditions
   EXPECT_NEAR(traj.points.front().velocities[0], 0.0, 1e-9);
@@ -209,7 +210,8 @@ TEST_F(TrajectoryControllerTest, upsampling_disabled_rejects_untimed_positions_o
 }
 
 // With upsampling on, preprocess synthesizes timing so the same untimed chunk now
-// passes validation and installs, and the reference carries (cubic) velocities.
+// passes validation and installs, and the reference carries (cubic) velocities. A second
+// chunk arriving mid-execution must still blend into the first.
 TEST_F(TrajectoryControllerTest, upsampling_enabled_accepts_untimed_positions_only)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -227,5 +229,11 @@ TEST_F(TrajectoryControllerTest, upsampling_enabled_accepts_untimed_positions_on
   EXPECT_TRUE(traj_controller_->has_nontrivial_traj());  // synthesized timing -> installed
   const auto state_reference = traj_controller_->get_state_reference();
   EXPECT_EQ(state_reference.velocities.size(), joint_names_.size());
+
+  // a second chunk blends: the bridge survives only if the first waypoint is at dt, not 0
+  publish(zero_delay, points, rclcpp::Time(0, 0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration::from_seconds(0.02));
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u);
   executor.cancel();
 }

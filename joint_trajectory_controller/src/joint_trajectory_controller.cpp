@@ -1464,12 +1464,12 @@ void JointTrajectoryController::synthesize_timing(
     }
   }
 
-  // TODO(vedh1234): point 0 is at t=0, so a fresh chunk steps to points[0] from the live state
-  // instead of ramping in; a live-state lead-in belongs with cross-chunk continuity.
+  // first target lands at dt, not 0, leaving [start, dt) for the lead-in instead of a step
   const double dt = 1.0 / policy_frequency;
   for (size_t i = 0; i < traj.points.size(); ++i)
   {
-    traj.points[i].time_from_start = rclcpp::Duration::from_seconds(static_cast<double>(i) * dt);
+    traj.points[i].time_from_start =
+      rclcpp::Duration::from_seconds(static_cast<double>(i + 1) * dt);
   }
 }
 

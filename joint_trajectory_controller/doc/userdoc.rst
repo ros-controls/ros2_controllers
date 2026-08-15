@@ -127,8 +127,10 @@ is a strict superset of the default behaviour (it is off by default). It has no 
 ``interpolation_method`` is ``none``.
 
 ``positions_upsampling.policy_frequency`` (double, Hz) is used to synthesize
-``time_from_start = i / policy_frequency`` for chunks that arrive without timing; when it is ``0`` the
-chunks must carry their own strictly-increasing ``time_from_start``.
+``time_from_start = (i + 1) / policy_frequency`` for chunks that arrive without timing; when it is
+``0`` the chunks must carry their own strictly-increasing ``time_from_start``. The first waypoint is
+placed one policy step ahead rather than at ``0``, so the controller ramps into the chunk from the
+current state instead of stepping to it.
 
    .. code-block:: yaml
 

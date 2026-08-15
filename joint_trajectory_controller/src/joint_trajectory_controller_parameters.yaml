@@ -142,7 +142,7 @@ joint_trajectory_controller:
       type: double,
       default_value: 0.0,
       description: "Frequency in Hz at which an AI policy emits action-chunk waypoints. When greater
-        than zero, ``time_from_start = i / policy_frequency`` is synthesized for positions-only chunks
+        than zero, ``time_from_start = (i + 1) / policy_frequency`` is synthesized for positions-only chunks
         that arrive without timing. When zero, incoming chunks must already carry strictly-increasing
         ``time_from_start``. Only used when ``positions_upsampling.enable`` is true.",
       validation: {
