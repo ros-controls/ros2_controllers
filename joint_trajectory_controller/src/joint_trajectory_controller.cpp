@@ -279,7 +279,8 @@ controller_interface::return_type JointTrajectoryController::update(
   auto new_external_msg = new_trajectory_msg_.readFromRT();
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg && (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
+    current_trajectory_msg != *new_external_msg &&
+    (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
     bool blended = false;
     if (
@@ -474,7 +475,7 @@ controller_interface::return_type JointTrajectoryController::update(
       if (rt_active_goal_local_)
       {
         // send feedback
-        const auto & feedback = active_goal->preallocated_feedback_;
+        const auto & feedback = rt_active_goal_local_->preallocated_feedback_;
         feedback->header.stamp = time;
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
