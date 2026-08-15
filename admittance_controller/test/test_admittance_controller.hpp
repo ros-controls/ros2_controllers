@@ -194,10 +194,15 @@ protected:
     }
 
     auto sc_fts = semantic_components::ForceTorqueSensor(ft_sensor_name_);
+<<<<<<< HEAD
     fts_state_names_ = sc_fts.get_state_interface_names();
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+=======
+    const auto fts_state_names = sc_fts.get_state_interface_names();
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
+>>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
 
-    const size_t num_state_ifs = joint_state_values_.size() + fts_state_names_.size();
+    const size_t num_state_ifs = joint_state_values_.size() + fts_state_names.size();
     state_itfs_.reserve(num_state_ifs);
     state_ifs.reserve(num_state_ifs);
 
@@ -210,10 +215,10 @@ protected:
       state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
-    std::vector<std::string> fts_itf_names = {"force.x",  "force.y",  "force.z",
-                                              "torque.x", "torque.y", "torque.z"};
+    const std::vector<std::string> fts_itf_names = {"force.x",  "force.y",  "force.z",
+                                                    "torque.x", "torque.y", "torque.z"};
 
-    for (auto i = 0u; i < fts_state_names_.size(); ++i)
+    for (auto i = 0u; i < fts_state_names.size(); ++i)
     {
       auto fts_state_itf =
         std::make_shared<hardware_interface::StateInterface>(ft_sensor_name_, fts_itf_names[i]);
@@ -374,28 +379,22 @@ protected:
   const std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
 
-  bool hardware_state_has_offset_ = false;
-
   const std::string ik_base_frame_ = "base_link";
   const std::string ik_tip_frame_ = "tool0";
-  const std::string ik_group_name_ = "arm";
-
   const std::string control_frame_ = "tool0";
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";
   const std::string sensor_frame_ = "link_6";
 
-  std::array<bool, 6> admittance_selected_axes_ = {{true, true, true, true, true, true}};
-  std::array<double, 6> admittance_mass_ = {{5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
-  std::array<double, 6> admittance_damping_ratio_ = {
+  const std::array<bool, 6> admittance_selected_axes_ = {{true, true, true, true, true, true}};
+  const std::array<double, 6> admittance_mass_ = {{5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
+  const std::array<double, 6> admittance_damping_ratio_ = {
     {2.828427, 2.828427, 2.828427, 2.828427, 2.828427, 2.828427}};
-  std::array<double, 6> admittance_stiffness_ = {{214.1, 214.2, 214.3, 214.4, 214.5, 214.6}};
+  const std::array<double, 6> admittance_stiffness_ = {{214.1, 214.2, 214.3, 214.4, 214.5, 214.6}};
 
-  std::array<double, 6> joint_command_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
-  std::array<double, 6> joint_state_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
-  std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
-  std::vector<std::string> fts_state_names_;
-
+  const std::array<double, 6> joint_command_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  const std::array<double, 6> joint_state_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
+  const std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 

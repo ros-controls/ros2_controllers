@@ -144,6 +144,7 @@ protected:
     params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
+<<<<<<< HEAD
     if (position_feedback_ == true)
     {
       traction_interface_name_ = "position";
@@ -154,6 +155,9 @@ protected:
     }
 
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
+=======
+    std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
+>>>>>>> 1152eb3 (test: cleanup controller fixture member variables (#2562))
     command_itfs_.reserve(joint_command_values_.size());
     command_ifs.reserve(joint_command_values_.size());
 
@@ -259,30 +263,26 @@ protected:
 
 protected:
   // Controller-related parameters
-  double reference_timeout_ = 2.0;
-  bool front_steering_ = true;
-  bool open_loop_ = false;
-  unsigned int velocity_rolling_window_size_ = 10;
-  bool position_feedback_ = false;
-  std::vector<std::string> traction_joints_names_ = {{"rear_wheel_joint"}};
-  std::vector<std::string> steering_joints_names_ = {{"steering_axis_joint"}};
-  std::vector<std::string> joint_names_ = {{traction_joints_names_[0], steering_joints_names_[0]}};
-
-  std::vector<std::string> traction_joints_preceding_names_ = {{"pid_controller/rear_wheel_joint"}};
-  std::vector<std::string> steering_joints_preceding_names_ = {
+  const bool open_loop_ = false;
+  const unsigned int velocity_rolling_window_size_ = 10;
+  const bool position_feedback_ = false;
+  const std::vector<std::string> traction_joints_names_ = {{"rear_wheel_joint"}};
+  const std::vector<std::string> steering_joints_names_ = {{"steering_axis_joint"}};
+  const std::vector<std::string> traction_joints_preceding_names_ = {
+    {"pid_controller/rear_wheel_joint"}};
+  const std::vector<std::string> steering_joints_preceding_names_ = {
     {"pid_controller/steering_axis_joint"}};
 
-  double wheelbase_ = 3.24644;
-  double traction_wheel_radius_ = 0.45;
+  const double wheelbase_ = 3.24644;
+  const double traction_wheel_radius_ = 0.45;
 
-  std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
-  std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
-  std::array<std::string, 2> reference_interface_names_ = {{"linear", "angular"}};
-  std::string steering_interface_name_ = "position";
+  const std::array<double, 2> joint_state_values_ = {{3.3, 0.5}};
+  const std::array<double, 2> joint_command_values_ = {{1.1, 2.2}};
+  const std::array<std::string, 2> reference_interface_names_ = {{"linear", "angular"}};
+  const std::string steering_interface_name_ = "position";
 
-  // defined in setup
-  std::string traction_interface_name_ = "";
-  std::string preceding_prefix_ = "pid_controller";
+  const std::string traction_interface_name_ = position_feedback_ ? "position" : "velocity";
+  const std::string preceding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;

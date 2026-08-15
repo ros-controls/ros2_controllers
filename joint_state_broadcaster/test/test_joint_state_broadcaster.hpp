@@ -97,8 +97,8 @@ protected:
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
   const std::vector<std::string> interface_names_ = {HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
-  std::string custom_interface_name_ = "measured_position";
-  std::vector<double> joint_values_ = {1.1, 2.1, 3.1};
+  const std::string custom_interface_name_ = "measured_position";
+  const std::vector<double> joint_values_ = {1.1, 2.1, 3.1};
   double custom_joint_value_ = 3.5;
 
   hardware_interface::StateInterface::SharedPtr joint_1_pos_state_;
@@ -119,7 +119,7 @@ protected:
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
   std::unique_ptr<FriendJointStateBroadcaster> state_broadcaster_;
-  std::string frame_id_ = "base_link";
+  const std::string frame_id_ = "base_link";
 };
 
 #endif  // TEST_JOINT_STATE_BROADCASTER_HPP_
