@@ -2,6 +2,12 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.9.0 (2026-08-12)
+------------------
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Use new chainable controller exports API (`#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_)
+* Contributors: Sai Kishor Kothakota
+
 6.8.0 (2026-07-01)
 ------------------
 * fix: correct test_load_controller tests for motion_primitives and pid_controller (`#2445 <https://github.com/ros-controls/ros2_controllers/issues/2445>`_)

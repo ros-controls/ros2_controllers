@@ -303,7 +303,10 @@ bool Trajectory::sample(
   // whole animation has played out
   start_segment_itr = --end();
   end_segment_itr = end();
-  last_sample_idx_ = last_idx;
+  if (search_monotonically_increasing)
+  {
+    last_sample_idx_ = last_idx;
+  }
 
   // If the last segment was never entered (e.g. sample_time jumped past a very
   // short last segment because the controller rate is slower than the segment
