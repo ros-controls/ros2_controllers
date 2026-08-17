@@ -568,7 +568,8 @@ class JointTrajectoryController(Plugin):
         self._joint_pos[name]["command"] = val
 
     def _build_trajectory_msg(self):
-        """Build a JointTrajectory message from the current joint targets.
+        """
+        Build a JointTrajectory message from the current joint targets.
 
         The time to reach the target (time_from_start) is either the
         user-specified start time override (if > 0), or auto-computed from

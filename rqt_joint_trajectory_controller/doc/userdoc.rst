@@ -32,4 +32,3 @@ Instead, sending is explicit and configurable:
 * **continuous send**: when checked, republishes the command at ``pub freq`` (Hz). Off by default.
 * **start time (ms)**: overrides the trajectory ``time_from_start``. Set to ``0`` to auto-compute the duration from the joint velocity limits and the speed scaling.
 * **pub freq (Hz)**: rate at which commands are republished while ``continuous send`` is active.
-
