@@ -57,11 +57,13 @@ Pose integrate_twist(
     final_heading};
 }
 
-void expect_pose(const steering_kinematics::SteeringKinematics & odom, const Pose & expected)
+auto PoseNear(const Pose & expected)
 {
-  EXPECT_NEAR(odom.get_x(), expected.x, TOLERANCE);
-  EXPECT_NEAR(odom.get_y(), expected.y, TOLERANCE);
-  EXPECT_NEAR(odom.get_heading(), expected.heading, TOLERANCE);
+  return ::testing::AllOf(
+    ::testing::Field("x", &Pose::x, ::testing::DoubleNear(expected.x, TOLERANCE)),
+    ::testing::Field("y", &Pose::y, ::testing::DoubleNear(expected.y, TOLERANCE)),
+    ::testing::Field(
+      "heading", &Pose::heading, ::testing::DoubleNear(expected.heading, TOLERANCE)));
 }
 
 class SteeringOdometryIntegratorTest : public ::testing::TestWithParam<SteeringConfiguration>
@@ -78,7 +80,9 @@ protected:
     odom.set_odometry(initial.x, initial.y, initial.heading);
     odom.update_open_loop(linear, angular, dt);
 
-    expect_pose(odom, integrate_twist(initial, linear, angular, dt));
+    EXPECT_THAT(
+      (Pose{odom.get_x(), odom.get_y(), odom.get_heading()}),
+      PoseNear(integrate_twist(initial, linear, angular, dt)));
     EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
     EXPECT_DOUBLE_EQ(odom.get_angular(), angular);
   }
