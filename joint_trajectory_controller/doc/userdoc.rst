@@ -122,7 +122,9 @@ representation <joint_trajectory_controller_trajectory_representation>`).
 When ``positions_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
 are upsampled in place: the knot velocities of a global cubic spline (rest boundary conditions,
 ``v0 = v_{N-1} = 0``) are solved and written into the trajectory, so the existing sampler reproduces a
-smooth C2 motion. Messages that already carry velocities are passed through unchanged, so the feature
+motion that is continuous in acceleration across the chunk's waypoints (see :ref:`the plotted
+comparison <joint_trajectory_controller_trajectory_representation>`). Messages that already carry
+velocities are passed through unchanged, so the feature
 is a strict superset of the default behaviour (it is off by default). It has no effect when
 ``interpolation_method`` is ``none``.
 

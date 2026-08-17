@@ -52,7 +52,8 @@ The spline interpolator uses the following interpolation strategies depending on
   velocities. Enabling ``positions_upsampling`` avoids this for positions-only inputs: the controller
   pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
   writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
-  C2. See :ref:`Ingesting positions-only action chunks <joint_trajectory_controller_userdoc>`.
+  continuous in acceleration across the trajectory's own waypoints. See :ref:`Ingesting
+  positions-only action chunks <joint_trajectory_controller_userdoc>`.
 
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
@@ -66,6 +67,15 @@ To visualize the difference of the different interpolation methods and their inp
 
 .. image:: spline_position.png
   :alt: Sampled trajectory with splines if position is given only
+
+* Sampled trajectory with the same positions-only points, with ``positions_upsampling`` disabled and enabled:
+
+.. note::
+  The linear strategy reports no acceleration, so only the enabled series is drawn in the bottom
+  plot. Its step at ``t=0.5`` is the hand-off from the initial point, which is not part of the solve.
+
+.. image:: spline_position_upsampling.png
+  :alt: Sampled trajectory with positions-only points, with and without positions_upsampling
 
 * Sampled trajectory with cubic splines if velocity is given only (no deduction for interpolation method ``none``):
 
