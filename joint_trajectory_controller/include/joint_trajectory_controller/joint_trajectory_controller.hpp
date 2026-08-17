@@ -205,12 +205,8 @@ protected:
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
 
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  // Currently active action goal, if any. Needs to be a shared_ptr for processing the goal inside
-  // the goal_handle_timer_ in the non-rt loop
   realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
-  // local copy for the RT loop
   RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
-  // Is there a pending action goal?
   std::atomic<bool> rt_has_pending_goal_{false};
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   // Timer period for goal_handle_timer_
