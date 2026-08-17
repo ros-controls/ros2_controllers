@@ -166,7 +166,7 @@ class JointTrajectoryController(Plugin):
         self._update_act_pos_timer.timeout.connect(self._update_joint_widgets)
 
         # Timer for controller manager updates
-        self._list_cm = ControllerManagerLister()
+        self._list_cm = ControllerManagerLister(self._node)
         self._update_cm_list_timer = QTimer(self)
         self._update_cm_list_timer.setInterval(int(1000.0 / self._ctrlrs_update_freq))
         self._update_cm_list_timer.timeout.connect(self._update_cm_list)
@@ -200,6 +200,7 @@ class JointTrajectoryController(Plugin):
         self._unregister_state_sub()
         self._unregister_cmd_pub()
         self._unregister_robot_description_sub()
+        self._unregister_list_controllers()
         # self._node is context.node, owned and spun by rqt_gui_py. It must not
         # be destroyed here; the framework destroys it after all plugins have
         # shut down.
@@ -304,14 +305,18 @@ class JointTrajectoryController(Plugin):
 
     def _on_cm_change(self, cm_ns):
         self._cm_ns = cm_ns
+        self._unregister_list_controllers()
         if cm_ns:
-            self._list_controllers = ControllerLister(cm_ns)
+            self._list_controllers = ControllerLister(self._node, cm_ns)
             # NOTE: Clear below is important, as different controller managers
             # might have controllers with the same name but different
             # configurations. Clearing forces controller re-discovery
             self._widget.jtc_combo.clear()
             self._update_jtc_list()
-        else:
+
+    def _unregister_list_controllers(self):
+        if self._list_controllers is not None:
+            self._list_controllers.close()
             self._list_controllers = None
 
     def _on_jtc_change(self, jtc_name):

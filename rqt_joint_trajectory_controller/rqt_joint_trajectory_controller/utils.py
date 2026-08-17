@@ -19,6 +19,8 @@
 # No backwards compatibility guarantees are provided at this moment.
 
 
+import threading
+
 import rclpy
 from controller_manager_msgs.srv import ListControllers
 
@@ -56,10 +58,15 @@ def is_shutdown_context_error(exc):
     )
 
 
-def get_controller_managers(namespace="/", initial_guess=None):
+def get_controller_managers(node, namespace="/", initial_guess=None):
     """
     Get list of active controller manager namespaces.
 
+    @param node: Node used to query the ROS graph for controller_manager services.
+    Only synchronous graph introspection calls are made on it (get_service_names_and_types);
+    it is never spun, so it is safe to pass a node whose spinning is owned elsewhere
+    (e.g. rqt's shared context.node).
+    @type node: rclpy.node.Node
     @param namespace: Namespace where to look for controller managers.
     @type namespace: str
     @param initial_guess: Initial guess of the active controller managers.
@@ -79,24 +86,15 @@ def get_controller_managers(namespace="/", initial_guess=None):
         ns_list = initial_guess[:]  # force copy
 
     # Get list of (potential) currently running controller managers
-    node = rclpy.node.Node(
-        "get_controller_managers_node",
-        cli_args=["--ros-args", "-r", "__node:=get_controller_managers_node"],
-    )
-    try:
-        ns_list_curr = _sloppy_get_controller_managers(node, namespace)
+    ns_list_curr = _sloppy_get_controller_managers(node, namespace)
 
-        # Update initial guess:
-        # 1. Remove entries not found in current list
-        # 2. Add new untracked controller managers
-        ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
-        ns_list += [
-            ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)
-        ]
+    # Update initial guess:
+    # 1. Remove entries not found in current list
+    # 2. Add new untracked controller managers
+    ns_list[:] = [ns for ns in ns_list if ns in ns_list_curr]
+    ns_list += [ns for ns in ns_list_curr if ns not in ns_list and is_controller_manager(node, ns)]
 
-        return sorted(ns_list)
-    finally:
-        node.destroy_node()
+    return sorted(ns_list)
 
 
 def is_controller_manager(node, namespace):
@@ -191,11 +189,20 @@ class ControllerManagerLister:
     ROS master.
 
     Example usage:
-        >>> list_cm = ControllerManagerLister()
+        >>> list_cm = ControllerManagerLister(node)
         >>> print(list_cm())
     """
 
-    def __init__(self, namespace="/"):
+    def __init__(self, node, namespace="/"):
+        """
+        Store the injected node and namespace used to look up controller managers.
+
+        @param node Node used to query the ROS graph. Never spun by this class.
+        @type node rclpy.node.Node
+        @param namespace Namespace where to look for controller managers.
+        @type namespace str
+        """
+        self._node = node
         self._ns = namespace
         self._cm_list = []
 
@@ -205,7 +212,7 @@ class ControllerManagerLister:
             return self._cm_list
 
         try:
-            self._cm_list = get_controller_managers(self._ns, self._cm_list)
+            self._cm_list = get_controller_managers(self._node, self._ns, self._cm_list)
         except rclpy.executors.ExternalShutdownException:
             return self._cm_list
         except Exception as e:
@@ -223,22 +230,27 @@ class ControllerLister:
     controller filtering functions available in this module.
 
     Example usage. Get I{running} controllers of type C{bar_base/bar}:
-        >>> list_controllers = ControllerLister('foo_robot/controller_manager')
+        >>> list_controllers = ControllerLister(node, 'foo_robot/controller_manager')
         >>> all_ctrl = list_controllers()
         >>> running_ctrl = filter_by_state(all_ctrl, 'running')
         >>> running_bar_ctrl = filter_by_type(running_ctrl, 'bar_base/bar')
     """
 
-    def __init__(self, namespace="/controller_manager"):
+    def __init__(self, node, namespace="/controller_manager"):
         """
-        @param namespace Namespace of controller manager to monitor.
+        Store the injected node and namespace, and create the list_controllers client.
 
+        @param node Node used to call the controller manager's list_controllers
+        service. This class never spins node itself (see __call__): node may be
+        a shared node (e.g. rqt's context.node) that some other executor already
+        spins continuously elsewhere, and calling rclpy.spin_until_future_complete()
+        or spin_once() on it here would race against that executor.
+        @type node rclpy.node.Node
+
+        @param namespace Namespace of controller manager to monitor.
         @type namespace str
         """
-        self._node = rclpy.node.Node(
-            "controller_lister",
-            cli_args=["--ros-args", "-r", "__node:=controller_lister"],
-        )
+        self._node = node
         self._srv_name = namespace + "/" + _LIST_CONTROLLERS_STR
         self._srv_client = self._create_client()
 
@@ -249,9 +261,37 @@ class ControllerLister:
 
     def __call__(self):
         try:
-            controller_list = self._srv_client.call_async(ListControllers.Request())
-            rclpy.spin_until_future_complete(self._node, controller_list)
-            result = controller_list.result()
+            future = self._srv_client.call_async(ListControllers.Request())
+            # Wait via a plain threading.Event rather than spinning self._node:
+            # self._node may be context.node, which rqt_gui_py's RclpySpinner
+            # already spins continuously on another thread. Its executor already
+            # processes this future's response and completes it; we only need to
+            # be woken up when that happens. Poll self._node's own context between
+            # short waits so shutdown doesn't block here indefinitely, mirroring
+            # the exit condition spin_until_future_complete used to provide.
+            # self._node.context.ok() (not rclpy.ok(), which always checks the
+            # process-wide default context) is the correct check here: self._node
+            # may not be tied to the default context, and it is that node's
+            # context -- not the default one -- whose executor is what would ever
+            # complete this future.
+            #
+            # We deliberately do not use Client.call(): in Humble it blocks with
+            # no timeout at all and no way to observe context shutdown, and even
+            # in Jazzy/Rolling (where it gained a timeout_sec) a fixed wall-clock
+            # timeout can't express "keep waiting while healthy, stop promptly on
+            # shutdown" -- polling it in a loop would just resend a fresh request
+            # each iteration, since it calls call_async() internally every time.
+            done_event = threading.Event()
+            future.add_done_callback(lambda _future: done_event.set())
+            while self._node.context.ok() and not done_event.is_set():
+                done_event.wait(timeout=0.1)
+            # No-op if the future is already done. Otherwise (we gave up waiting
+            # because the context is shutting down) this marks it CANCELLED,
+            # which runs Client.remove_pending_request() via the future's own
+            # done-callback, so the request is not left registered in the
+            # client's pending-requests table after we stop waiting on it.
+            future.cancel()
+            result = future.result()
             return result.controller if result else []
         except rclpy.executors.ExternalShutdownException:
             return []
@@ -262,6 +302,24 @@ class ControllerLister:
 
     def _create_client(self):
         return self._node.create_client(ListControllers, self._srv_name)
+
+    def close(self):
+        """
+        Destroy the list_controllers client this instance owns on self._node.
+
+        Node.create_client() registers the client on self._node and never garbage-
+        collects it on its own; the client only stops being registered once
+        self._node.destroy_client() is called on it, or self._node itself is
+        destroyed. Since self._node may be long-lived and shared (e.g. rqt's
+        context.node), callers must call close() once this ControllerLister is no
+        longer used -- e.g. before replacing it with a new one, when
+        controller-manager selection is cleared, or during plugin shutdown --
+        otherwise every replacement leaks one more client onto self._node forever.
+        Does not touch self._node itself.
+        """
+        if self._srv_client is not None:
+            self._node.destroy_client(self._srv_client)
+            self._srv_client = None
 
 
 ###############################################################################
