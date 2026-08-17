@@ -16,6 +16,7 @@
  * Authors: Wiktor Bajor, Jakub Delicat
  */
 
+#include <tuple>
 #include <utility>
 
 #include <rclcpp/node.hpp>
@@ -73,6 +74,27 @@ public:
   void SetUp()
   {
     gps_broadcaster_ = std::make_unique<gps_sensor_broadcaster::GPSSensorBroadcaster>();
+
+    gps_status_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "status");
+    std::ignore = gps_status_->set_value(sensor_values_[0]);
+    gps_service_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "service");
+    std::ignore = gps_service_->set_value(sensor_values_[1]);
+    gps_latitude_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "latitude");
+    std::ignore = gps_latitude_->set_value(sensor_values_[2]);
+    gps_longitude_ =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "longitude");
+    std::ignore = gps_longitude_->set_value(sensor_values_[3]);
+    gps_altitude_ = std::make_shared<hardware_interface::StateInterface>(sensor_name_, "altitude");
+    std::ignore = gps_altitude_->set_value(sensor_values_[4]);
+    latitude_covariance_ =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "latitude_covariance");
+    std::ignore = latitude_covariance_->set_value(sensor_values_[5]);
+    longitude_covariance_ =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "longitude_covariance");
+    std::ignore = longitude_covariance_->set_value(sensor_values_[6]);
+    altitude_covariance_ =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "altitude_covariance");
+    std::ignore = altitude_covariance_->set_value(sensor_values_[7]);
   }
 
   void TearDown() { gps_broadcaster_.reset(nullptr); }
@@ -129,31 +151,15 @@ protected:
   const rclcpp::Parameter sensor_name_param_ = rclcpp::Parameter("sensor_name", "gps_sensor");
   const std::string sensor_name_ = sensor_name_param_.get_value<std::string>();
   const rclcpp::Parameter frame_id_ = rclcpp::Parameter("frame_id", "gps_sensor_frame");
-  std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
-  hardware_interface::StateInterface::SharedPtr gps_status_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "status", &sensor_values_[0]);
-  hardware_interface::StateInterface::SharedPtr gps_service_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "service", &sensor_values_[1]);
-  hardware_interface::StateInterface::SharedPtr gps_latitude_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "latitude", &sensor_values_[2]);
-  hardware_interface::StateInterface::SharedPtr gps_longitude_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "longitude", &sensor_values_[3]);
-  hardware_interface::StateInterface::SharedPtr gps_altitude_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "altitude", &sensor_values_[4]);
-  hardware_interface::StateInterface::SharedPtr latitude_covariance_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "latitude_covariance", &sensor_values_[5]);
-  hardware_interface::StateInterface::SharedPtr longitude_covariance_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "longitude_covariance", &sensor_values_[6]);
-  hardware_interface::StateInterface::SharedPtr altitude_covariance_ =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "altitude_covariance", &sensor_values_[7]);
+  const std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
+  hardware_interface::StateInterface::SharedPtr gps_status_;
+  hardware_interface::StateInterface::SharedPtr gps_service_;
+  hardware_interface::StateInterface::SharedPtr gps_latitude_;
+  hardware_interface::StateInterface::SharedPtr gps_longitude_;
+  hardware_interface::StateInterface::SharedPtr gps_altitude_;
+  hardware_interface::StateInterface::SharedPtr latitude_covariance_;
+  hardware_interface::StateInterface::SharedPtr longitude_covariance_;
+  hardware_interface::StateInterface::SharedPtr altitude_covariance_;
 
   std::unique_ptr<gps_sensor_broadcaster::GPSSensorBroadcaster> gps_broadcaster_;
 };

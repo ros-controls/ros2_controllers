@@ -20,6 +20,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -82,7 +83,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override
   {
-    auto ref_itfs = export_reference_interfaces();
+    // export_reference_interfaces() populates ordered_exported_reference_interfaces_
+    export_reference_interfaces();
+    export_state_interfaces();
     return tricycle_steering_controller::TricycleSteeringController::on_activate(previous_state);
   }
 
@@ -143,35 +146,26 @@ protected:
     params.node_options = controller_->define_custom_node_options();
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
 
-    if (position_feedback_ == true)
-    {
-      traction_interface_name_ = "position";
-    }
-    else
-    {
-      traction_interface_name_ = "velocity";
-    }
-
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     command_itfs_.reserve(joint_command_values_.size());
     loaned_command_ifs.reserve(joint_command_values_.size());
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_RIGHT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        traction_joints_names_[1], steering_interface_name_,
-        &joint_command_values_[CMD_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], steering_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_TRACTION_LEFT_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     command_itfs_.emplace_back(
       std::make_shared<hardware_interface::CommandInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_command_values_[CMD_STEER_WHEEL]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore = command_itfs_.back()->set_value(joint_command_values_[CMD_STEER_WHEEL]);
     loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
 
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
@@ -180,20 +174,20 @@ protected:
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[0], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]));
+        traction_joints_names_[0], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_RIGHT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        traction_joints_names_[1], traction_interface_name_,
-        &joint_state_values_[STATE_TRACTION_LEFT_WHEEL]));
+        traction_joints_names_[1], traction_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_TRACTION_LEFT_WHEEL]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     state_itfs_.emplace_back(
       std::make_shared<hardware_interface::StateInterface>(
-        steering_joints_names_[0], steering_interface_name_,
-        &joint_state_values_[STATE_STEER_AXIS]));
+        steering_joints_names_[0], steering_interface_name_));
+    std::ignore = state_itfs_.back()->set_value(joint_state_values_[STATE_STEER_AXIS]);
     loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
 
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
@@ -270,32 +264,27 @@ protected:
 
 protected:
   // Controller-related parameters
-  double reference_timeout_ = 2.0;
-  bool open_loop_ = false;
-  unsigned int velocity_rolling_window_size_ = 10;
-  bool position_feedback_ = false;
-  std::vector<std::string> traction_joints_names_ = {
+  const bool open_loop_ = false;
+  const unsigned int velocity_rolling_window_size_ = 10;
+  const bool position_feedback_ = false;
+  const std::vector<std::string> traction_joints_names_ = {
     "rear_right_wheel_joint", "rear_left_wheel_joint"};
-  std::vector<std::string> steering_joints_names_ = {"steering_axis_joint"};
-  std::vector<std::string> joint_names_ = {
-    traction_joints_names_[0], traction_joints_names_[1], steering_joints_names_[0]};
-
-  std::vector<std::string> traction_joints_preceding_names_ = {
+  const std::vector<std::string> steering_joints_names_ = {"steering_axis_joint"};
+  const std::vector<std::string> traction_joints_preceding_names_ = {
     "pid_controller/rear_right_wheel_joint", "pid_controller/rear_left_wheel_joint"};
-  std::vector<std::string> steering_joints_preceding_names_ = {
+  const std::vector<std::string> steering_joints_preceding_names_ = {
     "pid_controller/steering_axis_joint"};
 
-  double wheelbase_ = 3.24644;
-  double traction_track_width_ = 1.212121;
-  double traction_wheels_radius_ = 0.45;
+  const double wheelbase_ = 3.24644;
+  const double traction_track_width_ = 1.212121;
+  const double traction_wheels_radius_ = 0.45;
 
-  std::array<double, 3> joint_state_values_{{0.5, 0.5, 0.0}};
-  std::array<double, 3> joint_command_values_{{1.1, 3.3, 2.2}};
-  std::array<std::string, 2> reference_interface_names_{{"linear", "angular"}};
-  std::string steering_interface_name_ = "position";
-  // defined in setup
-  std::string traction_interface_name_ = "";
-  std::string preceding_prefix_ = "pid_controller";
+  const std::array<double, 3> joint_state_values_{{0.5, 0.5, 0.0}};
+  const std::array<double, 3> joint_command_values_{{1.1, 3.3, 2.2}};
+  const std::array<std::string, 2> reference_interface_names_{{"linear", "angular"}};
+  const std::string steering_interface_name_ = "position";
+  const std::string traction_interface_name_ = position_feedback_ ? "position" : "velocity";
+  const std::string preceding_prefix_ = "pid_controller";
 
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;

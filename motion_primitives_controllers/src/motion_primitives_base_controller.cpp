@@ -18,6 +18,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 #include "controller_interface/helpers.hpp"
 
@@ -136,59 +137,60 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
   }
 
   // Set the motion_type
-  (void)command_interfaces_[0].set_value(static_cast<double>(current_moprim_.type));
+  std::ignore = command_interfaces_[0].set_value(static_cast<double>(current_moprim_.type));
 
   // Process joint positions if available
   if (!current_moprim_.joint_positions.empty())
   {
     for (size_t i = 0; i < current_moprim_.joint_positions.size(); ++i)
     {
-      (void)command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);  // q1 to q6
+      // q1 to q6
+      std::ignore = command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);
     }
   }
 
   // Process Cartesian poses if available
   if (!current_moprim_.poses.empty())
   {
-    const auto & goal_pose = current_moprim_.poses[0].pose;            // goal pose
-    (void)command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
-    (void)command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
-    (void)command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
-    (void)command_interfaces_[10].set_value(goal_pose.orientation.x);  // pos_qx
-    (void)command_interfaces_[11].set_value(goal_pose.orientation.y);  // pos_qy
-    (void)command_interfaces_[12].set_value(goal_pose.orientation.z);  // pos_qz
-    (void)command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
+    const auto & goal_pose = current_moprim_.poses[0].pose;                    // goal pose
+    std::ignore = command_interfaces_[7].set_value(goal_pose.position.x);      // pos_x
+    std::ignore = command_interfaces_[8].set_value(goal_pose.position.y);      // pos_y
+    std::ignore = command_interfaces_[9].set_value(goal_pose.position.z);      // pos_z
+    std::ignore = command_interfaces_[10].set_value(goal_pose.orientation.x);  // pos_qx
+    std::ignore = command_interfaces_[11].set_value(goal_pose.orientation.y);  // pos_qy
+    std::ignore = command_interfaces_[12].set_value(goal_pose.orientation.z);  // pos_qz
+    std::ignore = command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
     // Process via poses if available (only for circular motion)
     if (current_moprim_.type == MotionType::CIRCULAR_CARTESIAN && current_moprim_.poses.size() == 2)
     {
-      const auto & via_pose = current_moprim_.poses[1].pose;            // via pose
-      (void)command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
-      (void)command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
-      (void)command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
-      (void)command_interfaces_[17].set_value(via_pose.orientation.x);  // pos_via_qx
-      (void)command_interfaces_[18].set_value(via_pose.orientation.y);  // pos_via_qy
-      (void)command_interfaces_[19].set_value(via_pose.orientation.z);  // pos_via_qz
-      (void)command_interfaces_[20].set_value(via_pose.orientation.w);  // pos_via_qw
+      const auto & via_pose = current_moprim_.poses[1].pose;                    // via pose
+      std::ignore = command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
+      std::ignore = command_interfaces_[15].set_value(via_pose.position.y);     // pos_via_y
+      std::ignore = command_interfaces_[16].set_value(via_pose.position.z);     // pos_via_z
+      std::ignore = command_interfaces_[17].set_value(via_pose.orientation.x);  // pos_via_qx
+      std::ignore = command_interfaces_[18].set_value(via_pose.orientation.y);  // pos_via_qy
+      std::ignore = command_interfaces_[19].set_value(via_pose.orientation.z);  // pos_via_qz
+      std::ignore = command_interfaces_[20].set_value(via_pose.orientation.w);  // pos_via_qw
     }
   }
 
-  (void)command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
+  std::ignore = command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
 
   // Read additional arguments
   for (const auto & arg : current_moprim_.additional_arguments)
   {
     if (arg.name == "velocity")
     {
-      (void)command_interfaces_[22].set_value(arg.value);
+      std::ignore = command_interfaces_[22].set_value(arg.value);
     }
     else if (arg.name == "acceleration")
     {
-      (void)command_interfaces_[23].set_value(arg.value);
+      std::ignore = command_interfaces_[23].set_value(arg.value);
     }
     else if (arg.name == "move_time")
     {
-      (void)command_interfaces_[24].set_value(arg.value);
+      std::ignore = command_interfaces_[24].set_value(arg.value);
     }
     else
     {

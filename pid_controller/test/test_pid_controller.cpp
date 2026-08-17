@@ -416,7 +416,7 @@ TEST_F(PidControllerTest, subscribe_and_get_messages_success)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
     EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
-    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
+    ASSERT_EQ(msg.dof_states[i].output, controller_->command_interfaces_[i].get_optional().value());
   }
 }
 
@@ -441,7 +441,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
     EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
-    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
+    ASSERT_EQ(msg.dof_states[i].output, controller_->command_interfaces_[i].get_optional().value());
   }
 
   for (size_t i = 0; i < controller_->ordered_exported_reference_interfaces_.size(); ++i)
