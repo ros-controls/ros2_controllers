@@ -16,7 +16,6 @@
 
 import os
 import rclpy
-import threading
 from ament_index_python.packages import get_package_share_directory
 
 from qt_gui.plugin import Plugin
@@ -102,12 +101,7 @@ class JointTrajectoryController(Plugin):
     def __init__(self, context):
         super().__init__(context)
         self.setObjectName("JointTrajectoryController")
-        self._node = rclpy.node.Node(
-            "rqt_joint_trajectory_controller",
-            cli_args=["--ros-args", "-r", "__node:=rqt_joint_trajectory_controller"],
-        )
-        self._executor = None
-        self._executor_thread = None
+        self._node = context.node
 
         # Create QWidget and extend it with all the attributes and children
         # from the UI file
@@ -185,7 +179,7 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.start()
 
         # subscriptions
-        subscribe_to_robot_description(self._node)
+        self._robot_description_sub = subscribe_to_robot_description(self._node)
 
         # Signal connections
         w = self._widget
@@ -205,18 +199,11 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.stop()
         self._unregister_state_sub()
         self._unregister_cmd_pub()
-        self._unregister_executor()
-        self._destroy_node()
-
-    def _destroy_node(self):
-        if self._node is not None:
-            try:
-                self._node.destroy_node()
-            except Exception as e:
-                if not is_shutdown_context_error(e):
-                    raise
-            finally:
-                self._node = None
+        self._unregister_robot_description_sub()
+        # self._node is context.node, owned and spun by rqt_gui_py. It must not
+        # be destroyed here; the framework destroys it after all plugins have
+        # shut down.
+        self._node = None
 
     def save_settings(self, plugin_settings, instance_settings):
         instance_settings.set_value("cm_ns", self._cm_ns)
@@ -426,21 +413,6 @@ class JointTrajectoryController(Plugin):
 
         self.jointStateChanged.connect(self._on_joint_state_change)
 
-        self._executor = rclpy.executors.SingleThreadedExecutor()
-        self._executor.add_node(self._node)
-        self._executor_thread = threading.Thread(target=self._spin_executor, daemon=True)
-        self._executor_thread.start()
-
-    def _spin_executor(self):
-        try:
-            self._executor.spin()
-        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-            pass
-        except Exception as e:
-            # During SIGINT shutdown, the ROS context can become invalid before spin exits.
-            if not is_shutdown_context_error(e):
-                print(f"Executor thread failed: {e}")
-
     def _unload_jtc(self):
         # Stop updating the joint positions
         try:
@@ -451,7 +423,6 @@ class JointTrajectoryController(Plugin):
         # Reset ROS interfaces
         self._unregister_state_sub()
         self._unregister_cmd_pub()
-        self._unregister_executor()
 
         # Clear joint widgets
         # NOTE: Implementation is a workaround for:
@@ -492,12 +463,10 @@ class JointTrajectoryController(Plugin):
             self._node.destroy_subscription(self._state_sub)
             self._state_sub = None
 
-    def _unregister_executor(self):
-        if self._executor is not None:
-            self._executor.shutdown()
-            self._executor_thread.join()
-            self._executor = None
-            self._executor_thread = None
+    def _unregister_robot_description_sub(self):
+        if self._robot_description_sub is not None:
+            self._node.destroy_subscription(self._robot_description_sub)
+            self._robot_description_sub = None
 
     def _state_cb(self, msg):
         current_pos = {}
