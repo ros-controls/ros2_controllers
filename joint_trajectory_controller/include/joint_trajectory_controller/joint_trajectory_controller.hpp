@@ -209,8 +209,7 @@ protected:
   RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
   std::atomic<bool> rt_has_pending_goal_{false};
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  // Timer period for goal_handle_timer_
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
+  rclcpp::Duration goal_handle_timer_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);

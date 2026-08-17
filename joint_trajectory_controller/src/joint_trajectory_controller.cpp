@@ -1055,7 +1055,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   RCLCPP_INFO(
     logger, "Action status changes will be monitored at %.2f Hz.", params_.action_monitor_rate);
-  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
+  goal_handle_timer_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
@@ -1497,7 +1497,7 @@ void JointTrajectoryController::goal_accepted_callback(
 
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
+    goal_handle_timer_period_.to_chrono<std::chrono::nanoseconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
