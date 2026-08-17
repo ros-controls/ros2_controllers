@@ -41,7 +41,7 @@ struct Pose
 Pose integrate_twist(
   const Pose & initial, const double linear, const double angular, const double dt)
 {
-  if (std::abs(angular * dt) < 1e-6)
+  if (steering_kinematics::is_close_to_zero(angular * dt))
   {
     const double middle_heading = initial.heading + angular * dt * 0.5;
     return {
