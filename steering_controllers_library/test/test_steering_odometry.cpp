@@ -67,9 +67,20 @@ void expect_pose(const steering_kinematics::SteeringKinematics & odom, const Pos
 class SteeringOdometryIntegratorTest : public ::testing::TestWithParam<SteeringConfiguration>
 {
 protected:
-  void configure(steering_kinematics::SteeringKinematics & odom) const
+  void expect_open_loop(
+    const Pose & initial, const double linear, const double angular, const double dt) const
   {
+    SCOPED_TRACE(
+      ::testing::Message() << "initial=" << initial.x << "," << initial.y << "," << initial.heading
+                           << " twist=" << linear << "," << angular << " dt=" << dt);
+    steering_kinematics::SteeringKinematics odom(1);
     odom.set_odometry_type(GetParam().type);
+    odom.set_odometry(initial.x, initial.y, initial.heading);
+    odom.update_open_loop(linear, angular, dt);
+
+    expect_pose(odom, integrate_twist(initial, linear, angular, dt));
+    EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
+    EXPECT_DOUBLE_EQ(odom.get_angular(), angular);
   }
 };
 
@@ -80,37 +91,21 @@ std::string configuration_name(const ::testing::TestParamInfo<SteeringConfigurat
 
 // cppcheck-suppress syntaxError
 // Cppcheck does not expand the GoogleTest parameterized-test macro.
-TEST_P(SteeringOdometryIntegratorTest, integrates_straight_from_nonzero_pose)
+TEST_P(SteeringOdometryIntegratorTest, integrates_open_loop_straight)
 {
-  steering_kinematics::SteeringKinematics odom(1);
-  configure(odom);
-  const Pose initial{-1.2, 0.7, 0.4};
-  odom.set_odometry(initial.x, initial.y, initial.heading);
-
-  constexpr double linear = 1.1;
-  constexpr double dt = 0.35;
-  odom.update_open_loop(linear, 0.0, dt);
-
-  expect_pose(odom, integrate_twist(initial, linear, 0.0, dt));
-  EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
-  EXPECT_DOUBLE_EQ(odom.get_angular(), 0.0);
+  // Retain the former Ackermann-only zero-pose case and extend it to every configuration.
+  expect_open_loop(Pose{0.0, 0.0, 0.0}, 2.0, 0.0, 0.5);
+  expect_open_loop(Pose{-1.2, 0.7, 0.4}, 1.1, 0.0, 0.35);
 }
 
-TEST_P(SteeringOdometryIntegratorTest, integrates_exact_arc_from_nonzero_pose)
+TEST_P(SteeringOdometryIntegratorTest, integrates_open_loop_arcs)
 {
-  steering_kinematics::SteeringKinematics odom(1);
-  configure(odom);
-  const Pose initial{0.8, -0.45, -0.3};
-  odom.set_odometry(initial.x, initial.y, initial.heading);
-
-  constexpr double linear = 1.3;
-  constexpr double angular = -0.45;
-  constexpr double dt = 0.6;
-  odom.update_open_loop(linear, angular, dt);
-
-  expect_pose(odom, integrate_twist(initial, linear, angular, dt));
-  EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
-  EXPECT_DOUBLE_EQ(odom.get_angular(), angular);
+  for (const double direction : {-1.0, 1.0})
+  {
+    // Retain both former Ackermann-only turn directions with a stronger exact-pose oracle.
+    expect_open_loop(Pose{0.0, 0.0, 0.0}, 1.0, direction, 1.0);
+    expect_open_loop(Pose{0.8, -0.45, -0.3}, 1.3, direction * 0.45, 0.6);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -146,42 +141,6 @@ TEST(TestSteeringOdometry, ackermann_odometry)
   EXPECT_NEAR(odom.get_angular(), .1, 1e-3);
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
-}
-
-TEST(TestSteeringOdometry, ackermann_odometry_openloop_linear)
-{
-  steering_kinematics::SteeringKinematics odom(1);
-  odom.set_wheel_params(1., 2., 1.);
-  odom.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
-  odom.update_open_loop(2., 0., 0.5);
-  EXPECT_DOUBLE_EQ(odom.get_linear(), 2.);
-  EXPECT_DOUBLE_EQ(odom.get_x(), 1.);
-  EXPECT_DOUBLE_EQ(odom.get_y(), 0.);
-}
-
-TEST(TestSteeringOdometry, ackermann_odometry_openloop_angular_left)
-{
-  steering_kinematics::SteeringKinematics odom(1);
-  odom.set_wheel_params(1., 2., 1.);
-  odom.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
-  odom.update_open_loop(1., 1., 1.);
-  EXPECT_DOUBLE_EQ(odom.get_linear(), 1.);
-  EXPECT_DOUBLE_EQ(odom.get_angular(), 1.);
-
-  EXPECT_GT(odom.get_x(), 0);  // pos x
-  EXPECT_GT(odom.get_y(), 0);  // pos y, ie. left
-}
-
-TEST(TestSteeringOdometry, ackermann_odometry_openloop_angular_right)
-{
-  steering_kinematics::SteeringKinematics odom(1);
-  odom.set_wheel_params(1., 2., 1.);
-  odom.set_odometry_type(steering_kinematics::ACKERMANN_CONFIG);
-  odom.update_open_loop(1., -1., 1.);
-  EXPECT_DOUBLE_EQ(odom.get_linear(), 1.);
-  EXPECT_DOUBLE_EQ(odom.get_angular(), -1.);
-  EXPECT_GT(odom.get_x(), 0);  // pos x
-  EXPECT_LT(odom.get_y(), 0);  // neg y ie. right
 }
 
 TEST(TestSteeringOdometry, ackermann_IK_linear)
