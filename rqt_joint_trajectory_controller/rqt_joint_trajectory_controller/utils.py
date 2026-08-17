@@ -262,34 +262,11 @@ class ControllerLister:
     def __call__(self):
         try:
             future = self._srv_client.call_async(ListControllers.Request())
-            # Wait via a plain threading.Event rather than spinning self._node:
-            # self._node may be context.node, which rqt_gui_py's RclpySpinner
-            # already spins continuously on another thread. Its executor already
-            # processes this future's response and completes it; we only need to
-            # be woken up when that happens. Poll self._node's own context between
-            # short waits so shutdown doesn't block here indefinitely, mirroring
-            # the exit condition spin_until_future_complete used to provide.
-            # self._node.context.ok() (not rclpy.ok(), which always checks the
-            # process-wide default context) is the correct check here: self._node
-            # may not be tied to the default context, and it is that node's
-            # context -- not the default one -- whose executor is what would ever
-            # complete this future.
-            #
-            # We deliberately do not use Client.call(): in Humble it blocks with
-            # no timeout at all and no way to observe context shutdown, and even
-            # in Jazzy/Rolling (where it gained a timeout_sec) a fixed wall-clock
-            # timeout can't express "keep waiting while healthy, stop promptly on
-            # shutdown" -- polling it in a loop would just resend a fresh request
-            # each iteration, since it calls call_async() internally every time.
+            # Wait without spinning the shared rqt node.
             done_event = threading.Event()
             future.add_done_callback(lambda _future: done_event.set())
             while self._node.context.ok() and not done_event.is_set():
                 done_event.wait(timeout=0.1)
-            # No-op if the future is already done. Otherwise (we gave up waiting
-            # because the context is shutting down) this marks it CANCELLED,
-            # which runs Client.remove_pending_request() via the future's own
-            # done-callback, so the request is not left registered in the
-            # client's pending-requests table after we stop waiting on it.
             future.cancel()
             result = future.result()
             return result.controller if result else []
