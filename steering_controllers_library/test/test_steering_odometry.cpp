@@ -1,4 +1,5 @@
 // Copyright (c) 2023, Virtual Vehicle Research GmbH
+// Copyright (c) 2026, Dylan Gallagher
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +17,110 @@
 
 #include <gmock/gmock.h>
 #include <cmath>
+#include <string>
 
 #include "steering_controllers_library/steering_kinematics.hpp"
+
+namespace
+{
+constexpr double TOLERANCE = 1e-10;
+
+struct SteeringConfiguration
+{
+  unsigned int type;
+  const char * name;
+};
+
+struct Pose
+{
+  double x;
+  double y;
+  double heading;
+};
+
+Pose integrate_twist(
+  const Pose & initial, const double linear, const double angular, const double dt)
+{
+  if (std::abs(angular * dt) < 1e-6)
+  {
+    const double middle_heading = initial.heading + angular * dt * 0.5;
+    return {
+      initial.x + linear * std::cos(middle_heading) * dt,
+      initial.y + linear * std::sin(middle_heading) * dt, initial.heading + angular * dt};
+  }
+
+  const double final_heading = initial.heading + angular * dt;
+  const double turning_radius = linear / angular;
+  return {
+    initial.x + turning_radius * (std::sin(final_heading) - std::sin(initial.heading)),
+    initial.y - turning_radius * (std::cos(final_heading) - std::cos(initial.heading)),
+    final_heading};
+}
+
+void expect_pose(const steering_kinematics::SteeringKinematics & odom, const Pose & expected)
+{
+  EXPECT_NEAR(odom.get_x(), expected.x, TOLERANCE);
+  EXPECT_NEAR(odom.get_y(), expected.y, TOLERANCE);
+  EXPECT_NEAR(odom.get_heading(), expected.heading, TOLERANCE);
+}
+
+class SteeringOdometryIntegratorTest : public ::testing::TestWithParam<SteeringConfiguration>
+{
+protected:
+  void configure(steering_kinematics::SteeringKinematics & odom) const
+  {
+    odom.set_odometry_type(GetParam().type);
+  }
+};
+
+std::string configuration_name(const ::testing::TestParamInfo<SteeringConfiguration> & information)
+{
+  return information.param.name;
+}
+
+// cppcheck-suppress syntaxError
+// Cppcheck does not expand the GoogleTest parameterized-test macro.
+TEST_P(SteeringOdometryIntegratorTest, integrates_straight_from_nonzero_pose)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  configure(odom);
+  const Pose initial{-1.2, 0.7, 0.4};
+  odom.set_odometry(initial.x, initial.y, initial.heading);
+
+  constexpr double linear = 1.1;
+  constexpr double dt = 0.35;
+  odom.update_open_loop(linear, 0.0, dt);
+
+  expect_pose(odom, integrate_twist(initial, linear, 0.0, dt));
+  EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
+  EXPECT_DOUBLE_EQ(odom.get_angular(), 0.0);
+}
+
+TEST_P(SteeringOdometryIntegratorTest, integrates_exact_arc_from_nonzero_pose)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  configure(odom);
+  const Pose initial{0.8, -0.45, -0.3};
+  odom.set_odometry(initial.x, initial.y, initial.heading);
+
+  constexpr double linear = 1.3;
+  constexpr double angular = -0.45;
+  constexpr double dt = 0.6;
+  odom.update_open_loop(linear, angular, dt);
+
+  expect_pose(odom, integrate_twist(initial, linear, angular, dt));
+  EXPECT_DOUBLE_EQ(odom.get_linear(), linear);
+  EXPECT_DOUBLE_EQ(odom.get_angular(), angular);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  SteeringConfigurations, SteeringOdometryIntegratorTest,
+  ::testing::Values(
+    SteeringConfiguration{steering_kinematics::BICYCLE_CONFIG, "Bicycle"},
+    SteeringConfiguration{steering_kinematics::TRICYCLE_CONFIG, "Tricycle"},
+    SteeringConfiguration{steering_kinematics::ACKERMANN_CONFIG, "Ackermann"}),
+  configuration_name);
+}  // namespace
 
 TEST(TestSteeringOdometry, initialize)
 {
