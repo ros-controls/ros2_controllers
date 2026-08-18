@@ -188,8 +188,8 @@ protected:
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
   std::unique_ptr<Trajectory> current_trajectory_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
-    new_trajectory_msg_;
+  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
+    rt_new_trajectory_msg_;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 

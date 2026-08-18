@@ -276,10 +276,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
-  auto new_external_msg = new_trajectory_msg_.readFromRT();
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg;
+  rt_new_trajectory_msg_.try_get([&](auto & msg) { new_external_msg = msg; });
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg &&
+    current_trajectory_msg != new_external_msg &&
     (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
     bool blended = false;
@@ -287,17 +288,17 @@ controller_interface::return_type JointTrajectoryController::update(
       params_.allow_trajectory_replacement && has_active_trajectory() &&
       current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
     {
-      blended = blend_with_active_trajectory(*new_external_msg, time);
+      blended = blend_with_active_trajectory(new_external_msg, time);
     }
     if (!blended)
     {
       // legacy behavior: joints omitted from the new message hold at the current position
-      fill_partial_goal(*new_external_msg);
-      sort_to_local_joint_order(*new_external_msg);
+      fill_partial_goal(new_external_msg);
+      sort_to_local_joint_order(new_external_msg);
       blend_prefix_size_ = 0;
     }
     // TODO(denis): Add here integration of position and velocity
-    current_trajectory_->update(*new_external_msg);
+    current_trajectory_->update(new_external_msg);
   }
 
   // current state update
@@ -374,16 +375,18 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
-        new_trajectory_msg_.reset();
+        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
 
@@ -499,16 +502,16 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
-          new_trajectory_msg_.reset();
+          rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
           if (should_decelerate_on_cancel_)
           {
-            // calculate stopping position based on max deceleration
-            new_trajectory_msg_.initRT(decelerate_to_hold_position());
+            rt_is_holding_ = true;
+            rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                           { m = msg; });
           }
           else
           {
-            // hold current position
-            new_trajectory_msg_.initRT(set_hold_position());
+            rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
           }
         }
         // check goal tolerance
@@ -525,8 +528,9 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
-            new_trajectory_msg_.reset();
-            new_trajectory_msg_.initRT(set_success_trajectory_point());
+            rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
+            rt_new_trajectory_msg_.try_set([msg = set_success_trajectory_point()](auto & m)
+                                           { m = msg; });
           }
           else if (!within_goal_time)
           {
@@ -542,16 +546,16 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
-            new_trajectory_msg_.reset();
+            rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
             if (should_decelerate_on_cancel_)
             {
-              // calculate stopping position based on max deceleration
-              new_trajectory_msg_.initRT(decelerate_to_hold_position());
+              rt_is_holding_ = true;
+              rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                             { m = msg; });
             }
             else
             {
-              // hold current position
-              new_trajectory_msg_.initRT(set_hold_position());
+              rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
             }
           }
         }
@@ -561,32 +565,36 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
-        new_trajectory_msg_.reset();
+        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
       else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
-        new_trajectory_msg_.reset();
+        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
       // else, run another cycle while waiting for outside_goal_tolerance
@@ -1206,7 +1214,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   }
 
   current_trajectory_ = std::make_unique<Trajectory>();
-  new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
+  rt_new_trajectory_msg_.set(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
 
   subscriber_is_active_ = true;
 
@@ -2020,7 +2028,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
-  new_trajectory_msg_.writeFromNonRT(traj_msg);
+  rt_new_trajectory_msg_.set(traj_msg);
 }
 
 void JointTrajectoryController::preempt_active_goal()
