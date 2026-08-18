@@ -209,4 +209,16 @@ In this case, the first waypoint is discarded and only the second one is realize
 
 |
 
+Internally, the controller assembles the merged trajectory from four regions, shown in the diagram below.
+*Prefix* waypoints are the old trajectory between the current playback position (*cursor*) and the handoff.
+The *bridge* point is sampled from the old trajectory at the handoff instant, providing velocity continuity into the new trajectory.
+*New points* are the waypoints from the incoming message.
+
+If the new trajectory is a partial goal (not all joints are commanded), the controller must reconcile the shared timeline.
+The *suffix* carries old waypoints that fall after the new trajectory ends and only exists for partial-joint goals:
+commanded joints are held at their final new value with zero velocity, while omitted joints keep their original waypoints so they can finish uninterrupted.
+
+.. image:: trajectory_blending.png
+  :alt: Structure of the merged trajectory message showing prefix, bridge, new points, and suffix regions.
+
 .. [#f1] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_
