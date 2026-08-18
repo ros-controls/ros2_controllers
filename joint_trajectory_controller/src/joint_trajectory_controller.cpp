@@ -1214,7 +1214,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   }
 
   current_trajectory_ = std::make_unique<Trajectory>();
-  rt_new_trajectory_msg_.set(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
+  rt_new_trajectory_msg_.set([](auto & msg) { msg.reset(); });
 
   subscriber_is_active_ = true;
 
@@ -2028,7 +2028,7 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
-  rt_new_trajectory_msg_.set(traj_msg);
+  rt_new_trajectory_msg_.set([traj_msg](auto & msg) { msg = traj_msg; });
 }
 
 void JointTrajectoryController::preempt_active_goal()
