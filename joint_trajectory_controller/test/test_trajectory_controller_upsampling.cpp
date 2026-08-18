@@ -37,8 +37,8 @@ class UpsamplingHelpers : public joint_trajectory_controller::JointTrajectoryCon
 {
 public:
   using JointTrajectoryController::is_positions_only;
-  using JointTrajectoryController::preprocess_incoming_trajectory;
   using JointTrajectoryController::prepend_commanded_state;
+  using JointTrajectoryController::preprocess_incoming_trajectory;
   using JointTrajectoryController::synthesize_timing;
 
   void configure_upsampling(bool enabled, double policy_frequency)
