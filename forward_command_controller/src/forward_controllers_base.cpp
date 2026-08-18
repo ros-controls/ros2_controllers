@@ -22,6 +22,7 @@
 
 #include "controller_interface/helpers.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 
@@ -74,6 +75,14 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
+      if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      {
+        RCLCPP_WARN_THROTTLE(
+          get_node()->get_logger(), *(get_node()->get_clock()), 1000,
+          "Can't accept new commands. Controller is not active.");
+        return;
+      }
+
       const auto cmd = *msg;
 
       if (!std::all_of(
