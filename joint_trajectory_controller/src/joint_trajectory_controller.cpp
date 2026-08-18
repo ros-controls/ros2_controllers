@@ -276,11 +276,11 @@ controller_interface::return_type JointTrajectoryController::update(
 
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg;
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
   rt_new_trajectory_msg_.try_get([&](auto & msg) { new_external_msg = msg; });
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != new_external_msg &&
+    new_external_msg && current_trajectory_msg != new_external_msg &&
     (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
     bool blended = false;
@@ -375,7 +375,6 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
-        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
@@ -502,7 +501,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
-          rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
           if (should_decelerate_on_cancel_)
           {
             rt_is_holding_ = true;
@@ -528,7 +526,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
-            rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
             rt_new_trajectory_msg_.try_set([msg = set_success_trajectory_point()](auto & m)
                                            { m = msg; });
           }
@@ -546,7 +543,6 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
-            rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
             if (should_decelerate_on_cancel_)
             {
               rt_is_holding_ = true;
@@ -565,7 +561,6 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
-        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
@@ -583,7 +578,6 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
-        rt_new_trajectory_msg_.try_set([](auto & msg) { msg.reset(); });
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
