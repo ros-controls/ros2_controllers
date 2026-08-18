@@ -1427,34 +1427,58 @@ void JointTrajectoryController::preprocess_incoming_trajectory(
     return;
   }
   synthesize_timing(msg);
-  fill_cubic_spline_velocities(msg, start_velocity_for(msg));
+  // with nothing to anchor on start_velocity stays empty, which is the rest boundary
+  std::vector<double> start_velocity;
+  prepend_commanded_state(msg, start_velocity);
+  fill_cubic_spline_velocities(msg, start_velocity);
 }
 
-std::vector<double> JointTrajectoryController::start_velocity_for(
-  const trajectory_msgs::msg::JointTrajectory & traj) const
+bool JointTrajectoryController::prepend_commanded_state(
+  trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const
 {
-  const auto commanded = rt_last_commanded_state_.get();
-  if (commanded.velocities.size() != dof_)
+  start_velocity.clear();
+  // only a zero stamp puts the trajectory's t=0 at "now", where the commanded state belongs
+  if (traj.header.stamp.sec != 0 || traj.header.stamp.nanosec != 0u)
   {
-    return {};
+    return false;
+  }
+  // the anchor needs room ahead of the first waypoint
+  if (
+    traj.points.empty() ||
+    rclcpp::Duration(traj.points.front().time_from_start) <= rclcpp::Duration(0, 0))
+  {
+    return false;
+  }
+  const auto commanded = rt_last_commanded_state_.get();
+  if (commanded.positions.size() != dof_ || commanded.velocities.size() != dof_)
+  {
+    return false;
   }
   // not sorted into the controller's joint order until install, so index by the sender's order
   const auto joint_map = mapping(traj.joint_names, params_.joints);
   if (joint_map.size() != traj.joint_names.size())
   {
-    return {};
+    return false;
   }
-  std::vector<double> start_velocity(joint_map.size());
+  trajectory_msgs::msg::JointTrajectoryPoint anchor;
+  anchor.positions.resize(joint_map.size());
+  std::vector<double> anchor_velocities(joint_map.size());
   for (size_t i = 0; i < joint_map.size(); ++i)
   {
     // NaN before the first update(), and while the hardware exposes no velocity state
-    if (!std::isfinite(commanded.velocities[joint_map[i]]))
+    if (
+      !std::isfinite(commanded.positions[joint_map[i]]) ||
+      !std::isfinite(commanded.velocities[joint_map[i]]))
     {
-      return {};
+      return false;
     }
-    start_velocity[i] = commanded.velocities[joint_map[i]];
+    anchor.positions[i] = commanded.positions[joint_map[i]];
+    anchor_velocities[i] = commanded.velocities[joint_map[i]];
   }
-  return start_velocity;
+  anchor.time_from_start = rclcpp::Duration(0, 0);
+  traj.points.insert(traj.points.begin(), std::move(anchor));
+  start_velocity = std::move(anchor_velocities);
+  return true;
 }
 
 bool JointTrajectoryController::is_positions_only(
