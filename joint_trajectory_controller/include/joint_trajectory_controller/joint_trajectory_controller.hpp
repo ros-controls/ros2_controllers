@@ -214,8 +214,7 @@ protected:
   // callback for topic interface
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
 
-  // Non-RT hook run on every incoming trajectory before validation. Currently upsamples
-  // positions-only chunks to a C2 spline when positions_upsampling is enabled; no-op otherwise.
+  // Non-RT hook run on every incoming trajectory before validation.
   void preprocess_incoming_trajectory(trajectory_msgs::msg::JointTrajectory & msg) const;
   // true if every point has positions but no velocities or accelerations
   bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;
