@@ -1540,7 +1540,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
-    rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
+    rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
     if (should_decelerate_on_cancel_)
     {
