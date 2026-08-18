@@ -479,6 +479,7 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
+  bool set_command_error = false;
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
     if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
@@ -487,9 +488,12 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
         get_node()->get_logger(),
         "Failed to set NaN value for command interface '%s' (index %zu) during deactivation.",
         command_interfaces_[i].get_name().c_str(), i);
-      return controller_interface::CallbackReturn::SUCCESS;
+      set_command_error = true;
     }
   }
+  RCLCPP_WARN_EXPRESSION(
+    get_node()->get_logger(), set_command_error,
+    "One or more command interfaces failed to halt during deactivation.");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -617,6 +621,8 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       ref_linear, ref_angular, params_.open_loop,
       params_.reduce_wheel_speed_until_steering_reached);
 
+    bool set_command_error = false;
+
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
       const auto & value = traction_commands[i];
@@ -624,7 +630,7 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       if (!command_interfaces_[i].set_value(value))
       {
         RCLCPP_WARN(logger, "Unable to set traction command at index %zu: value = %f", i, value);
-        return controller_interface::return_type::OK;
+        set_command_error = true;
       }
     }
     for (size_t i = 0; i < params_.steering_joints_names.size(); i++)
@@ -634,20 +640,27 @@ controller_interface::return_type SteeringControllersLibrary::update_and_write_c
       if (!command_interfaces_[i + params_.traction_joints_names.size()].set_value(value))
       {
         RCLCPP_WARN(logger, "Unable to set steering command at index %zu: value = %f", i, value);
-        return controller_interface::return_type::OK;
+        set_command_error = true;
       }
     }
+
+    RCLCPP_WARN_EXPRESSION(
+      logger, set_command_error,
+      "One or more command interfaces failed during normal command update.");
   }
   else
   {
+    bool set_command_error = false;
     for (size_t i = 0; i < params_.traction_joints_names.size(); i++)
     {
       if (!command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max()))
       {
         RCLCPP_WARN(logger, "Unable to set command interface to value 0.0");
-        return controller_interface::return_type::OK;
+        set_command_error = true;
       }
     }
+    RCLCPP_WARN_EXPRESSION(
+      logger, set_command_error, "One or more command interfaces failed to halt.");
   }
 
   // Publish odometry message
