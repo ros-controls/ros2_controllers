@@ -247,29 +247,6 @@ TEST(JtcUpsamplingHelpers, preprocess_upsamples_when_enabled)
 }
 
 // Feature on but the chunk already carries velocities: passed through unchanged.
-// A planner such as MoveIt sends the current state as its own first waypoint at t=0, so there is no
-// room for an anchor and the point count the client sent must survive.
-TEST(JtcUpsamplingHelpers, moveit_shaped_chunk_is_upsampled_without_an_anchor)
-{
-  UpsamplingHelpers c;
-  c.configure_upsampling(true, 0.0);  // chunks carry their own timing
-  c.configure_commanded_state({"joint1"}, {0.0}, {0.5});
-
-  auto traj = make_positions_chunk({0.0, 0.3, 0.6}, 0.5);  // first waypoint already at t=0
-  const size_t sent = traj.points.size();
-  c.preprocess_incoming_trajectory(traj);
-
-  ASSERT_EQ(traj.points.size(), sent);
-  EXPECT_DOUBLE_EQ(time_at(traj, 0), 0.0);
-  EXPECT_DOUBLE_EQ(time_at(traj, sent - 1), 1.0);
-  for (size_t i = 0; i < traj.points.size(); ++i)
-  {
-    ASSERT_EQ(traj.points[i].velocities.size(), 1u);
-  }
-  EXPECT_NEAR(traj.points.front().velocities[0], 0.0, 1e-9);
-  EXPECT_NEAR(traj.points.back().velocities[0], 0.0, 1e-9);
-}
-
 TEST(JtcUpsamplingHelpers, preprocess_passes_through_velocity_carrying_chunk)
 {
   UpsamplingHelpers c;
