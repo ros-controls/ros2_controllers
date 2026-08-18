@@ -98,7 +98,8 @@ void wraparound_joint(
   }
 }
 
-bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
+bool fill_cubic_spline_velocities(
+  trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity)
 {
   const size_t n = traj.points.size();
   if (n < 2)
@@ -107,6 +108,10 @@ bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
   }
   const size_t n_joints = traj.points[0].positions.size();
   if (n_joints == 0)
+  {
+    return false;
+  }
+  if (!start_velocity.empty() && start_velocity.size() != n_joints)
   {
     return false;
   }
@@ -144,12 +149,10 @@ bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj)
 
   for (size_t joint = 0; joint < n_joints; ++joint)
   {
-    // Rest boundary conditions: velocity is zero at both ends.
-    // TODO(vedh1234): accept a non-zero start velocity to stitch chunks (cross-chunk C2
-    // continuity).
+    // Clamped start when a start velocity is given, otherwise at rest.
     diagonal[0] = 1.0;
     upper_diagonal[0] = 0.0;
-    rhs[0] = 0.0;
+    rhs[0] = start_velocity.empty() ? 0.0 : start_velocity[joint];
     lower_diagonal[n - 1] = 0.0;
     diagonal[n - 1] = 1.0;
     rhs[n - 1] = 0.0;

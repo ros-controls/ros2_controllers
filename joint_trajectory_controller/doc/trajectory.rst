@@ -77,6 +77,17 @@ To visualize the difference of the different interpolation methods and their inp
 .. image:: spline_position_upsampling.png
   :alt: Sampled trajectory with positions-only points, with and without positions_upsampling
 
+* Sampled trajectory with the same positions-only points, but arriving while the robot is already
+  moving, with and without cross-chunk continuity:
+
+.. note::
+  Upsampling on its own pins the first waypoint at rest, so the robot brakes to a stop at ``t=0.5``
+  before accelerating away, and the acceleration jumps there. Carrying the state the robot is in
+  into the solve as a waypoint at ``t=0`` removes both.
+
+.. image:: spline_position_upsampling_cross_chunk.png
+  :alt: Sampled trajectory with positions-only points arriving mid-motion, with and without cross-chunk continuity
+
 * Sampled trajectory with cubic splines if velocity is given only (no deduction for interpolation method ``none``):
 
 .. image:: spline_velocity.png
@@ -197,5 +208,17 @@ In this case, the first waypoint is discarded and only the second one is realize
   :alt: Trajectory start time in the past.
 
 |
+
+Internally, the controller assembles the merged trajectory from four regions, shown in the diagram below.
+*Prefix* waypoints are the old trajectory between the current playback position (*cursor*) and the handoff.
+The *bridge* point is sampled from the old trajectory at the handoff instant, providing velocity continuity into the new trajectory.
+*New points* are the waypoints from the incoming message.
+
+If the new trajectory is a partial goal (not all joints are commanded), the controller must reconcile the shared timeline.
+The *suffix* carries old waypoints that fall after the new trajectory ends and only exists for partial-joint goals:
+commanded joints are held at their final new value with zero velocity, while omitted joints keep their original waypoints so they can finish uninterrupted.
+
+.. image:: trajectory_blending.png
+  :alt: Structure of the merged trajectory message showing prefix, bridge, new points, and suffix regions.
 
 .. [#f1] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_
