@@ -159,7 +159,7 @@ controller_interface::return_type ForwardStateController::update(
     const double value = state_value_opt.value();
     for (const auto & cmd_idx : cmd_indices)
     {
-      command_interfaces_[cmd_idx].set_value(value)
+      command_interfaces_[cmd_idx].set_value(value);
     }
   }
 
