@@ -111,6 +111,50 @@ A yaml file for using it could be:
               goal: 0.03
 
 
+Ingesting positions-only action chunks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Action policies (e.g. diffusion policy, ACT) emit *action chunks*: short trajectories of
+positions-only waypoints with no velocities and often no timing. Fed positions-only, the controller
+interpolates linearly (C0), yielding discontinuous velocities at every waypoint (see :ref:`trajectory
+representation <joint_trajectory_controller_trajectory_representation>`).
+
+When ``positions_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
+are upsampled in place: the knot velocities of a global cubic spline (rest boundary conditions,
+``v0 = v_{N-1} = 0``) are solved and written into the trajectory, so the existing sampler reproduces a
+motion that is continuous in acceleration across the chunk's waypoints (see :ref:`the plotted
+comparison <joint_trajectory_controller_trajectory_representation>`). Messages that already carry
+velocities are passed through unchanged, so the feature
+is a strict superset of the default behaviour (it is off by default). It has no effect when
+``interpolation_method`` is ``none``.
+
+``positions_upsampling.policy_frequency`` (double, Hz) is used to synthesize
+``time_from_start = (i + 1) / policy_frequency`` for chunks that arrive without timing; when it is
+``0`` the chunks must carry their own strictly-increasing ``time_from_start``. The first waypoint is
+placed one policy step ahead rather than at ``0``, so the controller ramps into the chunk from the
+current state instead of stepping to it.
+
+   .. code-block:: yaml
+
+      arm_controller:
+        ros__parameters:
+          joints:
+            - joint1
+            - joint2
+          command_interfaces:
+            - position
+          state_interfaces:
+            - position
+          positions_upsampling:
+            enable: true
+            policy_frequency: 30.0
+
+   .. note::
+      Only the topic interface (``~/joint_trajectory``) is upsampled. Each chunk uses rest boundary
+      conditions, so streaming chunks decelerate to a stop at each chunk boundary; cross-chunk C2
+      continuity and ``FollowJointTrajectory`` action-goal upsampling are future work.
+
+
 Preemption policy [#f1]_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
