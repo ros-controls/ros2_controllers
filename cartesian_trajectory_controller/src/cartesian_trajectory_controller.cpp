@@ -118,7 +118,9 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   const trajectory_msgs::msg::MultiDOFJointTrajectory & msg,
   trajectory_msgs::msg::JointTrajectory & joint_traj)
 {
-  if (msg.points.empty() || state_current_.positions.size() != dof_)
+  const auto commanded = rt_last_commanded_state_.get();
+
+  if (msg.points.empty() || commanded.positions.size() != dof_)
   {
     return false;
   }
@@ -130,9 +132,14 @@ bool CartesianTrajectoryController::build_joint_trajectory(
     return false;
   }
 
-  Eigen::VectorXd q = Eigen::Map<const Eigen::VectorXd>(state_current_.positions.data(), dof_);
+  const Eigen::VectorXd q_seed =
+    Eigen::Map<const Eigen::VectorXd>(commanded.positions.data(), dof_);
+  if (!q_seed.allFinite())  // NaN until the first update() has commanded something
+  {
+    return false;
+  }
   Eigen::Isometry3d current_pose;
-  if (!kinematics_->calculate_link_transform(q, ctc_params_.kinematics.tip, current_pose))
+  if (!kinematics_->calculate_link_transform(q_seed, ctc_params_.kinematics.tip, current_pose))
   {
     return false;
   }
@@ -144,11 +151,47 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   {
     return false;
   }
+  align_quaternions_shortest_arc(orientations);
 
-  const CartesianTrajectory path(times, positions, orientations);
+  Eigen::Vector3d initial_velocity = Eigen::Vector3d::Zero();
+  double initial_angular_speed = 0.0;
+  if (commanded.velocities.size() == dof_)
+  {
+    const Eigen::VectorXd q_dot =
+      Eigen::Map<const Eigen::VectorXd>(commanded.velocities.data(), dof_);
+    Eigen::Matrix<double, 6, 1> twist;
+    if (
+      q_dot.allFinite() && kinematics_->convert_joint_deltas_to_cartesian_deltas(
+                             q_seed, q_dot, ctc_params_.kinematics.tip, twist))
+    {
+      initial_velocity = twist.head<3>();
+      // the angle channel is signed along the path, so project rather than take the magnitude
+      const Eigen::Vector3d axis = (orientations[0].inverse() * orientations[1]).vec();
+      const double axis_norm = axis.norm();
+      if (axis_norm > 1e-9)
+      {
+        initial_angular_speed = twist.tail<3>().dot(axis / axis_norm);
+      }
+    }
+  }
+
+  const CartesianTrajectory path(
+    times, positions, orientations, initial_velocity, initial_angular_speed);
   // Carry the incoming stamp so JTC's deferred-start works.
   joint_traj.header.stamp = msg.header.stamp;
-  return solve_ik_along_path(path, q, joint_traj);
+  Eigen::VectorXd q = q_seed;
+  if (!solve_ik_along_path(path, q, joint_traj))
+  {
+    return false;
+  }
+
+  // the commanded state at t=0, as JTC's prepend_commanded_state does
+  trajectory_msgs::msg::JointTrajectoryPoint anchor;
+  anchor.positions.assign(q_seed.data(), q_seed.data() + dof_);
+  anchor.velocities = commanded.velocities;
+  anchor.time_from_start = rclcpp::Duration(0, 0);
+  joint_traj.points.insert(joint_traj.points.begin(), std::move(anchor));
+  return true;
 }
 
 bool CartesianTrajectoryController::build_cartesian_waypoints(
@@ -244,7 +287,6 @@ bool CartesianTrajectoryController::solve_ik_along_path(
       return false;
     }
     q += delta_q;
-
     trajectory_msgs::msg::JointTrajectoryPoint jp;
     jp.positions.assign(q.data(), q.data() + dof_);
     // Fill joint velocities so JTC cubic-interpolates
@@ -259,7 +301,12 @@ bool CartesianTrajectoryController::solve_ik_along_path(
     t_prev = t;
   }
 
-  return !joint_traj.points.empty();
+  if (joint_traj.points.empty())
+  {
+    return false;
+  }
+  joint_traj.points.back().velocities.assign(dof_, 0.0);
+  return true;
 }
 
 }  // namespace cartesian_trajectory_controller

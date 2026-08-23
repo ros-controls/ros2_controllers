@@ -50,17 +50,27 @@ TEST(TestCartesianTrajectory, passes_through_waypoints)
   EXPECT_NEAR(q.angularDistance(expected), 0.0, 1e-9);
 }
 
-// Orientation is time-parameterized SLERP between the bracketing waypoint quaternions.
-TEST(TestCartesianTrajectory, orientation_is_slerp)
+// Orientation slerps along the waypoint arc on the solved angle, not on raw time.
+TEST(TestCartesianTrajectory, orientation_shares_translation_time_profile)
 {
   auto traj = make_trajectory();
   Eigen::Vector3d p;
   Eigen::Quaterniond q;
 
-  ASSERT_TRUE(traj.sample(0.5, p, q));  // midpoint of first segment -> s = 0.5
+  ASSERT_TRUE(traj.sample(0.5, p, q));  // midpoint of the first segment in time, not in progress
   const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
   const Eigen::Quaterniond q1(Eigen::AngleAxisd(0.5, Eigen::Vector3d::UnitZ()));
-  EXPECT_NEAR(q.angularDistance(q0.slerp(0.5, q1)), 0.0, 1e-9);
+
+  // still on the shortest arc between the bracketing waypoints
+  EXPECT_NEAR(q0.angularDistance(q) + q.angularDistance(q1), q0.angularDistance(q1), 1e-9);
+
+  // x and the rotation angle have the same waypoint spacing, so they must be at the same fraction
+  const double rotation_fraction = q0.angularDistance(q) / q0.angularDistance(q1);
+  const double translation_fraction = p.x() / 0.5;
+  EXPECT_NEAR(rotation_fraction, translation_fraction, 1e-9);
+
+  // and that fraction is the rest-start cubic's, not the constant-rate 0.5
+  EXPECT_NEAR(rotation_fraction, 0.3125, 1e-9);
 }
 
 // Sampling outside the span clamps to the endpoints.
@@ -96,10 +106,17 @@ TEST(TestCartesianTrajectory, segment_duration_respects_speed_limits)
 {
   const Eigen::Quaterniond identity = Eigen::Quaterniond::Identity();
 
-  // 0.2 m at 0.1 m/s = 2.0 s; the (zero) rotation does not dominate.
+  // 0.2 m at 0.1 m/s = 2.0 s average, scaled to the cubic's peak; rotation does not dominate
   EXPECT_NEAR(
     cartesian_trajectory_controller::min_segment_duration(
       Eigen::Vector3d::Zero(), identity, Eigen::Vector3d(0.2, 0.0, 0.0), identity, 0.1, 0.5, 0.01),
+    3.0, 1e-9);
+
+  // SLERP is constant-rate, so an angular-limited segment is not scaled: 1.0 rad at 0.5 rad/s.
+  const Eigen::Quaterniond rotated(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()));
+  EXPECT_NEAR(
+    cartesian_trajectory_controller::min_segment_duration(
+      Eigen::Vector3d::Zero(), identity, Eigen::Vector3d::Zero(), rotated, 0.1, 0.5, 0.01),
     2.0, 1e-9);
 
   // Coincident, unrotated poses -> floored at min_duration.

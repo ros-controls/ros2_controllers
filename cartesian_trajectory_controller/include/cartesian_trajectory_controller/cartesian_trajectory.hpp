@@ -37,16 +37,17 @@ double min_segment_duration(
   double max_linear_speed, double max_angular_speed, double min_duration);
 
 /// Time-parameterized Cartesian path: cubic-spline (C2) translation and SLERP orientation.
-/// Translation waypoint velocities are solved with
-/// joint_trajectory_controller::fill_cubic_spline_velocities; orientation is interpolated directly
-/// from the waypoint quaternions.
+/// Cubic-spline (C2) translation and SLERP orientation, solved together on one shared profile.
 class CartesianTrajectory
 {
 public:
   /// times must be strictly increasing; the orientation waypoints are sign-aligned internally.
+  /// initial_velocity and initial_angular_speed seed waypoint 0; zero is a rest start.
   CartesianTrajectory(
     const std::vector<double> & times, const std::vector<Eigen::Vector3d> & positions,
-    const std::vector<Eigen::Quaterniond> & orientations);
+    const std::vector<Eigen::Quaterniond> & orientations,
+    const Eigen::Vector3d & initial_velocity = Eigen::Vector3d::Zero(),
+    double initial_angular_speed = 0.0);
 
   /// Sample the pose at time t (clamped to [front, back]). Returns false if the path has no
   /// waypoints.
@@ -55,7 +56,7 @@ public:
   double duration() const;
 
 private:
-  /// Cubic-Hermite translation + SLERP orientation within the segment starting at index.
+  /// Cubic-Hermite translation and rotation angle within the segment starting at index.
   void interpolate_segment(
     std::size_t index, double time_into_segment, double segment_duration,
     Eigen::Vector3d & position, Eigen::Quaterniond & orientation) const;
@@ -64,6 +65,9 @@ private:
   std::vector<Eigen::Vector3d> positions_;
   std::vector<Eigen::Vector3d> velocities_;
   std::vector<Eigen::Quaterniond> orientations_;
+  /// Rotation swept from waypoint 0, and its solved knot velocities.
+  std::vector<double> angles_;
+  std::vector<double> angle_velocities_;
 };
 
 }  // namespace cartesian_trajectory_controller

@@ -35,42 +35,63 @@ void align_quaternions_shortest_arc(std::vector<Eigen::Quaterniond> & orientatio
   }
 }
 
+// TODO(vedh1234): implement an exact motion profile instead of this factor.
+constexpr double peak_speed_ratio = 1.5;
+
 double min_segment_duration(
   const Eigen::Vector3d & from_position, const Eigen::Quaterniond & from_orientation,
   const Eigen::Vector3d & to_position, const Eigen::Quaterniond & to_orientation,
   double max_linear_speed, double max_angular_speed, double min_duration)
 {
-  const double linear_time = (to_position - from_position).norm() / max_linear_speed;
+  const double linear_time =
+    peak_speed_ratio * (to_position - from_position).norm() / max_linear_speed;
   const double angular_time = from_orientation.angularDistance(to_orientation) / max_angular_speed;
   return std::max({linear_time, angular_time, min_duration});
 }
 
 CartesianTrajectory::CartesianTrajectory(
   const std::vector<double> & times, const std::vector<Eigen::Vector3d> & positions,
-  const std::vector<Eigen::Quaterniond> & orientations)
+  const std::vector<Eigen::Quaterniond> & orientations, const Eigen::Vector3d & initial_velocity,
+  double initial_angular_speed)
 : times_(times), positions_(positions), orientations_(orientations)
 {
   assert(times_.size() == positions_.size() && times_.size() == orientations_.size());
   align_quaternions_shortest_arc(orientations_);
   velocities_.assign(positions_.size(), Eigen::Vector3d::Zero());
+  angles_.assign(positions_.size(), 0.0);
+  angle_velocities_.assign(positions_.size(), 0.0);
   if (positions_.size() < 2)
   {
     return;
   }
 
-  // Solve C2 waypoint velocities for x, y, z with the JTC spline helper (rest boundary conditions).
-  trajectory_msgs::msg::JointTrajectory xyz;
-  xyz.points.resize(positions_.size());
-  for (size_t i = 0; i < positions_.size(); ++i)
+  // rotation as a scalar channel, monotonically increasing
+  for (size_t i = 1; i < orientations_.size(); ++i)
   {
-    xyz.points[i].positions = {positions_[i].x(), positions_[i].y(), positions_[i].z()};
-    xyz.points[i].time_from_start = rclcpp::Duration::from_seconds(times_[i]);
+    angles_[i] = angles_[i - 1] + orientations_[i - 1].angularDistance(orientations_[i]);
   }
-  joint_trajectory_controller::fill_cubic_spline_velocities(xyz);
+
+  // Solve C2 waypoint velocities for x, y, z with the JTC spline helper (rest boundary conditions).
+  trajectory_msgs::msg::JointTrajectory channels;
+  channels.points.resize(positions_.size());
   for (size_t i = 0; i < positions_.size(); ++i)
   {
-    const auto & v = xyz.points[i].velocities;
+    channels.points[i].positions = {
+      positions_[i].x(), positions_[i].y(), positions_[i].z(), angles_[i]};
+    channels.points[i].time_from_start = rclcpp::Duration::from_seconds(times_[i]);
+  }
+  // Solving with the start velocity, rather than overwriting it afterwards
+  const std::vector<double> start_velocity = {
+    initial_velocity.x(), initial_velocity.y(), initial_velocity.z(), initial_angular_speed};
+  if (!joint_trajectory_controller::fill_cubic_spline_velocities(channels, start_velocity))
+  {
+    return;
+  }
+  for (size_t i = 0; i < positions_.size(); ++i)
+  {
+    const auto & v = channels.points[i].velocities;
     velocities_[i] = Eigen::Vector3d(v[0], v[1], v[2]);
+    angle_velocities_[i] = v[3];
   }
 }
 
@@ -130,14 +151,8 @@ void CartesianTrajectory::interpolate_segment(
   generate_powers(3, time_into_segment, t_powers);
   generate_powers(3, segment_duration, duration_powers);
 
-  // Cubic Hermite per axis
-  for (int axis = 0; axis < 3; ++axis)
+  auto hermite = [&](double start_pos, double start_vel, double end_pos, double end_vel)
   {
-    const double start_pos = positions_[index][axis];
-    const double start_vel = velocities_[index][axis];
-    const double end_pos = positions_[index + 1][axis];
-    const double end_vel = velocities_[index + 1][axis];
-
     double coefficients[4] = {0.0, 0.0, 0.0, 0.0};
     coefficients[0] = start_pos;
     coefficients[1] = start_vel;
@@ -147,13 +162,27 @@ void CartesianTrajectory::interpolate_segment(
     coefficients[3] = (2.0 * start_pos - 2.0 * end_pos + start_vel * duration_powers[1] +
                        end_vel * duration_powers[1]) /
                       duration_powers[3];
+    return t_powers[0] * coefficients[0] + t_powers[1] * coefficients[1] +
+           t_powers[2] * coefficients[2] + t_powers[3] * coefficients[3];
+  };
 
-    position[axis] = t_powers[0] * coefficients[0] + t_powers[1] * coefficients[1] +
-                     t_powers[2] * coefficients[2] + t_powers[3] * coefficients[3];
+  for (int axis = 0; axis < 3; ++axis)
+  {
+    position[axis] = hermite(
+      positions_[index][axis], velocities_[index][axis], positions_[index + 1][axis],
+      velocities_[index + 1][axis]);
   }
 
-  orientation =
-    orientations_[index].slerp(time_into_segment / segment_duration, orientations_[index + 1]);
+  // slerp on the solved angle, so rotation follows the same profile as translation
+  const double swept = angles_[index + 1] - angles_[index];
+  double fraction = time_into_segment / segment_duration;  // no rotation: parameter is unused
+  if (swept > 1e-12)
+  {
+    const double angle = hermite(
+      angles_[index], angle_velocities_[index], angles_[index + 1], angle_velocities_[index + 1]);
+    fraction = (angle - angles_[index]) / swept;
+  }
+  orientation = orientations_[index].slerp(fraction, orientations_[index + 1]);
 }
 
 double CartesianTrajectory::duration() const
