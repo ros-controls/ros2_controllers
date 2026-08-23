@@ -52,7 +52,7 @@ The spline interpolator uses the following interpolation strategies depending on
   velocities. Enabling ``positions_upsampling`` avoids this for positions-only inputs: the controller
   pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
   writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
-  continuous in acceleration across the trajectory's own waypoints. See :ref:`Ingesting
+  continuous in acceleration from the last commanded state onwards. See :ref:`Ingesting
   positions-only action chunks <joint_trajectory_controller_userdoc>`.
 
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
@@ -72,21 +72,11 @@ To visualize the difference of the different interpolation methods and their inp
 
 .. note::
   The linear strategy reports no acceleration, so only the enabled series is drawn in the bottom
-  plot. Its step at ``t=0.5`` is the hand-off from the initial point, which is not part of the solve.
+  plot. The last commanded state joins the solve as a waypoint at ``t=0``, so the motion leaves the
+  initial point without a step in acceleration.
 
 .. image:: spline_position_upsampling.png
   :alt: Sampled trajectory with positions-only points, with and without positions_upsampling
-
-* Sampled trajectory with the same positions-only points, but arriving while the robot is already
-  moving, with and without cross-chunk continuity:
-
-.. note::
-  Upsampling on its own pins the first waypoint at rest, so the robot brakes to a stop at ``t=0.5``
-  before accelerating away, and the acceleration jumps there. Carrying the state the robot is in
-  into the solve as a waypoint at ``t=0`` removes both.
-
-.. image:: spline_position_upsampling_cross_chunk.png
-  :alt: Sampled trajectory with positions-only points arriving mid-motion, with and without cross-chunk continuity
 
 * Sampled trajectory with cubic splines if velocity is given only (no deduction for interpolation method ``none``):
 
