@@ -154,6 +154,174 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
   EXPECT_EQ(controller_->command_interfaces_[24].get_optional().value(), 2.0);  // move time
 }
 
+TEST_F(MotionPrimitivesForwardControllerTest, resets_unused_command_interfaces_between_primitives)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  auto joint_primitive = make_linear_joint_primitive();
+  ASSERT_TRUE(controller_->moprim_queue_.push(joint_primitive));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0.1);
+  for (size_t i = 0; i < joint_primitive.joint_positions.size(); ++i)
+  {
+    EXPECT_EQ(
+      controller_->command_interfaces_[i + 1].get_optional().value(),
+      joint_primitive.joint_positions[i]);
+  }
+  for (size_t i = 7; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(
+    controller_->command_interfaces_[21].get_optional().value(), joint_primitive.blend_radius);
+  EXPECT_EQ(controller_->command_interfaces_[22].get_optional().value(), 0.7);
+  EXPECT_EQ(controller_->command_interfaces_[23].get_optional().value(), 1.0);
+  EXPECT_EQ(controller_->command_interfaces_[24].get_optional().value(), 2.0);
+
+  auto cartesian_primitive = make_linear_cartesian_primitive();
+  ASSERT_TRUE(controller_->moprim_queue_.push(cartesian_primitive));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  for (size_t i = 1; i <= 6; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[7].get_optional().value(), 0.1);
+  EXPECT_EQ(controller_->command_interfaces_[8].get_optional().value(), 0.2);
+  EXPECT_EQ(controller_->command_interfaces_[9].get_optional().value(), 0.3);
+  EXPECT_EQ(controller_->command_interfaces_[10].get_optional().value(), 0.4);
+  EXPECT_EQ(controller_->command_interfaces_[11].get_optional().value(), 0.5);
+  EXPECT_EQ(controller_->command_interfaces_[12].get_optional().value(), 0.6);
+  EXPECT_EQ(controller_->command_interfaces_[13].get_optional().value(), 0.7);
+  for (size_t i = 14; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  for (size_t i = 22; i <= 24; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+
+  auto joint_primitive_without_additional_arguments = make_linear_joint_primitive();
+  joint_primitive_without_additional_arguments.additional_arguments.clear();
+  ASSERT_TRUE(controller_->moprim_queue_.push(joint_primitive_without_additional_arguments));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  for (size_t i = 0; i < joint_primitive_without_additional_arguments.joint_positions.size(); ++i)
+  {
+    EXPECT_EQ(
+      controller_->command_interfaces_[i + 1].get_optional().value(),
+      joint_primitive_without_additional_arguments.joint_positions[i]);
+  }
+  for (size_t i = 7; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  for (size_t i = 22; i <= 24; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+}
+
+TEST_F(
+  MotionPrimitivesForwardControllerTest, accepts_linear_cartesian_with_joints_when_has_kinematics)
+{
+  SetUpController(true);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type =
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN);
+  primitive.joint_positions = {1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
+  primitive.blend_radius = 1.7;
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  spin_until_command_interface_is_set(1);
+
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN));
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 1.1);
+  EXPECT_EQ(controller_->command_interfaces_[2].get_optional().value(), 1.2);
+  EXPECT_EQ(controller_->command_interfaces_[3].get_optional().value(), 1.3);
+  EXPECT_EQ(controller_->command_interfaces_[4].get_optional().value(), 1.4);
+  EXPECT_EQ(controller_->command_interfaces_[5].get_optional().value(), 1.5);
+  EXPECT_EQ(controller_->command_interfaces_[6].get_optional().value(), 1.6);
+  for (size_t i = 7; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
+}
+
+TEST_F(MotionPrimitivesForwardControllerTest, accepts_linear_joint_with_pose_when_has_kinematics)
+{
+  SetUpController(true);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  auto primitive = make_linear_cartesian_primitive(2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8);
+  primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  spin_until_command_interface_is_set(7);
+
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT));
+  for (size_t i = 1; i <= 6; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[7].get_optional().value(), 2.1);
+  EXPECT_EQ(controller_->command_interfaces_[8].get_optional().value(), 2.2);
+  EXPECT_EQ(controller_->command_interfaces_[9].get_optional().value(), 2.3);
+  EXPECT_EQ(controller_->command_interfaces_[10].get_optional().value(), 2.4);
+  EXPECT_EQ(controller_->command_interfaces_[11].get_optional().value(), 2.5);
+  EXPECT_EQ(controller_->command_interfaces_[12].get_optional().value(), 2.6);
+  EXPECT_EQ(controller_->command_interfaces_[13].get_optional().value(), 2.7);
+  EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
+}
+
+TEST_F(MotionPrimitivesForwardControllerTest, rejects_kinematic_substitutions_without_kinematics)
+{
+  SetUpController(false);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive cartesian_with_joints;
+  cartesian_with_joints.type =
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN);
+  cartesian_with_joints.joint_positions = {1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
+  EXPECT_EQ(send_motion_sequence_goal({cartesian_with_joints}), nullptr);
+
+  auto joint_with_pose = make_linear_cartesian_primitive();
+  joint_with_pose.type =
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  EXPECT_EQ(send_motion_sequence_goal({joint_with_pose}), nullptr);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
