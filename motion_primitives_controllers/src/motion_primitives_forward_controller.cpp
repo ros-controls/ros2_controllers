@@ -47,6 +47,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
 
   params_ = param_listener_->get_params();
   tf_prefix_ = params_.tf_prefix;
+  has_kinematics_ = params_.has_kinematics;
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<ExecuteMotionAction>(
@@ -285,23 +286,68 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
     {
       case MotionType::LINEAR_JOINT:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
-        if (primitive.joint_positions.empty())
+        if (has_kinematics_)
         {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
-          return rclcpp_action::GoalResponse::REJECT;
+          if (primitive.poses.empty() && primitive.joint_positions.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "Primitive %zu invalid: LINEAR_JOINT requires either joint_positions or poses.", i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
+          if (!primitive.poses.empty() && !primitive.joint_positions.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "Primitive %zu invalid: LINEAR_JOINT requires either joint_positions or poses. This "
+              "primitive has both.",
+              i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
+        }
+        else
+        {
+          if (primitive.joint_positions.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
         }
         break;
 
       case MotionType::LINEAR_CARTESIAN:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
-        if (primitive.poses.empty())
+        if (has_kinematics_)
         {
-          RCLCPP_ERROR(
-            get_node()->get_logger(),
-            "Primitive %zu invalid: LINEAR_CARTESIAN requires at least one pose.", i);
-          return rclcpp_action::GoalResponse::REJECT;
+          if (primitive.poses.empty() && primitive.joint_positions.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "Primitive %zu invalid: LINEAR_CARTESIAN requires either joint_positions or poses.",
+              i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
+          if (!primitive.poses.empty() && !primitive.joint_positions.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(),
+              "Primitive %zu invalid: LINEAR_CARTESIAN requires either joint_positions or poses. "
+              "This primitive has both.",
+              i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
+        }
+        else
+        {
+          if (primitive.poses.empty())
+          {
+            RCLCPP_ERROR(
+              get_node()->get_logger(), "Primitive %zu invalid: LINEAR_CARTESIAN requires poses.",
+              i);
+            return rclcpp_action::GoalResponse::REJECT;
+          }
         }
         break;
 
