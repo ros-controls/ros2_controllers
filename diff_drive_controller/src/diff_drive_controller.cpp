@@ -417,11 +417,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   if (params_.publish_limited_velocity)
   {
-    limited_velocity_publisher_ = get_node()->create_publisher<TwistStamped>(
-      DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
       std::make_shared<realtime_tools::RealtimePublisher<TwistStamped>>(
-        limited_velocity_publisher_);
+        get_node(), DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
   }
 
   // initialize command subscriber
@@ -474,11 +472,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // initialize odometry publisher and message
-  odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
-    DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
-      odometry_publisher_);
+      get_node(), DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
@@ -528,11 +524,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // initialize transform publisher and message
-  odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
-    DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_transform_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
-      odometry_transform_publisher_);
+      get_node(), DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
 
   // keeping track of odom and base_link transforms only
   odometry_transform_message_.transforms.resize(1);
