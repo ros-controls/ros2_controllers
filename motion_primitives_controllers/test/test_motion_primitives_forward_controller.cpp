@@ -212,19 +212,60 @@ TEST_F(MotionPrimitivesForwardControllerTest, resets_unused_command_interfaces_b
     expect_command_interface_is_nan(i);
   }
 
-  auto joint_primitive_without_additional_arguments = make_linear_joint_primitive();
-  joint_primitive_without_additional_arguments.additional_arguments.clear();
-  ASSERT_TRUE(controller_->moprim_queue_.push(joint_primitive_without_additional_arguments));
+  MotionPrimitive circular_primitive;
+  circular_primitive.type =
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::CIRCULAR_CARTESIAN);
+  circular_primitive.blend_radius = 2.3;
+  circular_primitive.poses.resize(2);
+  auto pose0 = make_linear_cartesian_primitive(1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7);
+  auto pose1 = make_linear_cartesian_primitive(2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7);
+  circular_primitive.poses[0] = pose0.poses[0];
+  circular_primitive.poses[1] = pose1.poses[0];
+
+  ASSERT_TRUE(controller_->moprim_queue_.push(circular_primitive));
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  for (size_t i = 0; i < joint_primitive_without_additional_arguments.joint_positions.size(); ++i)
+  for (size_t i = 1; i <= 6; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[7].get_optional().value(), 1.1);
+  EXPECT_EQ(controller_->command_interfaces_[8].get_optional().value(), 1.2);
+  EXPECT_EQ(controller_->command_interfaces_[9].get_optional().value(), 1.3);
+  EXPECT_EQ(controller_->command_interfaces_[10].get_optional().value(), 1.4);
+  EXPECT_EQ(controller_->command_interfaces_[11].get_optional().value(), 1.5);
+  EXPECT_EQ(controller_->command_interfaces_[12].get_optional().value(), 1.6);
+  EXPECT_EQ(controller_->command_interfaces_[13].get_optional().value(), 1.7);
+  EXPECT_EQ(controller_->command_interfaces_[14].get_optional().value(), 2.1);
+  EXPECT_EQ(controller_->command_interfaces_[15].get_optional().value(), 2.2);
+  EXPECT_EQ(controller_->command_interfaces_[16].get_optional().value(), 2.3);
+  EXPECT_EQ(controller_->command_interfaces_[17].get_optional().value(), 2.4);
+  EXPECT_EQ(controller_->command_interfaces_[18].get_optional().value(), 2.5);
+  EXPECT_EQ(controller_->command_interfaces_[19].get_optional().value(), 2.6);
+  EXPECT_EQ(controller_->command_interfaces_[20].get_optional().value(), 2.7);
+  EXPECT_EQ(
+    controller_->command_interfaces_[21].get_optional().value(), circular_primitive.blend_radius);
+  for (size_t i = 22; i <= 24; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+
+  auto joint_primitive_after_circular = make_linear_joint_primitive();
+  joint_primitive_after_circular.additional_arguments.clear();
+  ASSERT_TRUE(controller_->moprim_queue_.push(joint_primitive_after_circular));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  for (size_t i = 0; i < joint_primitive_after_circular.joint_positions.size(); ++i)
   {
     EXPECT_EQ(
       controller_->command_interfaces_[i + 1].get_optional().value(),
-      joint_primitive_without_additional_arguments.joint_positions[i]);
+      joint_primitive_after_circular.joint_positions[i]);
   }
   for (size_t i = 7; i <= 20; ++i)
   {
@@ -321,6 +362,24 @@ TEST_F(MotionPrimitivesForwardControllerTest, rejects_kinematic_substitutions_wi
   joint_with_pose.type =
     static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
   EXPECT_EQ(send_motion_sequence_goal({joint_with_pose}), nullptr);
+}
+
+TEST_F(
+  MotionPrimitivesForwardControllerTest,
+  rejects_command_with_both_joint_positions_and_poses_when_hardware_solves_kinematics)
+{
+  SetUpController(true);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  auto primitive_with_both = make_linear_cartesian_primitive();
+  primitive_with_both.joint_positions = {1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
+
+  EXPECT_EQ(send_motion_sequence_goal({primitive_with_both}), nullptr);
+  primitive_with_both.type =
+    static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  EXPECT_EQ(send_motion_sequence_goal({primitive_with_both}), nullptr);
 }
 
 int main(int argc, char ** argv)
