@@ -47,7 +47,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_confi
 
   params_ = param_listener_->get_params();
   tf_prefix_ = params_.tf_prefix;
-  has_kinematics_ = params_.has_kinematics;
+  hardware_solves_kinematics_ = params_.hardware_solves_kinematics;
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<ExecuteMotionAction>(
@@ -286,7 +286,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
     {
       case MotionType::LINEAR_JOINT:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_JOINT (PTP)", i);
-        if (has_kinematics_)
+        if (hardware_solves_kinematics_)
         {
           if (primitive.poses.empty() && primitive.joint_positions.empty())
           {
@@ -319,7 +319,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
 
       case MotionType::LINEAR_CARTESIAN:
         RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: LINEAR_CARTESIAN (LIN)", i);
-        if (has_kinematics_)
+        if (hardware_solves_kinematics_)
         {
           if (primitive.poses.empty() && primitive.joint_positions.empty())
           {

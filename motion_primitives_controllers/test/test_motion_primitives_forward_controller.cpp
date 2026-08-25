@@ -237,7 +237,8 @@ TEST_F(MotionPrimitivesForwardControllerTest, resets_unused_command_interfaces_b
 }
 
 TEST_F(
-  MotionPrimitivesForwardControllerTest, accepts_linear_cartesian_with_joints_when_has_kinematics)
+  MotionPrimitivesForwardControllerTest,
+  accepts_linear_cartesian_with_joints_when_hardware_solves_kinematics)
 {
   SetUpController(true);
 
@@ -271,7 +272,9 @@ TEST_F(
   EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
 }
 
-TEST_F(MotionPrimitivesForwardControllerTest, accepts_linear_joint_with_pose_when_has_kinematics)
+TEST_F(
+  MotionPrimitivesForwardControllerTest,
+  accepts_linear_joint_with_pose_when_hardware_solves_kinematics)
 {
   SetUpController(true);
 

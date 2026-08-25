@@ -64,9 +64,10 @@ class TestableMotionPrimitivesForwardController
     MotionPrimitivesForwardControllerTest, resets_unused_command_interfaces_between_primitives);
   FRIEND_TEST(
     MotionPrimitivesForwardControllerTest,
-    accepts_linear_cartesian_with_joints_when_has_kinematics);
+    accepts_linear_cartesian_with_joints_when_hardware_solves_kinematics);
   FRIEND_TEST(
-    MotionPrimitivesForwardControllerTest, accepts_linear_joint_with_pose_when_has_kinematics);
+    MotionPrimitivesForwardControllerTest,
+    accepts_linear_joint_with_pose_when_hardware_solves_kinematics);
   FRIEND_TEST(
     MotionPrimitivesForwardControllerTest, rejects_kinematic_substitutions_without_kinematics);
 
@@ -126,10 +127,10 @@ public:
   }
 
 protected:
-  void SetUpController(bool has_kinematics = false)
+  void SetUpController(bool hardware_solves_kinematics = false)
   {
-    auto result =
-      controller_->get_node()->set_parameter(rclcpp::Parameter("has_kinematics", has_kinematics));
+    auto result = controller_->get_node()->set_parameter(
+      rclcpp::Parameter("hardware_solves_kinematics", hardware_solves_kinematics));
     ASSERT_TRUE(result.successful);
 
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;

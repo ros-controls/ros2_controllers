@@ -34,7 +34,7 @@ This controller provides an interface for sending motion primitives to an indust
   - `CIRCULAR_CARTESIAN`
 
 ### Forward and inverse kinematics
-The controller has a parameter called `has_kinematics`, which enables sending joint angles with `LINEAR_CARTESIAN` commands or sending poses with `LINEAR_JOINT` commands. This should only be set to `true` if the underlying hardware interface is capable of doing both forward and inverse kinematics.
+The controller has a parameter called `hardware_solves_kinematics`, which enables sending joint angles with `LINEAR_CARTESIAN` commands or sending poses with `LINEAR_JOINT` commands. This should only be set to `true` if the underlying hardware interface is capable of doing both forward and inverse kinematics.
 
 If multiple motion primitives are passed to the controller via the action, the controller forwards them to the hardware interface as a sequence. To do this, it first sends `MOTION_SEQUENCE_START`, followed by each individual primitive, and finally `MOTION_SEQUENCE_END`. All primitives between these two markers will be executed as a single, continuous sequence. This allows seamless transitions (blending) between primitives.
 
