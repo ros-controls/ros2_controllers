@@ -245,11 +245,9 @@ TEST_F(
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
 
-  MotionPrimitive primitive;
+  MotionPrimitive primitive = make_linear_joint_primitive({1.1, 1.2, 1.3, 1.4, 1.5, 1.6});
   primitive.type =
     static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN);
-  primitive.joint_positions = {1.1, 1.2, 1.3, 1.4, 1.5, 1.6};
-  primitive.blend_radius = 1.7;
 
   const auto goal_handle = send_motion_sequence_goal({primitive});
   ASSERT_NE(goal_handle, nullptr);
