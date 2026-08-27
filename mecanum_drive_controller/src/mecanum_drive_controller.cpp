@@ -418,8 +418,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   bool value_set_no_error = true;
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
-    value_set_no_error &=
-      command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN());
+    value_set_no_error &= command_interfaces_[i].set_value(0.0);
   }
   if (!value_set_no_error)
   {
