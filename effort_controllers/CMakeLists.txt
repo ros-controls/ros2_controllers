@@ -6,6 +6,7 @@ set_compiler_options()
 export_windows_symbols()
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  controller_interface
   forward_command_controller
   pluginlib
   rclcpp
