@@ -54,6 +54,13 @@ joint_trajectory_controller
   don't contain velocity / acceleration information, but the trajectory does. This way, the segment
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
+<<<<<<< HEAD
+=======
+* Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+* When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
+  <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
+* Added ``action_execution_timeout`` parameter that aborts the goal when total execution time from trajectory start exceeds the configured limit. (`#2360 <https://github.com/ros-controls/ros2_controllers/pull/2360>`_)
+>>>>>>> 8bc90c5 ([JTC] Add goal_timeout parameter to abort action when total trajectory time exceeds limit (#2360))
 
 mecanum_drive_controller
 ************************
