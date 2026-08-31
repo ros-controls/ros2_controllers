@@ -2141,7 +2141,8 @@ const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::se
 {
   // state_current_ is feedback and lags the command by the following error. Anchoring a stop to it
   // steps the command stream back by that error in one cycle, which downstream reads as a huge
-  // acceleration. last_commanded_state_ is what was last written, so it keeps the stream continuous.
+  // acceleration. last_commanded_state_ is what was last written, so it keeps the stream
+  // continuous.
   if (
     from_last_command && last_commanded_state_.positions.size() >= num_cmd_joints_ &&
     std::all_of(
@@ -2154,8 +2155,8 @@ const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::se
   return state_current_;
 }
 
-std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-JointTrajectoryController::set_hold_position(const bool from_last_command)
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
+  const bool from_last_command)
 {
   // Command to stay at current position. Never latch a non-finite position -- it would be written
   // straight to the command interfaces; keep the previous target for those joints instead.
@@ -2182,10 +2183,10 @@ JointTrajectoryController::set_hold_position(const bool from_last_command)
       const int written = snprintf(
         offenders + offenders_len, sizeof(offenders) - offenders_len, "%s%s",
         (offenders_len > 0) ? ", " : "", params_.joints[i].c_str());
-      offenders_len = (written > 0) ? std::min(
-                                        offenders_len + static_cast<size_t>(written),
-                                        sizeof(offenders) - 1)
-                                    : sizeof(offenders) - 1;
+      offenders_len =
+        (written > 0)
+          ? std::min(offenders_len + static_cast<size_t>(written), sizeof(offenders) - 1)
+          : sizeof(offenders) - 1;
     }
   }
   if (offenders_len > 0)
