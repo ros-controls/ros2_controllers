@@ -154,6 +154,94 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
   EXPECT_EQ(controller_->command_interfaces_[24].get_optional().value(), 2.0);  // move time
 }
 
+TEST_F(
+  MotionPrimitivesForwardControllerTest, aborts_active_goal_and_stops_hardware_on_execution_error)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  // simulate the hardware interface reporting an execution error
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::ERROR));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // the queued/in-flight command must be cancelled on the hw-interface
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(motion_primitives_controllers::MotionHelperType::STOP_MOTION));
+  for (size_t i = 1; i < command_values_.size(); ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+
+  auto result_future = action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(result_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  const auto wrapped_result = result_future.get();
+  EXPECT_EQ(wrapped_result.code, rclcpp_action::ResultCode::ABORTED);
+  EXPECT_EQ(wrapped_result.result->error_code, -2);
+}
+
+TEST_F(MotionPrimitivesForwardControllerTest, accepts_new_goal_after_execution_error_is_handled)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+
+  ASSERT_NE(send_motion_sequence_goal({primitive}), nullptr);
+
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::ERROR));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(motion_primitives_controllers::MotionHelperType::STOP_MOTION));
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(
+      motion_primitives_controllers::ExecutionState::STOPPING));  // Emulate response from hw
+                                                                  // interface
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(
+      motion_primitives_controllers::ExecutionState::STOPPED));  // Emulate response from hw
+                                                                 // interface
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(motion_primitives_controllers::MotionHelperType::RESET_STOP));
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(
+      motion_primitives_controllers::ExecutionState::IDLE));  // Emulate response from hw interface
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // aborting the previous goal must clear has_active_goal_, allowing a new goal to be accepted
+  EXPECT_NE(send_motion_sequence_goal({primitive}), nullptr);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
