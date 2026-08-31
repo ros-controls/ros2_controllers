@@ -14,7 +14,9 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -2134,8 +2136,32 @@ void JointTrajectoryController::preempt_active_goal()
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::set_hold_position()
 {
-  // Command to stay at current position
-  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  // Command to stay at current position. Never latch a non-finite position -- it would be written
+  // straight to the command interfaces; keep the previous target for those joints instead.
+  const auto & source = state_current_.positions;
+  auto & hold = hold_position_msg_ptr_->points[0].positions;
+  if (hold.size() != source.size())
+  {
+    hold.assign(source.size(), std::numeric_limits<double>::quiet_NaN());
+  }
+  bool all_finite = true;
+  for (size_t i = 0; i < source.size(); ++i)
+  {
+    if (std::isfinite(source[i]))
+    {
+      hold[i] = source[i];
+    }
+    else
+    {
+      all_finite = false;
+    }
+  }
+  if (!all_finite)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Measured position contains non-finite values; holding the last valid target instead.");
+  }
 
   // set flag, otherwise tolerances will be checked with holding position too
   rt_is_holding_ = true;
@@ -2149,6 +2175,26 @@ JointTrajectoryController::decelerate_to_hold_position()
   double max_t_stop = 0.0;
   const auto & p0 = state_current_.positions;
   const auto & v0 = state_current_.velocities;
+
+  // A hardware component can export a state interface and never write it, leaving NaN in the
+  // handle. NaN would propagate silently: std::max(0.0, NaN) is 0.0, so max_t_stop stays finite,
+  // every `t < stop_time_[i]` is false, and the whole ramp fills with a NaN hold position.
+  const auto finite_prefix = [this](const std::vector<double> & v)
+  {
+    return v.size() >= num_cmd_joints_ &&
+           std::all_of(
+             v.cbegin(), v.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
+             [](double x) { return std::isfinite(x); });
+  };
+  if (!finite_prefix(p0) || !finite_prefix(v0))
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Cannot compute a deceleration ramp: the measured state contains non-finite values. Does "
+      "the hardware write to every state interface it exports? Holding position instead.");
+    return set_hold_position();
+  }
+
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     stop_direction_[i] = (v0[i] >= 0.0) ? 1.0 : -1.0;
