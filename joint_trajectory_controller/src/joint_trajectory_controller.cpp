@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -2164,23 +2165,36 @@ JointTrajectoryController::set_hold_position(const bool from_last_command)
   {
     hold.assign(source.size(), std::numeric_limits<double>::quiet_NaN());
   }
-  bool all_finite = true;
+  // Name the offending joints in the single throttled message below rather than logging per joint:
+  // the throttle state is a function-local static, so a throttled log inside this loop would be
+  // shared across iterations and report only one joint per interval.
+  char offenders[256];
+  size_t offenders_len = 0;
   for (size_t i = 0; i < source.size(); ++i)
   {
     if (std::isfinite(source[i]))
     {
       hold[i] = source[i];
+      continue;
     }
-    else
+    if (offenders_len < sizeof(offenders) - 1)
     {
-      all_finite = false;
+      const int written = snprintf(
+        offenders + offenders_len, sizeof(offenders) - offenders_len, "%s%s",
+        (offenders_len > 0) ? ", " : "", params_.joints[i].c_str());
+      offenders_len = (written > 0) ? std::min(
+                                        offenders_len + static_cast<size_t>(written),
+                                        sizeof(offenders) - 1)
+                                    : sizeof(offenders) - 1;
     }
   }
-  if (!all_finite)
+  if (offenders_len > 0)
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Measured position contains non-finite values; holding the last valid target instead.");
+      "Non-finite position reported for joint(s) [%s]; holding the last valid target for them "
+      "instead. Does the hardware write to every state interface it exports?",
+      offenders);
   }
 
   // set flag, otherwise tolerances will be checked with holding position too
@@ -2209,12 +2223,16 @@ JointTrajectoryController::decelerate_to_hold_position(const bool from_last_comm
              v.cbegin(), v.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
              [](double x) { return std::isfinite(x); });
   };
-  if (!finite_prefix(p0) || !finite_prefix(v0))
+  const bool positions_ok = finite_prefix(p0);
+  const bool velocities_ok = finite_prefix(v0);
+  if (!positions_ok || !velocities_ok)
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Cannot compute a deceleration ramp: the state it would start from contains non-finite "
-      "values. Does the hardware write to every state interface it exports? Holding instead.");
+      "Cannot compute a deceleration ramp: %s non-finite or wrongly sized. Does the hardware "
+      "write to every state interface it exports? Holding position instead.",
+      (!positions_ok && !velocities_ok) ? "positions and velocities are"
+                                        : (!positions_ok ? "positions are" : "velocities are"));
     return set_hold_position(from_last_command);
   }
 
