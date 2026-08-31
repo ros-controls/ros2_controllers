@@ -169,6 +169,29 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
         print_error_once_ = false;
+
+        if (has_active_goal_)
+        {
+          rt_goal_handle_.try_get(
+            [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
+            {
+              auto result = std::make_shared<ExecuteMotionAction::Result>();
+              // -2 is not part of the action's enumerated error codes, used here since no
+              // dedicated "execution failed" code exists.
+              result->error_code = -2;
+              result->error_string = "Hardware interface reported an execution error";
+              goal_handle->setAborted(result);
+              has_active_goal_ = false;
+              RCLCPP_ERROR(get_node()->get_logger(), "Motion primitives execution aborted.");
+            });
+        }
+        reset_command_interfaces();
+        // cancel commands already transferred to the hw-interface
+        std::ignore =
+          command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
+        // clear the queue (ignore return value)
+        static_cast<void>(moprim_queue_.get_latest(current_moprim_));
+        robot_stop_requested_ = true;
       }
       break;
 
