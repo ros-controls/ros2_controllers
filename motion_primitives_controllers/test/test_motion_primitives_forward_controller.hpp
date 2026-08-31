@@ -70,6 +70,9 @@ class TestableMotionPrimitivesForwardController
     accepts_linear_joint_with_pose_when_hardware_solves_kinematics);
   FRIEND_TEST(
     MotionPrimitivesForwardControllerTest, rejects_kinematic_substitutions_without_kinematics);
+  FRIEND_TEST(
+    VendorReservedMotionPrimitivesForwardControllerTest, accepts_fully_populated_primitive);
+  FRIEND_TEST(VendorReservedMotionPrimitivesForwardControllerTest, accepts_empty_primitive);
 
 public:
   controller_interface::CallbackReturn on_configure(

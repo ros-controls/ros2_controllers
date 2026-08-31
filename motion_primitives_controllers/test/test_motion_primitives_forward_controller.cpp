@@ -382,6 +382,104 @@ TEST_F(
   EXPECT_EQ(send_motion_sequence_goal({primitive_with_both}), nullptr);
 }
 
+// Vendor reserved types bypass all controller-side validation, so each type is exercised both
+// fully populated and empty to confirm neither shape is rejected.
+class VendorReservedMotionPrimitivesForwardControllerTest
+: public MotionPrimitivesForwardControllerFixture<TestableMotionPrimitivesForwardController>,
+  public ::testing::WithParamInterface<int8_t>
+{
+};
+
+TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_fully_populated_primitive)
+{
+  SetUpController(true);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive = make_linear_cartesian_primitive();
+  primitive.type = GetParam();
+  primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+  primitive.poses.resize(2);
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  spin_until_command_interface_is_set(0);
+
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(GetParam()));
+  for (size_t i = 0; i < primitive.joint_positions.size(); ++i)
+  {
+    EXPECT_EQ(
+      controller_->command_interfaces_[i + 1].get_optional().value(),
+      primitive.joint_positions[i]);
+  }
+  const auto & goal_pose = primitive.poses[0].pose;
+  EXPECT_EQ(controller_->command_interfaces_[7].get_optional().value(), goal_pose.position.x);
+  EXPECT_EQ(controller_->command_interfaces_[8].get_optional().value(), goal_pose.position.y);
+  EXPECT_EQ(controller_->command_interfaces_[9].get_optional().value(), goal_pose.position.z);
+  EXPECT_EQ(controller_->command_interfaces_[10].get_optional().value(), goal_pose.orientation.x);
+  EXPECT_EQ(controller_->command_interfaces_[11].get_optional().value(), goal_pose.orientation.y);
+  EXPECT_EQ(controller_->command_interfaces_[12].get_optional().value(), goal_pose.orientation.z);
+  EXPECT_EQ(controller_->command_interfaces_[13].get_optional().value(), goal_pose.orientation.w);
+  // via-pose interfaces are only populated for CIRCULAR_CARTESIAN, so they stay unset here
+  for (size_t i = 14; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
+  // make_linear_cartesian_primitive() leaves additional_arguments empty
+  for (size_t i = 22; i <= 24; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+}
+
+TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_empty_primitive)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type = GetParam();
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  spin_until_command_interface_is_set(0);
+
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(GetParam()));
+  for (size_t i = 1; i <= 20; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+  EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
+  for (size_t i = 22; i <= 24; ++i)
+  {
+    expect_command_interface_is_nan(i);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  AllVendorReservedTypes, VendorReservedMotionPrimitivesForwardControllerTest,
+  ::testing::Values(
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED1),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED2),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED3),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED4),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED5),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED6),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED7),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED8),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED9),
+    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED10)));
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
