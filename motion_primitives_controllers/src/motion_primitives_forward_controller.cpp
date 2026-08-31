@@ -361,6 +361,20 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
           return rclcpp_action::GoalResponse::REJECT;
         }
         break;
+      
+      // Vendor reserved types. No validation in this controller, hardware interfaces must do their own validation.
+      case MotionType::VENDOR_RESERVED1:
+      case MotionType::VENDOR_RESERVED2:
+      case MotionType::VENDOR_RESERVED3:
+      case MotionType::VENDOR_RESERVED4:
+      case MotionType::VENDOR_RESERVED5:
+      case MotionType::VENDOR_RESERVED6:
+      case MotionType::VENDOR_RESERVED7:
+      case MotionType::VENDOR_RESERVED8:
+      case MotionType::VENDOR_RESERVED9:
+      case MotionType::VENDOR_RESERVED10:
+        RCLCPP_INFO(get_node()->get_logger(), "Primitive %zu: VENDOR_RESERVED%u", i, primitive.type-110);
+        break;
 
       default:
         RCLCPP_ERROR(
