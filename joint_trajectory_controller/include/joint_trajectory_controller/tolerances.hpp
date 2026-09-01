@@ -98,7 +98,9 @@ SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Para
   auto const n_joints = params.joints.size();
 
   SegmentTolerances tolerances;
-  tolerances.goal_time_tolerance = constraints.goal_time;
+  // Negative goal_time means wait indefinitely for the goal to be reached
+  tolerances.goal_time_tolerance =
+    constraints.goal_time < 0.0 ? std::numeric_limits<double>::infinity() : constraints.goal_time;
   static auto logger = jtc_logger.get_child("tolerance");
   RCLCPP_DEBUG(logger, "goal_time %f", constraints.goal_time);
 

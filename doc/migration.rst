@@ -19,6 +19,14 @@ effort_controllers
 *****************************
 * ``effort_controllers/JointGroupEffortController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``effort``. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_).
 
+joint_trajectory_controller
+*****************************
+* The default value of the ``constraints.goal_time`` parameter changed from ``0.0`` to ``10.0`` seconds and its semantics changed.
+  Previously ``goal_time`` of ``0.0`` meant that the controller would wait a potentially infinite amount of time for the goal to be reached.
+  Now, any **negative** ``goal_time`` (e.g. ``-1.0``) means the controller will wait indefinitely, while ``0.0`` disables the grace period so the goal must be reached on time, and positive values set a finite grace period in seconds.
+  Configurations that relied on the old default or on ``goal_time: 0.0`` for an infinite timeout must set ``constraints.goal_time`` to a negative value (e.g. ``-1.0``) explicitly.
+  Note that ``cmd_timeout`` only activates when ``cmd_timeout > constraints.goal_time``; with the new default timeout feature setups relying on ``cmd_timeout`` (e.g. to hold position at the end of the trajectory) must set ``constraints.goal_time`` accordingly.
+
 position_controllers
 *****************************
 * ``position_controllers/JointGroupPositionController`` is deprecated. Use :ref:`forward_command_controller <forward_command_controller_userdoc>` instead by adding the ``interface_name`` parameter and set it to ``position``. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_).
