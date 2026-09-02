@@ -196,7 +196,6 @@ protected:
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
   ControllerStateMsg state_msg_;
 

@@ -1028,9 +1028,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
-  publisher_ = get_node()->create_publisher<ControllerStateMsg>(
-    "~/controller_state", rclcpp::SystemDefaultsQoS());
-  state_publisher_ = std::make_unique<StatePublisher>(publisher_);
+  state_publisher_ =
+    std::make_unique<StatePublisher>(get_node(), "~/controller_state", rclcpp::SystemDefaultsQoS());
 
   state_msg_.joint_names = params_.joints;
   state_msg_.reference.positions.resize(dof_);
