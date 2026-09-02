@@ -60,6 +60,11 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_single_action_goal);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest,
+    aborts_active_goal_and_stops_hardware_on_execution_error);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest, accepts_new_goal_after_execution_error_is_handled);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -67,6 +72,11 @@ public:
   {
     return motion_primitives_controllers::MotionPrimitivesForwardController::on_configure(
       previous_state);
+  }
+
+  double command_interface_value(size_t index) const
+  {
+    return command_interfaces_[index].get_optional().value();
   }
 };
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -188,6 +198,34 @@ protected:
     }
 
     std::cout << "Goal accepted by the action server." << std::endl;
+  }
+
+  rclcpp_action::ClientGoalHandle<ExecuteMotion>::SharedPtr send_motion_sequence_goal(
+    const std::vector<MotionPrimitive> & primitives)
+  {
+    if (!action_client_->wait_for_action_server(std::chrono::seconds(5)))
+    {
+      throw std::runtime_error("Action server not available");
+    }
+
+    auto goal_msg = ExecuteMotion::Goal();
+    goal_msg.trajectory.motions = primitives;
+
+    auto goal_future = action_client_->async_send_goal(goal_msg);
+
+    if (goal_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+    {
+      throw std::runtime_error("Failed to send goal (future timeout)");
+    }
+
+    return goal_future.get();
+  }
+
+  void expect_command_interface_is_nan(size_t index)
+  {
+    EXPECT_TRUE(std::isnan(controller_->command_interface_value(index)))
+      << "Expected command interface " << index << " (" << command_interface_names_[index]
+      << ") to be NaN";
   }
 
   const std::vector<std::string> command_interface_names_ = {
