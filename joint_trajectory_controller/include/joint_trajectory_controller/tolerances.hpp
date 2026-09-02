@@ -79,7 +79,7 @@ struct SegmentTolerances
  *
  * \code
  * constraints:
- *  goal_time: 1.0                   # Defaults to zero
+ *  goal_time: 1.0                   # Defaults to 10.0, negative waits indefinitely
  *  stopped_velocity_tolerance: 0.02 # Defaults to 0.01
  *  foo_joint:
  *    trajectory: 0.05               # Defaults to zero (ie. the tolerance is not enforced)

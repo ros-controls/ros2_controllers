@@ -26,6 +26,7 @@ joint_trajectory_controller
   Now, any **negative** ``goal_time`` (e.g. ``-1.0``) means the controller will wait indefinitely, while ``0.0`` disables the grace period so the goal must be reached on time, and positive values set a finite grace period in seconds.
   Configurations that relied on the old default or on ``goal_time: 0.0`` for an infinite timeout must set ``constraints.goal_time`` to a negative value (e.g. ``-1.0``) explicitly.
   Note that ``cmd_timeout`` only activates when ``cmd_timeout > constraints.goal_time``; with the new default timeout feature setups relying on ``cmd_timeout`` (e.g. to hold position at the end of the trajectory) must set ``constraints.goal_time`` accordingly.
+  The ``action_execution_timeout`` parameter is removed.
 
 position_controllers
 *****************************
