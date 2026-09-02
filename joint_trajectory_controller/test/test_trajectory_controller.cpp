@@ -3328,6 +3328,55 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_no_velocit
 }
 
 /**
+ * @brief A hardware component may export a velocity state interface and never write to it,
+ * leaving NaN in the handle. The deceleration ramp must not propagate that to the command
+ * interfaces: NaN is invisible to the ramp arithmetic (std::max(0.0, NaN) == 0.0, and every
+ * `t < stop_time` comparison is false), so without a guard every point of the stop trajectory
+ * is filled with a NaN hold position and written to the hardware.
+ */
+TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_commands_no_nan)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double cmd_timeout = 0.1;
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  const std::vector<double> nan_vel = {nan, nan, nan};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0),
+    rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
+
+  // velocity state interface exists but reads back NaN, as if the hardware never wrote it
+  SetUpAndActivateTrajectoryController(
+    executor, params, false, 0.0, 1.0, INITIAL_POS_JOINTS, nan_vel);
+
+  ASSERT_TRUE(traj_controller_->has_velocity_state_interface());
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{INITIAL_POS_JOINTS}};
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  updateController(rclcpp::Duration::from_seconds(cmd_timeout + 0.05));
+  updateController(rclcpp::Duration::from_seconds(0.1));
+
+  // Whatever path was taken, no NaN may reach the position command interfaces
+  for (size_t i = 0; i < 3; ++i)
+  {
+    const auto commanded = pos_cmd_interfaces_[i]->get_optional();
+    ASSERT_TRUE(commanded.has_value());
+    EXPECT_TRUE(std::isfinite(commanded.value()))
+      << "joint " << i << " was commanded a non-finite position: " << commanded.value();
+  }
+
+  executor.cancel();
+}
+
+/**
  * @brief When max_deceleration_on_cancel is 0.0 (the default) for any joint, the
  * controller disables should_decelerate_on_cancel_ internally during configure and falls back
  * to set_hold_position on timeout.

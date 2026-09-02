@@ -14,7 +14,10 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -1541,15 +1544,17 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
 
+    // The robot was tracking when the cancel arrived, so anchor the stop to the last commanded
+    // point to keep the command stream continuous. Fault paths deliberately do not do this.
     if (should_decelerate_on_cancel_)
     {
       // calculate stopping position based on max deceleration
-      add_new_trajectory_msg(decelerate_to_hold_position());
+      add_new_trajectory_msg(decelerate_to_hold_position(true));
     }
     else
     {
-      // hold current position
-      add_new_trajectory_msg(set_hold_position());
+      // hold last commanded position
+      add_new_trajectory_msg(set_hold_position(true));
     }
   }
   return rclcpp_action::CancelResponse::ACCEPT;
@@ -2131,11 +2136,67 @@ void JointTrajectoryController::preempt_active_goal()
   }
 }
 
-std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-JointTrajectoryController::set_hold_position()
+const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::select_hold_anchor(
+  const bool from_last_command) const
 {
-  // Command to stay at current position
-  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  // state_current_ is feedback and lags the command by the following error. Anchoring a stop to it
+  // steps the command stream back by that error in one cycle, which downstream reads as a huge
+  // acceleration. last_commanded_state_ is what was last written, so it keeps the stream
+  // continuous.
+  if (
+    from_last_command && last_commanded_state_.positions.size() >= num_cmd_joints_ &&
+    std::all_of(
+      last_commanded_state_.positions.cbegin(),
+      last_commanded_state_.positions.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
+      [](double x) { return std::isfinite(x); }))
+  {
+    return last_commanded_state_;
+  }
+  return state_current_;
+}
+
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
+  const bool from_last_command)
+{
+  // Command to stay at current position. Never latch a non-finite position -- it would be written
+  // straight to the command interfaces; keep the previous target for those joints instead.
+  const auto & source = select_hold_anchor(from_last_command).positions;
+  auto & hold = hold_position_msg_ptr_->points[0].positions;
+  if (hold.size() != source.size())
+  {
+    hold.assign(source.size(), std::numeric_limits<double>::quiet_NaN());
+  }
+  // Name the offending joints in the single throttled message below rather than logging per joint:
+  // the throttle state is a function-local static, so a throttled log inside this loop would be
+  // shared across iterations and report only one joint per interval.
+  char offenders[256];
+  size_t offenders_len = 0;
+  for (size_t i = 0; i < source.size(); ++i)
+  {
+    if (std::isfinite(source[i]))
+    {
+      hold[i] = source[i];
+      continue;
+    }
+    if (offenders_len < sizeof(offenders) - 1)
+    {
+      const int written = snprintf(
+        offenders + offenders_len, sizeof(offenders) - offenders_len, "%s%s",
+        (offenders_len > 0) ? ", " : "", params_.joints[i].c_str());
+      offenders_len =
+        (written > 0)
+          ? std::min(offenders_len + static_cast<size_t>(written), sizeof(offenders) - 1)
+          : sizeof(offenders) - 1;
+    }
+  }
+  if (offenders_len > 0)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Non-finite position reported for joint(s) [%s]; holding the last valid target for them "
+      "instead. Does the hardware write to every state interface it exports?",
+      offenders);
+  }
 
   // set flag, otherwise tolerances will be checked with holding position too
   rt_is_holding_ = true;
@@ -2144,11 +2205,38 @@ JointTrajectoryController::set_hold_position()
 }
 
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-JointTrajectoryController::decelerate_to_hold_position()
+JointTrajectoryController::decelerate_to_hold_position(const bool from_last_command)
 {
   double max_t_stop = 0.0;
-  const auto & p0 = state_current_.positions;
-  const auto & v0 = state_current_.velocities;
+  // Take p0 and v0 from the same point: a commanded p0 with a measured v0 leaves a slope
+  // discontinuity at the join, which is the same defect one derivative up.
+  const auto & anchor = select_hold_anchor(from_last_command);
+  const auto & p0 = anchor.positions;
+  const auto & v0 = anchor.velocities;
+
+  // A hardware component can export a state interface and never write it, leaving NaN in the
+  // handle. NaN would propagate silently: std::max(0.0, NaN) is 0.0, so max_t_stop stays finite,
+  // every `t < stop_time_[i]` is false, and the whole ramp fills with a NaN hold position.
+  const auto finite_prefix = [this](const std::vector<double> & v)
+  {
+    return v.size() >= num_cmd_joints_ &&
+           std::all_of(
+             v.cbegin(), v.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
+             [](double x) { return std::isfinite(x); });
+  };
+  const bool positions_ok = finite_prefix(p0);
+  const bool velocities_ok = finite_prefix(v0);
+  if (!positions_ok || !velocities_ok)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Cannot compute a deceleration ramp: %s non-finite or wrongly sized. Does the hardware "
+      "write to every state interface it exports? Holding position instead.",
+      (!positions_ok && !velocities_ok) ? "positions and velocities are"
+                                        : (!positions_ok ? "positions are" : "velocities are"));
+    return set_hold_position(from_last_command);
+  }
+
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     stop_direction_[i] = (v0[i] >= 0.0) ? 1.0 : -1.0;

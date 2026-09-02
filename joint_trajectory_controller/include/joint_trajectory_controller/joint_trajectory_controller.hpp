@@ -272,14 +272,31 @@ protected:
 
   void preempt_active_goal();
 
-  /** @brief set the current position with zero velocity and acceleration as new command
+  /** @brief pick the point a stop or hold should be anchored to
+   *
+   * Returns last_commanded_state_ when @p from_last_command is set and it holds a usable
+   * position, otherwise the measured state.
    */
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+  const trajectory_msgs::msg::JointTrajectoryPoint & select_hold_anchor(
+    bool from_last_command) const;
+
+  /** @brief set the current position with zero velocity and acceleration as new command
+   *
+   * @param from_last_command anchor the hold to the last commanded position instead of the
+   * measured one, keeping the command stream continuous across the transition. Only meaningful
+   * where the robot is still tracking; a fault path wants the measured state.
+   */
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position(
+    bool from_last_command = false);
 
   /** @brief decelerate at constant rate to a holding position with
    * zero velocity and acceleration as new command
+   *
+   * @param from_last_command anchor the ramp to the last commanded point instead of the measured
+   * one. See set_hold_position().
    */
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position();
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position(
+    bool from_last_command = false);
 
   /** @brief set last trajectory point to be repeated at success
    *
