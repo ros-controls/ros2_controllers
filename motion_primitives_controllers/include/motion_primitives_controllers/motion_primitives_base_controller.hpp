@@ -97,6 +97,7 @@ protected:
 
   void reset_command_interfaces();
   bool set_command_interfaces();
+  void reset_command_interface_range(size_t start, size_t end);
 
   bool print_error_once_ = true;
   // cancel requested by the action server

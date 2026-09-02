@@ -60,6 +60,16 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_single_action_goal);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest, resets_unused_command_interfaces_between_primitives);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest,
+    accepts_linear_cartesian_with_joints_when_hardware_solves_kinematics);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest,
+    accepts_linear_joint_with_pose_when_hardware_solves_kinematics);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest, rejects_kinematic_substitutions_without_kinematics);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -67,6 +77,11 @@ public:
   {
     return motion_primitives_controllers::MotionPrimitivesForwardController::on_configure(
       previous_state);
+  }
+
+  double command_interface_value(size_t index) const
+  {
+    return command_interfaces_[index].get_optional().value();
   }
 };
 // We are using template class here for easier reuse of Fixture in specializations of controllers
@@ -112,8 +127,12 @@ public:
   }
 
 protected:
-  void SetUpController()
+  void SetUpController(bool hardware_solves_kinematics = false)
   {
+    auto result = controller_->get_node()->set_parameter(
+      rclcpp::Parameter("hardware_solves_kinematics", hardware_solves_kinematics));
+    ASSERT_TRUE(result.successful);
+
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
 
@@ -188,6 +207,88 @@ protected:
     }
 
     std::cout << "Goal accepted by the action server." << std::endl;
+  }
+
+  rclcpp_action::ClientGoalHandle<ExecuteMotion>::SharedPtr send_motion_sequence_goal(
+    const std::vector<MotionPrimitive> & primitives)
+  {
+    if (!action_client_->wait_for_action_server(std::chrono::seconds(5)))
+    {
+      throw std::runtime_error("Action server not available");
+    }
+
+    auto goal_msg = ExecuteMotion::Goal();
+    goal_msg.trajectory.motions = primitives;
+
+    auto goal_future = action_client_->async_send_goal(goal_msg);
+
+    if (goal_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+    {
+      throw std::runtime_error("Failed to send goal (future timeout)");
+    }
+
+    return goal_future.get();
+  }
+
+  MotionPrimitive make_linear_joint_primitive(
+    const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
+    double velocity = 0.7, double acceleration = 1.0, double move_time = 2.0,
+    double blend_radius = 3.0)
+  {
+    MotionPrimitive primitive;
+    primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+    primitive.joint_positions = joint_positions;
+    primitive.blend_radius = blend_radius;
+
+    primitive.additional_arguments.resize(3);
+    primitive.additional_arguments[0].name = "velocity";
+    primitive.additional_arguments[0].value = velocity;
+    primitive.additional_arguments[1].name = "acceleration";
+    primitive.additional_arguments[1].value = acceleration;
+    primitive.additional_arguments[2].name = "move_time";
+    primitive.additional_arguments[2].value = move_time;
+
+    return primitive;
+  }
+
+  MotionPrimitive make_linear_cartesian_primitive(
+    double x = 0.1, double y = 0.2, double z = 0.3, double qx = 0.4, double qy = 0.5,
+    double qz = 0.6, double qw = 0.7, double blend_radius = 3.0)
+  {
+    MotionPrimitive primitive;
+    primitive.type =
+      static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN);
+    primitive.blend_radius = blend_radius;
+    primitive.poses.resize(1);
+    primitive.poses[0].pose.position.x = x;
+    primitive.poses[0].pose.position.y = y;
+    primitive.poses[0].pose.position.z = z;
+    primitive.poses[0].pose.orientation.x = qx;
+    primitive.poses[0].pose.orientation.y = qy;
+    primitive.poses[0].pose.orientation.z = qz;
+    primitive.poses[0].pose.orientation.w = qw;
+
+    return primitive;
+  }
+
+  void expect_command_interface_is_nan(size_t index)
+  {
+    EXPECT_TRUE(std::isnan(controller_->command_interface_value(index)))
+      << "Expected command interface " << index << " (" << command_interface_names_[index]
+      << ") to be NaN";
+  }
+
+  void spin_until_command_interface_is_set(size_t index)
+  {
+    const auto start = std::chrono::steady_clock::now();
+    while (std::isnan(controller_->command_interface_value(index)) &&
+           (std::chrono::steady_clock::now() - start) < std::chrono::seconds(5))
+    {
+      ASSERT_EQ(
+        controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
   }
 
   const std::vector<std::string> command_interface_names_ = {
