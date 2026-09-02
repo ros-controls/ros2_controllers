@@ -15,6 +15,7 @@
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <numeric>
@@ -409,7 +410,7 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           outside_goal_tolerance = true;
 
-          if (active_tol->goal_time_tolerance != 0.0)
+          if (std::isfinite(active_tol->goal_time_tolerance))
           {
             // if we exceed goal_time_tolerance set it to aborted
             if (time_difference > active_tol->goal_time_tolerance)
