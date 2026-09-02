@@ -117,22 +117,20 @@ Ingesting positions-only action chunks
 Action policies (e.g. diffusion policy, ACT) emit *action chunks*: short trajectories of
 positions-only waypoints with no velocities and often no timing. Fed positions-only, the controller
 interpolates linearly (C0), yielding discontinuous velocities at every waypoint (see :ref:`trajectory
-representation <joint_trajectory_controller_trajectory_representation>`).
+representation <joint_trajectory_controller_trajectory_representation>` for the plotted comparison).
 
-When ``positions_upsampling.enable`` is true, incoming positions-only messages on ``~/joint_trajectory``
-are upsampled in place: the knot velocities of a global cubic spline (rest boundary conditions,
-``v0 = v_{N-1} = 0``) are solved and written into the trajectory, so the existing sampler reproduces a
-motion that is continuous in acceleration across the chunk's waypoints (see :ref:`the plotted
-comparison <joint_trajectory_controller_trajectory_representation>`). Messages that already carry
-velocities are passed through unchanged, so the feature
-is a strict superset of the default behaviour (it is off by default). It has no effect when
-``interpolation_method`` is ``none``.
+``positions_upsampling.enable`` solves the knot velocities of a global cubic spline for incoming
+positions-only messages on ``~/joint_trajectory``, upgrading them from C0 to C2. The state the
+controller last commanded is prepended as an extra waypoint at ``time_from_start = 0``, so the
+segment into the first waypoint is part of the solve and a chunk arriving mid-motion continues it
+rather than braking to a stop. The spline ends at rest, and starts at rest as well until the
+controller has commanded anything. Messages that already carry velocities pass through unchanged;
+the feature is off by default and has no effect when ``interpolation_method`` is ``none``.
 
-``positions_upsampling.policy_frequency`` (double, Hz) is used to synthesize
-``time_from_start = (i + 1) / policy_frequency`` for chunks that arrive without timing; when it is
-``0`` the chunks must carry their own strictly-increasing ``time_from_start``. The first waypoint is
-placed one policy step ahead rather than at ``0``, so the controller ramps into the chunk from the
-current state instead of stepping to it.
+``positions_upsampling.policy_frequency`` (double, Hz) synthesizes
+``time_from_start = (i + 1) / policy_frequency`` for chunks that arrive without timing, placing the
+first waypoint one policy step ahead. ``0`` means the chunks must carry their own
+strictly-increasing ``time_from_start``.
 
    .. code-block:: yaml
 
@@ -150,9 +148,8 @@ current state instead of stepping to it.
             policy_frequency: 30.0
 
    .. note::
-      Only the topic interface (``~/joint_trajectory``) is upsampled. Each chunk uses rest boundary
-      conditions, so streaming chunks decelerate to a stop at each chunk boundary; cross-chunk C2
-      continuity and ``FollowJointTrajectory`` action-goal upsampling are future work.
+      Only the topic interface (``~/joint_trajectory``) is upsampled. ``FollowJointTrajectory``
+      action goals bypass this path and are not upsampled.
 
 
 Preemption policy [#f1]_
