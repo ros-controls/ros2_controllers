@@ -401,6 +401,13 @@ TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_fully_popula
   primitive.type = GetParam();
   primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
   primitive.poses.resize(2);
+  primitive.poses[1].pose.position.x = 1.1;
+  primitive.poses[1].pose.position.y = 1.2;
+  primitive.poses[1].pose.position.z = 1.3;
+  primitive.poses[1].pose.orientation.x = 1.4;
+  primitive.poses[1].pose.orientation.y = 1.5;
+  primitive.poses[1].pose.orientation.z = 1.6;
+  primitive.poses[1].pose.orientation.w = 1.7;
 
   const auto goal_handle = send_motion_sequence_goal({primitive});
   ASSERT_NE(goal_handle, nullptr);
@@ -408,13 +415,11 @@ TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_fully_popula
   spin_until_command_interface_is_set(0);
 
   EXPECT_EQ(
-    controller_->command_interfaces_[0].get_optional().value(),
-    static_cast<double>(GetParam()));
+    controller_->command_interfaces_[0].get_optional().value(), static_cast<double>(GetParam()));
   for (size_t i = 0; i < primitive.joint_positions.size(); ++i)
   {
     EXPECT_EQ(
-      controller_->command_interfaces_[i + 1].get_optional().value(),
-      primitive.joint_positions[i]);
+      controller_->command_interfaces_[i + 1].get_optional().value(), primitive.joint_positions[i]);
   }
   const auto & goal_pose = primitive.poses[0].pose;
   EXPECT_EQ(controller_->command_interfaces_[7].get_optional().value(), goal_pose.position.x);
@@ -424,11 +429,16 @@ TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_fully_popula
   EXPECT_EQ(controller_->command_interfaces_[11].get_optional().value(), goal_pose.orientation.y);
   EXPECT_EQ(controller_->command_interfaces_[12].get_optional().value(), goal_pose.orientation.z);
   EXPECT_EQ(controller_->command_interfaces_[13].get_optional().value(), goal_pose.orientation.w);
-  // via-pose interfaces are only populated for CIRCULAR_CARTESIAN, so they stay unset here
-  for (size_t i = 14; i <= 20; ++i)
-  {
-    expect_command_interface_is_nan(i);
-  }
+
+  const auto & via_pose = primitive.poses[1].pose;
+  EXPECT_EQ(controller_->command_interfaces_[14].get_optional().value(), via_pose.position.x);
+  EXPECT_EQ(controller_->command_interfaces_[15].get_optional().value(), via_pose.position.y);
+  EXPECT_EQ(controller_->command_interfaces_[16].get_optional().value(), via_pose.position.z);
+  EXPECT_EQ(controller_->command_interfaces_[17].get_optional().value(), via_pose.orientation.x);
+  EXPECT_EQ(controller_->command_interfaces_[18].get_optional().value(), via_pose.orientation.y);
+  EXPECT_EQ(controller_->command_interfaces_[19].get_optional().value(), via_pose.orientation.z);
+  EXPECT_EQ(controller_->command_interfaces_[20].get_optional().value(), via_pose.orientation.w);
+
   EXPECT_EQ(controller_->command_interfaces_[21].get_optional().value(), primitive.blend_radius);
   // make_linear_cartesian_primitive() leaves additional_arguments empty
   for (size_t i = 22; i <= 24; ++i)
@@ -453,8 +463,7 @@ TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_empty_primit
   spin_until_command_interface_is_set(0);
 
   EXPECT_EQ(
-    controller_->command_interfaces_[0].get_optional().value(),
-    static_cast<double>(GetParam()));
+    controller_->command_interfaces_[0].get_optional().value(), static_cast<double>(GetParam()));
   for (size_t i = 1; i <= 20; ++i)
   {
     expect_command_interface_is_nan(i);
@@ -466,19 +475,15 @@ TEST_P(VendorReservedMotionPrimitivesForwardControllerTest, accepts_empty_primit
   }
 }
 
+// Test various vendor specific types
 INSTANTIATE_TEST_SUITE_P(
   AllVendorReservedTypes, VendorReservedMotionPrimitivesForwardControllerTest,
   ::testing::Values(
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED1),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED2),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED3),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED4),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED5),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED6),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED7),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED8),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED9),
-    static_cast<int8_t>(motion_primitives_controllers::MotionType::VENDOR_RESERVED10)));
+    static_cast<int8_t>(110),  // Lower bound
+    static_cast<int8_t>(254),  // Upper bound
+    static_cast<int8_t>(125),  // Rest are somewhere in between
+    static_cast<int8_t>(150), static_cast<int8_t>(175), static_cast<int8_t>(200),
+    static_cast<int8_t>(225), static_cast<int8_t>(250)));
 
 int main(int argc, char ** argv)
 {
