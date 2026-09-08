@@ -37,7 +37,7 @@ This controller provides an interface for sending motion primitives to an indust
 The controller has a parameter called `hardware_solves_kinematics`, which enables sending joint angles with `LINEAR_CARTESIAN` commands or sending poses with `LINEAR_JOINT` commands. This should only be set to `true` if the underlying hardware interface is capable of doing both forward and inverse kinematics.
 
 ### Vendor specific primitive types
-This controller also supports forwarding vendor specific motion primitives. Any motion primitive with a type between 110 and 254 (inclusive), will be treated as a vendor specific motion primitive, which means that the controller will skip all validation, and just forward whatever information is available. It is then up to the receiving hardware interface to validate the motion primitive.
+This controller also supports forwarding vendor specific motion primitives. Any motion primitive with a type between 110 and 127 (inclusive), will be treated as a vendor specific motion primitive, which means that the controller will skip all validation, and just forward whatever information is available. It is then up to the receiving hardware interface to validate the motion primitive.
 
 ### Motion sequences
 If multiple motion primitives are passed to the controller via the action, the controller forwards them to the hardware interface as a sequence. To do this, it first sends `MOTION_SEQUENCE_START`, followed by each individual primitive, and finally `MOTION_SEQUENCE_END`. All primitives between these two markers will be executed as a single, continuous sequence. This allows seamless transitions (blending) between primitives.

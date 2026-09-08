@@ -367,7 +367,7 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
         // their own validation.
         if (
           static_cast<uint8_t>(primitive.type) >= 110 &&
-          static_cast<uint8_t>(primitive.type) <= 254)
+          static_cast<uint8_t>(primitive.type) <= 127)
         {
           RCLCPP_INFO(
             get_node()->get_logger(), "Primitive %zu: VENDOR_RESERVED_TYPE (%u)", i,

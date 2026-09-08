@@ -480,10 +480,9 @@ INSTANTIATE_TEST_SUITE_P(
   AllVendorReservedTypes, VendorReservedMotionPrimitivesForwardControllerTest,
   ::testing::Values(
     static_cast<int8_t>(110),  // Lower bound
-    static_cast<int8_t>(254),  // Upper bound
-    static_cast<int8_t>(125),  // Rest are somewhere in between
-    static_cast<int8_t>(150), static_cast<int8_t>(175), static_cast<int8_t>(200),
-    static_cast<int8_t>(225), static_cast<int8_t>(250)));
+    static_cast<int8_t>(127),  // Upper bound
+    static_cast<int8_t>(115),  // Rest are somewhere in between
+    static_cast<int8_t>(120), static_cast<int8_t>(125)));
 
 int main(int argc, char ** argv)
 {
