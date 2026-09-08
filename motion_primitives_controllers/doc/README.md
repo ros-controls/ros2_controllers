@@ -7,7 +7,7 @@ These interfaces are used to send motion primitive data to the hardware interfac
 - `q1` – `q6`: Target joint positions for joint-based motion
 - `pos_x`, `pos_y`, `pos_z`: Target Cartesian position
 - `pos_qx`, `pos_qy`, `pos_qz`, `pos_qw`: Orientation quaternion of the target pose
-- `pos_via_x`, `pos_via_y`, `pos_via_z`: Intermediate via-point position for circular motion
+- `pos_via_x`, `pos_via_y`, `pos_via_z`: Intermediate via-point position for circular motion and relevant vendor specific motion primitives
 - `pos_via_qx`, `pos_via_qy`, `pos_via_qz`, `pos_via_qw`: Orientation quaternion of via-point
 - `blend_radius`: Blending radius for smooth transitions
 - `velocity`: Desired motion velocity
@@ -36,6 +36,10 @@ This controller provides an interface for sending motion primitives to an indust
 ### Forward and inverse kinematics
 The controller has a parameter called `hardware_solves_kinematics`, which enables sending joint angles with `LINEAR_CARTESIAN` commands or sending poses with `LINEAR_JOINT` commands. This should only be set to `true` if the underlying hardware interface is capable of doing both forward and inverse kinematics.
 
+### Vendor specific primitive types
+This controller also supports forwarding vendor specific motion primitives. Any motion primitive with a type between 110 and 254 (inclusive), will be treated as a vendor specific motion primitive, which means that the controller will skip all validation, and just forward whatever information is available. It is then up to the receiving hardware interface to validate the motion primitive.
+
+### Motion sequences
 If multiple motion primitives are passed to the controller via the action, the controller forwards them to the hardware interface as a sequence. To do this, it first sends `MOTION_SEQUENCE_START`, followed by each individual primitive, and finally `MOTION_SEQUENCE_END`. All primitives between these two markers will be executed as a single, continuous sequence. This allows seamless transitions (blending) between primitives.
 
 The action interface also allows stopping the current execution of motion primitives. When a stop request is received, the controller sends `STOP_MOTION` to the hardware interface, which then halts the robot's movement. Once the controller receives confirmation that the robot has stopped, it sends `RESET_STOP` to the hardware interface. After that, new commands can be sent.
