@@ -178,8 +178,8 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
     std::ignore = command_interfaces_[12].set_value(goal_pose.orientation.z);  // pos_qz
     std::ignore = command_interfaces_[13].set_value(goal_pose.orientation.w);  // pos_qw
 
-    // Process via poses if available (only for circular motion)
-    if (current_moprim_.type == MotionType::CIRCULAR_CARTESIAN && current_moprim_.poses.size() == 2)
+    // Process via pose if available
+    if (current_moprim_.poses.size() == 2)
     {
       const auto & via_pose = current_moprim_.poses[1].pose;                    // via pose
       std::ignore = command_interfaces_[14].set_value(via_pose.position.x);     // pos_via_x
