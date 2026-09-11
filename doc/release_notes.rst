@@ -52,7 +52,6 @@ omni_wheel_drive_controller
 * 🚀 The omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
 
 pid_controller
-<<<<<<< HEAD
 *******************************
 * The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior (`#1585 <https://github.com/ros-controls/ros2_controllers/pull/1585>`__).
   * Output clamping via ``u_clamp_max`` and ``u_clamp_min`` was added, allowing users to bound the controller output.
@@ -60,11 +59,7 @@ pid_controller
   * A new ``error_deadband`` parameter stops integration when the error is within a specified range.
 * PID state publisher can be turned off or on by using  ``activate_state_publisher`` parameter. (`#1823 <https://github.com/ros-controls/ros2_controllers/pull/1823>`_).
 * Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
-=======
-**************
-* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output. (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
 * Added parameter ``reset_commands_at_deactivation`` (default: false) to reset the commands to 0.0 when the controller is deactivated. (`#2602 <https://github.com/ros-controls/ros2_controllers/pull/2602>`_).
->>>>>>> 0fbe448 (doc(pid): Update release notes with new controller parameters (#2606))
 
 motion_primitives_forward_controller
 *******************************************
