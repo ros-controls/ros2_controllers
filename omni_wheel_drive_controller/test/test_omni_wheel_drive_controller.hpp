@@ -62,6 +62,8 @@ class TestableOmniWheelDriveController
   FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_unchained_mode);
   FRIEND_TEST(OmniWheelDriveControllerTest, chainable_controller_chained_mode);
   FRIEND_TEST(OmniWheelDriveControllerTest, deactivate_then_activate);
+  FRIEND_TEST(
+    OmniWheelDriveControllerTest, normal_update_set_value_failure_still_updates_other_wheels);
   FRIEND_TEST(OmniWheelDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning);
   FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_test);
   FRIEND_TEST(OmniWheelDriveControllerTest, 3_wheel_rot_test);

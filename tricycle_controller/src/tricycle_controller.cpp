@@ -19,6 +19,7 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <queue>
 #include <string>
@@ -458,18 +459,14 @@ bool TricycleController::reset()
 
 void TricycleController::halt()
 {
-  if (!traction_joint_[0].velocity_command.get().set_value(0.0))
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Unable to set the velocity command for traction joint to value 0.0");
-  }
-  if (!steering_joint_[0].position_command.get().set_value(0.0))
-  {
-    RCLCPP_WARN(
-      get_node()->get_logger(),
-      "Unable to set the position command for steering joint to value 0.0");
-  }
+  bool set_command_error = false;
+  set_command_error |= !traction_joint_[0].velocity_command.get().set_value(
+    0.0, std::numeric_limits<unsigned int>::max());
+  set_command_error |= !steering_joint_[0].position_command.get().set_value(
+    0.0, std::numeric_limits<unsigned int>::max());
+  RCLCPP_WARN_EXPRESSION(
+    get_node()->get_logger(), set_command_error,
+    "Unable to set halt commands for one or more joints.");
 }
 
 CallbackReturn TricycleController::get_traction(
