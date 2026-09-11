@@ -38,7 +38,6 @@
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
 #include "realtime_tools/realtime_thread_safe_box.hpp"
@@ -187,9 +186,9 @@ protected:
 
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
-  std::shared_ptr<Trajectory> current_trajectory_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
-    new_trajectory_msg_;
+  std::unique_ptr<Trajectory> current_trajectory_ = nullptr;
+  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
+    rt_new_trajectory_msg_;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -203,13 +202,13 @@ protected:
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
-  using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
-  RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  std::atomic<bool> rt_has_pending_goal_{false};  ///< Is there a pending action goal?
+  realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
+  RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
+  std::atomic<bool> rt_has_pending_goal_{false};
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
+  rclcpp::Duration goal_handle_timer_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
@@ -268,7 +267,9 @@ protected:
   // the tolerances from the node parameter
   SegmentTolerances default_tolerances_;
   // the tolerances used for the current goal
-  realtime_tools::RealtimeBuffer<SegmentTolerances> active_tolerances_;
+  realtime_tools::RealtimeThreadSafeBox<SegmentTolerances> rt_goal_tolerances_;
+  // preallocated memory for tolerances used in RT loop
+  SegmentTolerances active_tol_;
 
   void preempt_active_goal();
 
