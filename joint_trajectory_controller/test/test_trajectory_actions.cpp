@@ -1157,6 +1157,65 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_fallback)
   expectCommandPoint(cancelled_position);
 }
 
+/**
+ * @brief Cancelling must not step the command stream back onto the measured state.
+ *
+ * With separate command and state values the state stays frozen at INITIAL_POS_JOINTS while the
+ * command advances, i.e. a permanent following error. Anchoring the hold to the measured state
+ * would snap the commanded position back by that error in a single control period, which
+ * downstream reads as a very large acceleration. The hold must stay where the command was.
+ */
+TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_holds_last_command_not_measured_state)
+{
+  // the defect and the fix are both about the position command stream. Skip before any setup:
+  // tearing down an executor for a test we never run is slow and flaky.
+  if (
+    std::find(command_interface_types_.begin(), command_interface_types_.end(), "position") ==
+    command_interface_types_.end())
+  {
+    GTEST_SKIP() << "no position command interface in this parameterization";
+  }
+
+  SetUpExecutor({}, true);
+  SetUpControllerHardware();
+
+  std::shared_future<typename GoalHandle::SharedPtr> gh_future;
+  {
+    std::vector<JointTrajectoryPoint> points;
+    JointTrajectoryPoint point;
+    point.time_from_start = rclcpp::Duration::from_seconds(1.0);
+    point.positions.resize(joint_names_.size());
+
+    point.positions[0] = 4.0;
+    point.positions[1] = 5.0;
+    point.positions[2] = 6.0;
+    points.push_back(point);
+
+    control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+    goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
+    goal_msg.trajectory.joint_names = joint_names_;
+    goal_msg.trajectory.points = points;
+
+    // let the command move away from the frozen state, then cancel mid-trajectory
+    gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    const auto goal_handle = gh_future.get();
+    action_client_->async_cancel_goal(goal_handle);
+  }
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::CANCELED, common_resultcode_);
+
+  for (size_t i = 0; i < 3; ++i)
+  {
+    const double commanded = pos_cmd_interfaces_[i]->get_optional().value();
+    // the measured state never moved, so a measured-anchored hold would land exactly here
+    EXPECT_GT(commanded, INITIAL_POS_JOINTS[i] + 0.1)
+      << "joint " << i << " snapped back toward the measured state on cancel";
+  }
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)
 {
   std::vector<rclcpp::Parameter> params = {
