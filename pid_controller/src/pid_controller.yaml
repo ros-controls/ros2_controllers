@@ -37,6 +37,21 @@ pid_controller:
       size_lt<>: 3,
     }
   }
+<<<<<<< HEAD
+=======
+  set_current_state_as_first_setpoint: {
+    type: bool,
+    default_value: true,
+    read_only: true,
+    description: "When true, the controller will set the current state as the first setpoint when the controller is activated. This can help to avoid large initial errors and sudden jumps in the control output when the controller starts."
+  }
+  reset_commands_at_deactivation: {
+    type: bool,
+    default_value: false,
+    read_only: true,
+    description: "When true, the controller will reset the commands to 0.0 when the controller is deactivated."
+  }
+>>>>>>> 95c9261 (feature(pid_controller): Optionally reset command interfaces at deactivation (#2602))
   use_external_measured_states: {
     type: bool,
     default_value: false,

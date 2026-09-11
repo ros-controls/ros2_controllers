@@ -378,6 +378,35 @@ controller_interface::CallbackReturn PidController::on_activate(
 
 controller_interface::CallbackReturn PidController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
+<<<<<<< HEAD
+=======
+{
+  // reset commands?
+  if (params_.reset_commands_at_deactivation)
+  {
+    for (size_t i = 0; i < dof_; ++i)
+    {
+      // write calculated values
+      auto success = command_interfaces_[i].set_value(0.0);
+      if (!success)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Failed to set command value for %s",
+          command_interfaces_[i].get_name().c_str());
+      }
+    }
+  }
+  // prefixed save_i_term parameter is read from ROS parameters
+  for (auto & pid : pids_)
+  {
+    pid->reset();
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::return_type PidController::update_reference_from_subscribers(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+>>>>>>> 95c9261 (feature(pid_controller): Optionally reset command interfaces at deactivation (#2602))
 {
   return controller_interface::CallbackReturn::SUCCESS;
 }
