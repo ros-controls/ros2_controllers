@@ -56,6 +56,8 @@ class TestablePidController : public pid_controller::PidController
   FRIEND_TEST(PidControllerTest, test_feedforward_mode_parameter);
   FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_off);
   FRIEND_TEST(PidControllerTest, test_update_logic_feedforward_on_with_zero_feedforward_gain);
+  FRIEND_TEST(PidControllerTest, reset_commands_at_deactivation);
+  FRIEND_TEST(PidControllerTest, do_not_reset_commands_at_deactivation);
   FRIEND_TEST(PidControllerTest, test_update_logic_chainable_not_use_subscriber_update);
   FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_off);
   FRIEND_TEST(PidControllerTest, test_update_logic_angle_wraparound_on);
