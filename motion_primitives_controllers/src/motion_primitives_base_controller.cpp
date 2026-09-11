@@ -126,6 +126,18 @@ void MotionPrimitivesBaseController::reset_command_interfaces()
   }
 }
 
+// Reset range of command interfaces
+void MotionPrimitivesBaseController::reset_command_interface_range(size_t start, size_t end)
+{
+  for (size_t i = start; i <= end; ++i)
+  {
+    if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to reset command interface %zu", i);
+    }
+  }
+}
+
 // Set command interfaces from the message, gets called in the update function
 bool MotionPrimitivesBaseController::set_command_interfaces()
 {
@@ -147,6 +159,11 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
       // q1 to q6
       std::ignore = command_interfaces_[i + 1].set_value(current_moprim_.joint_positions[i]);
     }
+  }
+  else
+  {
+    // Reset interfaces when not in use.
+    reset_command_interface_range(1, 6);
   }
 
   // Process Cartesian poses if available
@@ -173,28 +190,51 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
       std::ignore = command_interfaces_[19].set_value(via_pose.orientation.z);  // pos_via_qz
       std::ignore = command_interfaces_[20].set_value(via_pose.orientation.w);  // pos_via_qw
     }
+    else
+    {
+      reset_command_interface_range(14, 20);
+    }
+  }
+  else
+  {
+    reset_command_interface_range(7, 20);
   }
 
   std::ignore = command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
+
+  std::array<bool, 3> add_args_used;
+  add_args_used.fill(false);
 
   // Read additional arguments
   for (const auto & arg : current_moprim_.additional_arguments)
   {
     if (arg.name == "velocity")
     {
+      add_args_used[0] = true;
       std::ignore = command_interfaces_[22].set_value(arg.value);
     }
     else if (arg.name == "acceleration")
     {
+      add_args_used[1] = true;
       std::ignore = command_interfaces_[23].set_value(arg.value);
     }
     else if (arg.name == "move_time")
     {
+      add_args_used[2] = true;
       std::ignore = command_interfaces_[24].set_value(arg.value);
     }
     else
     {
       RCLCPP_WARN(get_node()->get_logger(), "Unknown additional argument: %s", arg.name.c_str());
+    }
+  }
+
+  // Reset unused additional arguments
+  for (size_t i = 0; i < add_args_used.size(); ++i)
+  {
+    if (!add_args_used[i])
+    {
+      std::ignore = command_interfaces_[i + 22].set_value(std::numeric_limits<double>::quiet_NaN());
     }
   }
   return true;
