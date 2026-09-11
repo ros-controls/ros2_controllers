@@ -58,7 +58,8 @@ joint_trajectory_controller
 
 pid_controller
 **************
-* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
+* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output. (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
+* Added parameter ``reset_commands_at_deactivation`` (default: false) to reset the commands to 0.0 when the controller is deactivated. (`#2602 <https://github.com/ros-controls/ros2_controllers/pull/2602>`_).
 
 steering_controllers_library
 *****************************
