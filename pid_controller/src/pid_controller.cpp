@@ -456,7 +456,8 @@ controller_interface::CallbackReturn PidController::on_activate(
   }
 
   // prefixed save_i_term parameter is read from ROS parameters
-  for (auto & pid : pids_) {
+  for (auto & pid : pids_)
+  {
     pid->reset();
   }
   return controller_interface::CallbackReturn::SUCCESS;
@@ -465,18 +466,24 @@ controller_interface::CallbackReturn PidController::on_activate(
 controller_interface::CallbackReturn PidController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // reset commands
-  for (size_t i = 0; i < dof_; ++i) {
-    // write calculated values
-    auto success = command_interfaces_[i].set_value(0.0);
-    if (!success) {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Failed to set command value for %s",
-        command_interfaces_[i].get_name().c_str());
+  // reset commands?
+  if (params_.reset_commands_at_deactivation)
+  {
+    for (size_t i = 0; i < dof_; ++i)
+    {
+      // write calculated values
+      auto success = command_interfaces_[i].set_value(0.0);
+      if (!success)
+      {
+        RCLCPP_ERROR(
+          get_node()->get_logger(), "Failed to set command value for %s",
+          command_interfaces_[i].get_name().c_str());
+      }
     }
   }
   // prefixed save_i_term parameter is read from ROS parameters
-  for (auto & pid : pids_) {
+  for (auto & pid : pids_)
+  {
     pid->reset();
   }
   return controller_interface::CallbackReturn::SUCCESS;
