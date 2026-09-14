@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
-    <height>317</height>
+    <width>616</width>
+    <height>594</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,37 +21,73 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="1" column="1">
-         <widget class="QComboBox" name="jtc_combo"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="QComboBox" name="cm_combo"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="cm_list_label">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;controller manager&lt;/span&gt; namespace. It is assumed that the &lt;span style=&quot; font-weight:600;&quot;&gt;robot_description&lt;/span&gt; parameter also lives in the same namespace.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>controller manager ns</string>
-          </property>
-          <property name="buddy">
-           <cstring>cm_combo</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="controller_list_label">
-          <property name="text">
-           <string>controller</string>
-          </property>
-          <property name="buddy">
-           <cstring>jtc_combo</cstring>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QWidget" name="combo_container">
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="cm_list_label">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;controller manager&lt;/span&gt; namespace. It is assumed that the &lt;span style=&quot; font-weight:600;&quot;&gt;robot_description&lt;/span&gt; parameter also lives in the same namespace.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Controller Manager</string>
+           </property>
+           <property name="buddy">
+            <cstring>cm_combo</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QComboBox" name="cm_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="controller_list_label">
+           <property name="text">
+            <string>Controller</string>
+           </property>
+           <property name="buddy">
+            <cstring>jtc_combo</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="jtc_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="robot_description_list_label">
+           <property name="text">
+            <string>robot description topic</string>
+           </property>
+           <property name="buddy">
+            <cstring>robot_description_combo</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QComboBox" name="robot_description_combo">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -172,8 +208,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>109</height>
+           <width>566</width>
+           <height>300</height>
           </rect>
          </property>
         </widget>
@@ -195,6 +231,7 @@
  <tabstops>
   <tabstop>cm_combo</tabstop>
   <tabstop>jtc_combo</tabstop>
+  <tabstop>robot_description_combo</tabstop>
   <tabstop>enable_button</tabstop>
  </tabstops>
  <resources/>
