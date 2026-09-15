@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "controller_interface/helpers.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/version.h"
 
 namespace
@@ -45,6 +46,18 @@ static const rmw_qos_profile_t qos_services = {
   false};
 #endif
 
+uint16_t pack_action_transition(gpio_tool_controller::ToolAction action, uint8_t transition)
+{
+  return static_cast<uint16_t>((static_cast<uint16_t>(action) << 8) | transition);
+}
+
+gpio_tool_controller::ToolAction unpack_action(uint16_t packed)
+{
+  return static_cast<gpio_tool_controller::ToolAction>(packed >> 8);
+}
+
+uint8_t unpack_transition(uint16_t packed) { return static_cast<uint8_t>(packed & 0xFF); }
+
 }  // namespace
 
 namespace gpio_tool_controller
@@ -53,8 +66,7 @@ GpioToolController::GpioToolController() : controller_interface::ControllerInter
 
 controller_interface::CallbackReturn GpioToolController::on_init()
 {
-  current_tool_action_.store(ToolAction::IDLE);
-  current_tool_transition_.store(GPIOToolTransition::IDLE);
+  set_tool_state(ToolAction::IDLE, GPIOToolTransition::IDLE);
   target_configuration_.set("");
   current_state_.set("");
   current_configuration_.set("");
@@ -359,7 +371,7 @@ controller_interface::CallbackReturn GpioToolController::on_deactivate(
 controller_interface::return_type GpioToolController::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  switch (current_tool_action_.load())
+  switch (tool_action())
   {
     case ToolAction::IDLE:
     {
@@ -410,7 +422,13 @@ controller_interface::return_type GpioToolController::update(
         "going to HALTED. Reset the tool using '~/reset_halted' service. After that set sensible "
         "state.",
         current_state_.get().c_str());
-      current_tool_transition_.store(GPIOToolTransition::HALTED);
+      // Force HALTED only if a new action has not already overridden CANCELING.
+      uint16_t seen = tool_state_.load();
+      if (unpack_action(seen) == ToolAction::CANCELING)
+      {
+        tool_state_.compare_exchange_strong(
+          seen, pack_action_transition(ToolAction::CANCELING, GPIOToolTransition::HALTED));
+      }
       check_tool_state(time, true);
       std::vector<double> tmp_vec;
       std::string tmp_str;
@@ -455,9 +473,10 @@ bool GpioToolController::set_commands(
       get_node()->get_logger(), "%s: Transitioning after setting commands to: %d",
       output_prefix.c_str(), next_transition);
     // when canceling we don't continue the transition
-    if (current_tool_action_.load() != ToolAction::CANCELING)
+    uint16_t seen = tool_state_.load();
+    if (unpack_action(seen) != ToolAction::CANCELING)
     {
-      current_tool_transition_.store(next_transition);
+      tool_state_.compare_exchange_strong(seen, pack_action_transition(unpack_action(seen), next_transition));
     }
   }
   else
@@ -465,7 +484,9 @@ bool GpioToolController::set_commands(
     RCLCPP_ERROR(
       get_node()->get_logger(), "%s: Error occurred when setting commands - see above for details.",
       output_prefix.c_str());
-    current_tool_transition_.store(GPIOToolTransition::HALTED);
+    uint16_t seen = tool_state_.load();
+    tool_state_.compare_exchange_strong(
+      seen, pack_action_transition(unpack_action(seen), GPIOToolTransition::HALTED));
   }
 
   return all_successful;
@@ -508,9 +529,10 @@ bool GpioToolController::check_states(
       get_node()->get_logger(), "%s: Transitioning after reaching state to: %d",
       output_prefix.c_str(), next_transition);
     // when canceling we don't continue transition
-    if (current_tool_action_.load() != ToolAction::CANCELING)
+    uint16_t seen = tool_state_.load();
+    if (unpack_action(seen) != ToolAction::CANCELING)
     {
-      current_tool_transition_.store(next_transition);
+      tool_state_.compare_exchange_strong(seen, pack_action_transition(unpack_action(seen), next_transition));
     }
   }
   else if ((current_time - state_change_start_).seconds() > params_.timeout)
@@ -520,7 +542,9 @@ bool GpioToolController::check_states(
       "%s: Tool didin't reached target state within %.2f seconds. Try resetting the tool using "
       "'~/reset_halted' service. After that set sensible state.",
       output_prefix.c_str(), params_.timeout);
-    current_tool_transition_.store(GPIOToolTransition::HALTED);
+    uint16_t seen = tool_state_.load();
+    tool_state_.compare_exchange_strong(
+      seen, pack_action_transition(unpack_action(seen), GPIOToolTransition::HALTED));
   }
 
   return all_correct;
@@ -577,7 +601,7 @@ void GpioToolController::handle_tool_state_transition(
   const size_t joint_states_start_index, std::string & current_state)
 {
   bool finish_transition_to_state = false;
-  switch (current_tool_transition_.load())
+  switch (tool_transition())
   {
     case GPIOToolTransition::IDLE:
       // reset time to avoid any time-source related crashing
@@ -656,13 +680,16 @@ void GpioToolController::handle_tool_state_transition(
 
   if (finish_transition_to_state)
   {
-    current_tool_action_.store(ToolAction::IDLE);
-    current_tool_transition_.store(GPIOToolTransition::IDLE);
-    transition_time_updated_.store(false);  // resetting the flag
+    uint16_t seen = tool_state_.load();
+    if (tool_state_.compare_exchange_strong(
+          seen, pack_action_transition(ToolAction::IDLE, GPIOToolTransition::IDLE)))
+    {
+      transition_time_updated_.store(false);  // resetting the flag
 
-    RCLCPP_INFO(
-      get_node()->get_logger(), "%s: Tool state or configuration change finished!",
-      target_state.c_str());
+      RCLCPP_INFO(
+        get_node()->get_logger(), "%s: Tool state or configuration change finished!",
+        target_state.c_str());
+    }
   }
 }
 
@@ -919,121 +946,169 @@ bool GpioToolController::prepare_command_and_state_ios()
   return ret;
 }
 
+ToolAction GpioToolController::tool_action() const { return unpack_action(tool_state_.load()); }
+
+uint8_t GpioToolController::tool_transition() const
+{
+  return unpack_transition(tool_state_.load());
+}
+
+void GpioToolController::set_tool_state(ToolAction action, uint8_t transition)
+{
+  tool_state_.store(pack_action_transition(action, transition));
+}
+
 GpioToolController::EngagingSrvType::Response GpioToolController::process_tool_action_request(
   const ToolAction & requested_action, const std::string & requested_action_name)
 {
   EngagingSrvType::Response response;
-  if (current_tool_action_.load() == ToolAction::RECONFIGURING)
+
+  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     response.success = false;
-    response.message = "Cannot engage the Tool while reconfiguring";
+    response.message =
+      "Cannot process '" + requested_action_name + "' request. Controller is not active.";
     RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
     return response;
   }
 
-  if (current_tool_action_.load() != ToolAction::IDLE)
+  // Retries the compare_exchange if update() or another request changes state concurrently.
+  while (true)
   {
-    const auto & current_action_name = (current_tool_action_.load() == ToolAction::ENGAGING)
-                                         ? params_.engaged.name
-                                         : params_.disengaged.name;
+    uint16_t seen = tool_state_.load();
+    const ToolAction current_action = unpack_action(seen);
 
-    if (current_tool_action_.load() != requested_action)
-    {
-      RCLCPP_WARN(
-        get_node()->get_logger(), "Stopping tool '%s' and starting '%s'.",
-        current_action_name.c_str(), requested_action_name.c_str());
-    }
-    else
+    if (current_action == ToolAction::RECONFIGURING)
     {
       response.success = false;
-      response.message =
-        "Tool is already executing action '" + requested_action_name + "'. Nothing to do.";
-      RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+      response.message = "Cannot engage the Tool while reconfiguring";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
       return response;
     }
-  }
-  else  // if already in desired state - nothing to do
-  {
-    const std::string current_state = current_state_.get();
-    if (
-      (requested_action == ToolAction::ENGAGING &&
-       (std::find(
-          params_.possible_engaged_states.begin(), params_.possible_engaged_states.end(),
-          current_state) != params_.possible_engaged_states.end())) ||
-      (requested_action == ToolAction::DISENGAGING && current_state == params_.disengaged.name))
+
+    if (current_action != ToolAction::IDLE)
+    {
+      const auto & current_action_name =
+        (current_action == ToolAction::ENGAGING) ? params_.engaged.name : params_.disengaged.name;
+
+      if (current_action != requested_action)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(), "Stopping tool '%s' and starting '%s'.",
+          current_action_name.c_str(), requested_action_name.c_str());
+      }
+      else
+      {
+        response.success = false;
+        response.message =
+          "Tool is already executing action '" + requested_action_name + "'. Nothing to do.";
+        RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+        return response;
+      }
+    }
+    else  // if already in desired state - nothing to do
+    {
+      const std::string current_state = current_state_.get();
+      if (
+        (requested_action == ToolAction::ENGAGING &&
+         (std::find(
+            params_.possible_engaged_states.begin(), params_.possible_engaged_states.end(),
+            current_state) != params_.possible_engaged_states.end())) ||
+        (requested_action == ToolAction::DISENGAGING && current_state == params_.disengaged.name))
+      {
+        response.success = true;
+        response.message =
+          "Tool is already in the desired state '" + requested_action_name + "'. Nothing to do.";
+        RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+        return response;
+      }
+    }
+
+    if (tool_state_.compare_exchange_strong(
+          seen, pack_action_transition(requested_action, GPIOToolTransition::SET_BEFORE_COMMAND)))
     {
       response.success = true;
-      response.message =
-        "Tool is already in the desired state '" + requested_action_name + "'. Nothing to do.";
-      RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+      response.message = "Tool action '" + requested_action_name + "' started.";
       return response;
     }
+    // `seen` is stale. Loop back and re-evaluate the preconditions against the fresh value.
   }
-
-  current_tool_action_.store(requested_action);
-  current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
-
-  response.success = true;
-  response.message = "Tool action '" + requested_action_name + "' started.";
-  return response;
 }
 
 GpioToolController::EngagingSrvType::Response GpioToolController::process_reconfigure_request(
   const std::string & config_name)
 {
   EngagingSrvType::Response response;
-  response.success = true;
+
+  if (get_lifecycle_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    response.success = false;
+    response.message = "Cannot process reconfigure request. Controller is not active.";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
+    return response;
+  }
   if (config_name.empty())
   {
     response.success = false;
     response.message = "Configuration name cannot be empty";
+    RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
+    return response;
   }
   if (
-    response.success &&
     std::find(params_.configurations.begin(), params_.configurations.end(), config_name) ==
-      params_.configurations.end())
+    params_.configurations.end())
   {
     response.success = false;
     response.message = "Configuration '" + config_name + "' does not exist";
-  }
-  if (response.success && current_tool_action_.load() != ToolAction::IDLE)
-  {
-    response.success = false;
-    response.message = "Tool is currently reconfiguring or executing '" + params_.engaged.name +
-                       "' or '" + params_.disengaged.name +
-                       "' action.Please wait until it finishes.";
-  }
-  // This is OK to access `current_state_` as we are in the IDLE state and it is not being modified
-  if (response.success && current_state_.get() != params_.disengaged.name)
-  {
-    response.success = false;
-    response.message = "Tool can be reconfigured only in '" + params_.disengaged.name +
-                       "' state. Current state is '" + current_state_.get() + "'.";
-  }
-  if (response.success)
-  {
-    current_tool_action_.store(ToolAction::RECONFIGURING);
-    current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
-    target_configuration_.set(config_name);
-    response.message = "Tool reconfiguration to '" + config_name + "' has started.";
-    RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
-  }
-  else
-  {
     RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
+    return response;
   }
 
-  return response;
+  // Retries the compare_exchange if update() changes state concurrently.
+  while (true)
+  {
+    uint16_t seen = tool_state_.load();
+    if (unpack_action(seen) != ToolAction::IDLE)
+    {
+      response.success = false;
+      response.message = "Tool is currently reconfiguring or executing '" + params_.engaged.name +
+                         "' or '" + params_.disengaged.name +
+                         "' action.Please wait until it finishes.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
+      return response;
+    }
+    // `current_state_` is not modified while in the IDLE state.
+    if (current_state_.get() != params_.disengaged.name)
+    {
+      response.success = false;
+      response.message = "Tool can be reconfigured only in '" + params_.disengaged.name +
+                         "' state. Current state is '" + current_state_.get() + "'.";
+      RCLCPP_ERROR(get_node()->get_logger(), "%s", response.message.c_str());
+      return response;
+    }
+
+    if (tool_state_.compare_exchange_strong(
+          seen,
+          pack_action_transition(ToolAction::RECONFIGURING, GPIOToolTransition::SET_BEFORE_COMMAND)))
+    {
+      target_configuration_.set(config_name);
+      response.success = true;
+      response.message = "Tool reconfiguration to '" + config_name + "' has started.";
+      RCLCPP_INFO(get_node()->get_logger(), "%s", response.message.c_str());
+      return response;
+    }
+    // concurrent change - re-check preconditions against the fresh state
+  }
 }
 
 GpioToolController::EngagingSrvType::Response GpioToolController::service_wait_for_transition_end(
   const std::string & requested_action_name)
 {
   EngagingSrvType::Response response;
-  while (current_tool_action_.load() != ToolAction::IDLE)
+  while (tool_action() != ToolAction::IDLE)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
+    if (tool_transition() == GPIOToolTransition::HALTED)
     {
       response.success = false;
       response.message = "Tool action or reconfiguration '" + requested_action_name +
@@ -1229,7 +1304,7 @@ controller_interface::CallbackReturn GpioToolController::prepare_publishers_and_
 
   controller_state_msg_.state = current_state_.get();
   controller_state_msg_.configuration = current_configuration_.get();
-  controller_state_msg_.current_transition.state = current_tool_transition_.load();
+  controller_state_msg_.current_transition.state = tool_transition();
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -1264,7 +1339,7 @@ void GpioToolController::publish_topics(const rclcpp::Time & time)
   {
     controller_state_msg_.state = current_state_.get();
     controller_state_msg_.configuration = current_configuration_.get();
-    controller_state_msg_.current_transition.state = current_tool_transition_.load();
+    controller_state_msg_.current_transition.state = tool_transition();
     controller_state_publisher_->try_publish(controller_state_msg_);
   }
 }
@@ -1300,7 +1375,12 @@ rclcpp_action::CancelResponse GpioToolController::handle_engaging_cancel(
     get_node()->get_logger(),
     "Tool action is being canceled, going to HALTED state. If you want to reset the Tool, use "
     "'~/reset_halted' service.");
-  current_tool_action_.store(ToolAction::CANCELING);
+  // Force action to CANCELING, keep the current transition.
+  uint16_t seen = tool_state_.load();
+  while (!tool_state_.compare_exchange_strong(
+    seen, pack_action_transition(ToolAction::CANCELING, unpack_transition(seen))))
+  {
+  }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -1326,7 +1406,12 @@ rclcpp_action::CancelResponse GpioToolController::handle_config_cancel(
     get_node()->get_logger(),
     "Tool action is being canceled, going to HALTED state. If you want to reset the Tool, use "
     "'~/reset_halted' service.");
-  current_tool_action_.store(ToolAction::CANCELING);
+  // Force action to CANCELING, keep the current transition.
+  uint16_t seen = tool_state_.load();
+  while (!tool_state_.compare_exchange_strong(
+    seen, pack_action_transition(ToolAction::CANCELING, unpack_transition(seen))))
+  {
+  }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -1338,7 +1423,8 @@ void GpioToolController::handle_state_action_accepted(
 
   while (true)
   {
-    if (current_tool_action_.load() == ToolAction::IDLE)
+    const uint16_t state = tool_state_.load();
+    if (unpack_action(state) == ToolAction::IDLE)
     {
       result->success = true;
       result->resulting_state_name = current_state_.get();
@@ -1346,7 +1432,7 @@ void GpioToolController::handle_state_action_accepted(
       goal_handle->succeed(result);
       break;
     }
-    else if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
+    else if (unpack_transition(state) == GPIOToolTransition::HALTED)
     {
       result->success = false;
       result->resulting_state_name = current_state_.get();
@@ -1358,7 +1444,7 @@ void GpioToolController::handle_state_action_accepted(
     }
     else
     {
-      feedback->transition.state = current_tool_transition_.load();
+      feedback->transition.state = unpack_transition(state);
       goal_handle->publish_feedback(feedback);
     }
 
@@ -1374,7 +1460,8 @@ void GpioToolController::handle_config_action_accepted(
 
   while (true)
   {
-    if (current_tool_action_.load() == ToolAction::IDLE)
+    const uint16_t state = tool_state_.load();
+    if (unpack_action(state) == ToolAction::IDLE)
     {
       result->success = true;
       result->resulting_config_name = current_configuration_.get();
@@ -1382,7 +1469,7 @@ void GpioToolController::handle_config_action_accepted(
       goal_handle->succeed(result);
       break;
     }
-    else if (current_tool_transition_.load() == GPIOToolTransition::HALTED)
+    else if (unpack_transition(state) == GPIOToolTransition::HALTED)
     {
       result->success = false;
       result->resulting_config_name = current_configuration_.get();
@@ -1394,7 +1481,7 @@ void GpioToolController::handle_config_action_accepted(
     }
     else
     {
-      feedback->transition.state = current_tool_transition_.load();
+      feedback->transition.state = unpack_transition(state);
       goal_handle->publish_feedback(feedback);
     }
 
@@ -1425,7 +1512,9 @@ void GpioToolController::check_tool_state(
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Tool state can not be determined, triggering CANCELING action and HALTED transition.");
-    current_tool_action_.store(ToolAction::CANCELING);
+    uint16_t seen = tool_state_.load();
+    tool_state_.compare_exchange_strong(
+      seen, pack_action_transition(ToolAction::CANCELING, unpack_transition(seen)));
   }
 
   if (configuration_control_enabled_)
@@ -1444,7 +1533,9 @@ void GpioToolController::check_tool_state(
         get_node()->get_logger(),
         "Tool configuration can not be determined, triggering CANCELING action and HALTED "
         "transition.");
-      current_tool_action_.store(ToolAction::CANCELING);
+      uint16_t seen = tool_state_.load();
+      tool_state_.compare_exchange_strong(
+        seen, pack_action_transition(ToolAction::CANCELING, unpack_transition(seen)));
     }
   }
 }

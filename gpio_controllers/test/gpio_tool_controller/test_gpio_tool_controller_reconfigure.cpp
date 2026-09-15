@@ -53,16 +53,12 @@ void prepare_for_reconfiguring(
      rclcpp::Parameter(
        "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
   fx.setup_parameters_with_config();
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
 
   // Start from "open" so on_activate() can identify an initial state.
   fx.SetInitialHardwareState("open");
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   // Override whatever on_activate() set and start the RECONFIGURING transition.
   fx.controller_->start_reconfiguring(target_config);

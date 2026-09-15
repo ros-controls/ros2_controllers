@@ -43,16 +43,12 @@ void prepare_for_engaging(
   fx.SetUpController(
     "test_gpio_tool_controller", {rclcpp::Parameter("possible_engaged_states", possible_states)});
   fx.setup_parameters();
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
 
   // Place hardware in "open" so on_activate() can identify an initial state.
   fx.SetInitialHardwareState("open");
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   // Override whatever on_activate() set and start the ENGAGING transition.
   fx.controller_->start_engaging();

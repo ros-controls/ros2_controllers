@@ -37,6 +37,7 @@
 #include "control_msgs/msg/gpio_tool_transition.hpp"
 #include "controller_interface/controller_interface_params.hpp"
 #include "gpio_controllers/gpio_tool_controller.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 namespace
 {
@@ -65,31 +66,28 @@ public:
 
   void start_disengaging()
   {
-    current_tool_action_.store(ToolAction::DISENGAGING);
-    current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
+    set_tool_state(ToolAction::DISENGAGING, GPIOToolTransition::SET_BEFORE_COMMAND);
     transition_time_updated_.store(false);
   }
 
   void start_engaging()
   {
-    current_tool_action_.store(ToolAction::ENGAGING);
-    current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
+    set_tool_state(ToolAction::ENGAGING, GPIOToolTransition::SET_BEFORE_COMMAND);
     transition_time_updated_.store(false);
   }
 
   void start_reconfiguring(const std::string & config_name)
   {
     target_configuration_.set(config_name);
-    current_tool_action_.store(ToolAction::RECONFIGURING);
-    current_tool_transition_.store(GPIOToolTransition::SET_BEFORE_COMMAND);
+    set_tool_state(ToolAction::RECONFIGURING, GPIOToolTransition::SET_BEFORE_COMMAND);
     transition_time_updated_.store(false);
   }
 
   // --- State machine introspection helpers ---
 
-  ToolAction get_current_action() const { return current_tool_action_.load(); }
+  ToolAction get_current_action() const { return tool_action(); }
 
-  uint8_t get_current_transition() const { return current_tool_transition_.load(); }
+  uint8_t get_current_transition() const { return tool_transition(); }
 
   std::string get_current_state() const { return current_state_.get(); }
 
@@ -110,11 +108,25 @@ public:
 
   // --- State forcing helpers for CANCELING / HALTED tests ---
 
-  void force_canceling() { current_tool_action_.store(ToolAction::CANCELING); }
+  void force_canceling() { set_tool_state(ToolAction::CANCELING, tool_transition()); }
 
-  void force_halted() { current_tool_transition_.store(GPIOToolTransition::HALTED); }
+  void force_halted() { set_tool_state(tool_action(), GPIOToolTransition::HALTED); }
 
   void trigger_reset_halted() { reset_halted_.store(true); }
+
+  // --- Raw packed (action, transition) access, for testing compare-and-swap ---
+
+  uint16_t get_packed_state() const { return tool_state_.load(); }
+
+  void set_state(ToolAction action, uint8_t transition) { set_tool_state(action, transition); }
+
+  // Moves the pair from `expected` to (new_action, new_transition) via compare_exchange.
+  bool try_advance(uint16_t & expected, ToolAction new_action, uint8_t new_transition)
+  {
+    const uint16_t desired =
+      static_cast<uint16_t>((static_cast<uint16_t>(new_action) << 8) | new_transition);
+    return tool_state_.compare_exchange_strong(expected, desired);
+  }
 
   // --- Inspection helpers ---
 
@@ -160,6 +172,29 @@ public:
 
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
     RCLCPP_INFO(rclcpp::get_logger("GpioToolControllerTest"), "initialized successfully");
+  }
+
+  // Drives the real LifecycleNode state machine, like the controller_manager does.
+  controller_interface::CallbackReturn ConfigureController()
+  {
+    const auto & state = controller_->configure();
+    return state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE
+             ? controller_interface::CallbackReturn::SUCCESS
+             : controller_interface::CallbackReturn::FAILURE;
+  }
+
+  controller_interface::CallbackReturn ActivateController()
+  {
+    auto cb_return = controller_interface::CallbackReturn::ERROR;
+    controller_->get_node()->activate(cb_return);
+    return cb_return;
+  }
+
+  controller_interface::CallbackReturn DeactivateController()
+  {
+    auto cb_return = controller_interface::CallbackReturn::ERROR;
+    controller_->get_node()->deactivate(cb_return);
+    return cb_return;
   }
 
   void setup_parameters()

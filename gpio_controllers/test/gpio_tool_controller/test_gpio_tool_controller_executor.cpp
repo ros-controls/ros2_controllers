@@ -180,14 +180,10 @@ void prepare_for_executor_test(
   fx.setup_parameters();
   fx.controller_->get_node()->set_parameter({"use_action", use_action});
 
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
   fx.SetInitialHardwareState(initial_hw_state);
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 }
 
 // Configure + setup_parameters_with_config + activate helper for configuration
@@ -209,14 +205,10 @@ void prepare_for_executor_test_with_config(
   fx.controller_->get_node()->set_parameter({"use_action", use_action});
   fx.controller_->get_node()->set_parameter({"timeout", timeout});
 
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
   fx.SetInitialHardwareState(initial_hw_state);
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 }
 
 // Hardware simulator that also responds to configuration command interfaces.
@@ -447,14 +439,10 @@ TEST_F(GpioToolControllerExecutorTest, ActionCancelGoalResultsInAbort)
   setup_parameters();
   controller_->get_node()->set_parameter({"use_action", true});
   controller_->get_node()->set_parameter({"timeout", 1.0});
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   SetInitialHardwareState("open");
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   SetUpExecutor();
 
@@ -585,16 +573,12 @@ TEST_F(GpioToolControllerExecutorTest, ConfigActionGoalRejectedWhenEngaged)
      rclcpp::Parameter("use_action", true)});
   setup_parameters_with_config();
   controller_->get_node()->set_parameter({"use_action", true});
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   // Set close_empty tool state + narrow_objects configuration
   SetStateValue("Closed_signal", 1.0);
   SetStateValue("Narrow_Configuration_Signal", 1.0);
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->get_current_state(), "close_empty");
 
   SetUpExecutor();

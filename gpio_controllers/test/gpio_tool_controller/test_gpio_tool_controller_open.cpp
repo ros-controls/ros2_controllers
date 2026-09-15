@@ -42,16 +42,12 @@ void prepare_for_disengaging(
   fx.SetUpController(
     "test_gpio_tool_controller", {rclcpp::Parameter("possible_engaged_states", possible_states)});
   fx.setup_parameters();
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
 
   // Place hardware in "close_empty" so on_activate() can identify an initial state.
   fx.SetInitialHardwareState("close_empty");
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   // Override whatever on_activate() set and start the DISENGAGING transition.
   fx.controller_->start_disengaging();
@@ -304,14 +300,10 @@ TEST_F(GpioToolControllerOpenTest, UpdateInIdleStateReturnsOkAndDoesNotChangeCom
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
   setup_parameters();
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   SetInitialHardwareState("open");
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->get_current_action(), ToolAction::IDLE);
 
   const double cmd_before = GetCmdValue("Open_valve");

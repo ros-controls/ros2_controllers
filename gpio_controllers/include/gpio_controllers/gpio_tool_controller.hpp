@@ -180,9 +180,14 @@ protected:
   rclcpp_action::Server<ConfigActionType>::SharedPtr config_action_server_;
   rclcpp::Service<ResetSrvType>::SharedPtr reset_service_;
 
-  // Store current action tool is executing
-  std::atomic<ToolAction> current_tool_action_{ToolAction::IDLE};
-  std::atomic<uint8_t> current_tool_transition_{GPIOToolTransition::IDLE};
+  // action and transition packed into one atomic word. Updated via compare_exchange.
+  std::atomic<uint16_t> tool_state_{0};  // 0 == (ToolAction::IDLE, GPIOToolTransition::IDLE)
+
+  ToolAction tool_action() const;
+  uint8_t tool_transition() const;
+  // Unconditional write. Only safe in on_init() and test setup.
+  void set_tool_state(ToolAction action, uint8_t transition);
+
   std::atomic<bool> reset_halted_{false};
   std::atomic<bool> transition_time_updated_{false};
   realtime_tools::RealtimeThreadSafeBox<std::string> target_configuration_;

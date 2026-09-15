@@ -38,14 +38,10 @@ void prepare_for_lifecycle(
   fx.SetUpController(
     "test_gpio_tool_controller", {rclcpp::Parameter("possible_engaged_states", possible_states)});
   fx.setup_parameters();
-  ASSERT_EQ(
-    fx.controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
   fx.SetInitialHardwareState(initial_hw_state);
-  ASSERT_EQ(
-    fx.controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(fx.ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 }
 }  // namespace
 
@@ -56,9 +52,7 @@ TEST_F(GpioToolControllerLifecycleTest, OnDeactivateReturnsSuccess)
 {
   prepare_for_lifecycle(*this, possible_engaged_states, "open");
 
-  EXPECT_EQ(
-    controller_->on_deactivate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  EXPECT_EQ(DeactivateController(), controller_interface::CallbackReturn::SUCCESS);
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +62,7 @@ TEST_F(GpioToolControllerLifecycleTest, OnDeactivateResetsJointStatesToNaN)
 {
   prepare_for_lifecycle(*this, possible_engaged_states, "open");
 
-  controller_->on_deactivate(rclcpp_lifecycle::State());
+  DeactivateController();
 
   for (const double val : controller_->get_joint_states_values())
   {
@@ -89,17 +83,13 @@ TEST_F(GpioToolControllerLifecycleTest, OnActivateWithAmbiguousStateGoesToCancel
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
   setup_parameters();
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   // Do NOT call SetInitialHardwareState – all values stay 0.0, no state matches.
 
   // on_activate returns SUCCESS even though the state is ambiguous (the FAILURE
   // path is intentionally disabled in the controller source).
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   EXPECT_EQ(controller_->get_current_action(), ToolAction::CANCELING);
 }
@@ -188,9 +178,7 @@ TEST_F(GpioToolControllerLifecycleTest, ConfigurationUndeterminedGoesToCanceling
      rclcpp::Parameter(
        "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
   setup_parameters_with_config();
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   // Tool state is known ("open"): Opened_signal=1, Closed_signal=0
   SetInitialHardwareState("open");
@@ -199,9 +187,7 @@ TEST_F(GpioToolControllerLifecycleTest, ConfigurationUndeterminedGoesToCanceling
   //   Wide_Configuration_Signal=0  → wide_objects  not matched
   // → configuration undetermined → CANCELING
 
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   EXPECT_EQ(controller_->get_current_action(), ToolAction::CANCELING);
   // Tool state was determined correctly despite config being ambiguous
@@ -219,15 +205,11 @@ TEST_F(GpioToolControllerLifecycleTest, ConfigurationControlDisabledSkipsConfigC
     "test_gpio_tool_controller",
     {rclcpp::Parameter("possible_engaged_states", possible_engaged_states)});
   setup_parameters();
-  ASSERT_EQ(
-    controller_->on_configure(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   SetupInterfaces();
   SetInitialHardwareState("open");
 
-  ASSERT_EQ(
-    controller_->on_activate(rclcpp_lifecycle::State()),
-    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(ActivateController(), controller_interface::CallbackReturn::SUCCESS);
 
   // Configuration signals are all 0.0, but since configuration_control_enabled_=false
   // the controller must NOT enter CANCELING for that reason.
