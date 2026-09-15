@@ -59,6 +59,9 @@ protected:
     std::shared_ptr<rclcpp_action::ServerGoalHandle<ExecuteMotionAction>> goal_handle);
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<ExecuteMotionAction>;
   realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<RealtimeGoalHandle>> rt_goal_handle_;
+
+private:
+  void cleanup_motion();
 };
 
 }  // namespace motion_primitives_controllers
