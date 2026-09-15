@@ -242,6 +242,82 @@ TEST_F(MotionPrimitivesForwardControllerTest, accepts_new_goal_after_execution_e
   EXPECT_NE(send_motion_sequence_goal({primitive}), nullptr);
 }
 
+TEST_F(
+  MotionPrimitivesForwardControllerTest, cancels_active_goal_when_stopped_after_cancel_request)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  // request cancellation of the active goal
+  auto cancel_future = action_client_->async_cancel_goal(goal_handle);
+  ASSERT_EQ(cancel_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+
+  // process the cancel request: sends STOP_MOTION to the hw-interface
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(),
+    static_cast<double>(motion_primitives_controllers::MotionHelperType::STOP_MOTION));
+
+  // simulate the hw-interface acknowledging the stop request
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::STOPPING));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::STOPPED));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // goal was still canceling when STOPPED was reached, so it must be reported as canceled
+  auto result_future = action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(result_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  const auto wrapped_result = result_future.get();
+  EXPECT_EQ(wrapped_result.code, rclcpp_action::ResultCode::CANCELED);
+}
+
+TEST_F(
+  MotionPrimitivesForwardControllerTest, aborts_active_goal_when_stopped_without_cancel_request)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  MotionPrimitive primitive;
+  primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+  primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+
+  const auto goal_handle = send_motion_sequence_goal({primitive});
+  ASSERT_NE(goal_handle, nullptr);
+
+  // the hw-interface reports STOPPED directly, without a preceding cancel request
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::STOPPED));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // goal was not canceling, so it must be reported as aborted
+  auto result_future = action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(result_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  const auto wrapped_result = result_future.get();
+  EXPECT_EQ(wrapped_result.code, rclcpp_action::ResultCode::ABORTED);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

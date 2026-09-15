@@ -145,9 +145,17 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
           [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
           {
             auto result = std::make_shared<ExecuteMotionAction::Result>();
-            goal_handle->setCanceled(result);
+            if (goal_handle->gh_->is_canceling())
+            {
+              goal_handle->setCanceled(result);
+              RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
+            }
+            else
+            {
+              goal_handle->setAborted(result);
+              RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution stopped / aborted.");
+            }
             has_active_goal_ = false;
-            RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
           });
       }
       if (robot_stop_requested_)
