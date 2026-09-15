@@ -68,8 +68,7 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(
     MotionPrimitivesForwardControllerTest, cancels_active_goal_when_stopped_after_cancel_request);
   FRIEND_TEST(
-    MotionPrimitivesForwardControllerTest,
-    aborts_active_goal_when_stopped_without_cancel_request);
+    MotionPrimitivesForwardControllerTest, aborts_active_goal_when_stopped_without_cancel_request);
 
 public:
   controller_interface::CallbackReturn on_configure(

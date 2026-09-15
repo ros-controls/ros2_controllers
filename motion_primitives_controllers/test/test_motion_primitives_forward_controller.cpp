@@ -242,8 +242,7 @@ TEST_F(MotionPrimitivesForwardControllerTest, accepts_new_goal_after_execution_e
   EXPECT_NE(send_motion_sequence_goal({primitive}), nullptr);
 }
 
-TEST_F(
-  MotionPrimitivesForwardControllerTest, cancels_active_goal_when_stopped_after_cancel_request)
+TEST_F(MotionPrimitivesForwardControllerTest, cancels_active_goal_when_stopped_after_cancel_request)
 {
   SetUpController();
 

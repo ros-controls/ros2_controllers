@@ -153,7 +153,8 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
             else
             {
               goal_handle->setAborted(result);
-              RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution stopped / aborted.");
+              RCLCPP_INFO(
+                get_node()->get_logger(), "Motion primitives execution stopped / aborted.");
             }
             has_active_goal_ = false;
           });
