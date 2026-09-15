@@ -72,6 +72,18 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
   return MotionPrimitivesBaseController::on_deactivate(previous_state);
 }
 
+// Motion has been requested to stop for some reason, clean up and tell hardware to stop
+void MotionPrimitivesForwardController::cleanup_motion()
+{
+  reset_command_interfaces();
+  // send stop command immediately to the hw-interface
+  std::ignore =
+    command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
+  // clear the queue (ignore return value)
+  static_cast<void>(moprim_queue_.get_latest(current_moprim_));
+  robot_stop_requested_ = true;
+}
+
 controller_interface::return_type MotionPrimitivesForwardController::update(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
@@ -79,13 +91,7 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
   {
     RCLCPP_INFO(get_node()->get_logger(), "Cancel requested, stopping execution.");
     cancel_requested_ = false;
-    reset_command_interfaces();
-    // send stop command immediately to the hw-interface
-    std::ignore =
-      command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION));
-    // clear the queue (ignore return value)
-    static_cast<void>(moprim_queue_.get_latest(current_moprim_));
-    robot_stop_requested_ = true;
+    cleanup_motion();
   }
 
   // read the status from the state interface
@@ -145,9 +151,20 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
           [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
           {
             auto result = std::make_shared<ExecuteMotionAction::Result>();
-            goal_handle->setCanceled(result);
+            if (goal_handle->gh_->is_canceling())
+            {
+              goal_handle->setCanceled(result);
+              RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
+            }
+            else
+            {
+              result->error_code = ExecuteMotionAction::Result::MOTION_EXECUTION_FAILED;
+              result->error_string = "Motion primitive execution stopped, aborting action.";
+              goal_handle->setAborted(result);
+              RCLCPP_INFO(
+                get_node()->get_logger(), "Motion primitive execution stopped, aborting action.");
+            }
             has_active_goal_ = false;
-            RCLCPP_INFO(get_node()->get_logger(), "Motion primitives execution canceled.");
           });
       }
       if (robot_stop_requested_)
@@ -160,7 +177,6 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
         robot_stop_requested_ = false;
         RCLCPP_INFO(get_node()->get_logger(), "Robot stopped, ready for new motion primitives.");
       }
-
       break;
 
     case ExecutionState::ERROR:
@@ -169,6 +185,21 @@ controller_interface::return_type MotionPrimitivesForwardController::update(
       {
         RCLCPP_ERROR(get_node()->get_logger(), "Execution state: ERROR");
         print_error_once_ = false;
+
+        if (has_active_goal_)
+        {
+          rt_goal_handle_.try_get(
+            [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
+            {
+              auto result = std::make_shared<ExecuteMotionAction::Result>();
+              result->error_code = ExecuteMotionAction::Result::MOTION_EXECUTION_FAILED;
+              result->error_string = "Hardware interface reported an execution error";
+              goal_handle->setAborted(result);
+              has_active_goal_ = false;
+              RCLCPP_ERROR(get_node()->get_logger(), "Motion primitives execution aborted.");
+            });
+        }
+        cleanup_motion();
       }
       break;
 
