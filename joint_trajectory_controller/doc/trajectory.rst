@@ -47,6 +47,14 @@ The spline interpolator uses the following interpolation strategies depending on
   * Returns position, velocity, and acceleration.
   * Guarantees continuity at the acceleration level.
 
+.. note::
+  The linear case above is discouraged because positions-only waypoints yield discontinuous
+  velocities. Enabling ``positions_upsampling`` avoids this for positions-only inputs: the controller
+  pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
+  writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
+  continuous in acceleration across the trajectory's own waypoints. See :ref:`Ingesting
+  positions-only action chunks <joint_trajectory_controller_userdoc>`.
+
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
 
 Effort trajectories are allowed for controllers that claim the ``effort`` command interface and they are treated as feed-forward effort that is added to the position feedback. Effort is handled separately from position, velocity and acceleration. We use linear interpolation for effort when the ``spline`` interpolation method is selected.
@@ -59,6 +67,15 @@ To visualize the difference of the different interpolation methods and their inp
 
 .. image:: spline_position.png
   :alt: Sampled trajectory with splines if position is given only
+
+* Sampled trajectory with the same positions-only points, with ``positions_upsampling`` disabled and enabled:
+
+.. note::
+  The linear strategy reports no acceleration, so only the enabled series is drawn in the bottom
+  plot. Its step at ``t=0.5`` is the hand-off from the initial point, which is not part of the solve.
+
+.. image:: spline_position_upsampling.png
+  :alt: Sampled trajectory with positions-only points, with and without positions_upsampling
 
 * Sampled trajectory with cubic splines if velocity is given only (no deduction for interpolation method ``none``):
 
@@ -116,19 +133,18 @@ Trajectory Replacement
 Joint trajectory messages allow to specify the time at which a new trajectory should start executing by means of the header timestamp, where zero time (the default) means "start now".
 
 .. note::
-  Partial support for this functionality has been ported to ROS 2 via the ``allow_trajectory_replacement`` parameter (see `#84 <https://github.com/ros-controls/ros2_controllers/issues/84>`__).
-  When enabled, a trajectory arriving with a future ``header.stamp`` is deferred. The controller
-  continues executing the active trajectory until the requested start time is reached, at which
-  point the new trajectory is handled, and the execution begins.
+  This behavior is implemented in ROS 2 via the ``allow_trajectory_replacement`` parameter
+  (default ``true``).
+  When enabled, a newly arriving trajectory is spliced into the active one exactly as described below,
+  rather than discarding it. ``speed_scaling`` continues to govern how fast the trajectory is
+  executed, while the header timestamp still selects *when* the handoff occurs: it is honoured as a
+  wall-clock instant whatever the scaling factor. The handoff anchor is sampled from the active
+  trajectory at that instant, so the transition is velocity-continuous and free of position jumps.
 
-  The current ROS 2 implementation differs from the legacy behavior described below in the following ways:
-
-  + The controller does not splice or stitch the current and new trajectories together. At the handoff time, the new trajectory fully replaces the old one.
-  + Omitted joints in a partial goal are filled with their current position at the handoff time (hold-in-place), rather than continuing to follow the old trajectory.
-  + Only a single deferred trajectory is stored. A newer deferred trajectory overwrites any previously deferred one.
-  + When a new action goal is accepted, the currently active goal is immediately aborted instead of continuing to emit feedback until the handoff time.
-  + While a deferred action goal is waiting for its start time, it does not publish action feedback and is not evaluated for path tolerances.
-  + The handoff trigger uses the controller's clock time. If the controller is running with a ``speed_scaling`` other than 1.0, the handoff may occur out of sync with the active trajectory's execution state.
+.. warning::
+  One difference from ROS 1 remains: because ROS 2 uses a single monolithic trajectory, joints
+  omitted from a partial goal are re-sampled onto the new trajectory's time grid. With sparse new
+  waypoints, this re-interpolation may deviate slightly from the omitted joint's original path.
 
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
 Rather, the controller will take the useful parts of both and combine them appropriately, yielding a smarter trajectory replacement strategy.

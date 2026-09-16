@@ -17,6 +17,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -49,6 +50,38 @@ void StateInterfacesBroadcasterTest::SetUp()
 {
   // initialize broadcaster
   state_broadcaster_ = std::make_unique<FriendStateInterfacesBroadcaster>();
+
+  joint_1_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[0]);
+  std::ignore = joint_1_pos_state_->set_value(joint_values_[0]);
+  joint_2_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[0]);
+  std::ignore = joint_2_pos_state_->set_value(joint_values_[1]);
+  joint_3_pos_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[0]);
+  std::ignore = joint_3_pos_state_->set_value(joint_values_[2]);
+  joint_1_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[1]);
+  std::ignore = joint_1_vel_state_->set_value(joint_values_[0]);
+  joint_2_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[1]);
+  std::ignore = joint_2_vel_state_->set_value(joint_values_[1]);
+  joint_3_vel_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[1]);
+  std::ignore = joint_3_vel_state_->set_value(joint_values_[2]);
+  joint_1_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], interface_names_[2]);
+  std::ignore = joint_1_eff_state_->set_value(joint_values_[0]);
+  joint_2_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[1], interface_names_[2]);
+  std::ignore = joint_2_eff_state_->set_value(joint_values_[1]);
+  joint_3_eff_state_ =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[2], interface_names_[2]);
+  std::ignore = joint_3_eff_state_->set_value(joint_values_[2]);
+
+  joint_X_custom_state =
+    std::make_shared<hardware_interface::StateInterface>(joint_names_[0], custom_interface_name_);
+  std::ignore = joint_X_custom_state->set_value(custom_joint_value_);
 }
 
 void StateInterfacesBroadcasterTest::TearDown() { state_broadcaster_.reset(nullptr); }

@@ -271,6 +271,63 @@ const auto urdf_rrrbot_continuous =
 </robot>
 )";
 
+// Continuous joints without <limit> (valid URDF; used to guard null limits access).
+const auto urdf_rrrbot_continuous_no_limits =
+  R"(
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="RRRbotContinuousNoLimits">
+  <link name="world"/>
+  <joint name="base_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+  <link name="base_link">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="joint1" type="continuous">
+    <origin rpy="-1.57079632679 0 0" xyz="0 0 0.2"/>
+    <parent link="base_link"/>
+    <child link="link1"/>
+  </joint>
+  <link name="link1">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="joint2" type="continuous">
+    <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
+    <parent link="link1"/>
+    <child link="link2"/>
+  </joint>
+  <link name="link2">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="joint3" type="continuous">
+    <origin rpy="1.57079632679 0 0" xyz="0 0 0.9"/>
+    <parent link="link2"/>
+    <child link="link3"/>
+  </joint>
+  <link name="link3">
+    <inertial>
+      <mass value="0.01"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+</robot>
+)";
+
 }  // namespace test_trajectory_controllers
 
 #endif  // TEST_ASSETS_HPP_

@@ -59,7 +59,7 @@ parallel_gripper_action_controller:
   }
   max_velocity_interface: {
     type: string,
-    description: "Controller will claim the speed specified interface, e.g. robotiq_85_left_knuckle_joint/max_effort_interface.",
+    description: "Controller will claim the speed specified interface, e.g. robotiq_85_left_knuckle_joint/max_velocity_interface.",
     default_value: "",
   }
   max_velocity: {

@@ -143,6 +143,21 @@ protected:
     }
   }
 
+  bool wait_for_publisher_topic(
+    rclcpp::Node::SharedPtr node, const std::string & topic_name, int max_attempts = 20)
+  {
+    for (int attempts = 0; attempts < max_attempts; ++attempts)
+    {
+      if (check_publisher_exists_via_graph(node, topic_name))
+      {
+        return true;
+      }
+      executor_->spin_some(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return false;
+  }
+
   void wait_for_publisher(
     rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr subscriber,
     int max_attempts = 20)
@@ -606,39 +621,20 @@ TEST_F(TestWrenchTransformer, NamespaceNormalizationRootNamespace)
 {
   // Test with root namespace ("/") - should use node name
   auto node = create_transformer_node({"base_link"}, 0.1, "test_broadcaster/wrench", "/");
-  executor_->spin_some(std::chrono::milliseconds(100));
 
-  // Get the publisher and check its topic name directly
-  auto topic_names_and_types = node->get_topic_names_and_types();
-  bool found = false;
-  for (const auto & [topic_name, topic_types] : topic_names_and_types)
-  {
-    if (topic_name == "/fts_wrench_transformer/base_link/wrench")
-    {
-      found = true;
-      break;
-    }
-  }
-  EXPECT_TRUE(found) << "Publisher topic should be /fts_wrench_transformer/base_link/wrench";
+  // Poll the graph until discovery reflects the publisher; a single snapshot is racy
+  EXPECT_TRUE(wait_for_publisher_topic(node, "/fts_wrench_transformer/base_link/wrench"))
+    << "Publisher topic should be /fts_wrench_transformer/base_link/wrench";
 }
 
 TEST_F(TestWrenchTransformer, NamespaceNormalizationCustomNamespace)
 {
   // Test with custom namespace - should use the namespace
   auto node = create_transformer_node({"base_link"}, 0.1, "test_broadcaster/wrench", "/my_robot");
-  executor_->spin_some(std::chrono::milliseconds(100));
 
-  auto topic_names_and_types = node->get_topic_names_and_types();
-  bool found = false;
-  for (const auto & [topic_name, topic_types] : topic_names_and_types)
-  {
-    if (topic_name == "/my_robot/base_link/wrench")
-    {
-      found = true;
-      break;
-    }
-  }
-  EXPECT_TRUE(found) << "Publisher topic should be /my_robot/base_link/wrench";
+  // Poll the graph until discovery reflects the publisher; a single snapshot is racy
+  EXPECT_TRUE(wait_for_publisher_topic(node, "/my_robot/base_link/wrench"))
+    << "Publisher topic should be /my_robot/base_link/wrench";
 }
 
 TEST_F(TestWrenchTransformer, RunWrenchTransformerFunction)
