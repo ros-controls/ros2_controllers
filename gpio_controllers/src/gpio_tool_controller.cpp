@@ -1464,7 +1464,7 @@ void GpioToolController::handle_config_action_accepted(
     if (unpack_action(state) == ToolAction::IDLE)
     {
       result->success = true;
-      result->resulting_config_name = current_configuration_.get();
+      result->resulting_state_name = current_configuration_.get();
       result->message = "Tool action successfully executed!";
       goal_handle->succeed(result);
       break;
@@ -1472,7 +1472,7 @@ void GpioToolController::handle_config_action_accepted(
     else if (unpack_transition(state) == GPIOToolTransition::HALTED)
     {
       result->success = false;
-      result->resulting_config_name = current_configuration_.get();
+      result->resulting_state_name = current_configuration_.get();
       result->message =
         "Tool action canceled or halted! Check the error, reset the tool using '~/reset_halted' "
         "service and set to sensible state.";
