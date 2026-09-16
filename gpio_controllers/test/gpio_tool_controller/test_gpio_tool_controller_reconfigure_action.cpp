@@ -20,7 +20,7 @@
 //   - Empty config name → reject
 //   - Unknown config name (not in configurations list) → reject
 //   - Tool not IDLE (busy with another action) → reject
-//   - Tool not in disengaged state ("open") → reject
+//   - Tool not in disengaged state ("open") → reject, unless enable_config_engaged is set
 //   - IDLE + disengaged + valid name → accept, start RECONFIGURING
 //   - Controller not active (never activated) → reject
 
@@ -37,15 +37,17 @@ namespace
 // will be in IDLE state and the tool in the given hardware state.
 void prepare_for_reconfigure_request(
   GpioToolControllerFixture<TestableGpioToolController> & fx,
-  const std::vector<std::string> & possible_states, const std::string & initial_hw_state = "open")
+  const std::vector<std::string> & possible_states, const std::string & initial_hw_state = "open",
+  const std::vector<rclcpp::Parameter> & extra_parameters = {})
 {
-  fx.SetUpController(
-    "test_gpio_tool_controller",
-    {rclcpp::Parameter("possible_engaged_states", possible_states),
-     rclcpp::Parameter(
-       "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
-     rclcpp::Parameter(
-       "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})});
+  std::vector<rclcpp::Parameter> parameters = {
+    rclcpp::Parameter("possible_engaged_states", possible_states),
+    rclcpp::Parameter(
+      "configurations", std::vector<std::string>{"narrow_objects", "wide_objects"}),
+    rclcpp::Parameter(
+      "configuration_joints", std::vector<std::string>{"gripper_distance_joint"})};
+  parameters.insert(parameters.end(), extra_parameters.begin(), extra_parameters.end());
+  fx.SetUpController("test_gpio_tool_controller", parameters);
   fx.setup_parameters_with_config();
   ASSERT_EQ(fx.ConfigureController(), controller_interface::CallbackReturn::SUCCESS);
   fx.SetupInterfaces();
@@ -141,6 +143,22 @@ TEST_F(GpioToolControllerReconfigureTest, RejectsReconfigureWhenNotDisengaged)
 
   EXPECT_FALSE(resp.success);
   EXPECT_EQ(controller_->get_current_action(), ToolAction::IDLE);
+}
+
+// ---------------------------------------------------------------------------
+// IDLE, tool engaged (close_empty), enable_config_engaged: true → accepted
+// ---------------------------------------------------------------------------
+TEST_F(GpioToolControllerReconfigureTest, AcceptsReconfigureWhenNotDisengagedIfEnabled)
+{
+  prepare_for_reconfigure_request(
+    *this, possible_engaged_states, "close_empty",
+    {rclcpp::Parameter("enable_config_engaged", true)});
+  ASSERT_EQ(controller_->get_current_state(), "close_empty");
+
+  auto resp = controller_->call_process_reconfigure_request("narrow_objects");
+
+  EXPECT_TRUE(resp.success);
+  EXPECT_EQ(controller_->get_current_action(), ToolAction::RECONFIGURING);
 }
 
 // ---------------------------------------------------------------------------
