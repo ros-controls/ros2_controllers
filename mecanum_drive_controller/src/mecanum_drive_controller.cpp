@@ -618,13 +618,16 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
   else
   {
-    const bool value_set_error =
-      command_interfaces_[FRONT_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
-      command_interfaces_[FRONT_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
-      command_interfaces_[REAR_RIGHT].set_value(0.0, std::numeric_limits<unsigned int>::max()) ||
-      command_interfaces_[REAR_LEFT].set_value(0.0, std::numeric_limits<unsigned int>::max());
+    // Use `&=` (not `||`) so every wheel is actually written; a `||`-chain
+    // short-circuits on the first successful set_value and leaves the
+    // remaining wheels at their last (non-zero) inverse-kinematics value.
+    bool value_set_no_error = true;
+    value_set_no_error &= command_interfaces_[FRONT_LEFT].set_value(0.0);
+    value_set_no_error &= command_interfaces_[FRONT_RIGHT].set_value(0.0);
+    value_set_no_error &= command_interfaces_[REAR_RIGHT].set_value(0.0);
+    value_set_no_error &= command_interfaces_[REAR_LEFT].set_value(0.0);
     RCLCPP_ERROR_EXPRESSION(
-      get_node()->get_logger(), !value_set_error,
+      get_node()->get_logger(), !value_set_no_error,
       "Setting values to command interfaces has failed! "
       "This means that you are maybe blocking the interface in your hardware for too long.");
   }
