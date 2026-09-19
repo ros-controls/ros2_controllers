@@ -105,7 +105,7 @@ A yaml file for using it could be:
           interpolate_from_desired_state: true
           constraints:
             stopped_velocity_tolerance: 0.01
-            goal_time: 0.0
+            goal_time: 10.0
             joint1:
               trajectory: 0.05
               goal: 0.03
