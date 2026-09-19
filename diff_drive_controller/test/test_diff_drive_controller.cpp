@@ -15,6 +15,7 @@
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -181,6 +182,45 @@ protected:
       executor.spin_some();
       std::this_thread::sleep_for(std::chrono::microseconds(10));
     }
+  }
+
+  template <typename T>
+  void subscribe_and_get_message(const std::string & topic, T & msg)
+  {
+    rclcpp::Node node{"test_subscription_node"};
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node.get_node_base_interface());
+
+    typename T::SharedPtr received_msg;
+    const auto msg_callback = [&](const typename T::SharedPtr sub_msg) { received_msg = sub_msg; };
+    const auto subscription = node.create_subscription<T>(topic, 10, msg_callback);
+
+    // update() does not guarantee a published message, so re-drive it until one arrives
+    constexpr size_t max_sub_check_loop_count = 5;
+    for (size_t i = 0; !received_msg; ++i)
+    {
+      if (i >= max_sub_check_loop_count)
+      {
+        throw std::runtime_error("Failed to receive message on topic: " + topic);
+      }
+
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
+
+      const auto timeout = std::chrono::milliseconds{5};
+      const auto until = node.get_clock()->now() + timeout;
+      while (!received_msg && node.get_clock()->now() < until)
+      {
+        executor.spin_some();
+        std::this_thread::sleep_for(std::chrono::microseconds{10});
+      }
+    }
+
+    msg = *received_msg;
+  }
+
+  std::string controller_topic(const std::string & name) const
+  {
+    return "/" + controller_name + "/" + name;
   }
 
   void assignResourcesPosFeedback()
@@ -1550,6 +1590,81 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
   EXPECT_NEAR(controller_->odometry_.getHeading(), commanded_angular * dt, 1e-3);
 
   // Safely spin down the lifecycle
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, odometry_message_is_published)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  const double linear = 0.2;
+  publish(linear, 0.0);
+  controller_->wait_for_twist(executor);
+
+  nav_msgs::msg::Odometry odom_msg;
+  ASSERT_NO_THROW(subscribe_and_get_message(controller_topic("odom"), odom_msg));
+
+  EXPECT_EQ(odom_msg.header.frame_id, "odom");
+  EXPECT_EQ(odom_msg.child_frame_id, "base_link");
+  EXPECT_NEAR(odom_msg.twist.twist.linear.x, linear, 1e-6);
+  EXPECT_NEAR(odom_msg.twist.twist.angular.z, 0.0, 1e-9);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, enable_odom_tf_true_publishes_transform)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
+       rclcpp::Parameter("enable_odom_tf", rclcpp::ParameterValue(true))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  publish(0.2, 0.0);
+  controller_->wait_for_twist(executor);
+
+  tf2_msgs::msg::TFMessage tf_msg;
+  ASSERT_NO_THROW(subscribe_and_get_message("/tf", tf_msg));
+
+  ASSERT_EQ(tf_msg.transforms.size(), 1lu);
+  EXPECT_EQ(tf_msg.transforms[0].header.frame_id, "odom");
+  EXPECT_EQ(tf_msg.transforms[0].child_frame_id, "base_link");
+
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   ASSERT_TRUE(deactivate_succeeds(controller_));
   ASSERT_TRUE(cleanup_succeeds(controller_));
