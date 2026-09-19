@@ -1601,8 +1601,7 @@ TEST_F(TestDiffDriveController, odometry_message_is_published)
   ASSERT_EQ(
     InitController(
       left_wheel_names, right_wheel_names,
-      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false))}),
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -1640,7 +1639,6 @@ TEST_F(TestDiffDriveController, enable_odom_tf_true_publishes_transform)
     InitController(
       left_wheel_names, right_wheel_names,
       {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
        rclcpp::Parameter("enable_odom_tf", rclcpp::ParameterValue(true))}),
     controller_interface::return_type::OK);
 
