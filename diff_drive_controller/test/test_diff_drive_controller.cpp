@@ -1669,6 +1669,111 @@ TEST_F(TestDiffDriveController, enable_odom_tf_true_publishes_transform)
   executor.cancel();
 }
 
+TEST_F(TestDiffDriveController, enable_odom_tf_false_publishes_no_transform)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("enable_odom_tf", rclcpp::ParameterValue(false))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  publish(0.2, 0.0);
+  controller_->wait_for_twist(executor);
+
+  tf2_msgs::msg::TFMessage tf_msg;
+  EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
+  EXPECT_EQ(tf_msg.transforms.size(), 0lu);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, publish_limited_velocity_publishes_limited_command)
+{
+  const double max_linear_vel = 0.5;
+
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("publish_limited_velocity", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("linear.x.max_velocity", rclcpp::ParameterValue(max_linear_vel))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  publish(5.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  geometry_msgs::msg::TwistStamped cmd_vel_out;
+  ASSERT_NO_THROW(subscribe_and_get_message(controller_topic("cmd_vel_out"), cmd_vel_out));
+
+  EXPECT_NEAR(cmd_vel_out.twist.linear.x, max_linear_vel, 1e-6);
+  EXPECT_NEAR(cmd_vel_out.twist.linear.y, 0.0, 1e-9);
+  EXPECT_NEAR(cmd_vel_out.twist.linear.z, 0.0, 1e-9);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, publish_limited_velocity_false_publishes_nothing)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter("publish_limited_velocity", rclcpp::ParameterValue(false))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  publish(0.2, 0.0);
+  controller_->wait_for_twist(executor);
+
+  geometry_msgs::msg::TwistStamped cmd_vel_out;
+  EXPECT_THROW(
+    subscribe_and_get_message(controller_topic("cmd_vel_out"), cmd_vel_out), std::runtime_error);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
