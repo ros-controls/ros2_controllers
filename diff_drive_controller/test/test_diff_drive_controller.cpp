@@ -88,6 +88,7 @@ public:
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
   FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
+  FRIEND_TEST(TestDiffDriveController, odometry_covariance_is_configured);
 };
 
 class TestDiffDriveController : public ::testing::Test
@@ -224,6 +225,46 @@ protected:
     return "/" + controller_name + "/" + name;
   }
 
+  static std::vector<std::string> makeWheelNames(const std::string & prefix, size_t count)
+  {
+    std::vector<std::string> names;
+    for (size_t i = 0; i < count; ++i)
+    {
+      names.push_back(prefix + std::to_string(i));
+    }
+    return names;
+  }
+
+  void assignMultiWheelResourcesPosFeedback(
+    const std::vector<std::string> & left_names, const std::vector<std::string> & right_names,
+    const std::vector<double> & left_positions, const std::vector<double> & right_positions)
+  {
+    std::vector<LoanedStateInterface> state_ifs;
+    std::vector<LoanedCommandInterface> command_ifs;
+
+    const auto add_wheel = [&](const std::string & name, double position)
+    {
+      auto state = std::make_shared<hardware_interface::StateInterface>(name, HW_IF_POSITION);
+      std::ignore = state->set_value(position);
+      multi_state_ifs_.push_back(state);
+      state_ifs.emplace_back(state, nullptr);
+
+      auto cmd = std::make_shared<hardware_interface::CommandInterface>(name, HW_IF_VELOCITY);
+      std::ignore = cmd->set_value(0.0);
+      multi_command_ifs_.push_back(cmd);
+      command_ifs.emplace_back(cmd, nullptr);
+    };
+
+    for (size_t i = 0; i < left_names.size(); ++i)
+    {
+      add_wheel(left_names[i], left_positions[i]);
+      add_wheel(right_names[i], right_positions[i]);
+    }
+
+    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+    controller_->export_reference_interfaces();
+  }
+
   void assignResourcesPosFeedback()
   {
     std::vector<LoanedStateInterface> state_ifs;
@@ -302,6 +343,9 @@ protected:
   hardware_interface::StateInterface::SharedPtr right_wheel_vel_state_;
   hardware_interface::CommandInterface::SharedPtr left_wheel_vel_cmd_;
   hardware_interface::CommandInterface::SharedPtr right_wheel_vel_cmd_;
+
+  std::vector<hardware_interface::StateInterface::SharedPtr> multi_state_ifs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> multi_command_ifs_;
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -1768,6 +1812,144 @@ TEST_F(TestDiffDriveController, publish_limited_velocity_false_publishes_nothing
   geometry_msgs::msg::TwistStamped cmd_vel_out;
   EXPECT_THROW(
     subscribe_and_get_message(controller_topic("cmd_vel_out"), cmd_vel_out), std::runtime_error);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, wheel_multipliers_scale_wheel_commands)
+{
+  const double separation_multiplier = 2.0;
+  const double left_radius_multiplier = 1.5;
+  const double right_radius_multiplier = 0.5;
+
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("open_loop", rclcpp::ParameterValue(true)),
+       rclcpp::Parameter(
+         "wheel_separation_multiplier", rclcpp::ParameterValue(separation_multiplier)),
+       rclcpp::Parameter(
+         "left_wheel_radius_multiplier", rclcpp::ParameterValue(left_radius_multiplier)),
+       rclcpp::Parameter(
+         "right_wheel_radius_multiplier", rclcpp::ParameterValue(right_radius_multiplier))}),
+    controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignResourcesNoFeedback();
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  const double effective_separation = 1.0 * separation_multiplier;
+  const double effective_left_radius = 0.1 * left_radius_multiplier;
+  const double effective_right_radius = 0.1 * right_radius_multiplier;
+  const double dt = 0.1;
+
+  const double linear = 0.1;
+  publish(linear, 0.0);
+  controller_->wait_for_twist(executor);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  EXPECT_NEAR(left_wheel_vel_cmd_->get_optional().value(), linear / effective_left_radius, 1e-6);
+  EXPECT_NEAR(right_wheel_vel_cmd_->get_optional().value(), linear / effective_right_radius, 1e-6);
+
+  const double angular = 1.0;
+  publish(0.0, angular);
+  controller_->wait_for_twist(executor);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  EXPECT_NEAR(
+    left_wheel_vel_cmd_->get_optional().value(),
+    -angular * effective_separation / 2.0 / effective_left_radius, 1e-6);
+  EXPECT_NEAR(
+    right_wheel_vel_cmd_->get_optional().value(),
+    angular * effective_separation / 2.0 / effective_right_radius, 1e-6);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, odometry_covariance_is_configured)
+{
+  const std::vector<double> pose_covariance = {0.001,     0.001,     1000000.0,
+                                               1000000.0, 1000000.0, 1000.0};
+  const std::vector<double> twist_covariance = {0.002,     0.002,     2000000.0,
+                                                2000000.0, 2000000.0, 2000.0};
+
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("pose_covariance_diagonal", rclcpp::ParameterValue(pose_covariance)),
+       rclcpp::Parameter("twist_covariance_diagonal", rclcpp::ParameterValue(twist_covariance))}),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  for (size_t i = 0; i < 6; ++i)
+  {
+    const size_t diagonal_index = 6 * i + i;
+    EXPECT_DOUBLE_EQ(
+      controller_->odometry_message_.pose.covariance[diagonal_index], pose_covariance[i])
+      << "pose covariance mismatch at diagonal " << i;
+    EXPECT_DOUBLE_EQ(
+      controller_->odometry_message_.twist.covariance[diagonal_index], twist_covariance[i])
+      << "twist covariance mismatch at diagonal " << i;
+  }
+}
+
+TEST_F(TestDiffDriveController, multiple_wheels_per_side_average_feedback)
+{
+  const size_t wheels_per_side = 3;
+  const auto left_names = makeWheelNames("left_wheel_", wheels_per_side);
+  const auto right_names = makeWheelNames("right_wheel_", wheels_per_side);
+
+  ASSERT_EQ(InitController(left_names, right_names, {}), controller_interface::return_type::OK);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  assignMultiWheelResourcesPosFeedback(left_names, right_names, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0});
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  waitForSetup(executor);
+
+  const double dt = 0.1;
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  const std::vector<double> next_positions = {0.05, 0.10, 0.15};
+  for (size_t i = 0; i < wheels_per_side; ++i)
+  {
+    std::ignore = multi_state_ifs_[2 * i]->set_value(next_positions[i]);
+    std::ignore = multi_state_ifs_[2 * i + 1]->set_value(next_positions[i]);
+  }
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
+    controller_interface::return_type::OK);
+
+  const double mean_wheel_travel = 0.10;
+  const double wheel_radius = 0.1;
+  EXPECT_NEAR(controller_->odometry_.getX(), mean_wheel_travel * wheel_radius, 1e-9);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 0.0, 1e-9);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   ASSERT_TRUE(deactivate_succeeds(controller_));
