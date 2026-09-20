@@ -191,8 +191,9 @@ protected:
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node.get_node_base_interface());
 
-    typename T::SharedPtr received_msg;
-    const auto msg_callback = [&](const typename T::SharedPtr sub_msg) { received_msg = sub_msg; };
+    typename T::ConstSharedPtr received_msg;
+    const auto msg_callback = [&](const typename T::ConstSharedPtr sub_msg)
+    { received_msg = sub_msg; };
     const auto subscription = node.create_subscription<T>(topic, 10, msg_callback);
 
     // update() does not guarantee a published message, so re-drive it until one arrives
