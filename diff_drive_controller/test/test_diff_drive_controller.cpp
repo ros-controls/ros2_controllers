@@ -1930,6 +1930,9 @@ TEST_F(TestDiffDriveController, multiple_wheels_per_side_average_feedback)
 
   waitForSetup(executor);
 
+  publish(0.0, 0.0);
+  controller_->wait_for_twist(executor);
+
   const double dt = 0.1;
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(dt)),
