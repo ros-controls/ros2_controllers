@@ -33,7 +33,7 @@ TEST_F(PidControllerTest, all_parameters_set_configure_success)
   ASSERT_TRUE(controller_->params_.reference_and_state_dof_names.empty());
   ASSERT_TRUE(controller_->params_.command_interface.empty());
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   ASSERT_THAT(controller_->params_.dof_names, testing::ElementsAreArray(dof_names_));
   ASSERT_THAT(
@@ -49,7 +49,7 @@ TEST_F(PidControllerTest, check_exported_interfaces)
 {
   SetUpController();
 
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(configure_succeeds(controller_));
 
   auto cmd_if_conf = controller_->command_interface_configuration();
   ASSERT_EQ(cmd_if_conf.names.size(), dof_command_values_.size());

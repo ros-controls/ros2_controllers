@@ -5,6 +5,10 @@ Release Notes: Kilted Kaiju to Lyrical Luth
 
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
 
+battery_state_broadcaster
+*************************
+* 🚀 The battery_state_broadcaster was added 🎉 (`#1888 <https://github.com/ros-controls/ros2_controllers/pull/1888>`_).
+
 state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
@@ -18,6 +22,7 @@ diff_drive_controller
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Set odometry service added to be used at runtime. (`#2096 <https://github.com/ros-controls/ros2_controllers/pull/2096>`_).
+* Removed deprecated parameter ``publish_rate`` and associated rate-limiting logic. (`#2259 <https://github.com/ros-controls/ros2_controllers/pull/2259>`_).
 
 mecanum_drive_controller
 *****************************
@@ -40,17 +45,27 @@ omni_wheel_drive_controller
 
 joint_trajectory_controller
 ***************************
+* When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
+  <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
   don't contain velocity / acceleration information, but the trajectory does. This way, the segment
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 * Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+* Fixed the final segment of every trajectory being cut short: the next-cycle lookahead sample advanced the shared segment search cursor to the end, so the following cycle jumped the reference to the last waypoint and succeeded the goal early. Independent of ``allow_trajectory_replacement``. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``  parameter. A trajectory arriving while another is executing is spliced into the active one instead of discarding it: the old path is followed up to the new start time, a velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal continue and finish their original motion. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2491 <https://github.com/ros-controls/ros2_controllers/pull/2491>`_)
 
 pid_controller
 **************
-* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
+* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output. (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
+* Added parameter ``reset_commands_at_deactivation`` (default: false) to reset the commands to 0.0 when the controller is deactivated. (`#2602 <https://github.com/ros-controls/ros2_controllers/pull/2602>`_).
 
 steering_controllers_library
 *****************************
 * Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
 * Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+
+magnetometer_broadcaster
+************************
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.

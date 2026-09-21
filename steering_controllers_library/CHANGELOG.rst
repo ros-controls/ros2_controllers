@@ -2,6 +2,31 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.9.0 (2026-08-12)
+------------------
+* fix(steering_controllers): handle NaN/Inf values in odometry update (`#2083 <https://github.com/ros-controls/ros2_controllers/issues/2083>`_)
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Fix safety concerns with halt logic across controllers (`#2326 <https://github.com/ros-controls/ros2_controllers/issues/2326>`_)
+* Use new chainable controller exports API (`#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_)
+* Contributors: Ishan Pathak, Sai Kishor Kothakota, lali-perelman
+
+6.8.0 (2026-07-01)
+------------------
+* Simplify reduce_wheel_speed_until_steering_reached logic (`#2396 <https://github.com/ros-controls/ros2_controllers/issues/2396>`_)
+* Remove deprecated steering_odometry class (`#2400 <https://github.com/ros-controls/ros2_controllers/issues/2400>`_)
+* Call appropriate lifecycle transitions in controller tests: force_torque_sensor_broadcaster, chained_filter_controller, parallel_gripper_controller, steering_controllers_library (`#2382 <https://github.com/ros-controls/ros2_controllers/issues/2382>`_)
+* Contributors: Christoph Fröhlich, Junius Santoso
+
+6.7.0 (2026-05-12)
+------------------
+* Add lyrical workflows, update README, and fix gcc-15 issues (`#2344 <https://github.com/ros-controls/ros2_controllers/issues/2344>`_)
+* Remove deprecated odometry reset methods (`#2252 <https://github.com/ros-controls/ros2_controllers/issues/2252>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
+6.6.0 (2026-04-22)
+------------------
+
 6.5.0 (2026-04-02)
 ------------------
 * set odometry service addition - steering controllers library (`#2244 <https://github.com/ros-controls/ros2_controllers/issues/2244>`_)

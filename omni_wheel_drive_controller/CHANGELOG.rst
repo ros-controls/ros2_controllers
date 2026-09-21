@@ -2,6 +2,28 @@
 Changelog for package omni_wheel_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.9.0 (2026-08-12)
+------------------
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Omni wheel drive odometry update (`#2286 <https://github.com/ros-controls/ros2_controllers/issues/2286>`_)
+* Fix safety concerns with halt logic across controllers (`#2326 <https://github.com/ros-controls/ros2_controllers/issues/2326>`_)
+* Use new chainable controller exports API (`#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_)
+* Contributors: Devdoot Chatterjee, Sai Kishor Kothakota, lali-perelman
+
+6.8.0 (2026-07-01)
+------------------
+* Test fix - call appropriate lifecycle transitions in controller tests: joint_state_broadcaster, joint_trajectory, omni_wheel_drive, bicycle_steering (`#2410 <https://github.com/ros-controls/ros2_controllers/issues/2410>`_)
+* Contributors: Junius Santoso
+
+6.7.0 (2026-05-12)
+------------------
+* Remove deprecated odometry reset methods (`#2252 <https://github.com/ros-controls/ros2_controllers/issues/2252>`_)
+* Bump C++ version to C++20 (`#2331 <https://github.com/ros-controls/ros2_controllers/issues/2331>`_)
+* Contributors: Christoph Fröhlich, Ege Kural
+
+6.6.0 (2026-04-22)
+------------------
+
 6.5.0 (2026-04-02)
 ------------------
 * Remove ament linters (`#2267 <https://github.com/ros-controls/ros2_controllers/issues/2267>`_)

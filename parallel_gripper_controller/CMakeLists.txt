@@ -30,7 +30,6 @@ generate_parameter_library(parallel_gripper_action_controller_parameters
 add_library(parallel_gripper_action_controller SHARED
         src/parallel_gripper_action_controller.cpp
 )
-target_compile_features(parallel_gripper_action_controller PUBLIC cxx_std_17)
 target_include_directories(parallel_gripper_action_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/parallel_gripper_action_controller>

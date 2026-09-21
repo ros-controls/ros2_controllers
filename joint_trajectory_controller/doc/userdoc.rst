@@ -48,7 +48,7 @@ This leads to the following allowed combinations of command and state interfaces
 Further restrictions of state interfaces exist:
 
 * ``velocity`` state interface cannot be used if ``position`` interface  is missing.
-* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present."
+* ``acceleration`` state interface cannot be used if ``position`` and ``velocity`` interfaces are not present.
 
 Example controller configurations can be found :ref:`below <ROS 2 interface>`.
 
@@ -80,7 +80,7 @@ A yaml file for using it could be:
       controller_manager:
         ros__parameters:
           joint_trajectory_controller:
-          type: "joint_trajectory_controller/JointTrajectoryController"
+            type: "joint_trajectory_controller/JointTrajectoryController"
 
       joint_trajectory_controller:
         ros__parameters:
@@ -105,10 +105,57 @@ A yaml file for using it could be:
           interpolate_from_desired_state: true
           constraints:
             stopped_velocity_tolerance: 0.01
-            goal_time: 0.0
+            goal_time: 10.0
             joint1:
               trajectory: 0.05
               goal: 0.03
+
+
+Ingesting positions-only action chunks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Action policies (e.g. diffusion policy, ACT) emit *action chunks*: short trajectories of
+positions-only waypoints with no velocities and often no timing. Fed positions-only, the controller
+interpolates linearly (C0), yielding discontinuous velocities at every waypoint (see :ref:`trajectory
+representation <joint_trajectory_controller_trajectory_representation>` for the plotted comparison).
+
+``positions_upsampling.enable`` solves the knot velocities of a global cubic spline for incoming
+positions-only messages on ``~/joint_trajectory``, upgrading them from C0 to C2. The state the
+controller last commanded is prepended as an extra waypoint at ``time_from_start = 0``, so the
+segment into the first waypoint is part of the solve and a chunk arriving mid-motion continues it
+rather than braking to a stop. The spline always ends at rest. Messages that already carry
+velocities pass through unchanged; the feature is off by default and has no effect when
+``interpolation_method`` is ``none``.
+
+The extra waypoint is only prepended when the message has a zero ``header.stamp`` and its first
+waypoint sits at ``time_from_start > 0``. Both hold for chunks timed by ``policy_frequency``.
+Otherwise the solve falls back to a rest start (``v0 = 0``), and the chunk accelerates from a
+standstill into its first waypoint. The same fallback applies to the very first chunk after
+activation, before the controller has commanded anything.
+
+``positions_upsampling.policy_frequency`` (double, Hz) synthesizes
+``time_from_start = (i + 1) / policy_frequency`` for chunks that arrive without timing, placing the
+first waypoint one policy step ahead. ``0`` means the chunks must carry their own
+strictly-increasing ``time_from_start``.
+
+   .. code-block:: yaml
+
+      arm_controller:
+        ros__parameters:
+          joints:
+            - joint1
+            - joint2
+          command_interfaces:
+            - position
+          state_interfaces:
+            - position
+          positions_upsampling:
+            enable: true
+            policy_frequency: 30.0
+
+   .. note::
+      Only the topic interface (``~/joint_trajectory``) is upsampled. ``FollowJointTrajectory``
+      action goals bypass this path and are not upsampled.
 
 
 Preemption policy [#f1]_
@@ -116,7 +163,7 @@ Preemption policy [#f1]_
 
 Only one action goal can be active at any moment, or none if the topic interface is used. Path and goal tolerances are checked only for the trajectory segments of the active goal.
 
-When an active action goal is preempted by another command coming from the action interface, the goal is canceled and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
+When an active action goal is preempted by another command coming from the action interface, the goal is aborted and the client is notified. The trajectory is replaced in a defined way, see :ref:`trajectory replacement <joint_trajectory_controller_trajectory_replacement>`.
 
 Sending an empty trajectory message from the topic interface (not the action interface) will override the current action goal and not abort the action.
 

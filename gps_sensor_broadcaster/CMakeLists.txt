@@ -34,7 +34,6 @@ add_library(gps_sensor_broadcaster SHARED
   src/gps_sensor_broadcaster.cpp
 )
 
-target_compile_features(gps_sensor_broadcaster PUBLIC cxx_std_17)
 target_include_directories(gps_sensor_broadcaster PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/gps_sensor_broadcaster>

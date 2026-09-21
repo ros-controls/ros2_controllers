@@ -36,7 +36,6 @@ add_library(forward_command_controller SHARED
   src/forward_command_controller.cpp
   src/multi_interface_forward_command_controller.cpp
 )
-target_compile_features(forward_command_controller PUBLIC cxx_std_17)
 target_include_directories(forward_command_controller PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/forward_command_controller>
