@@ -81,6 +81,9 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed);
   FRIEND_TEST(
     MecanumDriveControllerTest,
+    when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable);
+  FRIEND_TEST(
+    MecanumDriveControllerTest,
     when_reference_timeout_is_zero_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(
     MecanumDriveControllerTest,
