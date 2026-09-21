@@ -13,7 +13,7 @@ on:
       - '**/package.xml'
       - '**/CMakeLists.txt'
       - 'ros2_controllers-not-released.rolling.repos'
-      - 'ros2_controllers-not-released.kilted.repos'
+      - 'ros2_controllers-not-released.lyrical.repos'
       - '**.xml'
 
 concurrency:
@@ -27,6 +27,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [rolling]
+        ROS_DISTRO: [lyrical, rolling]
     with:
       ros_distro: ${{ matrix.ROS_DISTRO }}

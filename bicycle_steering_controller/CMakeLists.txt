@@ -35,7 +35,6 @@ add_library(
   SHARED
   src/bicycle_steering_controller.cpp
 )
-target_compile_features(bicycle_steering_controller PUBLIC cxx_std_17)
 target_include_directories(bicycle_steering_controller PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")

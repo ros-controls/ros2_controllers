@@ -57,6 +57,9 @@ public:
   controller_interface::CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
+  controller_interface::CallbackReturn on_deactivate(
+    const rclcpp_lifecycle::State & previous_state) override;
+
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
@@ -95,9 +98,11 @@ protected:
   ControllerStateMsg state_msg_;
 
   // override methods from ChainableControllerInterface
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
 
-  std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+  std::vector<hardware_interface::StateInterface::SharedPtr> on_export_state_interfaces_list()
+    override;
 
   bool on_set_chained_mode(bool chained_mode) override;
 

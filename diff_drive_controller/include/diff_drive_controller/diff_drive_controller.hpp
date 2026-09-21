@@ -86,7 +86,8 @@ public:
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
 
   struct WheelHandle
   {
@@ -147,12 +148,6 @@ protected:
   TwistStamped limited_velocity_message_;
 
   rclcpp::Time previous_update_timestamp_{0};
-
-  // publish rate limiter
-  // TODO(bhavin-umatiya): Remove these two member variables
-  double publish_rate_ = 50.0;
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_seconds(0.0);
-  rclcpp::Time previous_publish_timestamp_{0};
 
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   std::atomic<bool> set_odom_requested_{false};

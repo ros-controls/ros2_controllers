@@ -62,7 +62,15 @@ public:
   controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
-  std::vector<hardware_interface::StateInterface> on_export_state_interfaces() override;
+  std::vector<hardware_interface::StateInterface::SharedPtr> on_export_state_interfaces_list()
+    override;
+
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override
+  {
+    // This broadcaster does not export any reference (command) interfaces.
+    return {};
+  }
 
 protected:
   void apply_sensor_offset(const Params & params, geometry_msgs::msg::WrenchStamped & msg);

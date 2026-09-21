@@ -21,12 +21,17 @@
 #include <string>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 
 #include "forward_command_controller/multi_interface_forward_command_controller.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 using hardware_interface::CommandInterface;
 using hardware_interface::HW_IF_EFFORT;
@@ -71,16 +76,13 @@ protected:
   // dummy joint state value used for tests
   const std::string joint_name_ = "joint1";
 
-  double pos_cmd_ = 1.1;
-  double vel_cmd_ = 2.1;
-  double eff_cmd_ = 3.1;
+  const double pos_cmd_ = 1.1;
+  const double vel_cmd_ = 2.1;
+  const double eff_cmd_ = 3.1;
 
-  CommandInterface::SharedPtr joint_1_pos_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_POSITION, &pos_cmd_);
-  CommandInterface::SharedPtr joint_1_vel_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_VELOCITY, &vel_cmd_);
-  CommandInterface::SharedPtr joint_1_eff_cmd_ =
-    std::make_shared<CommandInterface>(joint_name_, HW_IF_EFFORT, &eff_cmd_);
+  CommandInterface::SharedPtr joint_1_pos_cmd_;
+  CommandInterface::SharedPtr joint_1_vel_cmd_;
+  CommandInterface::SharedPtr joint_1_eff_cmd_;
   rclcpp::executors::SingleThreadedExecutor executor;
 };
 

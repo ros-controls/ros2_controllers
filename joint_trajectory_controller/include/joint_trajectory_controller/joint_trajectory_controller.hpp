@@ -38,9 +38,9 @@
 #include "rclcpp/timer.hpp"
 #include "rclcpp_action/server.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "realtime_tools/realtime_buffer.hpp"
 #include "realtime_tools/realtime_publisher.hpp"
 #include "realtime_tools/realtime_server_goal_handle.hpp"
+#include "realtime_tools/realtime_thread_safe_box.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
@@ -94,6 +94,12 @@ protected:
   trajectory_msgs::msg::JointTrajectoryPoint command_next_;
   trajectory_msgs::msg::JointTrajectoryPoint state_desired_;
   trajectory_msgs::msg::JointTrajectoryPoint state_error_;
+  trajectory_msgs::msg::JointTrajectoryPoint blend_sample_;
+  trajectory_msgs::msg::JointTrajectoryPoint blend_bridge_;
+  // Tracks which controller joints are commanded by a new blended trajectory
+  std::vector<bool> blend_commanded_;
+  // Number of points prepended during a blend (prefix + bridge); used to offset action feedback
+  size_t blend_prefix_size_ = 0;
 
   // Degrees of freedom
   size_t dof_;
@@ -113,6 +119,8 @@ protected:
   // variables for storing internal data for open-loop control
   trajectory_msgs::msg::JointTrajectoryPoint last_commanded_state_;
   rclcpp::Time last_commanded_time_;
+  realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
+    rt_last_commanded_state_;
   /// Specify interpolation method. Default to splines.
   interpolation_methods::InterpolationMethod interpolation_method_{
     interpolation_methods::DEFAULT_INTERPOLATION};
@@ -147,8 +155,8 @@ protected:
   // Configuration for every joint if it wraps around (ie. is continuous, position error is
   // normalized)
   std::vector<bool> joints_angle_wraparound_;
-  // reserved storage for result of the command when closed loop pid adapter is used
-  std::vector<double> tmp_command_;
+  // Preallocated storage for closed-loop PID command output.
+  std::vector<double> closed_loop_pid_command_;
 
   // If true, enable calculations to stop all joints using constant deceleration
   bool should_decelerate_on_cancel_ = false;
@@ -178,9 +186,9 @@ protected:
 
   rclcpp::Service<control_msgs::srv::QueryTrajectoryState>::SharedPtr query_state_srv_;
 
-  std::shared_ptr<Trajectory> current_trajectory_ = nullptr;
-  realtime_tools::RealtimeBuffer<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
-    new_trajectory_msg_;
+  std::unique_ptr<Trajectory> current_trajectory_ = nullptr;
+  realtime_tools::RealtimeThreadSafeBox<std::shared_ptr<trajectory_msgs::msg::JointTrajectory>>
+    rt_new_trajectory_msg_;
 
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> hold_position_msg_ptr_ = nullptr;
 
@@ -194,16 +202,26 @@ protected:
   using FollowJTrajAction = control_msgs::action::FollowJointTrajectory;
   using RealtimeGoalHandle = realtime_tools::RealtimeServerGoalHandle<FollowJTrajAction>;
   using RealtimeGoalHandlePtr = std::shared_ptr<RealtimeGoalHandle>;
-  using RealtimeGoalHandleBuffer = realtime_tools::RealtimeBuffer<RealtimeGoalHandlePtr>;
 
-  RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
-  std::atomic<bool> rt_has_pending_goal_{false};  ///< Is there a pending action goal?
+  realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
+  RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
+  std::atomic<bool> rt_has_pending_goal_{false};
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
-  rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
+  rclcpp::Duration goal_handle_timer_period_ = rclcpp::Duration(50ms);
 
   // callback for topic interface
   void topic_callback(const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg);
+
+  // Non-RT hook run on every incoming trajectory before validation.
+  void preprocess_incoming_trajectory(trajectory_msgs::msg::JointTrajectory & msg) const;
+  // true if every point has positions but no velocities or accelerations
+  bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;
+  // fill time_from_start from positions_upsampling.policy_frequency when timing is absent
+  void synthesize_timing(trajectory_msgs::msg::JointTrajectory & traj) const;
+  // prepends the last commanded state as knot 0 at t=0; false if there is none usable yet
+  bool prepend_commanded_state(
+    trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const;
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_received_callback(
@@ -230,6 +248,15 @@ protected:
   // positions set to current position, velocities, accelerations and efforts to 0.0
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
+  // Fills omitted joints by sampling the active trajectory so they keep their old motion.
+  void fill_omitted_joints_from_old(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+    const rclcpp::Time & new_start);
+  // Blends a new trajectory into the active one in place (Merge-at-Arrival: prefix+bridge+suffix).
+  // Returns false, leaving the message untouched, if it cannot be blended.
+  bool blend_with_active_trajectory(
+    const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+    const rclcpp::Time & time);
   // sorts the joints of the incoming message to our local order
   void sort_to_local_joint_order(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
@@ -243,7 +270,9 @@ protected:
   // the tolerances from the node parameter
   SegmentTolerances default_tolerances_;
   // the tolerances used for the current goal
-  realtime_tools::RealtimeBuffer<SegmentTolerances> active_tolerances_;
+  realtime_tools::RealtimeThreadSafeBox<SegmentTolerances> rt_goal_tolerances_;
+  // preallocated memory for tolerances used in RT loop
+  SegmentTolerances active_tol_;
 
   void preempt_active_goal();
 
@@ -273,12 +302,11 @@ protected:
   void read_state_from_state_interfaces(JointTrajectoryPoint & state);
 
   /** Assign values from the command interfaces as state.
-   * This is only possible if command AND state interfaces exist for the same type,
-   *  therefore needs check for both.
+   * state values (e.g. velocity, acceleration, or effort) which do not have command interfaces will
+   * NOT be updated.
    * @param[out] state to be filled with values from command interfaces.
-   * @return true if all interfaces exists and contain non-NaN values, false otherwise.
    */
-  bool read_state_from_command_interfaces(JointTrajectoryPoint & state);
+  void update_state_from_command_interfaces(JointTrajectoryPoint & state);
   bool read_commands_from_command_interfaces(JointTrajectoryPoint & commands);
 
   void query_state_service(
@@ -296,6 +324,10 @@ private:
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
   void resize_joint_trajectory_point_command(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size, double value = 0.0);
+  void assign_point_from_command_interface(
+    std::vector<double> & trajectory_point_interface,
+    const std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> &
+      joint_interface);
 
   /**
    * @brief Set scaling factor used for speed scaling trajectory execution

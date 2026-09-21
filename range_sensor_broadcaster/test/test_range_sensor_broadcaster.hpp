@@ -23,9 +23,14 @@
 #include <string>
 #include <vector>
 
+#include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
 
 #include "range_sensor_broadcaster/range_sensor_broadcaster.hpp"
+
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
 
 class RangeSensorBroadcasterTest : public ::testing::Test
 {
@@ -38,8 +43,6 @@ protected:
   // defining the parameter names same as in test/range_sensor_broadcaster_params.yaml
   const std::string sensor_name_ = "range_sensor";
   const std::string frame_id_ = "range_sensor_frame";
-  const std::string interface_name_ = "range";
-
   const double field_of_view_ = 0.1;
   const int radiation_type_ = 1;
   const double min_range_ = 0.1;
@@ -47,14 +50,12 @@ protected:
   const double variance_ = 1.0;
 
   double sensor_range_ = 3.1;
-  hardware_interface::StateInterface::SharedPtr range_ =
-    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "range", &sensor_range_);
+  hardware_interface::StateInterface::SharedPtr range_;
 
   std::unique_ptr<range_sensor_broadcaster::RangeSensorBroadcaster> range_broadcaster_;
 
   controller_interface::return_type init_broadcaster(std::string broadcaster_name);
-  controller_interface::CallbackReturn configure_broadcaster(
-    std::vector<rclcpp::Parameter> & parameters);
+  void configure_broadcaster(std::vector<rclcpp::Parameter> & parameters);
   void subscribe_and_get_message(sensor_msgs::msg::Range & range_msg);
 };
 
