@@ -637,6 +637,75 @@ TEST_F(
   }
 }
 
+// Regression test: in chained mode, after IK writes non-zero wheel commands,
+// the next update tick sees NaN references (the previous tick resets them) and
+// must zero every wheel. A short-circuiting chain of set_value() calls would
+// leave stale non-zero commands on wheels past the first failed set.
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed)
+{
+  SetUpController();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  controller_->set_chained_mode(true);
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), NODE_SUCCESS);
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // Tick 1: preceding controller writes non-zero references; IK produces
+  // non-zero wheel commands on every wheel.
+  controller_->reference_interfaces_[0] = 1.0;
+  controller_->reference_interfaces_[1] = 0.5;
+  controller_->reference_interfaces_[2] = 0.25;
+
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    EXPECT_NE(controller_->command_interfaces_[i].get_optional().value(), 0.0)
+      << "wheel " << i << " should be non-zero after IK";
+  }
+
+  // update_and_write_commands() resets reference_interfaces_ to NaN at the
+  // end of every tick.
+  for (const auto & interface : controller_->reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(interface));
+  }
+
+  // Tick 2: preceding controller does not write new references, so IK is
+  // skipped and every wheel must be commanded to zero.
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+}
+
 // when ref_timeout = 0 expect reference_msg is accepted only once and command_interfaces
 // are calculated to valid values and reference_interfaces are unset
 TEST_F(
