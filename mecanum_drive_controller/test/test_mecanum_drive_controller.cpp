@@ -605,6 +605,63 @@ TEST_F(
   }
 }
 
+// Regression test for the ||-chain short-circuit in the else branch of
+// update_and_write_commands. If a tick runs with NaN reference interfaces
+// (e.g. in chained mode after the upstream controller stops writing, or on
+// any tick after `update_reference_from_subscribers` reset the refs to NaN),
+// the controller must zero ALL four wheel command interfaces. A previous
+// implementation used `set_value(0.0, UINT_MAX) || set_value(0.0, UINT_MAX)
+// || ...` which, combined with the retry cap always succeeding, left
+// FRONT_RIGHT, REAR_RIGHT and REAR_LEFT at their last inverse-kinematics
+// value.
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  const size_t fl = controller_->get_front_left_wheel_index();
+  const size_t fr = controller_->get_front_right_wheel_index();
+  const size_t rr = controller_->get_rear_right_wheel_index();
+  const size_t rl = controller_->get_rear_left_wheel_index();
+
+  // Tick 1: valid non-symmetric reference so the IK branch writes four
+  // distinct, non-zero wheel commands we can detect as "stale" later.
+  std::ignore = controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  std::ignore = controller_->ordered_exported_reference_interfaces_[1]->set_value(0.5);
+  std::ignore = controller_->ordered_exported_reference_interfaces_[2]->set_value(0.25);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ASSERT_NE(0.0, controller_->command_interfaces_[fl].get_optional().value());
+  ASSERT_NE(0.0, controller_->command_interfaces_[fr].get_optional().value());
+  ASSERT_NE(0.0, controller_->command_interfaces_[rr].get_optional().value());
+  ASSERT_NE(0.0, controller_->command_interfaces_[rl].get_optional().value());
+
+  // Tick 2: the previous tick reset the reference interfaces to NaN and
+  // nothing wrote them since (in chained mode `update_reference_from_subscribers`
+  // is not called), so update_and_write_commands takes the else branch.
+  for (const auto & itf : controller_->ordered_exported_reference_interfaces_)
+  {
+    EXPECT_TRUE(std::isnan(
+      itf->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
+  }
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[fl].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[fr].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[rr].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[rl].get_optional().value());
+}
+
 // when in chained mode the reference_interfaces of chained controller and command_interfaces
 // of preceding controller point to same memory location, hence reference_interfaces are not
 // exclusively set by the update method of chained controller
