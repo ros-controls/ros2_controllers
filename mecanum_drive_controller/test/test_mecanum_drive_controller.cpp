@@ -662,6 +662,66 @@ TEST_F(
   EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[rl].get_optional().value());
 }
 
+// Regression test: when the reference goes NaN (safety branch) after IK
+// has produced non-zero commands, the rate-limiter history in
+// `previous_two_commands_` must be reset. Otherwise, when a fresh non-NaN
+// reference resumes at zero, `limiter->limit()` sees a non-zero "previous"
+// command and slews toward zero under the deceleration bound, producing a
+// spurious wheel burst on re-enable (observed on hardware as a brief motion
+// when the operator taps the deadman with the stick centered).
+TEST_F(
+  MecanumDriveControllerTest,
+  when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable)
+{
+  SetUpController("test_mecanum_drive_controller_with_limits");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  const size_t fl = controller_->get_front_left_wheel_index();
+  const size_t fr = controller_->get_front_right_wheel_index();
+  const size_t rr = controller_->get_rear_right_wheel_index();
+  const size_t rl = controller_->get_rear_left_wheel_index();
+
+  const auto dt = rclcpp::Duration::from_seconds(0.01);
+  const auto t0 = rclcpp::Time(0, 0, RCL_ROS_TIME);
+
+  // Phase 1: drive at a non-zero reference for enough ticks that the limited
+  // linear.x command reaches a level (~0.5 m/s) that the deceleration bound
+  // (4.0 m/s^2 * 0.01 s = 0.04 m/s per tick) cannot zero in a single tick.
+  for (int i = 0; i < 30; ++i)
+  {
+    std::ignore = controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+    std::ignore = controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    std::ignore = controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
+    ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+  }
+  ASSERT_GT(controller_->command_interfaces_[fl].get_optional().value(), 0.1)
+    << "test setup: need built-up velocity that a single deceleration step "
+       "cannot bring to zero";
+
+  // Phase 2: preceding controller stops writing references (refs are NaN).
+  // Safety branch must zero every wheel AND reset the limiter history.
+  ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[fl].get_optional().value());
+
+  // Phase 3: reference resumes at exactly zero (operator re-taps the deadman
+  // with the stick centered). Without the limiter-history reset in phase 2,
+  // `limiter->limit()` would see last = <built_up> and slew toward 0 under
+  // the deceleration bound, producing a non-zero wheel command this tick.
+  std::ignore = controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  std::ignore = controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  std::ignore = controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
+  ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[fl].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[fr].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[rr].get_optional().value());
+  EXPECT_DOUBLE_EQ(0.0, controller_->command_interfaces_[rl].get_optional().value());
+}
+
 // when in chained mode the reference_interfaces of chained controller and command_interfaces
 // of preceding controller point to same memory location, hence reference_interfaces are not
 // exclusively set by the update method of chained controller
