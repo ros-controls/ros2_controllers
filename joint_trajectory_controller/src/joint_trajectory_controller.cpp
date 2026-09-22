@@ -456,14 +456,6 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal)
       {
         // send feedback
-<<<<<<< HEAD
-        const auto & feedback = active_goal->preallocated_feedback_;
-        feedback->header.stamp = time;
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
-        active_goal->setFeedback(feedback);
-=======
         rt_active_goal_local_->trySetFeedback(
           [&](FollowJTrajAction::Feedback & feedback)
           {
@@ -471,11 +463,8 @@ controller_interface::return_type JointTrajectoryController::update(
             feedback.actual = state_current_;
             feedback.desired = state_desired_;
             feedback.error = state_error_;
-            // report the index relative to the trajectory the client sent (a blend prepends points)
-            feedback.index = std::max(
-              0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
+            feedback.index = static_cast<int32_t>(next_point_index);
           });
->>>>>>> 2aa1d3e (fix(jtc): Use trySetFeedback for goal handle feedback (#2610))
 
         // check abort
         if (tolerance_violated_while_moving)
