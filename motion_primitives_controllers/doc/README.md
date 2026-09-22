@@ -41,7 +41,7 @@ The action interface also allows stopping the current execution of motion primit
 
 This can be done, for example, via a Python script as demonstrated in the [`example python script`](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/blob/main/ur_robot_driver/examples/send_dummy_motion_primitives_ur10e.py) in the `Universal_Robots_ROS2_Driver` package.
 
-Deactivating the controller while an action is executing, will result in that action being aborted. The hardware interface is responsible for what happens with the hardware in this case, whether it should continue or stop execution.
+Deactivating the controller while an action is executing, will result in that action being aborted, and the controller's motion primitive queue being drained. The hardware interface is responsible for what happens with the hardware in this case, whether it should continue or stop execution.
 
 ### Architecture overview of motion_primitives_forward_controller
 Architecture for a UR robot with [`Universal_Robots_ROS2_Driver` in motion primitives mode](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver).
