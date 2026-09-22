@@ -142,10 +142,19 @@ protected:
 
   rclcpp::Time previous_update_timestamp_{0};
 
+<<<<<<< HEAD
   // publish rate limiter
   double publish_rate_ = 50.0;
   rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
   rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
+=======
+  bool command_timed_out_ = false;
+
+  rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
+  std::atomic<bool> set_odom_requested_{false};
+  realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
+    requested_odom_params_;
+>>>>>>> 9b089a3 (Warn once per velocity command timeout in diff_drive_controller (#2620))
 
   bool reset();
   void halt();
