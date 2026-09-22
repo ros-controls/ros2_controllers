@@ -186,9 +186,7 @@ TEST_F(MotionPrimitivesForwardControllerTest, active_goal_aborted_on_deactivate)
   ASSERT_TRUE(deactivate_succeeds(controller_));
 
   EXPECT_FALSE(controller_->has_active_goal_);
-  EXPECT_EQ(
-    controller_->command_interfaces_[0].get_optional().value(),
-    static_cast<double>(motion_primitives_controllers::MotionHelperType::STOP_MOTION));
+  EXPECT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
   EXPECT_TRUE(controller_->moprim_queue_.empty());
 
   auto result_future = action_client_->async_get_result(goal_handle);
@@ -234,25 +232,14 @@ TEST_F(MotionPrimitivesForwardControllerTest, accepts_new_goal_after_reactivatio
     result_future.get().result->error_code,
     control_msgs::action::ExecuteMotionPrimitiveSequence::Result::ABORTED_BY_DEACTIVATION);
 
-  EXPECT_EQ(
-    controller_->command_interfaces_[0].get_optional().value(),
-    static_cast<double>(motion_primitives_controllers::MotionHelperType::STOP_MOTION));
-
-  // Set state interface to STOPPED
-  std::ignore = state_itfs_[0]->set_value(
-    static_cast<double>(motion_primitives_controllers::ExecutionState::STOPPED));
+  EXPECT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
 
   // Reactivate controller
   ASSERT_TRUE(activate_succeeds(controller_));
 
-  // Transition to state RESET_STOP
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-
-  EXPECT_EQ(
-    controller_->command_interfaces_[0].get_optional().value(),
-    static_cast<double>(motion_primitives_controllers::MotionHelperType::RESET_STOP));
 
   // Simulate hardware interface transitioning to idle
   std::ignore = state_itfs_[0]->set_value(
