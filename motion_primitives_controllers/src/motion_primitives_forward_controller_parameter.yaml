@@ -8,6 +8,6 @@ motion_primitives_forward_controller:
   hardware_solves_kinematics: {
     type: bool,
     default_value: false,
-    description: "Whether or not the hardware interface that is used with this controller can do both forward and inverse kinematics. Enables sending poses for LINEAR_JOINT commands and joint angles for LINEAR_CARTESIAN commands.",
+    description: "Whether or not the hardware that is used with this controller can do both forward and inverse kinematics. Enables sending poses for LINEAR_JOINT commands and joint angles for LINEAR_CARTESIAN commands.",
     read_only: false,
   }
