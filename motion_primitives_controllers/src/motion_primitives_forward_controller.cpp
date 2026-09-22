@@ -309,9 +309,22 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
         {
           if (primitive.joint_positions.empty())
           {
-            RCLCPP_ERROR(
-              get_node()->get_logger(),
-              "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
+            if (!primitive.poses.empty())
+            {
+              RCLCPP_ERROR(
+                get_node()->get_logger(),
+                "Primitive %zu invalid: LINEAR_JOINT requires joint_positions, but a pose was "
+                "given instead. If your hardware can resolve the inverse kinematics for a "
+                "cartesian goal in a joint movement, set 'hardware_solves_kinematics' to true to "
+                "allow this.",
+                i);
+            }
+            else
+            {
+              RCLCPP_ERROR(
+                get_node()->get_logger(),
+                "Primitive %zu invalid: LINEAR_JOINT requires joint_positions.", i);
+            }
             return rclcpp_action::GoalResponse::REJECT;
           }
         }
@@ -343,9 +356,22 @@ rclcpp_action::GoalResponse MotionPrimitivesForwardController::goal_received_cal
         {
           if (primitive.poses.empty())
           {
-            RCLCPP_ERROR(
-              get_node()->get_logger(), "Primitive %zu invalid: LINEAR_CARTESIAN requires poses.",
-              i);
+            if (!primitive.joint_positions.empty())
+            {
+              RCLCPP_ERROR(
+                get_node()->get_logger(),
+                "Primitive %zu invalid: LINEAR_CARTESIAN requires a pose, but joint positions were "
+                "given instead. If your hardware can resolve the forward kinematics for a joint "
+                "goal in a cartesian movement, set 'hardware_solves_kinematics' to true to allow "
+                "this.",
+                i);
+            }
+            else
+            {
+              RCLCPP_ERROR(
+                get_node()->get_logger(),
+                "Primitive %zu invalid: LINEAR_CARTESIAN requires a pose.", i);
+            }
             return rclcpp_action::GoalResponse::REJECT;
           }
         }
