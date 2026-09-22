@@ -456,12 +456,14 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal)
       {
         // send feedback
-        const auto & feedback = active_goal->preallocated_feedback_;
-        feedback->header.stamp = time;
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
-        active_goal->setFeedback(feedback);
+        active_goal->trySetFeedback(
+          [&](FollowJTrajAction::Feedback & feedback)
+          {
+            feedback.header.stamp = time;
+            feedback.actual = state_current_;
+            feedback.desired = state_desired_;
+            feedback.error = state_error_;
+          });
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -1519,11 +1521,13 @@ void JointTrajectoryController::goal_accepted_callback(
   }
 
   // Update the active goal
-  RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal->preallocated_feedback_->joint_names = params_.joints;
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
+  auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+  feedback->joint_names = params_.joints;
+  resize_joint_trajectory_point(feedback->actual, dof_);
+  resize_joint_trajectory_point(feedback->desired, dof_);
+  resize_joint_trajectory_point(feedback->error, dof_);
+  RealtimeGoalHandlePtr rt_goal =
+    std::make_shared<RealtimeGoalHandle>(goal_handle, nullptr, feedback);
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
