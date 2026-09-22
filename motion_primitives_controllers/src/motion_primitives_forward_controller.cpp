@@ -67,7 +67,7 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
 }
 
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deactivate(
-  const rclcpp_lifecycle::State & previous_state)
+  const rclcpp_lifecycle::State & /*previous_state*/)
 {
   if (has_active_goal_)
   {
@@ -84,9 +84,23 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deact
           get_node()->get_logger(),
           "Motion primitive controller is being deactivated, aborting action.");
       });
+    // Drain primitives queue.
+    static_cast<void>(moprim_queue_.get_latest(current_moprim_));
+    // Stop robot
+    // When reactivated the controller should be in ExecutionState::STOPPED (hardware interface is
+    // responsible for that)
+    robot_stop_requested_ = true;
+    reset_command_interfaces();
+    if (!command_interfaces_[0].set_value(static_cast<double>(MotionHelperType::STOP_MOTION)))
+    {
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
-  // Command interfaces are reset in base controller
-  return MotionPrimitivesBaseController::on_deactivate(previous_state);
+  else
+  {
+    reset_command_interfaces();
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type MotionPrimitivesForwardController::update(
