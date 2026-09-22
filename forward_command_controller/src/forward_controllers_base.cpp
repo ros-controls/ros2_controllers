@@ -75,7 +75,7 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
     "~/commands", rclcpp::SystemDefaultsQoS(),
     [this](const CmdType::SharedPtr msg)
     {
-      if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+      if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
       {
         RCLCPP_WARN_THROTTLE(
           get_node()->get_logger(), *(get_node()->get_clock()), 1000,
