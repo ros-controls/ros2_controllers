@@ -60,6 +60,9 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_single_action_goal);
+  FRIEND_TEST(MotionPrimitivesForwardControllerTest, active_goal_aborted_on_deactivate);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest, accepts_new_goal_after_reactivation_post_abort);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -146,7 +149,9 @@ protected:
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
-  void send_single_motion_sequence_goal(
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ExecuteMotion>;
+
+  std::shared_ptr<GoalHandle> send_single_motion_sequence_goal(
     const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
     double velocity = 0.7, double acceleration = 1.0, double move_time = 2.0,
     double blend_radius = 3.0)
@@ -188,6 +193,7 @@ protected:
     }
 
     std::cout << "Goal accepted by the action server." << std::endl;
+    return goal_handle;
   }
 
   const std::vector<std::string> command_interface_names_ = {
