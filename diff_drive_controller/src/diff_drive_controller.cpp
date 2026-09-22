@@ -331,17 +331,17 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
 
   // Set wheels velocities:
-  bool set_command_result = true;
+  bool set_command_error = false;
   for (size_t index = 0; index < static_cast<size_t>(wheels_per_side_); ++index)
   {
-    set_command_result &=
-      registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
-    set_command_result &=
-      registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
+    set_command_error |=
+      !registered_left_wheel_handles_[index].velocity.get().set_value(velocity_left);
+    set_command_error |=
+      !registered_right_wheel_handles_[index].velocity.get().set_value(velocity_right);
   }
 
   RCLCPP_DEBUG_EXPRESSION(
-    logger, !set_command_result, "Unable to set the command to one of the command handles!");
+    logger, set_command_error, "Unable to set the command to one of the command handles!");
 
   return controller_interface::return_type::OK;
 }
