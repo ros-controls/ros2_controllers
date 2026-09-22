@@ -125,13 +125,17 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   {
     ordered_exported_reference_interfaces_[0]->set_value(0.0);
     ordered_exported_reference_interfaces_[1]->set_value(0.0);
-    RCLCPP_WARN_THROTTLE(
-      logger, *get_node()->get_clock(), warning_throttle_ms,
-      "Velocity command timed out. Braking.");
+    // Warn on the transition only: the timeout holds until a new command arrives.
+    if (!command_timed_out_)
+    {
+      command_timed_out_ = true;
+      RCLCPP_WARN(logger, "Velocity command timed out. Braking.");
+    }
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
   {
+    command_timed_out_ = false;
     ordered_exported_reference_interfaces_[0]->set_value(command_msg_.twist.linear.x);
     ordered_exported_reference_interfaces_[1]->set_value(command_msg_.twist.angular.z);
   }
@@ -635,6 +639,7 @@ bool DiffDriveController::reset()
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
+  command_timed_out_ = false;
 
   return true;
 }
