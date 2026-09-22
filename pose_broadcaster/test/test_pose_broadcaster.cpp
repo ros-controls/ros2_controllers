@@ -15,12 +15,36 @@
 
 #include <cmath>
 #include <limits>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 using hardware_interface::LoanedStateInterface;
 
-void PoseBroadcasterTest::SetUp() { pose_broadcaster_ = std::make_unique<PoseBroadcaster>(); }
+void PoseBroadcasterTest::SetUp()
+{
+  pose_broadcaster_ = std::make_unique<PoseBroadcaster>();
+
+  pose_position_x_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.x");
+  pose_position_y_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.y");
+  pose_position_z_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.z");
+  pose_orientation_x_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.x");
+  pose_orientation_y_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.y");
+  pose_orientation_z_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.z");
+  pose_orientation_w_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.w");
+
+  std::ignore = pose_position_x_->set_value(pose_values_[0]);
+  std::ignore = pose_position_y_->set_value(pose_values_[1]);
+  std::ignore = pose_position_z_->set_value(pose_values_[2]);
+  std::ignore = pose_orientation_x_->set_value(pose_values_[3]);
+  std::ignore = pose_orientation_y_->set_value(pose_values_[4]);
+  std::ignore = pose_orientation_z_->set_value(pose_values_[5]);
+  std::ignore = pose_orientation_w_->set_value(pose_values_[6]);
+}
 
 void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
 

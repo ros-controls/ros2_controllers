@@ -310,8 +310,7 @@ controller_interface::CallbackReturn MecanumDriveController::on_configure(
     return controller_interface::CallbackReturn::ERROR;
   }
 
-  // Allocate reference interfaces and reset their values to NaN to catch uninitialized usage.
-  reference_interfaces_.resize(NR_REF_ITFS, std::numeric_limits<double>::quiet_NaN());
+  // Reset the reference interfaces to NaN to catch uninitialized usage.
   reset_buffers();
 
   RCLCPP_INFO(get_node()->get_logger(), "MecanumDriveController configured successfully");
@@ -438,9 +437,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
 
 void MecanumDriveController::reset_buffers()
 {
-  std::fill(
-    reference_interfaces_.begin(), reference_interfaces_.end(),
-    std::numeric_limits<double>::quiet_NaN());
+  for (auto & ref_itf : ordered_exported_reference_interfaces_)
+  {
+    if (!ref_itf->set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to reset reference interface to NaN");
+    }
+  }
 
   // Replace the queue with one initialized to two zero entries.
   previous_two_commands_ = std::queue<std::array<double, 3>>(
@@ -530,8 +533,9 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     }
     catch (const std::invalid_argument & e)
     {
-      RCLCPP_ERROR(
-        get_node()->get_logger(), "Failed to update speed limiter parameters: %s", e.what());
+      RCLCPP_ERROR_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Failed to update speed limiter parameters: %s", e.what());
     }
   }
 

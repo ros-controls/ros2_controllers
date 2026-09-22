@@ -2,6 +2,15 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.9.0 (2026-08-12)
+------------------
+* Throttle speed limiter parameter error logs (`#2546 <https://github.com/ros-controls/ros2_controllers/issues/2546>`_)
+* fix: Remove unused variable assignments in mecanum tests (`#2534 <https://github.com/ros-controls/ros2_controllers/issues/2534>`_)
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Fix safety concerns with halt logic across controllers (`#2326 <https://github.com/ros-controls/ros2_controllers/issues/2326>`_)
+* Use new chainable controller exports API (`#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_)
+* Contributors: Christoph Fröhlich, Sai Kishor Kothakota, cyberjay, lali-perelman
+
 6.8.0 (2026-07-01)
 ------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: forward_command, mecanum_drive, range_sensor, imu_sensor (`#2406 <https://github.com/ros-controls/ros2_controllers/issues/2406>`_)

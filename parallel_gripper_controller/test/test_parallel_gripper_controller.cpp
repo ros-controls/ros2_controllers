@@ -1,4 +1,4 @@
-// Copyright 2020 PAL Robotics SL.
+// Copyright 2022 ros2_control development team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,21 @@ void GripperControllerTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<FriendGripperController>();
+  joint_1_pos_state_ = std::make_shared<hardware_interface::StateInterface>(
+    joint_name_, hardware_interface::HW_IF_POSITION);
+  std::ignore = joint_1_pos_state_->set_value(joint_states_[0]);
+  joint_1_vel_state_ = std::make_shared<hardware_interface::StateInterface>(
+    joint_name_, hardware_interface::HW_IF_VELOCITY);
+  std::ignore = joint_1_vel_state_->set_value(joint_states_[1]);
+  joint_1_cmd_ = std::make_shared<hardware_interface::CommandInterface>(
+    joint_name_, hardware_interface::HW_IF_POSITION);
+  std::ignore = joint_1_cmd_->set_value(joint_commands_[0]);
+  joint_1_effort_cmd_ = std::make_shared<hardware_interface::CommandInterface>(
+    joint_name_, hardware_interface::HW_IF_EFFORT);
+  std::ignore = joint_1_effort_cmd_->set_value(joint_effort_commands_[0]);
+  joint_1_speed_cmd_ = std::make_shared<hardware_interface::CommandInterface>(
+    joint_name_, hardware_interface::HW_IF_VELOCITY);
+  std::ignore = joint_1_speed_cmd_->set_value(joint_speed_commands_[0]);
 }
 
 void GripperControllerTest::TearDown() { controller_.reset(nullptr); }
@@ -92,10 +107,8 @@ TEST_F(GripperControllerTest, ConfigureParamsSuccess)
   this->controller_->get_node()->set_parameter({"joint", "joint1"});
   executor.spin_some();
 
-  // configure successful
   ASSERT_TRUE(configure_succeeds(controller_));
 
-  // check interface configuration
   auto cmd_if_conf = this->controller_->command_interface_configuration();
   ASSERT_THAT(cmd_if_conf.names, SizeIs(1lu));
   ASSERT_THAT(
@@ -114,7 +127,6 @@ TEST_F(GripperControllerTest, ActivateSuccess)
 
   this->controller_->get_node()->set_parameter({"joint", "joint1"});
 
-  // activate successful
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
 }
@@ -130,7 +142,6 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
   ASSERT_TRUE(deactivate_succeeds(controller_));
   this->controller_->release_interfaces();
 
-  // re-assign interfaces
   std::vector<LoanedCommandInterface> command_ifs;
   command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
   std::vector<LoanedStateInterface> state_ifs;
@@ -140,6 +151,103 @@ TEST_F(GripperControllerTest, ActivateDeactivateActivateSuccess)
 
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
+}
+
+TEST_F(GripperControllerTest, ActivateWithEffortInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/effort"));
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+}
+
+TEST_F(GripperControllerTest, ActivateWithVelocityInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/velocity"));
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+}
+
+TEST_F(GripperControllerTest, ActivateWithEffortAndVelocityInterfaceSuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort_and_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  auto cmd_if_conf = this->controller_->command_interface_configuration();
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/effort"));
+  ASSERT_THAT(cmd_if_conf.names, testing::Contains("joint1/velocity"));
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+}
+
+TEST_F(GripperControllerTest, DeactivateWithEffortAndVelocitySuccess)
+{
+  this->SetUpController("test_gripper_controller_with_effort_and_velocity");
+
+  this->controller_->release_interfaces();
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(this->joint_1_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_effort_cmd_, nullptr);
+  command_ifs.emplace_back(this->joint_1_speed_cmd_, nullptr);
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(this->joint_1_pos_state_, nullptr);
+  state_ifs.emplace_back(this->joint_1_vel_state_, nullptr);
+  this->controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+}
+
+TEST_F(GripperControllerTest, ActivateFailsWhenEffortInterfaceMissing)
+{
+  // effort interface configured in params but NOT provided as a hardware interface
+  this->SetUpController("test_gripper_controller_with_effort");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  // on_activate should FAIL because effort configured but not found
+  ASSERT_EQ(
+    this->controller_->on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::FAILURE);
 }
 
 int main(int argc, char ** argv)

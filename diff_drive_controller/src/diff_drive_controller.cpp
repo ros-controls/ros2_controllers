@@ -118,24 +118,34 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
     command_msg_ = current_ref_op.value();
   }
 
+  constexpr rcutils_duration_value_t warning_throttle_ms = 1000;
+
   const auto age_of_last_command = time - command_msg_.header.stamp;
-  // Brake if cmd_vel has timeout, override the stored command
-  if (age_of_last_command > cmd_vel_timeout_)
+  const bool cmd_vel_timeout_disabled = cmd_vel_timeout_ == rclcpp::Duration::from_seconds(0.0);
+  // Brake if cmd_vel has timeout, override the stored command.
+  // A cmd_vel_timeout of 0.0 disables the timeout.
+  if (!cmd_vel_timeout_disabled && age_of_last_command > cmd_vel_timeout_)
   {
     ordered_exported_reference_interfaces_[0]->set_value(0.0);
     ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    // Warn on the transition only: the timeout holds until a new command arrives.
+    if (!command_timed_out_)
+    {
+      command_timed_out_ = true;
+      RCLCPP_WARN(logger, "Velocity command timed out. Braking.");
+    }
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
   {
+    command_timed_out_ = false;
     ordered_exported_reference_interfaces_[0]->set_value(command_msg_.twist.linear.x);
     ordered_exported_reference_interfaces_[1]->set_value(command_msg_.twist.angular.z);
   }
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
-      logger, *get_node()->get_clock(),
-      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.seconds() * 1000),
+      logger, *get_node()->get_clock(), warning_throttle_ms,
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
@@ -167,7 +177,9 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     }
     catch (const std::invalid_argument & e)
     {
-      RCLCPP_ERROR(logger, "Failed to update speed limiter parameters: %s", e.what());
+      RCLCPP_ERROR_THROTTLE(
+        logger, *get_node()->get_clock(), 1000, "Failed to update speed limiter parameters: %s",
+        e.what());
     }
   }
 
@@ -633,6 +645,7 @@ bool DiffDriveController::reset()
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
+  command_timed_out_ = false;
 
   return true;
 }

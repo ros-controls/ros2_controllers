@@ -15,7 +15,9 @@
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -93,9 +95,19 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
       for (size_t i = 0; i < params_.joints.size(); ++i)
       {
         auto urdf_joint = model.getJoint(params_.joints[i]);
-        if (urdf_joint)
+        // Continuous joints are not required to declare <limit> in URDF; limits may be null.
+        if (urdf_joint && urdf_joint->limits)
         {
           max_joint_vel[i] = urdf_joint->limits->velocity;
+        }
+        else if (urdf_joint)
+        {
+          // Continuous joints may omit <limit>; velocity is only needed for
+          // decelerate_on_cancel (warned later if that feature cannot run).
+          RCLCPP_DEBUG(
+            get_node()->get_logger(),
+            "Joint '%s' has no <limit> in the URDF; velocity limit unavailable (using 0.0).",
+            params_.joints[i].c_str());
         }
         if (urdf_joint && urdf_joint->type == urdf::Joint::CONTINUOUS)
         {
@@ -262,65 +274,34 @@ controller_interface::return_type JointTrajectoryController::update(
   }
 
   // don't update goal after we sampled the trajectory to avoid any race condition
-  const auto active_goal = *rt_active_goal_.readFromRT();
+  rt_active_goal_local_.reset();
+  rt_active_goal_.try_get([&](const auto & goal) { rt_active_goal_local_ = goal; });
 
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
-  auto new_external_msg = new_trajectory_msg_.readFromRT();
-
-  // A cancel (goal_cancelled_callback) asked us to drop any deferred trajectory.
-  if (rt_clear_pending_.exchange(false))
-  {
-    pending_traj_msg_ = nullptr;
-    rt_active_goal_deferred_ = false;
-  }
-
-  // The trajectory message to be installed into current_trajectory_ this cycle (if any).
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> traj_msg_to_install = nullptr;
-
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
+  rt_new_trajectory_msg_.try_get([&](auto & msg) { new_external_msg = msg; });
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
   if (
-    current_trajectory_msg != *new_external_msg && *new_external_msg != pending_traj_msg_ &&
-    (rt_has_pending_goal_ && !active_goal) == false)
+    new_external_msg && current_trajectory_msg != new_external_msg &&
+    (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
-    if (is_internal_hold(*new_external_msg))
-    {
-      // Internal hold/success/decelerate: install but never cancel a deferred trajectory.
-      traj_msg_to_install = *new_external_msg;
-    }
-    else if (
+    bool blended = false;
+    if (
       params_.allow_trajectory_replacement && has_active_trajectory() &&
-      rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type()) > time)
+      current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
     {
-      // Future-stamped: defer until its start time, keep old trajectory running.
-      pending_traj_msg_ = *new_external_msg;
-      pending_start_ = rclcpp::Time((*new_external_msg)->header.stamp, time.get_clock_type());
+      blended = blend_with_active_trajectory(new_external_msg, time);
     }
-    else
+    if (!blended)
     {
-      // Immediate or blending off: install now, drop any previously deferred trajectory.
-      fill_partial_goal(*new_external_msg);
-      sort_to_local_joint_order(*new_external_msg);
-      traj_msg_to_install = *new_external_msg;
-      pending_traj_msg_ = nullptr;
-      rt_active_goal_deferred_ = false;
+      // legacy behavior: joints omitted from the new message hold at the current position
+      fill_partial_goal(new_external_msg);
+      sort_to_local_joint_order(new_external_msg);
+      blend_prefix_size_ = 0;
     }
-  }
-
-  // FIRE: deferred trajectory's start time reached — install now.
-  if (pending_traj_msg_ && time >= pending_start_)
-  {
-    fill_partial_goal(pending_traj_msg_);
-    sort_to_local_joint_order(pending_traj_msg_);
-    traj_msg_to_install = pending_traj_msg_;
-    pending_traj_msg_ = nullptr;
-    rt_active_goal_deferred_ = false;
-  }
-
-  if (traj_msg_to_install)
-  {
     // TODO(denis): Add here integration of position and velocity
-    current_trajectory_->update(traj_msg_to_install);
+    current_trajectory_->update(new_external_msg);
   }
 
   // current state update
@@ -387,7 +368,7 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       const bool before_last_point = end_segment_itr != current_trajectory_->end();
-      auto active_tol = active_tolerances_.readFromRT();
+      rt_goal_tolerances_.try_get([&](const SegmentTolerances & tol) { active_tol_ = tol; });
 
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
@@ -397,16 +378,17 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
-        new_trajectory_msg_.reset();
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
 
@@ -421,7 +403,7 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           (before_last_point || first_sample) && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->state_tolerance[index], true /* show_errors */))
+            state_error_, index, active_tol_.state_tolerance[index], true /* show_errors */))
         {
           tolerance_violated_while_moving = true;
         }
@@ -429,19 +411,19 @@ controller_interface::return_type JointTrajectoryController::update(
         if (
           !before_last_point && !rt_is_holding_ &&
           !check_state_tolerance_per_joint(
-            state_error_, index, active_tol->goal_state_tolerance[index], false /* show_errors */))
+            state_error_, index, active_tol_.goal_state_tolerance[index], false /* show_errors */))
         {
           outside_goal_tolerance = true;
 
-          if (active_tol->goal_time_tolerance != 0.0)
+          if (std::isfinite(active_tol_.goal_time_tolerance))
           {
             // if we exceed goal_time_tolerance set it to aborted
-            if (time_difference > active_tol->goal_time_tolerance)
+            if (time_difference > active_tol_.goal_time_tolerance)
             {
               within_goal_time = false;
               // print once, goal will be aborted afterwards
               check_state_tolerance_per_joint(
-                state_error_, index, active_tol->goal_state_tolerance[index],
+                state_error_, index, active_tol_.goal_state_tolerance[index],
                 true /* show_errors */);
             }
           }
@@ -492,23 +474,25 @@ controller_interface::return_type JointTrajectoryController::update(
 
         // store the previous command and time used in open-loop control mode
         last_commanded_state_ = command_next_;
+        rt_last_commanded_state_.try_set([this](trajectory_msgs::msg::JointTrajectoryPoint & state)
+                                         { state = last_commanded_state_; });
         last_commanded_time_ = time;
       }
 
-      // Do not report on an action goal whose trajectory is still deferred (blending): its real
-      // trajectory has not started yet, so the old trajectory's progress must not succeed/abort it.
-      if (active_goal && !rt_active_goal_deferred_)
+      if (rt_active_goal_local_)
       {
         // send feedback
-        auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
-        feedback->header.stamp = time;
-        feedback->joint_names = params_.joints;
-
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
-        feedback->index = static_cast<int32_t>(next_point_index);
-        active_goal->setFeedback(feedback);
+        rt_active_goal_local_->trySetFeedback(
+          [&](FollowJTrajAction::Feedback & feedback)
+          {
+            feedback.header.stamp = time;
+            feedback.actual = state_current_;
+            feedback.desired = state_desired_;
+            feedback.error = state_error_;
+            // report the index relative to the trajectory the client sent (a blend prepends points)
+            feedback.index = std::max(
+              0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
+          });
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -516,24 +500,21 @@ controller_interface::return_type JointTrajectoryController::update(
           auto result = std::make_shared<FollowJTrajAction::Result>();
           result->set__error_code(FollowJTrajAction::Result::PATH_TOLERANCE_VIOLATED);
           result->set__error_string("Aborted due to path tolerance violation");
-          active_goal->setAborted(result);
-          // TODO(matthew-reynolds): Need a lock-free write here
-          // See https://github.com/ros-controls/ros2_controllers/issues/168
-          rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          rt_active_goal_local_->setAborted(result);
+          rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
           rt_has_pending_goal_ = false;
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
-          new_trajectory_msg_.reset();
           if (should_decelerate_on_cancel_)
           {
-            // calculate stopping position based on max deceleration
-            new_trajectory_msg_.initRT(decelerate_to_hold_position());
+            rt_is_holding_ = true;
+            rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                           { m = msg; });
           }
           else
           {
-            // hold current position
-            new_trajectory_msg_.initRT(set_hold_position());
+            rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
           }
         }
         // check goal tolerance
@@ -544,16 +525,14 @@ controller_interface::return_type JointTrajectoryController::update(
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::SUCCESSFUL);
             result->set__error_string("Goal successfully reached!");
-            active_goal->setSucceeded(result);
-            // TODO(matthew-reynolds): Need a lock-free write here
-            // See https://github.com/ros-controls/ros2_controllers/issues/168
-            rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_active_goal_local_->setSucceeded(result);
+            rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_INFO(logger, "Goal reached, success!");
 
-            new_trajectory_msg_.reset();
-            new_trajectory_msg_.initRT(set_success_trajectory_point());
+            rt_new_trajectory_msg_.try_set([msg = set_success_trajectory_point()](auto & m)
+                                           { m = msg; });
           }
           else if (!within_goal_time)
           {
@@ -563,24 +542,21 @@ controller_interface::return_type JointTrajectoryController::update(
             auto result = std::make_shared<FollowJTrajAction::Result>();
             result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
             result->set__error_string(error_string);
-            active_goal->setAborted(result);
-            // TODO(matthew-reynolds): Need a lock-free write here
-            // See https://github.com/ros-controls/ros2_controllers/issues/168
-            rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+            rt_active_goal_local_->setAborted(result);
+            rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
             rt_has_pending_goal_ = false;
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
-            new_trajectory_msg_.reset();
             if (should_decelerate_on_cancel_)
             {
-              // calculate stopping position based on max deceleration
-              new_trajectory_msg_.initRT(decelerate_to_hold_position());
+              rt_is_holding_ = true;
+              rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                             { m = msg; });
             }
             else
             {
-              // hold current position
-              new_trajectory_msg_.initRT(set_hold_position());
+              rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
             }
           }
         }
@@ -590,32 +566,34 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
-        new_trajectory_msg_.reset();
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
       else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
-        new_trajectory_msg_.reset();
         if (should_decelerate_on_cancel_)
         {
           // calculate stopping position based on max deceleration
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+          rt_is_holding_ = true;
+          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
+                                         { m = msg; });
         }
         else
         {
           // hold current position
-          new_trajectory_msg_.initRT(set_hold_position());
+          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
         }
       }
       // else, run another cycle while waiting for outside_goal_tolerance
@@ -804,7 +782,7 @@ void JointTrajectoryController::query_state_service(
     response->success = false;
     return;
   }
-  const auto active_goal = *rt_active_goal_.readFromRT();
+
   response->name = params_.joints;
   trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
   if (has_active_trajectory())
@@ -851,6 +829,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // get degrees of freedom
   dof_ = params_.joints.size();
+  blend_commanded_.assign(dof_, false);
 
   // TODO(destogl): why is this here? Add comment or move
   if (!reset())
@@ -1022,11 +1001,26 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   // parse remaining parameters
   default_tolerances_ = get_segment_tolerances(logger, params_);
-  active_tolerances_.initRT(default_tolerances_);
+  rt_goal_tolerances_.set(default_tolerances_);
+  active_tol_ = default_tolerances_;
   const std::string interpolation_string =
     get_node()->get_parameter("interpolation_method").as_string();
   interpolation_method_ = interpolation_methods::from_string(interpolation_string);
   RCLCPP_INFO(logger, "Using '%s' interpolation method.", interpolation_string.c_str());
+
+  if (params_.positions_upsampling.enable)
+  {
+    RCLCPP_INFO(
+      logger, "Positions upsampling enabled (policy_frequency=%.2f Hz).",
+      params_.positions_upsampling.policy_frequency);
+    RCLCPP_WARN_EXPRESSION(
+      logger, interpolation_method_ == interpolation_methods::InterpolationMethod::NONE,
+      "positions_upsampling has no effect when interpolation_method is 'none'.");
+    RCLCPP_WARN_EXPRESSION(
+      logger, params_.positions_upsampling.policy_frequency == 0.0,
+      "positions_upsampling.policy_frequency is 0: chunks without their own timing will be "
+      "rejected.");
+  }
 
   // prepare hold_position_msg
   init_hold_position_msg();
@@ -1082,7 +1076,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
 
   RCLCPP_INFO(
     logger, "Action status changes will be monitored at %.2f Hz.", params_.action_monitor_rate);
-  action_monitor_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
+  goal_handle_timer_period_ = rclcpp::Duration::from_seconds(1.0 / params_.action_monitor_rate);
 
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<FollowJTrajAction>(
@@ -1232,12 +1226,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     }
   }
 
-  current_trajectory_ = std::make_shared<Trajectory>();
-  new_trajectory_msg_.writeFromNonRT(std::shared_ptr<trajectory_msgs::msg::JointTrajectory>());
-
-  pending_traj_msg_ = nullptr;
-  rt_active_goal_deferred_ = false;
-  rt_clear_pending_ = false;
+  current_trajectory_ = std::make_unique<Trajectory>();
+  rt_new_trajectory_msg_.set([](auto & msg) { msg.reset(); });
 
   subscriber_is_active_ = true;
 
@@ -1254,6 +1244,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     update_state_from_command_interfaces(state_current_);
     update_state_from_command_interfaces(last_commanded_state_);
   }
+  rt_last_commanded_state_.set(last_commanded_state_);
 
   // reset/zero out all of the PID's (The integral term is not retained and reset to zero)
   for (auto & pid : pids_)
@@ -1293,8 +1284,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
   auto logger = get_node()->get_logger();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
   {
     rt_has_pending_goal_ = false;
@@ -1302,7 +1294,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
     action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
     action_res->set__error_string("Current goal cancelled during deactivate transition.");
     active_goal->setAborted(action_res);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
   }
 
   for (size_t index = 0; index < num_cmd_joints_; ++index)
@@ -1383,10 +1375,6 @@ bool JointTrajectoryController::reset()
 
   current_trajectory_.reset();
 
-  pending_traj_msg_ = nullptr;
-  rt_active_goal_deferred_ = false;
-  rt_clear_pending_ = false;
-
   return true;
 }
 
@@ -1424,9 +1412,130 @@ void JointTrajectoryController::publish_state(
   }
 }
 
+void JointTrajectoryController::preprocess_incoming_trajectory(
+  trajectory_msgs::msg::JointTrajectory & msg) const
+{
+  if (!params_.positions_upsampling.enable)
+  {
+    return;
+  }
+  // 'none' sampling forwards raw waypoints, so synthesized velocities would be ignored
+  if (interpolation_method_ == interpolation_methods::InterpolationMethod::NONE)
+  {
+    return;
+  }
+  if (!is_positions_only(msg))
+  {
+    return;
+  }
+  synthesize_timing(msg);
+  // with nothing to anchor on start_velocity stays empty, which is the rest boundary
+  std::vector<double> start_velocity;
+  prepend_commanded_state(msg, start_velocity);
+  fill_cubic_spline_velocities(msg, start_velocity);
+}
+
+bool JointTrajectoryController::prepend_commanded_state(
+  trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const
+{
+  start_velocity.clear();
+  // only a zero stamp puts the trajectory's t=0 at "now", where the commanded state belongs
+  if (traj.header.stamp.sec != 0 || traj.header.stamp.nanosec != 0u)
+  {
+    return false;
+  }
+  // the anchor needs room ahead of the first waypoint
+  if (
+    traj.points.empty() ||
+    rclcpp::Duration(traj.points.front().time_from_start) <= rclcpp::Duration(0, 0))
+  {
+    return false;
+  }
+  const auto commanded = rt_last_commanded_state_.get();
+  if (commanded.positions.size() != dof_ || commanded.velocities.size() != dof_)
+  {
+    return false;
+  }
+  // not sorted into the controller's joint order until install, so index by the sender's order
+  const auto joint_map = mapping(traj.joint_names, params_.joints);
+  if (joint_map.size() != traj.joint_names.size())
+  {
+    return false;
+  }
+  trajectory_msgs::msg::JointTrajectoryPoint anchor;
+  anchor.positions.resize(joint_map.size());
+  std::vector<double> anchor_velocities(joint_map.size());
+  for (size_t i = 0; i < joint_map.size(); ++i)
+  {
+    // NaN before the first update(), and while the hardware exposes no velocity state
+    if (
+      !std::isfinite(commanded.positions[joint_map[i]]) ||
+      !std::isfinite(commanded.velocities[joint_map[i]]))
+    {
+      return false;
+    }
+    anchor.positions[i] = commanded.positions[joint_map[i]];
+    anchor_velocities[i] = commanded.velocities[joint_map[i]];
+  }
+  anchor.time_from_start = rclcpp::Duration(0, 0);
+  traj.points.insert(traj.points.begin(), std::move(anchor));
+  start_velocity = std::move(anchor_velocities);
+  return true;
+}
+
+bool JointTrajectoryController::is_positions_only(
+  const trajectory_msgs::msg::JointTrajectory & traj) const
+{
+  if (traj.points.empty())
+  {
+    return false;
+  }
+  for (const auto & point : traj.points)
+  {
+    if (point.positions.empty())
+    {
+      return false;
+    }
+    if (!point.velocities.empty() || !point.accelerations.empty())
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void JointTrajectoryController::synthesize_timing(
+  trajectory_msgs::msg::JointTrajectory & traj) const
+{
+  const double policy_frequency = params_.positions_upsampling.policy_frequency;
+  if (policy_frequency <= 0.0)
+  {
+    return;  // no rate configured: chunks must carry their own timing
+  }
+  // leave already-timed chunks untouched
+  for (const auto & point : traj.points)
+  {
+    const auto & t = point.time_from_start;
+    if (t.sec != 0 || t.nanosec != 0u)
+    {
+      return;
+    }
+  }
+
+  // first target lands at dt, not 0, leaving [start, dt) for the lead-in instead of a step
+  const double dt = 1.0 / policy_frequency;
+  for (size_t i = 0; i < traj.points.size(); ++i)
+  {
+    traj.points[i].time_from_start =
+      rclcpp::Duration::from_seconds(static_cast<double>(i + 1) * dt);
+  }
+}
+
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
+  preprocess_incoming_trajectory(*msg);
+
   if (!validate_trajectory_msg(*msg))
   {
     return;
@@ -1438,7 +1547,7 @@ void JointTrajectoryController::topic_callback(
     add_new_trajectory_msg(msg);
     rt_is_holding_ = false;
   }
-};
+}
 
 rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const FollowJTrajAction::Goal> goal)
@@ -1458,6 +1567,13 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
+  if (params_.positions_upsampling.enable && is_positions_only(goal->trajectory))
+  {
+    RCLCPP_WARN_ONCE(
+      get_node()->get_logger(),
+      "positions_upsampling upsamples the ~/joint_trajectory topic only, not action goals.");
+  }
+
   RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -1468,7 +1584,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
   RCLCPP_INFO(get_node()->get_logger(), "Got request to cancel goal");
 
   // Check that cancel request refers to currently active goal (if any)
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal && active_goal->gh_ == goal_handle)
   {
     RCLCPP_INFO(
@@ -1478,7 +1595,7 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_has_pending_goal_ = false;
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
     active_goal->setCanceled(action_res);
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
     if (should_decelerate_on_cancel_)
     {
@@ -1490,8 +1607,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
       // hold current position
       add_new_trajectory_msg(set_hold_position());
     }
-    // Written after add_new_trajectory_msg so the hold is visible before RT clears pending.
-    rt_clear_pending_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -1510,23 +1625,22 @@ void JointTrajectoryController::goal_accepted_callback(
 
     add_new_trajectory_msg(traj_msg);
     rt_is_holding_ = false;
-
-    // If blending is on, trajectory will be deferred by update(). Mark it so the result/feedback
-    // block does not judge the goal before it starts.
-    const auto now = get_node()->now();
-    rt_active_goal_deferred_ = params_.allow_trajectory_replacement && has_active_trajectory() &&
-                               rclcpp::Time(traj_msg->header.stamp, now.get_clock_type()) > now;
   }
 
   // Update the active goal
-  RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal->preallocated_feedback_->joint_names = params_.joints;
+  auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+  feedback->joint_names = params_.joints;
+  resize_joint_trajectory_point(feedback->actual, dof_);
+  resize_joint_trajectory_point(feedback->desired, dof_);
+  resize_joint_trajectory_point(feedback->error, dof_);
+  RealtimeGoalHandlePtr rt_goal =
+    std::make_shared<RealtimeGoalHandle>(goal_handle, nullptr, feedback);
   rt_goal->execute();
-  rt_active_goal_.writeFromNonRT(rt_goal);
+  rt_active_goal_.set([&](auto & goal) { goal = rt_goal; });
 
   // Update tolerances if specified in the goal
   auto logger = this->get_node()->get_logger();
-  active_tolerances_.writeFromNonRT(get_segment_tolerances(
+  rt_goal_tolerances_.set(get_segment_tolerances(
     logger, default_tolerances_, *(goal_handle->get_goal()), params_.joints));
 
   // Set smartpointer to expire for create_wall_timer to delete previous entry from timer list
@@ -1534,7 +1648,7 @@ void JointTrajectoryController::goal_accepted_callback(
 
   // Setup goal status checking timer
   goal_handle_timer_ = get_node()->create_wall_timer(
-    action_monitor_period_.to_chrono<std::chrono::nanoseconds>(),
+    goal_handle_timer_period_.to_chrono<std::chrono::nanoseconds>(),
     std::bind(&RealtimeGoalHandle::runNonRealtime, rt_goal));
 }
 
@@ -1645,6 +1759,198 @@ void JointTrajectoryController::fill_partial_goal(
       }
     }
   }
+}
+
+void JointTrajectoryController::fill_omitted_joints_from_old(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+  const rclcpp::Time & new_start)
+{
+  if (dof_ == trajectory_msg->joint_names.size() || !has_active_trajectory())
+  {
+    return;
+  }
+
+  trajectory_msg->joint_names.reserve(dof_);
+  for (size_t index = 0; index < dof_; ++index)
+  {
+    if (!blend_commanded_[index])
+    {
+      trajectory_msg->joint_names.push_back(params_.joints[index]);
+    }
+  }
+
+  TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+  for (auto & point : trajectory_msg->points)
+  {
+    // points are time-ordered, so let the search advance incrementally instead of rescanning
+    const bool sampled = current_trajectory_->sample(
+      new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
+      start_segment_itr, end_segment_itr, true);
+
+    for (size_t index = 0; index < dof_; ++index)
+    {
+      if (blend_commanded_[index])
+      {
+        continue;
+      }
+      if (!point.positions.empty())
+      {
+        // every joint must contribute exactly one value, the suffix below indexes these by joint
+        double position = state_current_.positions[index];
+        if (sampled && index < blend_sample_.positions.size())
+        {
+          position = blend_sample_.positions[index];
+        }
+        // the old trajectory could not be sampled, so hold the joint
+        else if (has_position_command_interface_)
+        {
+          const auto position_command_value_op =
+            joint_command_interface_[0][index].get().get_optional();
+          if (
+            position_command_value_op.has_value() && !std::isnan(position_command_value_op.value()))
+          {
+            position = position_command_value_op.value();
+          }
+        }
+        else if (has_position_state_interface_)
+        {
+          const auto position_state_value_op =
+            joint_state_interface_[0][index].get().get_optional();
+          if (position_state_value_op.has_value() && !std::isnan(position_state_value_op.value()))
+          {
+            position = position_state_value_op.value();
+          }
+        }
+        point.positions.push_back(position);
+      }
+      if (!point.velocities.empty())
+      {
+        point.velocities.push_back(
+          (sampled && index < blend_sample_.velocities.size()) ? blend_sample_.velocities[index]
+                                                               : 0.0);
+      }
+      if (!point.accelerations.empty())
+      {
+        point.accelerations.push_back(
+          (sampled && index < blend_sample_.accelerations.size())
+            ? blend_sample_.accelerations[index]
+            : 0.0);
+      }
+      if (!point.effort.empty())
+      {
+        point.effort.push_back(0.0);
+      }
+    }
+  }
+}
+
+bool JointTrajectoryController::blend_with_active_trajectory(
+  const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
+  const rclcpp::Time & time)
+{
+  const auto old_msg = current_trajectory_->get_trajectory_msg();
+  const rclcpp::Time old_start = current_trajectory_->time_from_start();
+  // playback position in the old trajectory's time base. It precedes old_start while a
+  // future-stamped trajectory is still ramping in, so it must not be clamped to it.
+  const rclcpp::Time cursor = traj_time_;
+
+  const rclcpp::Time stamp(trajectory_msg->header.stamp, time.get_clock_type());
+
+  bool has_omitted = false;
+  for (size_t j = 0; j < dof_; ++j)
+  {
+    blend_commanded_[j] = std::find(
+                            trajectory_msg->joint_names.begin(), trajectory_msg->joint_names.end(),
+                            params_.joints[j]) != trajectory_msg->joint_names.end();
+    has_omitted = has_omitted || !blend_commanded_[j];
+  }
+
+  // the suffix must hold commanded joints at a position, which a velocity-only goal lacks
+  if (has_omitted && trajectory_msg->points.back().positions.empty())
+  {
+    return false;
+  }
+
+  const rclcpp::Time new_start =
+    (stamp > time) ? cursor + (stamp - time) * scaling_factor_.load() : cursor;
+
+  // sample the bridge anchor before the sweep below advances the trajectory's search cursor
+  TrajectoryPointConstIter start_segment_itr, end_segment_itr;
+  const bool have_bridge = current_trajectory_->sample(
+    new_start, interpolation_method_, blend_bridge_, start_segment_itr, end_segment_itr, false);
+
+  fill_omitted_joints_from_old(trajectory_msg, new_start);
+  sort_to_local_joint_order(trajectory_msg);
+  const auto new_last = trajectory_msg->points.back();
+  const rclcpp::Time new_end =
+    new_start + rclcpp::Duration(trajectory_msg->points.back().time_from_start);
+  for (auto & point : trajectory_msg->points)
+  {
+    point.time_from_start = new_start + rclcpp::Duration(point.time_from_start) - old_start;
+  }
+
+  // prefix: old waypoints in (cursor, new_start)
+  std::vector<JointTrajectoryPoint> prefix;
+  for (const auto & op : old_msg->points)
+  {
+    const rclcpp::Time t = old_start + rclcpp::Duration(op.time_from_start);
+    if (t > cursor && t < new_start)
+    {
+      prefix.push_back(op);
+    }
+  }
+  // bridge anchor: velocity-continuous entry into the new trajectory
+  if (have_bridge)
+  {
+    blend_bridge_.time_from_start = new_start - old_start;
+    // drop if not strictly before first new point (would break monotonic time)
+    if (
+      trajectory_msg->points.empty() ||
+      rclcpp::Duration(blend_bridge_.time_from_start) <
+        rclcpp::Duration(trajectory_msg->points.front().time_from_start))
+    {
+      prefix.push_back(blend_bridge_);
+    }
+  }
+
+  // suffix: old waypoints after new_end; commanded joints held at new_last
+  std::vector<JointTrajectoryPoint> suffix;
+  if (has_omitted)
+  {
+    for (const auto & op : old_msg->points)
+    {
+      const rclcpp::Time t = old_start + rclcpp::Duration(op.time_from_start);
+      if (t > new_end)
+      {
+        auto p = op;
+        for (size_t j = 0; j < dof_; ++j)
+        {
+          if (blend_commanded_[j])
+          {
+            if (!p.positions.empty()) p.positions[j] = new_last.positions[j];
+            if (!p.velocities.empty()) p.velocities[j] = 0.0;
+            if (!p.accelerations.empty()) p.accelerations[j] = 0.0;
+          }
+        }
+        suffix.push_back(p);
+      }
+    }
+  }
+
+  trajectory_msg->points.insert(trajectory_msg->points.begin(), prefix.begin(), prefix.end());
+  trajectory_msg->points.insert(trajectory_msg->points.end(), suffix.begin(), suffix.end());
+  trajectory_msg->joint_names = params_.joints;
+  blend_prefix_size_ = prefix.size();  // action feedback index offset
+
+  // Re-anchor at the cursor so the first sample lands at the current state.
+  // Anchoring at old_start would jump forward under speed scaling on install.
+  const rclcpp::Duration cursor_offset = cursor - old_start;
+  for (auto & point : trajectory_msg->points)
+  {
+    point.time_from_start = rclcpp::Duration(point.time_from_start) - cursor_offset;
+  }
+  trajectory_msg->header.stamp = rclcpp::Time(0, 0, time.get_clock_type());
+  return true;
 }
 
 void JointTrajectoryController::sort_to_local_joint_order(
@@ -1865,12 +2171,13 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
-  new_trajectory_msg_.writeFromNonRT(traj_msg);
+  rt_new_trajectory_msg_.set([traj_msg](auto & msg) { msg = traj_msg; });
 }
 
 void JointTrajectoryController::preempt_active_goal()
 {
-  const auto active_goal = *rt_active_goal_.readFromNonRT();
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
   {
     auto action_res = std::make_shared<FollowJTrajAction::Result>();
@@ -1879,7 +2186,7 @@ void JointTrajectoryController::preempt_active_goal()
     active_goal->setAborted(action_res);
     // Deliver result now; the old goal_handle_timer_ is destroyed after this returns.
     active_goal->runNonRealtime();
-    rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+    rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
   }
 }
 
