@@ -463,7 +463,6 @@ controller_interface::return_type JointTrajectoryController::update(
             feedback.actual = state_current_;
             feedback.desired = state_desired_;
             feedback.error = state_error_;
-            feedback.index = static_cast<int32_t>(next_point_index);
           });
 
         // check abort
