@@ -462,7 +462,7 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal)
       {
         // send feedback
-        rt_active_goal_local_->trySetFeedback(
+        active_goal->trySetFeedback(
           [&](FollowJTrajAction::Feedback & feedback)
           {
             feedback.header.stamp = time;
