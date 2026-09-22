@@ -202,25 +202,22 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
 
   std::ignore = command_interfaces_[21].set_value(current_moprim_.blend_radius);  // blend_radius
 
-  std::array<bool, 3> add_args_used;
-  add_args_used.fill(false);
+  // Reset additional arguments
+  reset_command_interface_range(22, 24);
 
   // Read additional arguments
   for (const auto & arg : current_moprim_.additional_arguments)
   {
     if (arg.name == "velocity")
     {
-      add_args_used[0] = true;
       std::ignore = command_interfaces_[22].set_value(arg.value);
     }
     else if (arg.name == "acceleration")
     {
-      add_args_used[1] = true;
       std::ignore = command_interfaces_[23].set_value(arg.value);
     }
     else if (arg.name == "move_time")
     {
-      add_args_used[2] = true;
       std::ignore = command_interfaces_[24].set_value(arg.value);
     }
     else
@@ -229,14 +226,6 @@ bool MotionPrimitivesBaseController::set_command_interfaces()
     }
   }
 
-  // Reset unused additional arguments
-  for (size_t i = 0; i < add_args_used.size(); ++i)
-  {
-    if (!add_args_used[i])
-    {
-      std::ignore = command_interfaces_[i + 22].set_value(std::numeric_limits<double>::quiet_NaN());
-    }
-  }
   return true;
 }
 
