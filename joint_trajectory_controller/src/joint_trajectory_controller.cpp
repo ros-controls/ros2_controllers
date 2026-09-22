@@ -456,12 +456,26 @@ controller_interface::return_type JointTrajectoryController::update(
       if (active_goal)
       {
         // send feedback
+<<<<<<< HEAD
         const auto & feedback = active_goal->preallocated_feedback_;
         feedback->header.stamp = time;
         feedback->actual = state_current_;
         feedback->desired = state_desired_;
         feedback->error = state_error_;
         active_goal->setFeedback(feedback);
+=======
+        rt_active_goal_local_->trySetFeedback(
+          [&](FollowJTrajAction::Feedback & feedback)
+          {
+            feedback.header.stamp = time;
+            feedback.actual = state_current_;
+            feedback.desired = state_desired_;
+            feedback.error = state_error_;
+            // report the index relative to the trajectory the client sent (a blend prepends points)
+            feedback.index = std::max(
+              0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
+          });
+>>>>>>> 2aa1d3e (fix(jtc): Use trySetFeedback for goal handle feedback (#2610))
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -1519,11 +1533,13 @@ void JointTrajectoryController::goal_accepted_callback(
   }
 
   // Update the active goal
-  RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal->preallocated_feedback_->joint_names = params_.joints;
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
+  auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+  feedback->joint_names = params_.joints;
+  resize_joint_trajectory_point(feedback->actual, dof_);
+  resize_joint_trajectory_point(feedback->desired, dof_);
+  resize_joint_trajectory_point(feedback->error, dof_);
+  RealtimeGoalHandlePtr rt_goal =
+    std::make_shared<RealtimeGoalHandle>(goal_handle, nullptr, feedback);
   rt_goal->execute();
   rt_active_goal_.writeFromNonRT(rt_goal);
 
