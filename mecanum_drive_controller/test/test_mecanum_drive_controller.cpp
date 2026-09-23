@@ -680,9 +680,7 @@ TEST_F(
 // the next update tick sees NaN references (the previous tick resets them) and
 // must zero every wheel. A short-circuiting chain of set_value() calls would
 // leave stale non-zero commands on wheels past the first failed set.
-TEST_F(
-  MecanumDriveControllerTest,
-  when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed)
+TEST_F(MecanumDriveControllerTest, when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed)
 {
   SetUpController();
 
@@ -754,8 +752,7 @@ TEST_F(
 // spurious wheel burst on re-enable (observed as a brief motion when the
 // operator taps the deadman with the stick centered).
 TEST_F(
-  MecanumDriveControllerTest,
-  when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable)
+  MecanumDriveControllerTest, when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable)
 {
   SetUpController("test_mecanum_drive_controller_with_limits");
 
@@ -777,9 +774,10 @@ TEST_F(
     controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
     ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
   }
-  const double built_up = controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
-                            .get_optional()
-                            .value();
+  const double built_up =
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value();
   ASSERT_GT(built_up, 0.1) << "test setup: need built-up velocity that a single "
                               "deceleration step cannot bring to zero";
 
