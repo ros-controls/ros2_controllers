@@ -676,6 +676,151 @@ TEST_F(
   }
 }
 
+// Regression test: in chained mode, after IK writes non-zero wheel commands,
+// the next update tick sees NaN references (the previous tick resets them) and
+// must zero every wheel. A short-circuiting chain of set_value() calls would
+// leave stale non-zero commands on wheels past the first failed set.
+TEST_F(MecanumDriveControllerTest, when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed)
+{
+  SetUpController();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  // Tick 1: preceding controller writes non-zero references; IK produces
+  // non-zero wheel commands on every wheel.
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.5);
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(0.25);
+
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  for (size_t i = 0; i < controller_->command_interfaces_.size(); ++i)
+  {
+    EXPECT_NE(controller_->command_interfaces_[i].get_optional().value(), 0.0)
+      << "wheel " << i << " should be non-zero after IK";
+  }
+
+  // update_and_write_commands() resets reference_interfaces_ to NaN at the
+  // end of every tick.
+  for (const auto & interface : controller_->ordered_exported_reference_interfaces_)
+  {
+    EXPECT_TRUE(
+      std::isnan(
+        interface->get_optional<double>().value_or(std::numeric_limits<double>::quiet_NaN())));
+  }
+
+  // Tick 2: preceding controller does not write new references, so IK is
+  // skipped and every wheel must be commanded to zero.
+  ASSERT_EQ(
+    controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+}
+
+// Regression test: when the reference goes NaN (safety branch) after IK
+// has produced non-zero commands, the rate-limiter history must be reset.
+// Otherwise, the next tick with a zero reference sees a non-zero "previous"
+// command in `previous_two_commands_` and slews down from it, producing a
+// spurious wheel burst on re-enable (observed as a brief motion when the
+// operator taps the deadman with the stick centered).
+TEST_F(
+  MecanumDriveControllerTest, when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable)
+{
+  SetUpController("test_mecanum_drive_controller_with_limits");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(controller_->is_in_chained_mode());
+
+  const auto dt = rclcpp::Duration::from_seconds(0.01);
+  const auto t0 = rclcpp::Time(0, 0, RCL_ROS_TIME);
+
+  // Phase 1: drive at a non-zero reference for enough ticks that the limited
+  // linear.x command reaches a level (~0.5 m/s) that the deceleration bound
+  // (4.0 m/s^2 * 0.01 s = 0.04 m/s per tick) cannot zero in a single tick.
+  for (int i = 0; i < 30; ++i)
+  {
+    controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+    controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+    controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
+    ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+  }
+  const double built_up =
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value();
+  ASSERT_GT(built_up, 0.1) << "test setup: need built-up velocity that a single "
+                              "deceleration step cannot bring to zero";
+
+  // Phase 2: preceding controller stops writing references (refs are NaN).
+  // Safety branch must zero every wheel AND reset the limiter history.
+  ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+
+  // Phase 3: reference resumes at exactly zero (operator re-taps the deadman
+  // with the stick centered). Without the limiter-history reset in phase 2,
+  // `limiter->limit()` would see last = <built_up> and slew toward 0 under
+  // the deceleration bound, producing a non-zero wheel command this tick.
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  controller_->ordered_exported_reference_interfaces_[2]->set_value(0.0);
+  ASSERT_EQ(controller_->update(t0, dt), controller_interface::return_type::OK);
+
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_front_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_right_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+  EXPECT_DOUBLE_EQ(
+    controller_->command_interfaces_[controller_->get_rear_left_wheel_index()]
+      .get_optional()
+      .value(),
+    0.0);
+}
+
 // when ref_timeout = 0 expect reference_msg is accepted only once and command_interfaces
 // are calculated to valid values and reference_interfaces are unset
 TEST_F(

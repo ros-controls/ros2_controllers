@@ -145,6 +145,8 @@ protected:
 
   rclcpp::Time previous_update_timestamp_{0};
 
+  bool command_timed_out_ = false;
+
   rclcpp::Service<control_msgs::srv::SetOdometry>::SharedPtr set_odom_service_;
   std::atomic<bool> set_odom_requested_{false};
   realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
