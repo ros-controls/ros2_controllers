@@ -681,9 +681,6 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
     previous_two_commands_ = std::queue<std::array<double, 3>>(
       std::deque<std::array<double, 3>>{{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});
 
-    // Use `&=` (not `&&`) so every wheel is actually written; an `&&`-chain
-    // short-circuits on the first failed set_value and leaves the remaining
-    // wheels at their last (non-zero) inverse-kinematics value.
     bool value_set_no_error = true;
     value_set_no_error &= command_interfaces_[FRONT_LEFT].set_value(0.0);
     value_set_no_error &= command_interfaces_[FRONT_RIGHT].set_value(0.0);
