@@ -673,11 +673,6 @@ controller_interface::return_type MecanumDriveController::update_and_write_comma
   }
   else
   {
-    // Reset the rate-limiter history so that when a fresh non-NaN reference
-    // resumes, `limiter->limit()` starts from rest instead of slewing from the
-    // stale pre-NaN command back to the new target. Without this, releasing
-    // and re-enabling the deadman while the joystick is centered can produce
-    // a spurious wheel burst.
     previous_two_commands_ = std::queue<std::array<double, 3>>(
       std::deque<std::array<double, 3>>{{{0.0, 0.0, 0.0}}, {{0.0, 0.0, 0.0}}});
 
