@@ -154,6 +154,125 @@ TEST_F(MotionPrimitivesForwardControllerTest, receive_single_action_goal)
   EXPECT_EQ(controller_->command_interfaces_[24].get_optional().value(), 2.0);  // move time
 }
 
+TEST_F(MotionPrimitivesForwardControllerTest, active_goal_aborted_on_deactivate)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  auto goal_handle = send_double_motion_sequence_goal();
+
+  // Wait until the accepted goal is registered as active on the controller side
+  auto start = std::chrono::steady_clock::now();
+  while (!controller_->has_active_goal_ &&
+         (std::chrono::steady_clock::now() - start) < std::chrono::seconds(5))
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(controller_->has_active_goal_);
+
+  // Simulate the hardware executing the motion primitive
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::EXECUTING));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+
+  EXPECT_FALSE(controller_->has_active_goal_);
+  EXPECT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
+  EXPECT_TRUE(controller_->moprim_queue_.empty());
+
+  auto result_future = action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(result_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  EXPECT_EQ(
+    result_future.get().result->error_code,
+    control_msgs::action::ExecuteMotionPrimitiveSequence::Result::ABORTED_BY_DEACTIVATION);
+}
+
+TEST_F(MotionPrimitivesForwardControllerTest, accepts_new_goal_after_reactivation_post_abort)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  auto goal_handle = send_single_motion_sequence_goal();
+
+  auto start = std::chrono::steady_clock::now();
+  while (!controller_->has_active_goal_ &&
+         (std::chrono::steady_clock::now() - start) < std::chrono::seconds(5))
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(controller_->has_active_goal_);
+
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::EXECUTING));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_FALSE(controller_->has_active_goal_);
+
+  auto result_future = action_client_->async_get_result(goal_handle);
+  ASSERT_EQ(result_future.wait_for(std::chrono::seconds(5)), std::future_status::ready);
+  EXPECT_EQ(
+    result_future.get().result->error_code,
+    control_msgs::action::ExecuteMotionPrimitiveSequence::Result::ABORTED_BY_DEACTIVATION);
+
+  EXPECT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
+
+  // Reactivate controller
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // Simulate hardware interface transitioning to idle
+  std::ignore = state_itfs_[0]->set_value(
+    static_cast<double>(motion_primitives_controllers::ExecutionState::IDLE));
+  std::ignore = state_itfs_[1]->set_value(
+    static_cast<double>(motion_primitives_controllers::ReadyForNewPrimitive::READY));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  auto second_goal_handle = send_single_motion_sequence_goal({0.1, 0.2, 0.3, 0.4, 0.5, 0.6});
+  ASSERT_TRUE(second_goal_handle);
+  start = std::chrono::steady_clock::now();
+  while (!controller_->has_active_goal_ &&
+         (std::chrono::steady_clock::now() - start) < std::chrono::seconds(5))
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(controller_->has_active_goal_);
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    controller_->command_interfaces_[0].get_optional().value(), MotionPrimitive::LINEAR_JOINT);
+  EXPECT_EQ(controller_->command_interfaces_[1].get_optional().value(), 0.1);
+  EXPECT_EQ(controller_->command_interfaces_[2].get_optional().value(), 0.2);
+  EXPECT_EQ(controller_->command_interfaces_[3].get_optional().value(), 0.3);
+  EXPECT_EQ(controller_->command_interfaces_[4].get_optional().value(), 0.4);
+  EXPECT_EQ(controller_->command_interfaces_[5].get_optional().value(), 0.5);
+  EXPECT_EQ(controller_->command_interfaces_[6].get_optional().value(), 0.6);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
