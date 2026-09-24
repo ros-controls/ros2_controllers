@@ -67,9 +67,9 @@ tricycle_controller:
     description: "for doing the pose integration in separate node.",
   }
   cmd_vel_timeout: {
-    type: int,
-    default_value: 500, # milliseconds
-    description: "Timeout in milliseconds, after which input command on ``cmd_vel`` topic is considered staled.",
+    type: double,
+    default_value: 0.5, # seconds
+    description: "Timeout in seconds, after which input command on ``cmd_vel`` topic is considered staled.",
   }
   publish_ackermann_command: {
     type: bool,
