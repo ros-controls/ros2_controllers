@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <shared_mutex>
 #include <string>
@@ -26,6 +27,7 @@
 
 #include "gmock/gmock.h"
 
+#include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
@@ -44,6 +46,19 @@ using testing::Each;
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
+
+namespace
+{
+constexpr char kTimestampSecInterface[] = "measurement_clock/measurement_time_sec";
+constexpr char kTimestampNsecInterface[] = "measurement_clock/measurement_time_nsec";
+
+std::vector<rclcpp::Parameter> timestamp_parameters()
+{
+  return {
+    rclcpp::Parameter("timestamp_state_interfaces.sec", kTimestampSecInterface),
+    rclcpp::Parameter("timestamp_state_interfaces.nsec", kTimestampNsecInterface)};
+}
+}  // namespace
 
 void JointStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
@@ -192,6 +207,18 @@ void JointStateBroadcasterTest::assign_state_interfaces(
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 }
 
+void JointStateBroadcasterTest::assign_state_interfaces_with_timestamp(
+  const hardware_interface::StateInterface::SharedPtr & sec,
+  const hardware_interface::StateInterface::SharedPtr & nsec)
+{
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(sec);
+  state_ifs.emplace_back(nsec);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+}
+
 TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
 {
   // publisher not initialized yet
@@ -225,6 +252,372 @@ TEST_F(JointStateBroadcasterTest, ActivateEmptyTest)
   ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
   ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp)
+{
+  // With the interfaces present, header.stamp comes from them, not the time passed to update().
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_2_pos_state_);
+  state_ifs.emplace_back(joint_3_pos_state_);
+  state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(joint_2_vel_state_);
+  state_ifs.emplace_back(joint_3_vel_state_);
+  state_ifs.emplace_back(joint_1_eff_state_);
+  state_ifs.emplace_back(joint_2_eff_state_);
+  state_ifs.emplace_back(joint_3_eff_state_);
+  state_ifs.emplace_back(measurement_sec_state_);
+  state_ifs.emplace_back(measurement_nsec_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  // A distinct time value, the published stamp must not equal it.
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(5, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
+  EXPECT_EQ(stamp.sec, 1234)
+    << "header.stamp should come from measurement_time_sec, not the CM time";
+  EXPECT_EQ(stamp.nanosec, 567000000u);
+
+  // The measurement time interfaces feed the stamp, so they must not appear as a joint.
+  EXPECT_EQ(state_broadcaster_->name_if_value_mapping_.count("measurement_clock"), 0u)
+    << "measurement-time interfaces should not appear as a joint in the state message";
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesIntegerType)
+{
+  // The measurement time interfaces also work as int32 and uint32, not only double.
+  for (const std::string & data_type : {std::string("int32"), std::string("uint32")})
+  {
+    SCOPED_TRACE("data_type=" + data_type);
+    state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
+    init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+
+    auto make_state = [&data_type](const std::string & interface, const std::string & value)
+    {
+      hardware_interface::InterfaceInfo info;
+      info.name = interface;
+      info.data_type = data_type;
+      info.initial_value = value;
+      return std::make_shared<hardware_interface::StateInterface>(
+        hardware_interface::InterfaceDescription("measurement_clock", info));
+    };
+
+    // Keep these alive for the iteration: a LoanedStateInterface references the StateInterface,
+    // it does not own the shared_ptr.
+    auto sec_state = make_state("measurement_time_sec", "1234");
+    auto nsec_state = make_state("measurement_time_nsec", "567000000");
+
+    std::vector<LoanedStateInterface> state_ifs;
+    state_ifs.emplace_back(joint_1_pos_state_);
+    state_ifs.emplace_back(joint_1_vel_state_);
+    state_ifs.emplace_back(sec_state);
+    state_ifs.emplace_back(nsec_state);
+    state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+    ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+    ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+    ASSERT_EQ(
+      state_broadcaster_->update(rclcpp::Time(5, 0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+
+    const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
+    EXPECT_EQ(stamp.sec, 1234) << "header.stamp should be sourced from the " << data_type
+                               << " interface";
+    EXPECT_EQ(stamp.nanosec, 567000000u);
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInUrdfFilterMode)
+{
+  // In URDF filter mode the configured measurement time interfaces must still be requested,
+  // otherwise they are never claimed and header.stamp falls back to the controller manager time.
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+
+  const auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  EXPECT_EQ(
+    state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains("measurement_clock/measurement_time_sec"));
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains("measurement_clock/measurement_time_nsec"));
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesPartialConfigurationRejected)
+{
+  // Setting only one of sec or nsec must fail configuration.
+  for (const auto & parameter :
+       {rclcpp::Parameter("timestamp_state_interfaces.sec", kTimestampSecInterface),
+        rclcpp::Parameter("timestamp_state_interfaces.nsec", kTimestampNsecInterface)})
+  {
+    SCOPED_TRACE(parameter.get_name());
+    state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
+    init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, {parameter});
+    EXPECT_FALSE(configure_succeeds(state_broadcaster_));
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesClaimedInExplicitMode)
+{
+  // In explicit joints/interfaces mode the configured timestamp interfaces are requested strictly
+  // alongside the joint interfaces, so they are required when configured.
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, {joint_names_[0]}, {HW_IF_POSITION}, timestamp_parameters());
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+
+  const auto state_if_conf = state_broadcaster_->state_interface_configuration();
+  EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains(kTimestampSecInterface));
+  EXPECT_THAT(state_if_conf.names, ::testing::Contains(kTimestampNsecInterface));
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsupportedTypeUsesControllerTime)
+{
+  // An unsupported interface data type falls back to the controller manager time.
+  auto unsupported_sec = std::make_shared<hardware_interface::StateInterface>(
+    "measurement_clock", "measurement_time_sec", "bool", "true");
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(unsupported_sec, measurement_nsec_state_);
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(9, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 9);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesDoNotMaskMissingJointInterfaces)
+{
+  // Activation fails when only timestamp interfaces are present and no joint interfaces.
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(measurement_sec_state_);
+  state_ifs.emplace_back(measurement_nsec_state_);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  const auto state = state_broadcaster_->get_node()->activate();
+  EXPECT_EQ(state.id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesInvalidValuesAreSafe)
+{
+  // Invalid values are rejected without throwing, and their cycles are not published.
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  // Before the first valid measurement nothing is published, so the message stays untouched.
+  // The all-zero sentinel, an out-of-range value, and a stray negative all yield no measurement.
+  for (const double sec : {0.0, std::numeric_limits<double>::max(), -1.0})
+  {
+    SCOPED_TRACE("sec=" + std::to_string(sec));
+    measurement_sec_value_ = sec;
+    measurement_nsec_value_ = 0.0;
+    ASSERT_NO_THROW(
+      state_broadcaster_->update(rclcpp::Time(10, 0), rclcpp::Duration::from_seconds(0.01)));
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 0);
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 0u);
+  }
+
+  measurement_sec_value_ = 1234.0;
+  measurement_nsec_value_ = 567000000.0;
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(12, 0), rclcpp::Duration::from_seconds(0.01)));
+  const auto published_positions = state_broadcaster_->joint_state_msg_.position;
+
+  // Fresh joint data from here on, so an unchanged message proves each cycle was skipped.
+  for (auto & value : joint_values_)
+  {
+    value += 0.5;
+  }
+
+  const std::vector<std::pair<double, double>> invalid_values = {
+    {-1.0, 0.0},
+    {1234.5, 0.0},
+    {std::numeric_limits<double>::infinity(), 0.0},
+    {std::numeric_limits<double>::quiet_NaN(), 0.0},
+    {1234.0, -1.0},
+    {1234.0, 1.5},
+    {1234.0, 1000000000.0},
+  };
+  for (const auto & [sec, nsec] : invalid_values)
+  {
+    SCOPED_TRACE("sec=" + std::to_string(sec) + ", nsec=" + std::to_string(nsec));
+    measurement_sec_value_ = sec;
+    measurement_nsec_value_ = nsec;
+    ASSERT_NO_THROW(
+      state_broadcaster_->update(rclcpp::Time(13, 0), rclcpp::Duration::from_seconds(0.01)));
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.position, published_positions);
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 1234);
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 567000000u);
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUint32OverflowIsSafe)
+{
+  // A uint32 seconds value above INT32_MAX is rejected, so nothing is published.
+  hardware_interface::InterfaceInfo sec_info;
+  sec_info.name = "measurement_time_sec";
+  sec_info.data_type = "uint32";
+  sec_info.initial_value = std::to_string(std::numeric_limits<uint32_t>::max());
+  auto sec_state = std::make_shared<hardware_interface::StateInterface>(
+    hardware_interface::InterfaceDescription("measurement_clock", sec_info));
+
+  hardware_interface::InterfaceInfo nsec_info;
+  nsec_info.name = "measurement_time_nsec";
+  nsec_info.data_type = "uint32";
+  nsec_info.initial_value = "1";
+  auto nsec_state = std::make_shared<hardware_interface::StateInterface>(
+    hardware_interface::InterfaceDescription("measurement_clock", nsec_info));
+
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(sec_state, nsec_state);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(14, 0), rclcpp::Duration::from_seconds(0.01)));
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 0);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 0u);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesZeroSecondsWithNanosecondsIsValid)
+{
+  // Only the all-zero stamp means "no measurement time", so small times near a simulated clock's
+  // origin are published as the real times they are.
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  const std::vector<std::pair<double, double>> valid_values = {
+    {0.0, 1.0},
+    {0.0, 10000.0},
+    {0.0, 999999999.0},
+  };
+  for (const auto & [sec, nsec] : valid_values)
+  {
+    SCOPED_TRACE("sec=" + std::to_string(sec) + ", nsec=" + std::to_string(nsec));
+    measurement_sec_value_ = sec;
+    measurement_nsec_value_ = nsec;
+    ASSERT_EQ(
+      state_broadcaster_->update(rclcpp::Time(20, 0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 0);
+    EXPECT_EQ(
+      state_broadcaster_->joint_state_msg_.header.stamp.nanosec, static_cast<uint32_t>(nsec));
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesAbsentValueDoesNotPublish)
+{
+  // Hardware writes the all-zero sentinel to say it has no measurement time, so nothing is
+  // published, including before it has written the interfaces for the first time.
+  hardware_interface::InterfaceInfo sec_info;
+  sec_info.name = "measurement_time_sec";
+  sec_info.data_type = "int32";
+  sec_info.initial_value = "0";
+  auto sec_state = std::make_shared<hardware_interface::StateInterface>(
+    hardware_interface::InterfaceDescription("measurement_clock", sec_info));
+
+  hardware_interface::InterfaceInfo nsec_info;
+  nsec_info.name = "measurement_time_nsec";
+  nsec_info.data_type = "uint32";
+  nsec_info.initial_value = "0";
+  auto nsec_state = std::make_shared<hardware_interface::StateInterface>(
+    hardware_interface::InterfaceDescription("measurement_clock", nsec_info));
+
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(sec_state, nsec_state);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(17, 0), rclcpp::Duration::from_seconds(0.01)));
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 0);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 0u);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesNoPublishUntilFirstValidMeasurement)
+{
+  // Nothing is published until the first valid measurement, which is then used immediately even if
+  // it is earlier than the controller manager time.
+  measurement_sec_value_ = 0.0;
+  measurement_nsec_value_ = 0.0;
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(100, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 0);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 0u);
+
+  measurement_sec_value_ = 99.0;
+  measurement_nsec_value_ = 999999999.0;
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(101, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 99);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 999999999u);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesReadFailureSkipsCycle)
+{
+  // A read failure leaves this cycle without a measurement time, so it is skipped rather than
+  // published with the previous stamp, which would no longer describe the data.
+  init_broadcaster_and_set_parameters(kThreeJointURDF, {}, {}, timestamp_parameters());
+  assign_state_interfaces_with_timestamp(measurement_sec_state_, measurement_nsec_state_);
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(15, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 1234);
+  const auto published_positions = state_broadcaster_->joint_state_msg_.position;
+
+  // Fresh joint data, but the seconds interface cannot be read. An unchanged message then proves
+  // nothing was published, since the publish path is the only writer of joint_state_msg_.
+  for (auto & value : joint_values_)
+  {
+    value += 0.5;
+  }
+  std::unique_lock<std::shared_mutex> timestamp_lock(measurement_sec_state_->get_mutex());
+  ASSERT_NO_THROW(
+    state_broadcaster_->update(rclcpp::Time(16, 0), rclcpp::Duration::from_seconds(0.01)));
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.position, published_positions);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.sec, 1234);
+  EXPECT_EQ(state_broadcaster_->joint_state_msg_.header.stamp.nanosec, 567000000u);
+}
+
+TEST_F(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime)
+{
+  // Default (unset): header.stamp is the time passed to update().
+  SetUpStateBroadcaster();
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(7, 0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & stamp = state_broadcaster_->joint_state_msg_.header.stamp;
+  EXPECT_EQ(stamp.sec, 7);
+  EXPECT_EQ(stamp.nanosec, 0u);
 }
 
 TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest)
