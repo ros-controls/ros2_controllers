@@ -24,79 +24,27 @@
 
 namespace joint_trajectory_controller
 {
+
+/**
+ * @brief  Check if command interfaces combination is valid.
+ *
+ * Valid combinations are:
+ * 1. effort
+ * 2. velocity
+ * 3. position [velocity, [acceleration]]
+ * 4. position, effort
+ */
 tl::expected<void, std::string> command_interface_type_combinations(
-  rclcpp::Parameter const & parameter)
-{
-  auto const & interface_types = parameter.as_string_array();
+  rclcpp::Parameter const & parameter);
 
-  // Check if command interfaces combination is valid. Valid combinations are:
-  // 1. effort
-  // 2. velocity
-  // 3. position [velocity, [acceleration]]
-  // 4. position, effort
-
-  if (
-    rsl::contains<std::vector<std::string>>(interface_types, "velocity") &&
-    interface_types.size() > 1 &&
-    !rsl::contains<std::vector<std::string>>(interface_types, "position"))
-  {
-    return tl::make_unexpected(
-      "'velocity' command interface can be used either alone or 'position' "
-      "command interface has to be present");
-  }
-
-  if (
-    rsl::contains<std::vector<std::string>>(interface_types, "acceleration") &&
-    (!rsl::contains<std::vector<std::string>>(interface_types, "velocity") &&
-     !rsl::contains<std::vector<std::string>>(interface_types, "position")))
-  {
-    return tl::make_unexpected(
-      "'acceleration' command interface can only be used if 'velocity' and "
-      "'position' command interfaces are present");
-  }
-
-  if (
-    rsl::contains<std::vector<std::string>>(interface_types, "effort") &&
-    !(interface_types.size() == 1 ||
-      (interface_types.size() == 2 &&
-       rsl::contains<std::vector<std::string>>(interface_types, "position"))))
-  {
-    return tl::make_unexpected(
-      "'effort' command interface has to be used alone or with a 'position' interface");
-  }
-
-  return {};
-}
-
+/**
+ * @brief  Check if state interfaces combination is valid.
+ *
+ * Valid combinations are:
+ * 1. position [velocity, [acceleration]]
+ */
 tl::expected<void, std::string> state_interface_type_combinations(
-  rclcpp::Parameter const & parameter)
-{
-  auto const & interface_types = parameter.as_string_array();
-
-  // Valid combinations are
-  // 1. position [velocity, [acceleration]]
-
-  if (
-    rsl::contains<std::vector<std::string>>(interface_types, "velocity") &&
-    !rsl::contains<std::vector<std::string>>(interface_types, "position"))
-  {
-    return tl::make_unexpected(
-      "'velocity' state interface cannot be used if 'position' interface "
-      "is missing.");
-  }
-
-  if (
-    rsl::contains<std::vector<std::string>>(interface_types, "acceleration") &&
-    (!rsl::contains<std::vector<std::string>>(interface_types, "position") ||
-     !rsl::contains<std::vector<std::string>>(interface_types, "velocity")))
-  {
-    return tl::make_unexpected(
-      "'acceleration' state interface cannot be used if 'position' and 'velocity' "
-      "interfaces are not present.");
-  }
-
-  return {};
-}
+  rclcpp::Parameter const & parameter);
 
 }  // namespace joint_trajectory_controller
 
