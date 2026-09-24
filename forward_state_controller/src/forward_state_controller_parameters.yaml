@@ -1,0 +1,19 @@
+forward_state_controller:
+  state_interfaces: {
+      type: string_array,
+      description: "List of state interfaces whose values will be forwarded to command interfaces",
+      validation: {
+        not_empty<>: []
+      },
+      read_only: true
+    }
+  forward_state:
+    __map_state_interfaces:
+      to_command: {
+        type: string_array,
+        description: "List of command interfaces to forward this state interface value to",
+        validation: {
+          not_empty<>: []
+        },
+        read_only: true
+      }
