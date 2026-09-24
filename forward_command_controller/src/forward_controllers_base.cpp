@@ -70,8 +70,9 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
     return ret;
   }
 
+  auto qos = rclcpp::SystemDefaultsQoS().keep_last(history_depth_);
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
-    "~/commands", rclcpp::SystemDefaultsQoS(),
+    "~/commands", qos,
     [this](const CmdType::SharedPtr msg)
     {
       const auto cmd = *msg;
