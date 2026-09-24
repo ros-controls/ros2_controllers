@@ -288,8 +288,8 @@ controller_interface::return_type JointTrajectoryController::update(
   {
     bool blended = false;
     if (
-      params_.allow_trajectory_replacement && has_active_trajectory() &&
-      current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
+      params_.allow_trajectory_replacement && has_active_trajectory() && !rt_is_holding_ &&
+      is_active_trajectory_executing())
     {
       blended = blend_with_active_trajectory(new_external_msg, time);
     }
@@ -2384,6 +2384,20 @@ bool JointTrajectoryController::set_scaling_factor(double scaling_factor)
 bool JointTrajectoryController::has_active_trajectory() const
 {
   return current_trajectory_ != nullptr && current_trajectory_->has_trajectory_msg();
+}
+
+bool JointTrajectoryController::is_active_trajectory_executing() const
+{
+  // a finished trajectory has nothing left to blend with, so a new one is installed from the
+  // current state instead (a hold trajectory is excluded via rt_is_holding_ by the caller)
+  const auto & points = current_trajectory_->get_trajectory_msg()->points;
+  if (points.empty())
+  {
+    return false;
+  }
+  const rclcpp::Time end_time =
+    current_trajectory_->time_from_start() + rclcpp::Duration(points.back().time_from_start);
+  return traj_time_ < end_time;
 }
 
 void JointTrajectoryController::update_pids()
