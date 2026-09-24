@@ -295,6 +295,9 @@ protected:
 
   bool has_active_trajectory() const;
 
+  /// True if the active trajectory's last point has not been reached yet
+  bool is_active_trajectory_executing() const;
+
   void publish_state(
     const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
     const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error);
