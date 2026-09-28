@@ -14,6 +14,8 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "cartesian_trajectory_controller/cartesian_trajectory.hpp"
@@ -88,16 +90,23 @@ TEST(TestCartesianTrajectory, clamps_outside_span)
   EXPECT_NEAR(p.z(), 0.2, 1e-9);
 }
 
-// align_quaternions_shortest_arc flips signs so consecutive waypoints share a hemisphere (dot >=
-// 0).
-TEST(TestCartesianTrajectory, aligns_to_shortest_arc)
+// A waypoint given with the opposite quaternion sign is still reached along the shorter arc.
+TEST(TestCartesianTrajectory, rotates_along_shorter_arc)
 {
-  const Eigen::Quaterniond q(Eigen::AngleAxisd(0.2, Eigen::Vector3d::UnitZ()));
-  std::vector<Eigen::Quaterniond> quats = {q, Eigen::Quaterniond(-q.w(), -q.x(), -q.y(), -q.z())};
-  ASSERT_LT(quats[0].dot(quats[1]), 0.0);  // second waypoint starts on the opposite hemisphere
+  const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
+  const Eigen::Quaterniond q1(Eigen::AngleAxisd(0.4, Eigen::Vector3d::UnitZ()));
+  const Eigen::Quaterniond q1_flipped(-q1.w(), -q1.x(), -q1.y(), -q1.z());
+  ASSERT_LT(q0.dot(q1_flipped), 0.0);
+  const CartesianTrajectory traj(
+    {0.0, 1.0}, {Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()}, {q0, q1_flipped});
 
-  cartesian_trajectory_controller::align_quaternions_shortest_arc(quats);
-  EXPECT_GE(quats[0].dot(quats[1]), 0.0);  // now on the same hemisphere -> shortest arc
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  for (double t = 0.0; t <= 1.0; t += 0.1)
+  {
+    ASSERT_TRUE(traj.sample(t, p, q));
+    EXPECT_NEAR(q0.angularDistance(q) + q.angularDistance(q1), 0.4, 1e-9);
+  }
 }
 
 // min_segment_duration returns the larger of the linear/angular-limited times, floored at
@@ -112,18 +121,56 @@ TEST(TestCartesianTrajectory, segment_duration_respects_speed_limits)
       Eigen::Vector3d::Zero(), identity, Eigen::Vector3d(0.2, 0.0, 0.0), identity, 0.1, 0.5, 0.01),
     3.0, 1e-9);
 
-  // SLERP is constant-rate, so an angular-limited segment is not scaled: 1.0 rad at 0.5 rad/s.
+  // rotation follows the same cubic profile: 1.0 rad at 0.5 rad/s = 2.0 s average, scaled
   const Eigen::Quaterniond rotated(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()));
   EXPECT_NEAR(
     cartesian_trajectory_controller::min_segment_duration(
       Eigen::Vector3d::Zero(), identity, Eigen::Vector3d::Zero(), rotated, 0.1, 0.5, 0.01),
-    2.0, 1e-9);
+    3.0, 1e-9);
 
   // Coincident, unrotated poses -> floored at min_duration.
   EXPECT_NEAR(
     cartesian_trajectory_controller::min_segment_duration(
       Eigen::Vector3d::Zero(), identity, Eigen::Vector3d::Zero(), identity, 0.1, 0.5, 0.01),
     0.01, 1e-9);
+}
+
+// A synthesized segment peaks exactly at the speed limit, for translation and for rotation.
+TEST(TestCartesianTrajectory, synthesized_segment_peaks_at_speed_limit)
+{
+  const Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
+  const Eigen::Vector3d p1(0.2, 0.0, 0.0);
+  const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
+  const Eigen::Quaterniond q1(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()));
+  const double max_linear = 0.1;
+  const double max_angular = 0.5;
+
+  // one segment limited by translation, one by rotation
+  for (const auto & [to_position, to_orientation] : {std::pair{p1, q0}, std::pair{p0, q1}})
+  {
+    const double duration = cartesian_trajectory_controller::min_segment_duration(
+      p0, q0, to_position, to_orientation, max_linear, max_angular, 0.01);
+    const CartesianTrajectory traj({0.0, duration}, {p0, to_position}, {q0, to_orientation});
+
+    const double dt = 1e-3;
+    double peak_linear = 0.0;
+    double peak_angular = 0.0;
+    Eigen::Vector3d p_prev, p;
+    Eigen::Quaterniond q_prev, q;
+    ASSERT_TRUE(traj.sample(0.0, p_prev, q_prev));
+    for (double t = dt; t <= duration; t += dt)
+    {
+      ASSERT_TRUE(traj.sample(t, p, q));
+      peak_linear = std::max(peak_linear, (p - p_prev).norm() / dt);
+      peak_angular = std::max(peak_angular, q_prev.angularDistance(q) / dt);
+      p_prev = p;
+      q_prev = q;
+    }
+    EXPECT_LE(peak_linear, max_linear + 1e-6);
+    EXPECT_LE(peak_angular, max_angular + 1e-6);
+    EXPECT_GT(std::max(peak_linear / max_linear, peak_angular / max_angular), 0.999)
+      << "the limiting speed is never reached";
+  }
 }
 
 // A single-waypoint path has zero duration and returns that pose for any query time.

@@ -24,7 +24,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-// The generator inherits JTC, so on_init validates JTC's required params (joints, command/state
+// The controller inherits JTC, so on_init validates JTC's required params (joints, command/state
 // interfaces) and on_configure loads the kinematics plugin. Both are supplied via a params file.
 TEST(TestLoadCartesianTrajectoryController, load_and_configure)
 {
