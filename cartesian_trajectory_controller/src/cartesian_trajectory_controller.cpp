@@ -22,11 +22,22 @@
 #include <vector>
 
 #include "cartesian_trajectory_controller/cartesian_trajectory.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
+#include "joint_trajectory_controller/trajectory.hpp"
 #include "rclcpp/duration.hpp"
 
 namespace cartesian_trajectory_controller
 {
+namespace
+{
+/// [x, y, z, qx, qy, qz, qw], the pose layout kinematics_interface expects
+Eigen::Matrix<double, 7, 1> to_pose_vector(
+  const Eigen::Vector3d & position, const Eigen::Quaterniond & orientation)
+{
+  Eigen::Matrix<double, 7, 1> pose;
+  pose << position, orientation.x(), orientation.y(), orientation.z(), orientation.w();
+  return pose;
+}
+}  // namespace
 
 controller_interface::CallbackReturn CartesianTrajectoryController::on_init()
 {
@@ -99,7 +110,7 @@ controller_interface::CallbackReturn CartesianTrajectoryController::on_configure
 void CartesianTrajectoryController::reference_callback(
   std::shared_ptr<trajectory_msgs::msg::MultiDOFJointTrajectory> msg)
 {
-  if (get_node()->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (!subscriber_is_active_)
   {
     return;
   }
@@ -118,29 +129,43 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   const trajectory_msgs::msg::MultiDOFJointTrajectory & msg,
   trajectory_msgs::msg::JointTrajectory & joint_traj)
 {
-  const auto commanded = rt_last_commanded_state_.get();
-
-  if (msg.points.empty() || commanded.positions.size() != dof_)
+  if (msg.points.empty())
   {
+    RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: message has no points.");
     return false;
   }
   if (!msg.header.frame_id.empty() && msg.header.frame_id != ctc_params_.kinematics.base)
   {
     RCLCPP_WARN(
-      get_node()->get_logger(), "Ignoring pose target: frame_id '%s' is not the base frame '%s'.",
+      get_node()->get_logger(), "Ignoring trajectory: frame_id '%s' is not the base frame '%s'.",
       msg.header.frame_id.c_str(), ctc_params_.kinematics.base.c_str());
     return false;
   }
 
+  // the trajectory starts from the commanded state, NaN until the first update() has commanded
+  const auto commanded = rt_last_commanded_state_.get();
   const Eigen::VectorXd q_seed =
-    Eigen::Map<const Eigen::VectorXd>(commanded.positions.data(), dof_);
-  if (!q_seed.allFinite())  // NaN until the first update() has commanded something
+    Eigen::Map<const Eigen::VectorXd>(commanded.positions.data(), commanded.positions.size());
+  if (q_seed.size() != static_cast<Eigen::Index>(dof_) || !q_seed.allFinite())
   {
+    RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: no commanded state yet.");
     return false;
   }
+  // rest if the commanded velocity is unavailable
+  std::vector<double> start_velocity;
+  if (
+    commanded.velocities.size() == dof_ &&
+    std::all_of(
+      commanded.velocities.begin(), commanded.velocities.end(),
+      [](double v) { return std::isfinite(v); }))
+  {
+    start_velocity = commanded.velocities;
+  }
+
   Eigen::Isometry3d current_pose;
   if (!kinematics_->calculate_link_transform(q_seed, ctc_params_.kinematics.tip, current_pose))
   {
+    RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: forward kinematics failed.");
     return false;
   }
 
@@ -151,46 +176,43 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   {
     return false;
   }
-  align_quaternions_shortest_arc(orientations);
 
   Eigen::Vector3d initial_velocity = Eigen::Vector3d::Zero();
   double initial_angular_speed = 0.0;
-  if (commanded.velocities.size() == dof_)
+  Eigen::Matrix<double, 6, 1> twist;
+  if (
+    !start_velocity.empty() &&
+    kinematics_->convert_joint_deltas_to_cartesian_deltas(
+      q_seed, Eigen::Map<const Eigen::VectorXd>(start_velocity.data(), dof_),
+      ctc_params_.kinematics.tip, twist))
   {
-    const Eigen::VectorXd q_dot =
-      Eigen::Map<const Eigen::VectorXd>(commanded.velocities.data(), dof_);
-    Eigen::Matrix<double, 6, 1> twist;
-    if (
-      q_dot.allFinite() && kinematics_->convert_joint_deltas_to_cartesian_deltas(
-                             q_seed, q_dot, ctc_params_.kinematics.tip, twist))
+    initial_velocity = twist.head<3>();
+    // the angle channel is signed along the path, so project onto the first segment's axis,
+    // taken in the base frame like the twist
+    const Eigen::AngleAxisd rotation(orientations[1] * orientations[0].inverse());
+    if (rotation.angle() > 1e-9)
     {
-      initial_velocity = twist.head<3>();
-      // the angle channel is signed along the path, so project rather than take the magnitude
-      const Eigen::Vector3d axis = (orientations[0].inverse() * orientations[1]).vec();
-      const double axis_norm = axis.norm();
-      if (axis_norm > 1e-9)
-      {
-        initial_angular_speed = twist.tail<3>().dot(axis / axis_norm);
-      }
+      initial_angular_speed = twist.tail<3>().dot(rotation.axis());
     }
   }
 
   const CartesianTrajectory path(
     times, positions, orientations, initial_velocity, initial_angular_speed);
   // Carry the incoming stamp so JTC's deferred-start works.
+  // TODO(vedh1234): anchor at the stamped start, not at arrival
   joint_traj.header.stamp = msg.header.stamp;
-  Eigen::VectorXd q = q_seed;
-  if (!solve_ik_along_path(path, q, joint_traj))
+  if (!solve_ik_along_path(path, q_seed, joint_traj))
   {
+    RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: inverse kinematics failed.");
     return false;
   }
 
-  // the commanded state at t=0, as JTC's prepend_commanded_state does
-  trajectory_msgs::msg::JointTrajectoryPoint anchor;
-  anchor.positions.assign(q_seed.data(), q_seed.data() + dof_);
-  anchor.velocities = commanded.velocities;
-  anchor.time_from_start = rclcpp::Duration(0, 0);
-  joint_traj.points.insert(joint_traj.points.begin(), std::move(anchor));
+  // joint velocities for continuous acceleration
+  if (!joint_trajectory_controller::fill_cubic_spline_velocities(joint_traj, start_velocity))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to solve joint velocities for the trajectory.");
+    return false;
+  }
   return true;
 }
 
@@ -204,28 +226,44 @@ bool CartesianTrajectoryController::build_cartesian_waypoints(
   positions = {current_pose.translation()};
   orientations = {Eigen::Quaterniond(current_pose.rotation())};
 
-  bool has_timing = false;
-  for (const auto & point : msg.points)
-  {
-    const auto & t = point.time_from_start;
-    has_timing = has_timing || (t.sec != 0 || t.nanosec != 0u);
-  }
+  const bool has_timing = std::any_of(
+    msg.points.begin(), msg.points.end(), [](const auto & point)
+    { return point.time_from_start.sec != 0 || point.time_from_start.nanosec != 0u; });
 
   for (const auto & point : msg.points)
   {
     if (point.transforms.empty())
     {
+      RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: a point has no transform.");
       return false;
     }
     const auto & tf = point.transforms[0];
     const Eigen::Vector3d position(tf.translation.x, tf.translation.y, tf.translation.z);
     Eigen::Quaterniond orientation(tf.rotation.w, tf.rotation.x, tf.rotation.y, tf.rotation.z);
-    orientation.normalize();  // shortest-arc sign alignment
+    if (!position.allFinite() || !orientation.coeffs().allFinite() || orientation.norm() < 1e-9)
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "Ignoring trajectory: pose is not finite or not a valid rotation.");
+      return false;
+    }
+    orientation.normalize();
 
     double t;
     if (has_timing)
     {
       t = rclcpp::Duration(point.time_from_start).seconds();
+      if (t <= times.back())
+      {
+        if (t == 0.0 && times.size() == 1)
+        {
+          continue;  // waypoint 0 is already the current pose
+        }
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "Ignoring trajectory: time_from_start is not strictly increasing.");
+        return false;
+      }
     }
     else  // synthesize timing from the commanded Cartesian and angular speeds
     {
@@ -239,73 +277,66 @@ bool CartesianTrajectoryController::build_cartesian_waypoints(
     orientations.push_back(orientation);
   }
 
-  return times.size() >= 2 && times.back() > 0.0;
+  return times.size() >= 2;
 }
 
 bool CartesianTrajectoryController::solve_ik_along_path(
-  const CartesianTrajectory & path, Eigen::VectorXd & q,
+  const CartesianTrajectory & path, Eigen::VectorXd q,
   trajectory_msgs::msg::JointTrajectory & joint_traj)
 {
   const std::string & tip = ctc_params_.kinematics.tip;
   const double dt = ctc_params_.resample_dt;
-  const auto steps = static_cast<size_t>(std::ceil(path.duration() / dt));
+  // rounding keeps the last segment between 0.5 and 1.5 dt; the last sample is pinned to the end
+  const auto steps = static_cast<size_t>(std::max(1L, std::lround(path.duration() / dt)));
 
   joint_traj.joint_names = params_.joints;
+  joint_traj.points.reserve(steps + 1);
+  // the commanded state at t=0, as JTC's prepend_commanded_state does
+  trajectory_msgs::msg::JointTrajectoryPoint anchor;
+  anchor.positions.assign(q.data(), q.data() + dof_);
+  anchor.time_from_start = rclcpp::Duration(0, 0);
+  joint_traj.points.push_back(std::move(anchor));
+
   Eigen::Vector3d target_position;
   Eigen::Quaterniond target_orientation;
-  double t_prev = 0.0;  // previous sample time, for the per-segment velocity below
+  Eigen::VectorXd delta_q = Eigen::VectorXd::Zero(dof_);
   for (size_t k = 1; k <= steps; ++k)
   {
-    const double t = std::min(static_cast<double>(k) * dt, path.duration());
+    const double t = (k == steps) ? path.duration() : static_cast<double>(k) * dt;
     if (!path.sample(t, target_position, target_orientation))
     {
       return false;
     }
-
-    Eigen::Matrix<double, 7, 1> x_target;
-    x_target << target_position.x(), target_position.y(), target_position.z(),
-      target_orientation.x(), target_orientation.y(), target_orientation.z(),
-      target_orientation.w();
 
     Eigen::Isometry3d current;
     if (!kinematics_->calculate_link_transform(q, tip, current))
     {
       return false;
     }
-    const Eigen::Quaterniond current_orientation(current.rotation());
-    Eigen::Matrix<double, 7, 1> x_current;
-    x_current << current.translation().x(), current.translation().y(), current.translation().z(),
-      current_orientation.x(), current_orientation.y(), current_orientation.z(),
-      current_orientation.w();
 
+    Eigen::Matrix<double, 7, 1> x_current =
+      to_pose_vector(current.translation(), Eigen::Quaterniond(current.rotation()));
+    Eigen::Matrix<double, 7, 1> x_target = to_pose_vector(target_position, target_orientation);
     Eigen::Matrix<double, 6, 1> delta_x;
-    Eigen::VectorXd delta_q = Eigen::VectorXd::Zero(dof_);
     if (
       !kinematics_->calculate_frame_difference(x_current, x_target, 1.0, delta_x) ||
       !kinematics_->convert_cartesian_deltas_to_joint_deltas(q, delta_x, tip, delta_q))
     {
       return false;
     }
+    // TODO(vedh1234): respect joint limits and resolve redundancy
     q += delta_q;
+    if (!q.allFinite())
+    {
+      return false;
+    }
     trajectory_msgs::msg::JointTrajectoryPoint jp;
     jp.positions.assign(q.data(), q.data() + dof_);
-    // Fill joint velocities so JTC cubic-interpolates
-    const double seg_dt = t - t_prev;
-    if (seg_dt > 1e-9)
-    {
-      const Eigen::VectorXd q_dot = delta_q / seg_dt;
-      jp.velocities.assign(q_dot.data(), q_dot.data() + dof_);
-    }
     jp.time_from_start = rclcpp::Duration::from_seconds(t);
     joint_traj.points.push_back(std::move(jp));
-    t_prev = t;
   }
 
-  if (joint_traj.points.empty())
-  {
-    return false;
-  }
-  joint_traj.points.back().velocities.assign(dof_, 0.0);
+  // TODO(vedh1234): reject the trajectory if IK does not converge
   return true;
 }
 

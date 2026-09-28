@@ -24,10 +24,6 @@
 namespace cartesian_trajectory_controller
 {
 
-/// Flip quaternion signs so consecutive waypoints lie on the same hemisphere, making SLERP take the
-/// shortest arc across every segment (the quaternion analog of angles::shortest_angular_distance).
-void align_quaternions_shortest_arc(std::vector<Eigen::Quaterniond> & orientations);
-
 /// Time to move between two poses without exceeding the Cartesian or angular speed, floored at
 /// min_duration so coincident poses still advance in time. Used to synthesize waypoint timing when
 /// the incoming chunk carries none.
@@ -36,12 +32,12 @@ double min_segment_duration(
   const Eigen::Vector3d & to_position, const Eigen::Quaterniond & to_orientation,
   double max_linear_speed, double max_angular_speed, double min_duration);
 
-/// Time-parameterized Cartesian path: cubic-spline (C2) translation and SLERP orientation.
-/// Cubic-spline (C2) translation and SLERP orientation, solved together on one shared profile.
+/// Time-parameterized Cartesian path: cubic-spline (C2) translation and SLERP orientation, solved
+/// together on one shared profile.
 class CartesianTrajectory
 {
 public:
-  /// times must be strictly increasing; the orientation waypoints are sign-aligned internally.
+  /// times must be strictly increasing; every segment rotates along the shorter arc.
   /// initial_velocity and initial_angular_speed seed waypoint 0; zero is a rest start.
   CartesianTrajectory(
     const std::vector<double> & times, const std::vector<Eigen::Vector3d> & positions,

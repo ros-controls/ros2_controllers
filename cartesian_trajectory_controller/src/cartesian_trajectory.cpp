@@ -24,17 +24,6 @@
 namespace cartesian_trajectory_controller
 {
 
-void align_quaternions_shortest_arc(std::vector<Eigen::Quaterniond> & orientations)
-{
-  for (size_t i = 1; i < orientations.size(); ++i)
-  {
-    if (orientations[i - 1].dot(orientations[i]) < 0.0)
-    {
-      orientations[i].coeffs() *= -1.0;
-    }
-  }
-}
-
 // TODO(vedh1234): implement an exact motion profile instead of this factor.
 constexpr double peak_speed_ratio = 1.5;
 
@@ -45,7 +34,8 @@ double min_segment_duration(
 {
   const double linear_time =
     peak_speed_ratio * (to_position - from_position).norm() / max_linear_speed;
-  const double angular_time = from_orientation.angularDistance(to_orientation) / max_angular_speed;
+  const double angular_time =
+    peak_speed_ratio * from_orientation.angularDistance(to_orientation) / max_angular_speed;
   return std::max({linear_time, angular_time, min_duration});
 }
 
@@ -56,7 +46,6 @@ CartesianTrajectory::CartesianTrajectory(
 : times_(times), positions_(positions), orientations_(orientations)
 {
   assert(times_.size() == positions_.size() && times_.size() == orientations_.size());
-  align_quaternions_shortest_arc(orientations_);
   velocities_.assign(positions_.size(), Eigen::Vector3d::Zero());
   angles_.assign(positions_.size(), 0.0);
   angle_velocities_.assign(positions_.size(), 0.0);
@@ -71,7 +60,7 @@ CartesianTrajectory::CartesianTrajectory(
     angles_[i] = angles_[i - 1] + orientations_[i - 1].angularDistance(orientations_[i]);
   }
 
-  // Solve C2 waypoint velocities for x, y, z with the JTC spline helper (rest boundary conditions).
+  // C2 waypoint velocities for x, y, z and the angle, with the JTC spline helper
   trajectory_msgs::msg::JointTrajectory channels;
   channels.points.resize(positions_.size());
   for (size_t i = 0; i < positions_.size(); ++i)
@@ -80,7 +69,6 @@ CartesianTrajectory::CartesianTrajectory(
       positions_[i].x(), positions_[i].y(), positions_[i].z(), angles_[i]};
     channels.points[i].time_from_start = rclcpp::Duration::from_seconds(times_[i]);
   }
-  // Solving with the start velocity, rather than overwriting it afterwards
   const std::vector<double> start_velocity = {
     initial_velocity.x(), initial_velocity.y(), initial_velocity.z(), initial_angular_speed};
   if (!joint_trajectory_controller::fill_cubic_spline_velocities(channels, start_velocity))
@@ -116,20 +104,15 @@ bool CartesianTrajectory::sample(
     return true;
   }
 
+  // TODO(vedh1234): cache the last index, as JTC's Trajectory::sample does
   size_t index = 0;
   while (index + 1 < num_waypoints && times_[index + 1] <= t)
   {
     ++index;
   }
 
-  const double segment_duration = times_[index + 1] - times_[index];
-  if (segment_duration <= 0.0)
-  {
-    position = positions_[index + 1];
-    orientation = orientations_[index + 1];
-    return true;
-  }
-  interpolate_segment(index, t - times_[index], segment_duration, position, orientation);
+  interpolate_segment(
+    index, t - times_[index], times_[index + 1] - times_[index], position, orientation);
   return true;
 }
 
@@ -137,33 +120,18 @@ void CartesianTrajectory::interpolate_segment(
   std::size_t index, double time_into_segment, double segment_duration, Eigen::Vector3d & position,
   Eigen::Quaterniond & orientation) const
 {
-  auto generate_powers = [](int n, double x, double * powers)
-  {
-    powers[0] = 1.0;
-    for (int i = 1; i <= n; ++i)
-    {
-      powers[i] = powers[i - 1] * x;
-    }
-  };
-
-  double t_powers[4];
-  double duration_powers[4];
-  generate_powers(3, time_into_segment, t_powers);
-  generate_powers(3, segment_duration, duration_powers);
+  const double s = time_into_segment;
+  const double s2 = s * s;
+  const double s3 = s2 * s;
+  const double T = segment_duration;
+  const double T2 = T * T;
+  const double T3 = T2 * T;
 
   auto hermite = [&](double start_pos, double start_vel, double end_pos, double end_vel)
   {
-    double coefficients[4] = {0.0, 0.0, 0.0, 0.0};
-    coefficients[0] = start_pos;
-    coefficients[1] = start_vel;
-    coefficients[2] = (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * duration_powers[1] -
-                       end_vel * duration_powers[1]) /
-                      duration_powers[2];
-    coefficients[3] = (2.0 * start_pos - 2.0 * end_pos + start_vel * duration_powers[1] +
-                       end_vel * duration_powers[1]) /
-                      duration_powers[3];
-    return t_powers[0] * coefficients[0] + t_powers[1] * coefficients[1] +
-           t_powers[2] * coefficients[2] + t_powers[3] * coefficients[3];
+    const double c2 = (-3.0 * start_pos + 3.0 * end_pos - 2.0 * start_vel * T - end_vel * T) / T2;
+    const double c3 = (2.0 * start_pos - 2.0 * end_pos + start_vel * T + end_vel * T) / T3;
+    return start_pos + s * start_vel + s2 * c2 + s3 * c3;
   };
 
   for (int axis = 0; axis < 3; ++axis)

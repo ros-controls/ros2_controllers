@@ -75,10 +75,10 @@ private:
     const Eigen::Isometry3d & current_pose, std::vector<double> & times,
     std::vector<Eigen::Vector3d> & positions, std::vector<Eigen::Quaterniond> & orientations) const;
 
-  /// Densely resample the Cartesian path and integrate differential IK (from the seed joints q)
-  /// into a joint trajectory.
+  /// Densely resample the Cartesian path and integrate differential IK from the seed joints q into
+  /// a joint trajectory that starts with q at t=0.
   bool solve_ik_along_path(
-    const CartesianTrajectory & path, Eigen::VectorXd & q,
+    const CartesianTrajectory & path, Eigen::VectorXd q,
     trajectory_msgs::msg::JointTrajectory & joint_traj);
 
   std::shared_ptr<ParamListener> ctc_param_listener_;
