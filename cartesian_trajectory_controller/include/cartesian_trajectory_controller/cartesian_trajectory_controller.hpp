@@ -61,8 +61,7 @@ protected:
   /// Convert an incoming Cartesian chunk into a joint trajectory and install it into JTC.
   void reference_callback(std::shared_ptr<trajectory_msgs::msg::MultiDOFJointTrajectory> msg);
 
-  /// Orchestrates the conversion of an incoming Cartesian chunk into a joint trajectory.
-  /// Returns false on an unsupported frame or a kinematics failure (message is then dropped).
+  /// Build the joint trajectory for a Cartesian message; false drops the message.
   bool build_joint_trajectory(
     const trajectory_msgs::msg::MultiDOFJointTrajectory & msg,
     trajectory_msgs::msg::JointTrajectory & joint_traj);

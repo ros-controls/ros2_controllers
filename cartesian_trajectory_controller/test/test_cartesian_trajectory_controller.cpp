@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// End-to-end test: drives the real controller through its real lifecycle and update() loop with
-// real command/state interfaces (the test plays mock hardware: shared command/state storage, as
-// mock_components/GenericSystem does), then checks the executed joints via forward kinematics.
+// Runs the controller through its lifecycle and update() loop on mock position joints, and checks
+// the executed motion by forward kinematics.
 
 #include <gmock/gmock.h>
 
@@ -81,8 +80,7 @@ double max_knot_acceleration_jump(const trajectory_msgs::msg::JointTrajectory & 
   return worst;
 }
 
-// Exposes the protected reference_callback for direct, deterministic injection and lets the fixture
-// inject parameter overrides (mirrors the pattern used by the JTC tests).
+// Exposes the protected callbacks and allows parameter overrides, as in the JTC tests.
 class TestableController : public cartesian_trajectory_controller::CartesianTrajectoryController
 {
 public:
