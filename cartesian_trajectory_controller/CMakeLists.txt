@@ -16,7 +16,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   realtime_tools
-  tf2_eigen
   trajectory_msgs
 )
 
@@ -50,7 +49,6 @@ target_link_libraries(cartesian_trajectory_controller PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   realtime_tools::realtime_tools
-  tf2_eigen::tf2_eigen
   ${geometry_msgs_TARGETS}
   ${trajectory_msgs_TARGETS}
 )
@@ -71,29 +69,17 @@ if(BUILD_TESTING)
     test/test_load_cartesian_trajectory_controller.cpp)
   target_link_libraries(test_load_cartesian_trajectory_controller
     controller_manager::controller_manager
-    hardware_interface::hardware_interface
     ros2_control_test_assets::ros2_control_test_assets
   )
 
   ament_add_gmock(test_cartesian_trajectory test/test_cartesian_trajectory.cpp)
-  target_link_libraries(test_cartesian_trajectory
-    cartesian_trajectory_controller
-    Eigen3::Eigen
-  )
+  target_link_libraries(test_cartesian_trajectory cartesian_trajectory_controller)
 
   ament_add_gmock(test_cartesian_trajectory_controller
     test/test_cartesian_trajectory_controller.cpp)
   target_link_libraries(test_cartesian_trajectory_controller
     cartesian_trajectory_controller
-    Eigen3::Eigen
-    controller_interface::controller_interface
-    hardware_interface::hardware_interface
-    kinematics_interface::kinematics_interface
-    pluginlib::pluginlib
-    rclcpp::rclcpp
     ros2_control_test_assets::ros2_control_test_assets
-    ${geometry_msgs_TARGETS}
-    ${trajectory_msgs_TARGETS}
   )
   set_tests_properties(test_cartesian_trajectory_controller PROPERTIES TIMEOUT 120)
 endif()
