@@ -33,7 +33,7 @@ Each incoming message is converted into a joint trajectory in four steps:
    where the robot currently is.
 2. The translation is interpolated with a cubic spline through the resulting waypoints, and the
    orientation with spherical linear interpolation (SLERP) between consecutive quaternions.
-   Quaternions are sign aligned first, so every segment rotates along the shorter arc.
+   Every segment rotates along the shorter arc, whatever the signs of the quaternions.
 3. The path is sampled every ``resample_dt`` seconds, and differential inverse kinematics is run at
    each sample to obtain the corresponding joint positions.
 4. The resulting joint trajectory is handed to the joint trajectory controller, which executes it in
@@ -42,12 +42,23 @@ Each incoming message is converted into a joint trajectory in four steps:
 The conversion runs once per message in the subscription callback, not in the control loop, so the
 real-time path is unchanged from the joint trajectory controller.
 
+.. warning::
+   Joint limits are not checked, so a clamped joint makes the end effector leave the path without an
+   error. Redundancy, unreachable poses and singularities are not handled either.
+
+.. note::
+   Higher ``kinematics.alpha`` lags the path more; lower is less stable near singularities.
+
 Timing
 ^^^^^^
 
-If the incoming poses carry ``time_from_start``, that timing is used as given.
+If the incoming poses carry ``time_from_start``, that timing is used as given, and
+``max_cartesian_speed`` and ``max_angular_speed`` are not applied.
 This is the usual case when the poses come from a planner or from a policy that knows its own output
 rate.
+The times have to be strictly increasing, otherwise the message is ignored.
+A first pose at ``time_from_start = 0``, as planners send the start state, is taken to be the current
+pose and skipped.
 
 If the message carries no timing, the controller synthesizes it from ``max_cartesian_speed`` and
 ``max_angular_speed``.
@@ -68,6 +79,8 @@ Using the Cartesian Trajectory Controller
 
 The controller expects at least position feedback from the hardware, and a robot description that
 contains the chain between ``kinematics.base`` and ``kinematics.tip``.
+``joints`` has to list exactly the joints of that chain, so joints outside it, such as a gripper, need
+their own controller.
 
 Because the controller inherits from the joint trajectory controller, it takes that controller's
 parameters as well as its own.
@@ -138,6 +151,8 @@ Subscriber
 
 Each point carries one transform, which is the target pose of ``kinematics.tip`` expressed in
 ``kinematics.base``.
+Only the first transform of each point and its ``time_from_start`` are used; ``joint_names``,
+velocities and accelerations are ignored.
 A message may hold a single pose or a sequence of them, so both a single target and a longer path
 can be sent the same way.
 The ``header.frame_id`` has to be either empty or equal to ``kinematics.base``, otherwise the message
@@ -145,6 +160,8 @@ is ignored.
 
 The ``header.stamp`` is carried over to the generated joint trajectory, so the start time behaves as
 it does for the joint trajectory controller.
+The trajectory is still built from the state at arrival, so a future stamp is only exact if the robot
+is at rest until then.
 
 Publishers
 ^^^^^^^^^^
