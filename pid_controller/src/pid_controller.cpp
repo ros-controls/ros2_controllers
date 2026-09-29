@@ -211,8 +211,36 @@ controller_interface::CallbackReturn PidController::on_configure(
           return;
         }
       }
-      // TODO(destogl): Sort the input values based on joint and interface names
-      measured_state_.set(*state_msg);
+      auto ordered_state = *state_msg;
+      if (
+        ordered_state.values_dot.empty() &&
+        params_.reference_and_state_interfaces.size() == 2)
+      {
+        ordered_state.values_dot.resize(
+          reference_and_state_dof_names_.size(), std::numeric_limits<double>::quiet_NaN());
+      }
+      for (size_t i = 0; i < reference_and_state_dof_names_.size(); ++i)
+      {
+        const auto found = std::find(
+          state_msg->dof_names.begin(), state_msg->dof_names.end(),
+          reference_and_state_dof_names_[i]);
+        if (found == state_msg->dof_names.end())
+        {
+          RCLCPP_ERROR(
+            get_node()->get_logger(), "Expected DoF name '%s' is missing.",
+            reference_and_state_dof_names_[i].c_str());
+          return;
+        }
+        const auto position = static_cast<size_t>(
+          std::distance(state_msg->dof_names.begin(), found));
+        ordered_state.dof_names[i] = reference_and_state_dof_names_[i];
+        ordered_state.values[i] = state_msg->values[position];
+        if (!state_msg->values_dot.empty())
+        {
+          ordered_state.values_dot[i] = state_msg->values_dot[position];
+        }
+      }
+      measured_state_.set(ordered_state);
     };
     measured_state_subscriber_ = get_node()->create_subscription<ControllerMeasuredStateMsg>(
       "~/measured_state", subscribers_qos, measured_state_callback);
@@ -265,36 +293,34 @@ void PidController::reference_callback(const std::shared_ptr<ControllerReference
   }
   else if (
     msg->dof_names.size() == reference_and_state_dof_names_.size() &&
-    msg->values.size() == reference_and_state_dof_names_.size())
+    msg->values.size() == reference_and_state_dof_names_.size() &&
+    (msg->values_dot.empty() ||
+     msg->values_dot.size() == reference_and_state_dof_names_.size()))
   {
-    auto ref_msg = msg;  // simple initialization
+    auto ordered_reference = *msg;
+    reset_controller_reference_msg(ordered_reference, reference_and_state_dof_names_);
 
-    // sort values in the ref_msg
-    reset_controller_reference_msg(*msg, reference_and_state_dof_names_);
-
-    bool all_found = true;
-    for (size_t i = 0; i < msg->dof_names.size(); ++i)
+    for (size_t i = 0; i < reference_and_state_dof_names_.size(); ++i)
     {
-      auto found_it =
-        std::find(ref_msg->dof_names.begin(), ref_msg->dof_names.end(), msg->dof_names[i]);
-      if (found_it == msg->dof_names.end())
+      const auto found = std::find(
+        msg->dof_names.begin(), msg->dof_names.end(), reference_and_state_dof_names_[i]);
+      if (found == msg->dof_names.end())
       {
-        all_found = false;
         RCLCPP_WARN(
-          get_node()->get_logger(), "DoF name '%s' not found in the defined list of state DoFs.",
-          msg->dof_names[i].c_str());
-        break;
+          get_node()->get_logger(), "DoF name '%s' is missing from the reference message.",
+          reference_and_state_dof_names_[i].c_str());
+        return;
       }
 
-      auto position = static_cast<size_t>(std::distance(ref_msg->dof_names.begin(), found_it));
-      ref_msg->values[position] = msg->values[i];
-      ref_msg->values_dot[position] = msg->values_dot[i];
+      const auto position =
+        static_cast<size_t>(std::distance(msg->dof_names.begin(), found));
+      ordered_reference.values[i] = msg->values[position];
+      if (!msg->values_dot.empty())
+      {
+        ordered_reference.values_dot[i] = msg->values_dot[position];
+      }
     }
-
-    if (all_found)
-    {
-      input_ref_.set(*ref_msg);
-    }
+    input_ref_.set(ordered_reference);
   }
   else
   {
