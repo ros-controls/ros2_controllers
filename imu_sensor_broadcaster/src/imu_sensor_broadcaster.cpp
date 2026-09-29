@@ -127,6 +127,20 @@ controller_interface::return_type IMUSensorBroadcaster::update_and_write_command
   imu_sensor_->get_values_as_message(input_imu);
   do_transform(state_message_, input_imu, r_);
 
+  if (ordered_exported_state_interfaces_.size() == 10)
+  {
+    (void)ordered_exported_state_interfaces_[0]->set_value(state_message_.orientation.x);
+    (void)ordered_exported_state_interfaces_[1]->set_value(state_message_.orientation.y);
+    (void)ordered_exported_state_interfaces_[2]->set_value(state_message_.orientation.z);
+    (void)ordered_exported_state_interfaces_[3]->set_value(state_message_.orientation.w);
+    (void)ordered_exported_state_interfaces_[4]->set_value(state_message_.angular_velocity.x);
+    (void)ordered_exported_state_interfaces_[5]->set_value(state_message_.angular_velocity.y);
+    (void)ordered_exported_state_interfaces_[6]->set_value(state_message_.angular_velocity.z);
+    (void)ordered_exported_state_interfaces_[7]->set_value(state_message_.linear_acceleration.x);
+    (void)ordered_exported_state_interfaces_[8]->set_value(state_message_.linear_acceleration.y);
+    (void)ordered_exported_state_interfaces_[9]->set_value(state_message_.linear_acceleration.z);
+  }
+
   if (realtime_publisher_)
   {
     state_message_.header.stamp = time;
