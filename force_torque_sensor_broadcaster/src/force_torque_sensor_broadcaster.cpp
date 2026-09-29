@@ -106,8 +106,14 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     "sensor_filter_chain", get_node()->get_node_logging_interface(),
     get_node()->get_node_parameters_interface());
 
+  if (!filter_chain_configured)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to configure sensor filter chain.");
+    return CallbackReturn::ERROR;
+  }
+
   // Even on successful configure, if empty, the chain won't be used
-  has_filter_chain_ = filter_chain_configured && filter_chain_->get_length() > 0;
+  has_filter_chain_ = filter_chain_->get_length() > 0;
 
   RCLCPP_INFO_EXPRESSION(
     get_node()->get_logger(), has_filter_chain_, "Filter active with %zu filters!",
@@ -178,6 +184,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
   param_listener_->try_get_params(params_);
 
   wrench_raw_.header.stamp = time;
+  wrench_raw_.header.frame_id = params_.frame_id;
   force_torque_sensor_->get_values_as_message(wrench_raw_.wrench);
   this->apply_sensor_offset(params_, wrench_raw_);
   this->apply_sensor_multiplier(params_, wrench_raw_);
@@ -194,6 +201,7 @@ controller_interface::return_type ForceTorqueSensorBroadcaster::update_and_write
     if (filtered && realtime_filtered_publisher_)
     {
       wrench_filtered_.header.stamp = time;
+      wrench_filtered_.header.frame_id = params_.frame_id;
       realtime_filtered_publisher_->try_publish(wrench_filtered_);
     }
   }
