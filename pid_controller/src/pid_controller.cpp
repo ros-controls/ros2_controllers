@@ -425,11 +425,14 @@ controller_interface::CallbackReturn PidController::on_activate(
     reset_controller_reference_msg(current_ref_, reference_and_state_dof_names_);
     input_ref_.try_set(current_ref_);
   }
-  auto measured_state_op = measured_state_.try_get();
-  if (measured_state_op.has_value())
+  if (!params_.use_external_measured_states)
   {
-    reset_controller_measured_state_msg(current_state_, reference_and_state_dof_names_);
-    measured_state_.try_set(current_state_);
+    auto measured_state_op = measured_state_.try_get();
+    if (measured_state_op.has_value())
+    {
+      reset_controller_measured_state_msg(current_state_, reference_and_state_dof_names_);
+      measured_state_.try_set(current_state_);
+    }
   }
 
   measured_state_values_.assign(
