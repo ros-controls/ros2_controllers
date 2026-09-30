@@ -1,0 +1,206 @@
+// Copyright (c) 2025, b-robotized
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef TEST_VDA5050_SAFETY_STATE_BROADCASTER_HPP_
+#define TEST_VDA5050_SAFETY_STATE_BROADCASTER_HPP_
+
+#include <array>
+#include <limits>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "controller_interface/test_utils.hpp"
+#include "gmock/gmock.h"
+#include "hardware_interface/loaned_state_interface.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/utilities.hpp"
+#include "rclcpp/wait_result_kind.hpp"
+#include "rclcpp/wait_set.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+
+#include "control_msgs/msg/vda5050_safety_state.hpp"
+#include "vda5050_safety_state_broadcaster/vda5050_safety_state_broadcaster.hpp"
+
+using Vda5050SafetyStateMsg = control_msgs::msg::VDA5050SafetyState;
+using controller_interface::activate_succeeds;
+using controller_interface::configure_succeeds;
+using controller_interface::deactivate_succeeds;
+using testing::IsEmpty;
+using testing::SizeIs;
+
+class FriendVDA5050SafetyStateBroadcaster
+: public vda5050_safety_state_broadcaster::Vda5050SafetyStateBroadcaster
+{
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, init_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, all_parameters_set_configure_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, no_interfaces_set_activate_fail);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, activate_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, deactivate_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, check_exported_interfaces);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_status_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, update_broadcasted_bool_success);
+  FRIEND_TEST(VDA5050SafetyStateBroadcasterTest, publish_nan_interfaces);
+};
+
+class VDA5050SafetyStateBroadcasterTest : public ::testing::Test
+{
+public:
+  static void SetUpTestCase() {}
+  static void TearDownTestCase() {}
+
+  void SetUp()
+  {
+    // initialize controller
+    vda5050_safety_state_broadcaster_ = std::make_unique<FriendVDA5050SafetyStateBroadcaster>();
+
+    fieldViolation1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "fieldViolation");
+    std::ignore = fieldViolation1_itf_->set_value(itfs_values_[0]);
+    fieldViolation2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "fieldViolation");
+    std::ignore = fieldViolation2_itf_->set_value(itfs_values_[1]);
+    fieldViolation3_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor3", "fieldViolation", "bool", "false");
+
+    eStopManual1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopManual");
+    std::ignore = eStopManual1_itf_->set_value(itfs_values_[2]);
+    eStopManual2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "eStopManual");
+    std::ignore = eStopManual2_itf_->set_value(itfs_values_[3]);
+    eStopManual3_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor3", "eStopManual", "bool", "false");
+
+    eStopRemote1_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopRemote");
+    std::ignore = eStopRemote1_itf_->set_value(itfs_values_[4]);
+    eStopRemote2_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor2", "eStopRemote");
+    std::ignore = eStopRemote2_itf_->set_value(itfs_values_[5]);
+
+    eStopAutoack_itf_ =
+      std::make_shared<hardware_interface::StateInterface>("PLC_sensor1", "eStopAutoack");
+    std::ignore = eStopAutoack_itf_->set_value(itfs_values_[6]);
+    eStopAutoack2_itf_ = std::make_shared<hardware_interface::StateInterface>(
+      "PLC_sensor2", "eStopAutoack", "bool", "false");
+  }
+  void TearDown() { vda5050_safety_state_broadcaster_.reset(nullptr); }
+
+  void SetUpVDA5050SafetyStateBroadcaster(
+    const std::string controller_name = "test_vda5050_safety_state_broadcaster")
+  {
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = controller_name;
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = "";
+    params.node_options = vda5050_safety_state_broadcaster_->define_custom_node_options();
+    ASSERT_EQ(
+      vda5050_safety_state_broadcaster_->init(params), controller_interface::return_type::OK);
+
+    std::vector<hardware_interface::LoanedStateInterface> state_ifs;
+
+    state_ifs.emplace_back(fieldViolation1_itf_, nullptr);
+    state_ifs.emplace_back(fieldViolation2_itf_, nullptr);
+    state_ifs.emplace_back(fieldViolation3_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual1_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual2_itf_, nullptr);
+    state_ifs.emplace_back(eStopManual3_itf_, nullptr);
+    state_ifs.emplace_back(eStopRemote1_itf_, nullptr);
+    state_ifs.emplace_back(eStopRemote2_itf_, nullptr);
+    state_ifs.emplace_back(eStopAutoack_itf_, nullptr);
+    state_ifs.emplace_back(eStopAutoack2_itf_, nullptr);
+
+    vda5050_safety_state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+  }
+
+protected:
+  const size_t itf_size_ = 10;
+  std::array<double, 7> itfs_values_ = {{
+    0.0,  // 0 fieldViolation1
+    1.0,  // 1 fieldViolation2
+    0.0,  // 2 eStopManual1
+    0.0,  // 3 eStopManual2
+    0.0,  // 4 eStopRemote1
+    1.0,  // 5 eStopRemote2
+    1.0,  // 6 eStopAutoack
+  }};
+  hardware_interface::StateInterface::SharedPtr fieldViolation1_itf_;
+  hardware_interface::StateInterface::SharedPtr fieldViolation2_itf_;
+  hardware_interface::StateInterface::SharedPtr fieldViolation3_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual1_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual2_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopManual3_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopRemote1_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopRemote2_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopAutoack_itf_;
+  hardware_interface::StateInterface::SharedPtr eStopAutoack2_itf_;
+
+  // Test related parameters
+  std::unique_ptr<FriendVDA5050SafetyStateBroadcaster> vda5050_safety_state_broadcaster_;
+
+  void subscribe_and_get_messages(Vda5050SafetyStateMsg & vda5050_safety_state_msg)
+  {
+    // create a new subscriber
+    rclcpp::Node test_subscription_node("test_subscription_node");
+    auto vda5050_safety_state_subscription =
+      test_subscription_node.create_subscription<Vda5050SafetyStateMsg>(
+        "/test_vda5050_safety_state_broadcaster/vda5050_safety_state", 10,
+        [](const Vda5050SafetyStateMsg::SharedPtr) {});
+
+    // call update to publish the test value
+    // since update doesn't guarantee a published message, republish until received
+    Vda5050SafetyStateMsg received_vda5050_safety_state_msg;
+    bool has_vda5050_safety_state_msg = false;
+
+    rclcpp::WaitSet wait_set;
+    wait_set.add_subscription(vda5050_safety_state_subscription);
+
+    int max_sub_check_loop_count = 100;  // max number of tries for pub/sub loop
+    while (max_sub_check_loop_count--)
+    {
+      vda5050_safety_state_broadcaster_->update(
+        rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01));
+
+      if (wait_set.wait(std::chrono::milliseconds(20)).kind() == rclcpp::WaitResultKind::Ready)
+      {
+        rclcpp::MessageInfo msg_info;
+        if (vda5050_safety_state_subscription->take(received_vda5050_safety_state_msg, msg_info))
+        {
+          has_vda5050_safety_state_msg = true;
+        }
+      }
+
+      // check if message has been received
+      if (has_vda5050_safety_state_msg)
+      {
+        break;
+      }
+    }
+    ASSERT_GE(max_sub_check_loop_count, 0) << "Test was unable to publish a message through "
+                                              "controller/broadcaster update loop";
+    ASSERT_TRUE(has_vda5050_safety_state_msg);
+
+    // take message from subscription
+    vda5050_safety_state_msg = received_vda5050_safety_state_msg;
+  }
+};
+
+#endif  // TEST_VDA5050_SAFETY_STATE_BROADCASTER_HPP_
