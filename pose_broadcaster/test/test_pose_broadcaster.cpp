@@ -250,6 +250,30 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 }
 
+
+TEST_F(PoseBroadcasterTest, disabling_tf_after_cleanup_stops_tf_publication)
+{
+  SetUpPoseBroadcaster();
+  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
+  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+  pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
+
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
+  tf2_msgs::msg::TFMessage enabled_message;
+  ASSERT_NO_THROW(subscribe_and_get_message("/tf", enabled_message));
+
+  ASSERT_TRUE(deactivate_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(cleanup_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(pose_broadcaster_->get_node()->set_parameter({"tf.enable", false}).successful);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
+
+  tf2_msgs::msg::TFMessage disabled_message;
+  EXPECT_THROW(subscribe_and_get_message("/tf", disabled_message), std::runtime_error);
+}
+
 int main(int argc, char * argv[])
 {
   ::testing::InitGoogleMock(&argc, argv);
