@@ -200,6 +200,11 @@ public:
 
   size_t get_blend_prefix_size() const { return blend_prefix_size_; }
 
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_installed_trajectory_msg() const
+  {
+    return has_active_trajectory() ? current_trajectory_->get_trajectory_msg() : nullptr;
+  }
+
   double get_cmd_timeout() { return cmd_timeout_; }
 
   void set_node_options(const rclcpp::NodeOptions & node_options) { node_options_ = node_options; }
