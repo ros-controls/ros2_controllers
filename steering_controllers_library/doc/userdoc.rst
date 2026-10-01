@@ -93,6 +93,7 @@ Publishers
 - ``<controller_name>/odometry``          [`nav_msgs/msg/Odometry <odometry_msg_>`_]
 - ``<controller_name>/tf_odometry``       [`tf2_msgs/msg/TFMessage <tf_msg_>`_]
 - ``<controller_name>/controller_state``  [`control_msgs/msg/SteeringControllerStatus <steering_controller_status_msg_>`_]
+- ``<controller_name>/cmd_vel_out``  [`geometry_msgs/msg/TwistStamped <twist_msg_>`_], published only if ``publish_limited_velocity=true``
 
 Services
 ,,,,,,,,,,,
