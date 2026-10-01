@@ -80,6 +80,29 @@ protected:
   }
 };
 
+TEST_F(TestTolerancesFixture, test_goal_time_from_parameters)
+{
+  for (const auto & joint : joint_names_)
+  {
+    params.constraints.joints_map[joint] = {};
+  }
+
+  params.constraints.goal_time = 5.0;
+  auto active_tolerances = joint_trajectory_controller::get_segment_tolerances(logger, params);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 5.0);
+  EXPECT_TRUE(std::isfinite(active_tolerances.goal_time_tolerance));
+
+  params.constraints.goal_time = 0.0;
+  active_tolerances = joint_trajectory_controller::get_segment_tolerances(logger, params);
+  EXPECT_DOUBLE_EQ(active_tolerances.goal_time_tolerance, 0.0);
+  EXPECT_TRUE(std::isfinite(active_tolerances.goal_time_tolerance));
+
+  params.constraints.goal_time = -1.0;
+  active_tolerances = joint_trajectory_controller::get_segment_tolerances(logger, params);
+  EXPECT_TRUE(std::isinf(active_tolerances.goal_time_tolerance));
+  EXPECT_GT(active_tolerances.goal_time_tolerance, 0.0);
+}
+
 TEST_F(TestTolerancesFixture, test_get_segment_tolerances)
 {
   // send goal with nonzero tolerances, are they accepted?

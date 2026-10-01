@@ -603,7 +603,7 @@ TEST_P(TrajectoryControllerTestParameterized, update_dynamic_tolerances)
   // test default parameters
   {
     auto tols = traj_controller_->get_tolerances();
-    EXPECT_EQ(tols.goal_time_tolerance, 0.0);
+    EXPECT_EQ(tols.goal_time_tolerance, 10.0);
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {
       EXPECT_EQ(tols.state_tolerance.at(i).position, 0.0);
@@ -1430,8 +1430,11 @@ TEST_P(TrajectoryControllerTestParameterized, timeout)
   rclcpp::executors::MultiThreadedExecutor executor;
   constexpr double cmd_timeout = 0.1;
   rclcpp::Parameter cmd_timeout_parameter("cmd_timeout", cmd_timeout);
+  // timeout only activates when cmd_timeout > constraints.goal_time
+  rclcpp::Parameter goal_time_parameter("constraints.goal_time", 0.001);
   double kp = 1.0;  // activate feedback control for testing velocity/effort PID
-  SetUpAndActivateTrajectoryController(executor, {cmd_timeout_parameter}, false, kp);
+  SetUpAndActivateTrajectoryController(
+    executor, {cmd_timeout_parameter, goal_time_parameter}, false, kp);
 
   // send msg
   constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
@@ -3355,6 +3358,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_no_velocit
   constexpr double cmd_timeout = 0.1;
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", 10.0),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", 10.0),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0),
@@ -3396,6 +3401,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_zero_max_d
   // -> controller disables should_decelerate_on_cancel_ and falls back to set_hold_position
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
 
   SetUpAndActivateTrajectoryController(executor, params);
@@ -3439,6 +3446,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_positive_velocity)
 
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
@@ -3497,6 +3506,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_negative_velocity)
 
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
@@ -3549,6 +3560,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_per_joint_calculati
 
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
@@ -3611,6 +3624,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
 
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
