@@ -102,6 +102,8 @@ controller_interface::CallbackReturn PoseBroadcaster::on_configure(
       std::make_unique<realtime_tools::RealtimePublisher<geometry_msgs::msg::PoseStamped>>(
         pose_publisher_);
 
+    realtime_tf_publisher_.reset();
+    tf_publisher_.reset();
     if (params_.tf.enable)
     {
       tf_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
