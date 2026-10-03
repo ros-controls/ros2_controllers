@@ -35,6 +35,32 @@ Published topics
    controller’s namespace (e.g., ``/my_state_broadcaster/joint_states``). If ``false`` (default),
    it is published at the root (e.g., ``/joint_states``).
 
+.. note::
+
+   By default ``header.stamp`` is the controller manager update time. Set both
+   ``timestamp_state_interfaces.sec`` and ``timestamp_state_interfaces.nsec`` to the full names of
+   two state interfaces that the hardware writes a measurement time to, in the controller manager
+   clock domain. That measurement time is then used for the stamp. A seconds value of zero means no
+   measurement time is available.
+
+Example:
+
+.. code-block:: yaml
+
+   joint_state_broadcaster:
+     ros__parameters:
+       timestamp_state_interfaces:
+         sec: measurement_clock/measurement_time_sec
+         nsec: measurement_clock/measurement_time_nsec
+
+.. code-block:: xml
+
+   <sensor name="measurement_clock">
+     <!-- data_type may be double, int32 or uint32 -->
+     <state_interface name="measurement_time_sec" data_type="uint32"/>
+     <state_interface name="measurement_time_nsec" data_type="uint32"/>
+   </sensor>
+
 
 Parameters
 ----------
