@@ -77,8 +77,7 @@ private:
   void apply_state_value(
     StateType & state_msg, std::size_t gpio_index, std::size_t interface_index) const;
   void apply_command(
-    const CmdType & gpio_commands, std::size_t gpio_index,
-    std::size_t command_interface_index) const;
+    const CmdType & gpio_commands, std::size_t gpio_index, std::size_t command_interface_index);
   bool should_broadcast_all_interfaces_of_configured_gpios() const;
   void set_all_state_interfaces_of_configured_gpios();
   InterfacesNames get_gpios_state_interfaces_names(const std::string & gpio_name) const;
