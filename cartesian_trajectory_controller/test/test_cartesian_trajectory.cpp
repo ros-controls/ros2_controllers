@@ -1,0 +1,230 @@
+// Copyright (c) 2026 ros2_control Development Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <gmock/gmock.h>
+
+#include <algorithm>
+#include <utility>
+#include <vector>
+
+#include "cartesian_trajectory_controller/cartesian_trajectory.hpp"
+
+using cartesian_trajectory_controller::CartesianTrajectory;
+
+namespace
+{
+CartesianTrajectory make_trajectory()
+{
+  const std::vector<double> times = {0.0, 1.0, 2.0};
+  const std::vector<Eigen::Vector3d> positions = {
+    {0.0, 0.0, 0.0}, {0.5, 0.1, 0.0}, {1.0, 0.0, 0.2}};
+  std::vector<Eigen::Quaterniond> orientations = {
+    Eigen::Quaterniond::Identity(),
+    Eigen::Quaterniond(Eigen::AngleAxisd(0.5, Eigen::Vector3d::UnitZ())),
+    Eigen::Quaterniond(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()))};
+  return CartesianTrajectory(times, positions, orientations);
+}
+}  // namespace
+
+// Cubic Hermite interpolates the waypoints, so sampling at a waypoint time returns that waypoint's
+// pose.
+TEST(TestCartesianTrajectory, passes_through_waypoints)
+{
+  auto traj = make_trajectory();
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+
+  ASSERT_TRUE(traj.sample(1.0, p, q));
+  EXPECT_NEAR(p.x(), 0.5, 1e-9);
+  EXPECT_NEAR(p.y(), 0.1, 1e-9);
+  const Eigen::Quaterniond expected(Eigen::AngleAxisd(0.5, Eigen::Vector3d::UnitZ()));
+  EXPECT_NEAR(q.angularDistance(expected), 0.0, 1e-9);
+}
+
+// Orientation slerps along the waypoint arc on the solved angle, not on raw time.
+TEST(TestCartesianTrajectory, orientation_shares_translation_time_profile)
+{
+  auto traj = make_trajectory();
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+
+  ASSERT_TRUE(traj.sample(0.5, p, q));  // midpoint of the first segment in time, not in progress
+  const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
+  const Eigen::Quaterniond q1(Eigen::AngleAxisd(0.5, Eigen::Vector3d::UnitZ()));
+
+  // still on the shortest arc between the bracketing waypoints
+  EXPECT_NEAR(q0.angularDistance(q) + q.angularDistance(q1), q0.angularDistance(q1), 1e-9);
+
+  // x and the rotation angle have the same waypoint spacing, so they must be at the same fraction
+  const double rotation_fraction = q0.angularDistance(q) / q0.angularDistance(q1);
+  const double translation_fraction = p.x() / 0.5;
+  EXPECT_NEAR(rotation_fraction, translation_fraction, 1e-9);
+
+  // and that fraction is the rest-start cubic's, not the constant-rate 0.5
+  EXPECT_NEAR(rotation_fraction, 0.3125, 1e-9);
+}
+
+// Sampling outside the span clamps to the endpoints.
+TEST(TestCartesianTrajectory, clamps_outside_span)
+{
+  auto traj = make_trajectory();
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+
+  ASSERT_TRUE(traj.sample(-1.0, p, q));
+  EXPECT_NEAR(p.norm(), 0.0, 1e-9);
+
+  ASSERT_TRUE(traj.sample(5.0, p, q));
+  EXPECT_NEAR(p.x(), 1.0, 1e-9);
+  EXPECT_NEAR(p.z(), 0.2, 1e-9);
+}
+
+// A waypoint given with the opposite quaternion sign is still reached along the shorter arc.
+TEST(TestCartesianTrajectory, rotates_along_shorter_arc)
+{
+  const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
+  const Eigen::Quaterniond q1(Eigen::AngleAxisd(0.4, Eigen::Vector3d::UnitZ()));
+  const Eigen::Quaterniond q1_flipped(-q1.w(), -q1.x(), -q1.y(), -q1.z());
+  ASSERT_LT(q0.dot(q1_flipped), 0.0);
+  const CartesianTrajectory traj(
+    {0.0, 1.0}, {Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()}, {q0, q1_flipped});
+
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  for (double t = 0.0; t <= 1.0; t += 0.1)
+  {
+    ASSERT_TRUE(traj.sample(t, p, q));
+    EXPECT_NEAR(q0.angularDistance(q) + q.angularDistance(q1), 0.4, 1e-9);
+  }
+}
+
+// min_segment_duration returns the larger of the linear/angular-limited times, floored at
+// min_duration.
+TEST(TestCartesianTrajectory, segment_duration_respects_speed_limits)
+{
+  const Eigen::Quaterniond identity = Eigen::Quaterniond::Identity();
+
+  // 0.2 m at 0.1 m/s = 2.0 s average, scaled to the cubic's peak; rotation does not dominate
+  EXPECT_NEAR(
+    cartesian_trajectory_controller::min_segment_duration(
+      Eigen::Vector3d::Zero(), identity, Eigen::Vector3d(0.2, 0.0, 0.0), identity, 0.1, 0.5, 0.01),
+    3.0, 1e-9);
+
+  // rotation follows the same cubic profile: 1.0 rad at 0.5 rad/s = 2.0 s average, scaled
+  const Eigen::Quaterniond rotated(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()));
+  EXPECT_NEAR(
+    cartesian_trajectory_controller::min_segment_duration(
+      Eigen::Vector3d::Zero(), identity, Eigen::Vector3d::Zero(), rotated, 0.1, 0.5, 0.01),
+    3.0, 1e-9);
+
+  // Coincident, unrotated poses -> floored at min_duration.
+  EXPECT_NEAR(
+    cartesian_trajectory_controller::min_segment_duration(
+      Eigen::Vector3d::Zero(), identity, Eigen::Vector3d::Zero(), identity, 0.1, 0.5, 0.01),
+    0.01, 1e-9);
+}
+
+// A synthesized segment peaks exactly at the speed limit, for translation and for rotation.
+TEST(TestCartesianTrajectory, synthesized_segment_peaks_at_speed_limit)
+{
+  const Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
+  const Eigen::Vector3d p1(0.2, 0.0, 0.0);
+  const Eigen::Quaterniond q0 = Eigen::Quaterniond::Identity();
+  const Eigen::Quaterniond q1(Eigen::AngleAxisd(1.0, Eigen::Vector3d::UnitZ()));
+  const double max_linear = 0.1;
+  const double max_angular = 0.5;
+
+  // one segment limited by translation, one by rotation
+  for (const auto & [to_position, to_orientation] : {std::pair{p1, q0}, std::pair{p0, q1}})
+  {
+    const double duration = cartesian_trajectory_controller::min_segment_duration(
+      p0, q0, to_position, to_orientation, max_linear, max_angular, 0.01);
+    const CartesianTrajectory traj({0.0, duration}, {p0, to_position}, {q0, to_orientation});
+
+    const double dt = 1e-3;
+    double peak_linear = 0.0;
+    double peak_angular = 0.0;
+    Eigen::Vector3d p_prev, p;
+    Eigen::Quaterniond q_prev, q;
+    ASSERT_TRUE(traj.sample(0.0, p_prev, q_prev));
+    for (double t = dt; t <= duration; t += dt)
+    {
+      ASSERT_TRUE(traj.sample(t, p, q));
+      peak_linear = std::max(peak_linear, (p - p_prev).norm() / dt);
+      peak_angular = std::max(peak_angular, q_prev.angularDistance(q) / dt);
+      p_prev = p;
+      q_prev = q;
+    }
+    EXPECT_LE(peak_linear, max_linear + 1e-6);
+    EXPECT_LE(peak_angular, max_angular + 1e-6);
+    EXPECT_GT(std::max(peak_linear / max_linear, peak_angular / max_angular), 0.999)
+      << "the limiting speed is never reached";
+  }
+}
+
+// A single-waypoint path has zero duration and returns that pose for any query time.
+TEST(TestCartesianTrajectory, single_waypoint_clamps)
+{
+  const std::vector<double> times = {0.5};
+  const std::vector<Eigen::Vector3d> positions = {{1.0, 2.0, 3.0}};
+  const std::vector<Eigen::Quaterniond> orientations = {
+    Eigen::Quaterniond(Eigen::AngleAxisd(0.3, Eigen::Vector3d::UnitZ()))};
+  CartesianTrajectory traj(times, positions, orientations);
+
+  EXPECT_NEAR(traj.duration(), 0.0, 1e-12);
+
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  for (double t : {-1.0, 0.5, 5.0})
+  {
+    ASSERT_TRUE(traj.sample(t, p, q));
+    EXPECT_NEAR((p - positions[0]).norm(), 0.0, 1e-12);
+    EXPECT_NEAR(q.angularDistance(orientations[0]), 0.0, 1e-12);
+  }
+}
+
+// An empty path cannot be sampled.
+TEST(TestCartesianTrajectory, empty_trajectory_sample_returns_false)
+{
+  const std::vector<double> times;
+  const std::vector<Eigen::Vector3d> positions;
+  const std::vector<Eigen::Quaterniond> orientations;
+  CartesianTrajectory traj(times, positions, orientations);
+
+  Eigen::Vector3d p;
+  Eigen::Quaterniond q;
+  EXPECT_FALSE(traj.sample(0.0, p, q));
+}
+
+// Cubic-Hermite translation is C1 across a knot (the velocity is continuous, not a staircase).
+TEST(TestCartesianTrajectory, translation_is_smooth_not_staircase)
+{
+  auto traj = make_trajectory();  // knots at t = 0, 1, 2
+  const double eps = 1e-4;
+  Eigen::Vector3d p_before, p_at, p_after;
+  Eigen::Quaterniond q;
+  ASSERT_TRUE(traj.sample(1.0 - eps, p_before, q));
+  ASSERT_TRUE(traj.sample(1.0, p_at, q));
+  ASSERT_TRUE(traj.sample(1.0 + eps, p_after, q));
+
+  const Eigen::Vector3d v_left = (p_at - p_before) / eps;
+  const Eigen::Vector3d v_right = (p_after - p_at) / eps;
+  EXPECT_NEAR((v_left - v_right).norm(), 0.0, 1e-2);  // continuous velocity at the knot
+}
+
+int main(int argc, char ** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
