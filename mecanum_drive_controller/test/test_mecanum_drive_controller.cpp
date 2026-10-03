@@ -313,9 +313,9 @@ TEST_F(
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 101.101);
   ASSERT_TRUE(deactivate_succeeds(controller_));
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 0.0);
   ASSERT_TRUE(activate_succeeds(controller_));
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value()));
+  ASSERT_EQ(controller_->command_interfaces_[NR_CMD_ITFS - 4].get_optional().value(), 0.0);
 
   ASSERT_EQ(
     controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
