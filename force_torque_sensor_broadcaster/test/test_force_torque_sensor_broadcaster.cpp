@@ -175,9 +175,6 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Configure_Success)
   // set the 'sensor_name'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
 
-  // set the 'frame_id'
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-
   // configure passed
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
 
@@ -198,10 +195,6 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Configure_Success)
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
 
-  RCLCPP_INFO(fts_broadcaster_->get_node()->get_logger(), "Setting up frame_id");
-  // set the 'frame_id'
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
-
   // configure passed
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
 }
@@ -210,9 +203,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_ActivateDeactivate_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set the params 'sensor_name' and 'frame_id'
+  // set the 'sensor_name'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // configure and activate success
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
@@ -242,9 +234,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Update_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set the params 'sensor_name' and 'frame_id'
+  // set the 'sensor_name'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
@@ -258,10 +249,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set the params 'interface_names' and 'frame_id'
+  // set the 'interface_names'
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
@@ -274,9 +264,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set the params 'sensor_name' and 'frame_id'
+  // set the 'sensor_name'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
@@ -300,9 +289,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Offsets
 
   std::array<double, 3> force_offsets = {{10.0, 30.0, -50.0}};
   std::array<double, 3> torque_offsets = {{1.0, -1.2, -5.2}};
-  // set the params 'sensor_name' and 'frame_id'
+  // set the 'sensor_name'
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
   fts_broadcaster_->get_node()->set_parameter({"offset.force.x", force_offsets[0]});
   fts_broadcaster_->get_node()->set_parameter({"offset.force.y", force_offsets[1]});
   fts_broadcaster_->get_node()->set_parameter({"offset.force.z", force_offsets[2]});
@@ -367,7 +355,6 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorName_Publish_Success_with_Multipl
 
   // Set the required params
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   // Set all multiplier parameters
   fts_broadcaster_->get_node()->set_parameter({"multiplier.force.x", force_multipliers[0]});
@@ -432,10 +419,9 @@ TEST_F(ForceTorqueSensorBroadcasterTest, InterfaceNames_Publish_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set the params 'interface_names' and 'frame_id'
+  // set the 'interface_names'
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
@@ -470,14 +456,13 @@ TEST_F(ForceTorqueSensorBroadcasterTest, All_InterfaceNames_Publish_Success)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
 
-  // set all the params 'interface_names' and 'frame_id'
+  // set all the 'interface_names'
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.x", "fts_sensor/force.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.y", "fts_sensor/force.y"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.force.z", "fts_sensor/force.z"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.x", "fts_sensor/torque.x"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.y", "fts_sensor/torque.y"});
   fts_broadcaster_->get_node()->set_parameter({"interface_names.torque.z", "fts_sensor/torque.z"});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
 
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
@@ -618,6 +603,43 @@ TEST_F(ForceTorqueSensorBroadcasterTest, SensorFilterChain_Publish_Success)
   ASSERT_EQ(wrench_msg_filtered.wrench.torque.x, sensor_values_[3] + 1.0);
   ASSERT_EQ(wrench_msg_filtered.wrench.torque.y, sensor_values_[4] + 1.0);
   ASSERT_EQ(wrench_msg_filtered.wrench.torque.z, sensor_values_[5] + 1.0);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, invalid_filter_configuration_rejects_configure)
+{
+  SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster_bad_chain");
+  EXPECT_FALSE(configure_succeeds(fts_broadcaster_));
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_must_be_set_at_startup)
+{
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "test_force_torque_sensor_broadcaster_without_frame_id";
+  params.node_options = fts_broadcaster_->define_custom_node_options();
+  EXPECT_EQ(fts_broadcaster_->init(params), controller_interface::return_type::ERROR);
+}
+
+TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_parameter_is_read_only)
+{
+  SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
+  fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
+
+  geometry_msgs::msg::WrenchStamped before;
+  std::string topic = "/test_force_torque_sensor_broadcaster/wrench";
+  subscribe_and_get_message(before, topic);
+  ASSERT_EQ(before.header.frame_id, frame_id_);
+
+  const std::string updated_frame = "updated_fts_sensor_frame";
+  const auto result = fts_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("frame_id", updated_frame));
+  EXPECT_FALSE(result.successful);
+  EXPECT_EQ(fts_broadcaster_->get_node()->get_parameter("frame_id").as_string(), frame_id_);
+
+  geometry_msgs::msg::WrenchStamped after;
+  subscribe_and_get_message(after, topic);
+  EXPECT_EQ(after.header.frame_id, frame_id_);
 }
 
 int main(int argc, char ** argv)
