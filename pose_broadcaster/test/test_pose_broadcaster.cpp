@@ -250,7 +250,6 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   ASSERT_EQ(tf_msg.transforms.size(), 0lu);
 }
 
-
 TEST_F(PoseBroadcasterTest, disabling_tf_after_cleanup_stops_tf_publication)
 {
   SetUpPoseBroadcaster();
