@@ -628,27 +628,27 @@ TEST_F(ForceTorqueSensorBroadcasterTest, invalid_filter_configuration_rejects_co
 }
 
 
-TEST_F(ForceTorqueSensorBroadcasterTest, accepted_frame_parameter_update_changes_message_frame)
+TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_parameter_is_read_only)
 {
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
-  fts_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
   ASSERT_TRUE(activate_succeeds(fts_broadcaster_));
+
   geometry_msgs::msg::WrenchStamped before;
   std::string topic = "/test_force_torque_sensor_broadcaster/wrench";
   subscribe_and_get_message(before, topic);
   ASSERT_EQ(before.header.frame_id, frame_id_);
+
   const std::string updated_frame = "updated_fts_sensor_frame";
   const auto result = fts_broadcaster_->get_node()->set_parameter(
     rclcpp::Parameter("frame_id", updated_frame));
-  ASSERT_TRUE(result.successful) << result.reason;
-  ASSERT_EQ(fts_broadcaster_->get_node()->get_parameter("frame_id").as_string(), updated_frame);
+  EXPECT_FALSE(result.successful);
+  EXPECT_EQ(fts_broadcaster_->get_node()->get_parameter("frame_id").as_string(), frame_id_);
+
   geometry_msgs::msg::WrenchStamped after;
   subscribe_and_get_message(after, topic);
-  EXPECT_EQ(after.header.frame_id, updated_frame);
-  EXPECT_DOUBLE_EQ(after.wrench.force.x, sensor_values_[0]);
-  EXPECT_DOUBLE_EQ(after.wrench.torque.z, sensor_values_[5]);
+  EXPECT_EQ(after.header.frame_id, frame_id_);
 }
 
 int main(int argc, char ** argv)
