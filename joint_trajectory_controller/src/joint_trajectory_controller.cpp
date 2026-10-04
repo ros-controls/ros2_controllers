@@ -345,12 +345,17 @@ controller_interface::return_type JointTrajectoryController::update(
       bool outside_goal_tolerance = false;
       bool within_goal_time = true;
       const bool before_last_point = end_segment_itr != current_trajectory_->end();
+      // Use elapsed controller time, not speed-scaled trajectory progress.
+      const double execution_time = (time - traj_start).seconds();
+      const bool action_timed_out = !rt_is_holding_ && (active_goal || !rt_has_pending_goal_) &&
+                                    action_execution_timeout_ > 0.0 &&
+                                    execution_time > action_execution_timeout_;
       auto active_tol = active_tolerances_.readFromRT();
 
       // have we reached the end, are not holding position, and is a timeout configured?
       // Check independently of other tolerances
       if (
-        !before_last_point && !rt_is_holding_ && cmd_timeout_ > 0.0 &&
+        !before_last_point && !rt_is_holding_ && !action_timed_out && cmd_timeout_ > 0.0 &&
         time_difference > cmd_timeout_)
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
@@ -407,7 +412,7 @@ controller_interface::return_type JointTrajectoryController::update(
       }
 
       // set values for next hardware write() if tolerance is met
-      if (!tolerance_violated_while_moving && within_goal_time)
+      if (!tolerance_violated_while_moving && within_goal_time && !action_timed_out)
       {
         if (use_closed_loop_pid_adapter_)
         {
@@ -453,7 +458,36 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_time_ = time;
       }
 
-      if (active_goal)
+      // Preserve tolerance failure precedence, but never succeed after the execution timeout.
+      if (action_timed_out && !tolerance_violated_while_moving && within_goal_time)
+      {
+        RCLCPP_ERROR(
+          logger, "Aborted due to action_execution_timeout [%f] exceeded [%f]",
+          action_execution_timeout_, execution_time);
+        new_trajectory_msg_.reset();
+        if (should_decelerate_on_cancel_)
+        {
+          new_trajectory_msg_.initRT(decelerate_to_hold_position());
+        }
+        else
+        {
+          new_trajectory_msg_.initRT(set_hold_position());
+        }
+
+        if (active_goal)
+        {
+          auto result = std::make_shared<FollowJTrajAction::Result>();
+          result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
+          result->set__error_string(
+            "Aborted due to action_execution_timeout [timeout: " +
+            std::to_string(action_execution_timeout_) +
+            ", elapsed: " + std::to_string(execution_time) + "]");
+          active_goal->setAborted(result);
+          rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
+          rt_has_pending_goal_ = false;
+        }
+      }
+      else if (active_goal)
       {
         // send feedback
         active_goal->trySetFeedback(
@@ -576,38 +610,6 @@ controller_interface::return_type JointTrajectoryController::update(
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
       // or outside_goal_tolerance violated within the goal_time_tolerance
-      // Check if action_execution_timeout is exceeded (from trajectory start)
-      if (
-        !before_last_point && !rt_is_holding_ && action_execution_timeout_ > 0.0 &&
-        (traj_time_ - current_trajectory_->time_from_start()).seconds() > action_execution_timeout_)
-      {
-        RCLCPP_ERROR(
-          logger, "Aborted due to action_execution_timeout [%f] exceeded [%f]",
-          action_execution_timeout_,
-          (traj_time_ - current_trajectory_->time_from_start()).seconds());
-        new_trajectory_msg_.reset();
-        if (should_decelerate_on_cancel_)
-        {
-          new_trajectory_msg_.initRT(decelerate_to_hold_position());
-        }
-        else
-        {
-          new_trajectory_msg_.initRT(set_hold_position());
-        }
-
-        if (active_goal)
-        {
-          auto result = std::make_shared<FollowJTrajAction::Result>();
-          result->set__error_code(FollowJTrajAction::Result::GOAL_TOLERANCE_VIOLATED);
-          result->set__error_string(
-            "Aborted due to action_execution_timeout [timeout: " +
-            std::to_string(action_execution_timeout_) + ", elapsed: " +
-            std::to_string((traj_time_ - current_trajectory_->time_from_start()).seconds()) + "]");
-          active_goal->setAborted(result);
-          rt_active_goal_.writeFromNonRT(RealtimeGoalHandlePtr());
-          rt_has_pending_goal_ = false;
-        }
-      }
     }
   }
 
