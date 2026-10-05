@@ -2,6 +2,11 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add controller interface dependencies (backport `#2579 <https://github.com/ros-controls/ros2_controllers/issues/2579>`_) (`#2580 <https://github.com/ros-controls/ros2_controllers/issues/2580>`_)
+* Contributors: mergify[bot]
+
 5.17.0 (2026-08-12)
 -------------------
 

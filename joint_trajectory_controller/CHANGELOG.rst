@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix(jtc): Use trySetFeedback for goal handle feedback (backport `#2610 <https://github.com/ros-controls/ros2_controllers/issues/2610>`_) (`#2626 <https://github.com/ros-controls/ros2_controllers/issues/2626>`_)
+* [JTC] Add goal_timeout parameter to abort action when total trajectory time exceeds limit (`#2360 <https://github.com/ros-controls/ros2_controllers/issues/2360>`_)
+* Contributors: kamal2730, mergify[bot]
+
 5.17.0 (2026-08-12)
 -------------------
 * Use preallocated feedback from JTC to avoid heap allocation (backport `#2160 <https://github.com/ros-controls/ros2_controllers/issues/2160>`_) (`#2542 <https://github.com/ros-controls/ros2_controllers/issues/2542>`_)
