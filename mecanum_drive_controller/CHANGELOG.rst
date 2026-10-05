@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.10.0 (2026-10-05)
+-------------------
 * Fix/mecanum zero all wheels (`#2624 <https://github.com/ros-controls/ros2_controllers/issues/2624>`_)
 * test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
 * Contributors: Akshat Guduru, mibrahim-cpr

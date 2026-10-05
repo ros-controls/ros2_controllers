@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.10.0 (2026-10-05)
+-------------------
 * feat: migrate diff_drive_controller and joint_trajectory_controller to new RealtimePublisher constructor (`#2576 <https://github.com/ros-controls/ros2_controllers/issues/2576>`_)
 * fix(jtc): Use trySetFeedback for goal handle feedback (`#2610 <https://github.com/ros-controls/ros2_controllers/issues/2610>`_)
 * [JTC] cross chunk continuity for positions upsampling (`#2573 <https://github.com/ros-controls/ros2_controllers/issues/2573>`_)

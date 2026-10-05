@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.10.0 (2026-10-05)
+-------------------
 * Add closed-form steering integration tests (`#2567 <https://github.com/ros-controls/ros2_controllers/issues/2567>`_)
 * test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
 * Contributors: Akshat Guduru, Dylan Gallagher
