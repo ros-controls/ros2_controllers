@@ -17,6 +17,7 @@
 
 #include <gmock/gmock.h>
 #include <cmath>
+#include <stdexcept>
 #include <string>
 
 #include "steering_controllers_library/steering_kinematics.hpp"
@@ -24,6 +25,10 @@
 namespace
 {
 constexpr double TOLERANCE = 1e-10;
+constexpr double WHEEL_RADIUS = 0.31;
+constexpr double WHEEL_BASE = 1.7;
+constexpr double STEERING_TRACK = 1.1;
+constexpr double TRACTION_TRACK = 1.5;
 
 struct SteeringConfiguration
 {
@@ -37,6 +42,35 @@ struct Pose
   double y;
   double heading;
 };
+
+struct WheelState
+{
+  double center_traction;
+  double right_traction;
+  double left_traction;
+  double center_steering;
+  double right_steering;
+  double left_steering;
+};
+
+WheelState wheel_state_from_twist(const double linear, const double angular)
+{
+  const double center_steering = std::atan(angular * WHEEL_BASE / linear);
+  const double turning_radius = linear / angular;
+  const double center_traction = linear / WHEEL_RADIUS;
+  const double right_traction =
+    center_traction * (turning_radius + TRACTION_TRACK * 0.5) / turning_radius;
+  const double left_traction =
+    center_traction * (turning_radius - TRACTION_TRACK * 0.5) / turning_radius;
+  const double right_steering = std::atan2(
+    2.0 * WHEEL_BASE * std::sin(center_steering),
+    2.0 * WHEEL_BASE * std::cos(center_steering) + STEERING_TRACK * std::sin(center_steering));
+  const double left_steering = std::atan2(
+    2.0 * WHEEL_BASE * std::sin(center_steering),
+    2.0 * WHEEL_BASE * std::cos(center_steering) - STEERING_TRACK * std::sin(center_steering));
+  return {center_traction, right_traction, left_traction,
+          center_steering, right_steering, left_steering};
+}
 
 Pose integrate_twist(
   const Pose & initial, const double linear, const double angular, const double dt)
@@ -114,6 +148,109 @@ TEST_P(SteeringOdometryIntegratorTest, integrates_open_loop_arcs)
 
 INSTANTIATE_TEST_SUITE_P(
   SteeringConfigurations, SteeringOdometryIntegratorTest,
+  ::testing::Values(
+    SteeringConfiguration{steering_kinematics::BICYCLE_CONFIG, "Bicycle"},
+    SteeringConfiguration{steering_kinematics::TRICYCLE_CONFIG, "Tricycle"},
+    SteeringConfiguration{steering_kinematics::ACKERMANN_CONFIG, "Ackermann"}),
+  configuration_name);
+
+class SteeringOdometryFeedbackTest : public ::testing::TestWithParam<SteeringConfiguration>
+{
+protected:
+  void configure(steering_kinematics::SteeringKinematics & odom) const
+  {
+    odom.set_wheel_params(WHEEL_RADIUS, WHEEL_BASE, STEERING_TRACK, TRACTION_TRACK);
+    odom.set_odometry_type(GetParam().type);
+  }
+
+  bool update_from_velocity(
+    steering_kinematics::SteeringKinematics & odom, const double linear, const double angular,
+    const double dt) const
+  {
+    const auto wheels = wheel_state_from_twist(linear, angular);
+    switch (GetParam().type)
+    {
+      case steering_kinematics::BICYCLE_CONFIG:
+        return odom.update_from_velocity(wheels.center_traction, wheels.center_steering, dt);
+      case steering_kinematics::TRICYCLE_CONFIG:
+        return odom.update_from_velocity(
+          wheels.right_traction, wheels.left_traction, wheels.center_steering, dt);
+      case steering_kinematics::ACKERMANN_CONFIG:
+        return odom.update_from_velocity(
+          wheels.right_traction, wheels.left_traction, wheels.right_steering, wheels.left_steering,
+          dt);
+      default:
+        throw std::logic_error("unexpected test configuration");
+    }
+  }
+
+  bool update_from_position(
+    steering_kinematics::SteeringKinematics & odom, const double linear, const double angular,
+    const double wheel_position_time, const double dt) const
+  {
+    const auto wheels = wheel_state_from_twist(linear, angular);
+    switch (GetParam().type)
+    {
+      case steering_kinematics::BICYCLE_CONFIG:
+        return odom.update_from_position(
+          wheels.center_traction * wheel_position_time, wheels.center_steering, dt);
+      case steering_kinematics::TRICYCLE_CONFIG:
+        return odom.update_from_position(
+          wheels.right_traction * wheel_position_time, wheels.left_traction * wheel_position_time,
+          wheels.center_steering, dt);
+      case steering_kinematics::ACKERMANN_CONFIG:
+        return odom.update_from_position(
+          wheels.right_traction * wheel_position_time, wheels.left_traction * wheel_position_time,
+          wheels.right_steering, wheels.left_steering, dt);
+      default:
+        throw std::logic_error("unexpected test configuration");
+    }
+  }
+};
+
+// cppcheck-suppress syntaxError
+// Cppcheck does not expand the GoogleTest parameterized-test macro.
+TEST_P(SteeringOdometryFeedbackTest, velocity_feedback_matches_body_twist)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  configure(odom);
+  const Pose initial{-0.2, 0.5, 0.25};
+  odom.set_odometry(initial.x, initial.y, initial.heading);
+
+  constexpr double linear = 0.8;
+  constexpr double angular = 0.32;
+  constexpr double dt = 0.25;
+  ASSERT_TRUE(update_from_velocity(odom, linear, angular, dt));
+
+  EXPECT_THAT(
+    (Pose{odom.get_x(), odom.get_y(), odom.get_heading()}),
+    PoseNear(integrate_twist(initial, linear, angular, dt)));
+  EXPECT_NEAR(odom.get_linear(), linear, TOLERANCE);
+  EXPECT_NEAR(odom.get_angular(), angular, TOLERANCE);
+}
+
+TEST_P(SteeringOdometryFeedbackTest, position_feedback_uses_incremental_wheel_state)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  configure(odom);
+  const Pose initial{0.3, -0.6, -0.2};
+  odom.set_odometry(initial.x, initial.y, initial.heading);
+
+  constexpr double linear = 0.9;
+  constexpr double angular = -0.28;
+  constexpr double dt = 0.4;
+  ASSERT_TRUE(update_from_position(odom, linear, angular, dt, dt));
+  ASSERT_TRUE(update_from_position(odom, linear, angular, 2.0 * dt, dt));
+
+  EXPECT_THAT(
+    (Pose{odom.get_x(), odom.get_y(), odom.get_heading()}),
+    PoseNear(integrate_twist(initial, linear, angular, 2.0 * dt)));
+  EXPECT_NEAR(odom.get_linear(), linear, TOLERANCE);
+  EXPECT_NEAR(odom.get_angular(), angular, TOLERANCE);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  SteeringFeedbackConfigurations, SteeringOdometryFeedbackTest,
   ::testing::Values(
     SteeringConfiguration{steering_kinematics::BICYCLE_CONFIG, "Bicycle"},
     SteeringConfiguration{steering_kinematics::TRICYCLE_CONFIG, "Tricycle"},
