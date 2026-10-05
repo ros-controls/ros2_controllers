@@ -2,6 +2,11 @@
 Changelog for package pid_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* feature(pid_controller): Optionally reset command interfaces at deactivation (backport `#2602 <https://github.com/ros-controls/ros2_controllers/issues/2602>`_) (`#2604 <https://github.com/ros-controls/ros2_controllers/issues/2604>`_)
+* Contributors: mergify[bot]
+
 4.42.1 (2026-08-12)
 -------------------
 
