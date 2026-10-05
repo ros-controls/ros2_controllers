@@ -1,0 +1,7 @@
+<library path="cmd_vel_controller">
+  <class name="cmd_vel_controller/CmdVelController" type="cmd_vel_controller::CmdVelController" base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      Controller to limit cmd_vel.
+    </description>
+  </class>
+</library>
