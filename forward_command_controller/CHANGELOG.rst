@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.43.0 (2026-10-05)
+-------------------
 * feat: warn when ForwardCommandController receives commands while inactive (backport `#2488 <https://github.com/ros-controls/ros2_controllers/issues/2488>`_) (`#2642 <https://github.com/ros-controls/ros2_controllers/issues/2642>`_)
 * test: cleanup controller fixture member variables (backport `#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_) (`#2565 <https://github.com/ros-controls/ros2_controllers/issues/2565>`_)
 * Contributors: mergify[bot]

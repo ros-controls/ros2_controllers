@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.43.0 (2026-10-05)
+-------------------
 * Add controller interface dependencies (backport `#2579 <https://github.com/ros-controls/ros2_controllers/issues/2579>`_) (`#2581 <https://github.com/ros-controls/ros2_controllers/issues/2581>`_)
 * Contributors: mergify[bot]
 
