@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.54.1 (2026-10-05)
+-------------------
 * Add controller interface dependencies (`#2579 <https://github.com/ros-controls/ros2_controllers/issues/2579>`_)
 * Contributors: Plumezz
 
