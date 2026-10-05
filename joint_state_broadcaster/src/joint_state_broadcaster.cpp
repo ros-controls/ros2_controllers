@@ -85,6 +85,10 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
       }
     }
   }
+  else if (params_.joints.empty() || params_.interfaces.empty())
+  {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  }
   else
   {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -105,12 +109,15 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (use_urdf_joint_interfaces())
+  if (params_.joints.empty() || params_.interfaces.empty())
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "'joints' or 'interfaces' parameter is empty. Will try to publish all available state "
-      "interfaces of the URDF joints.");
+      params_.use_urdf_to_filter
+        ? "'joints' or 'interfaces' parameter is empty. Will try to publish all available "
+          "state interfaces of the URDF joints."
+        : "'joints' or 'interfaces' parameter is empty. All available state interfaces will be "
+          "considered.");
     params_.joints.clear();
     params_.interfaces.clear();
   }
@@ -336,10 +343,12 @@ bool JointStateBroadcaster::init_joint_data()
   // name_if_value_mapping_ if it is not already there
   for (const auto & extra_joint_name : params_.extra_joints)
   {
-    if (name_if_value_mapping_.count(extra_joint_name) == 0)
+    if (std::find(joint_names_.begin(), joint_names_.end(), extra_joint_name) == joint_names_.end())
     {
-      name_if_value_mapping_[extra_joint_name] = {
-        {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+      auto & values = name_if_value_mapping_[extra_joint_name];
+      values[HW_IF_POSITION] = 0.0;
+      values[HW_IF_VELOCITY] = 0.0;
+      values[HW_IF_EFFORT] = 0.0;
       joint_names_.push_back(extra_joint_name);
     }
   }
@@ -408,12 +417,12 @@ void JointStateBroadcaster::init_joint_state_msg()
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
-  return this->use_urdf_joint_interfaces();
+  return params_.joints.empty() || params_.interfaces.empty();
 }
 
 bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 {
-  return params_.joints.empty() || params_.interfaces.empty();
+  return params_.use_urdf_to_filter && (params_.joints.empty() || params_.interfaces.empty());
 }
 
 controller_interface::return_type JointStateBroadcaster::update(

@@ -1236,3 +1236,33 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
   EXPECT_DOUBLE_EQ(pos[2], INIT_POS[2])
     << "joint3's position slot has wrong value — map_index was shifted by the nullopt";
 }
+
+
+TEST_F(JointStateBroadcasterTest, use_urdf_filter_false_without_urdf_contract_probe)
+{
+  init_broadcaster_and_set_parameters(
+    "", {}, {}, {rclcpp::Parameter("use_urdf_to_filter", false)});
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  const auto config = state_broadcaster_->state_interface_configuration();
+  EXPECT_EQ(config.type, controller_interface::interface_configuration_type::ALL);
+  EXPECT_TRUE(config.names.empty());
+}
+
+
+TEST_F(JointStateBroadcasterTest, extra_joint_with_custom_only_interface_probe)
+{
+  init_broadcaster_and_set_parameters(
+    "", {joint_names_[0]}, {custom_interface_name_},
+    {rclcpp::Parameter("extra_joints", std::vector<std::string>{joint_names_[0]})});
+  assign_state_interfaces({joint_names_[0]}, {custom_interface_name_});
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(23), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  const auto & msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_THAT(msg.name, ElementsAreArray(std::vector<std::string>{joint_names_[0]}));
+  ASSERT_THAT(msg.position, ElementsAreArray(std::vector<double>{0.0}));
+  ASSERT_THAT(msg.velocity, ElementsAreArray(std::vector<double>{0.0}));
+  ASSERT_THAT(msg.effort, ElementsAreArray(std::vector<double>{0.0}));
+}
