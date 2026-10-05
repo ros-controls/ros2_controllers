@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix another shutdown race with rqt_jtc (backport `#2467 <https://github.com/ros-controls/ros2_controllers/issues/2467>`_) (`#2550 <https://github.com/ros-controls/ros2_controllers/issues/2550>`_)
+* Contributors: mergify[bot]
+
 2.54.0 (2026-08-10)
 -------------------
 
