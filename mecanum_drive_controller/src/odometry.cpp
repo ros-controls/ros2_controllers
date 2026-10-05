@@ -35,8 +35,14 @@ Odometry::Odometry()
 void Odometry::init(
   const rclcpp::Time & time, std::array<double, PLANAR_POINT_DIM> base_frame_offset)
 {
-  // Reset timestamp:
+  // Reset timestamp and state:
   timestamp_ = time;
+  position_x_in_base_frame_ = 0.0;
+  position_y_in_base_frame_ = 0.0;
+  orientation_z_in_base_frame_ = 0.0;
+  velocity_in_base_frame_linear_x = 0.0;
+  velocity_in_base_frame_linear_y = 0.0;
+  velocity_in_base_frame_angular_z = 0.0;
 
   // Base frame offset (wrt to center frame).
   base_frame_offset_[0] = base_frame_offset[0];
