@@ -632,8 +632,8 @@ TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_parameter_is_read_only)
   ASSERT_EQ(before.header.frame_id, frame_id_);
 
   const std::string updated_frame = "updated_fts_sensor_frame";
-  const auto result = fts_broadcaster_->get_node()->set_parameter(
-    rclcpp::Parameter("frame_id", updated_frame));
+  const auto result =
+    fts_broadcaster_->get_node()->set_parameter(rclcpp::Parameter("frame_id", updated_frame));
   EXPECT_FALSE(result.successful);
   EXPECT_EQ(fts_broadcaster_->get_node()->get_parameter("frame_id").as_string(), frame_id_);
 
