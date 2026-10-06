@@ -2,6 +2,11 @@
 Changelog for package parallel_gripper_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+* test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
+* Contributors: Akshat Guduru
+
 6.9.0 (2026-08-12)
 ------------------
 * fix(parallel_gripper): fix effort and velocity interface lookup (`#2318 <https://github.com/ros-controls/ros2_controllers/issues/2318>`_)
