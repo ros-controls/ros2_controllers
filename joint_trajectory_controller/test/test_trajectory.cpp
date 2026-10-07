@@ -784,11 +784,6 @@ TEST(TestTrajectory, fill_point_before_with_same_degree_as_traj)
   }
 }
 
-// A hardware component can declare a velocity state interface and never write it; the handle then
-// reads back NaN instead of being empty. set_point_before_trajectory_msg only zero-fills velocities
-// when the current point's velocity vector is *empty*, so a present-but-NaN vector passes through
-// untouched and corrupts the whole first segment's cubic/quintic sampling, not just the one joint's
-// initial point.
 TEST(TestTrajectory, fill_point_before_zero_fills_non_finite_velocity)
 {
   auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
@@ -806,8 +801,6 @@ TEST(TestTrajectory, fill_point_before_zero_fills_non_finite_velocity)
   p2.velocities.push_back(0.0);
   full_msg->points.push_back(p2);
 
-  // Declared (non-empty) but never written: reads back NaN, unlike the "no velocity interface at
-  // all" case which is represented by an empty vector.
   trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
   point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
   point_before_msg.positions.push_back(0.0);
@@ -1474,8 +1467,6 @@ TEST(TestAllFinite, inf_is_not_finite)
 
 TEST(TestAllFinite, nan_in_last_element_is_not_finite)
 {
-  // Every element must be checked, not just a leading subrange -- a non-finite value in the
-  // last slot (e.g. a commanded joint that is not first in the vector) must still be caught.
   EXPECT_FALSE(
     joint_trajectory_controller::all_finite({1.0, 2.0, std::numeric_limits<double>::quiet_NaN()}));
 }

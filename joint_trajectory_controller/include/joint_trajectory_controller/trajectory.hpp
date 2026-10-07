@@ -239,17 +239,7 @@ void wraparound_joint(
 bool fill_cubic_spline_velocities(
   trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity = {});
 
-/**
- * \brief Check that every element of \p values is finite.
- *
- * A hardware component can declare a state interface and never write it, leaving NaN (or +-inf)
- * in the handle; every consumer that assumes a normal float needs the same check, so it is
- * centralized here instead of repeated inline. Callers are responsible for checking that
- * \p values has the size they expect before relying on this; an empty vector is vacuously finite.
- *
- * \param values Vector to check, in full.
- * \return false if any element of \p values is not finite; true otherwise (including when empty).
- */
+/** \brief True iff every element of \p values is finite (vacuously true if empty). */
 bool all_finite(const std::vector<double> & values);
 
 }  // namespace joint_trajectory_controller

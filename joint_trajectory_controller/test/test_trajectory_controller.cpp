@@ -3332,13 +3332,7 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_no_velocit
   executor.cancel();
 }
 
-/**
- * @brief A hardware component may export a velocity state interface and never write to it,
- * leaving NaN in the handle. The deceleration ramp must not propagate that to the command
- * interfaces: NaN is invisible to the ramp arithmetic (std::max(0.0, NaN) == 0.0, and every
- * `t < stop_time` comparison is false), so without a guard every point of the stop trajectory
- * is filled with a NaN hold position and written to the hardware.
- */
+// std::max(0.0, NaN) == 0.0, so an unwritten (NaN) velocity state must not reach the ramp.
 TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_commands_no_nan)
 {
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -3355,7 +3349,6 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0),
     rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
 
-  // velocity state interface exists but reads back NaN, as if the hardware never wrote it
   SetUpAndActivateTrajectoryController(
     executor, params, false, 0.0, 1.0, INITIAL_POS_JOINTS, nan_vel);
 
@@ -3371,7 +3364,6 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_
   updateController(rclcpp::Duration::from_seconds(cmd_timeout + 0.05));
   updateController(rclcpp::Duration::from_seconds(0.1));
 
-  // Whatever path was taken, no NaN may reach the position command interfaces
   for (size_t i = 0; i < 3; ++i)
   {
     const auto commanded = pos_cmd_interfaces_[i]->get_optional();

@@ -1158,18 +1158,8 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_decelerate_fallback)
   expectCommandPoint(cancelled_position);
 }
 
-/**
- * @brief Cancelling must not step the command stream back onto the measured state.
- *
- * With separate command and state values the state stays frozen at INITIAL_POS_JOINTS while the
- * command advances, i.e. a permanent following error. Anchoring the hold to the measured state
- * would snap the commanded position back by that error in a single control period, which
- * downstream reads as a very large acceleration. The hold must stay where the command was.
- */
 TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_holds_last_command_not_measured_state)
 {
-  // the defect and the fix are both about the position command stream. Skip before any setup:
-  // tearing down an executor for a test we never run is slow and flaky.
   if (
     std::find(command_interface_types_.begin(), command_interface_types_.end(), "position") ==
     command_interface_types_.end())
@@ -1197,7 +1187,6 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_holds_last_command_no
     goal_msg.trajectory.joint_names = joint_names_;
     goal_msg.trajectory.points = points;
 
-    // let the command move away from the frozen state, then cancel mid-trajectory
     gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 

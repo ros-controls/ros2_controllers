@@ -275,18 +275,13 @@ protected:
 
   void preempt_active_goal();
 
-  /** @brief pick the point a hold or a deceleration ramp should be anchored to
-   *
-   * Returns the realtime-safe last-commanded-state snapshot when @p from_last_command is set
-   * and it holds a usable position; otherwise the measured state (state_current_). By value,
-   * since the last-commanded source is a thread-safe snapshot rather than a direct member.
-   */
+  /** @brief pick the point a hold or a deceleration ramp should be anchored to */
   trajectory_msgs::msg::JointTrajectoryPoint select_hold_anchor(bool from_last_command) const;
 
   /** @brief set the current position with zero velocity and acceleration as new command
    *
-   * @param from_last_command anchor the hold to last_commanded_state_ instead of the measured
-   * state. See select_hold_anchor().
+   * @param from_last_command hold at the last command instead of the measured state; false on
+   * fault paths
    */
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position(
     bool from_last_command = false);
@@ -294,8 +289,8 @@ protected:
   /** @brief decelerate at constant rate to a holding position with
    * zero velocity and acceleration as new command
    *
-   * @param from_last_command anchor the ramp to last_commanded_state_ instead of the measured
-   * state. See select_hold_anchor().
+   * @param from_last_command hold at the last command instead of the measured state; false on
+   * fault paths
    */
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position(
     bool from_last_command = false);
