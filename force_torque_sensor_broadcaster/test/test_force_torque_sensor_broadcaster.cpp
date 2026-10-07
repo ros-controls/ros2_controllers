@@ -30,6 +30,7 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
+#include "rclcpp/version.h"
 
 using hardware_interface::LoanedStateInterface;
 using testing::IsEmpty;
@@ -621,6 +622,10 @@ TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_must_be_set_at_startup)
 
 TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_parameter_is_read_only)
 {
+#if !RCLCPP_VERSION_GTE(18, 0, 0)
+  GTEST_SKIP() << "Read-only parameter enforcement is unavailable in this rclcpp version";
+#endif
+
   SetUpFTSBroadcaster("test_force_torque_sensor_broadcaster");
   fts_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
   ASSERT_TRUE(configure_succeeds(fts_broadcaster_));
