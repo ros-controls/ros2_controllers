@@ -622,7 +622,7 @@ TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_must_be_set_at_startup)
 
 TEST_F(ForceTorqueSensorBroadcasterTest, frame_id_parameter_is_read_only)
 {
-#if !RCLCPP_VERSION_GTE(18, 0, 0)
+#if RCLCPP_VERSION_MAJOR < 18
   GTEST_SKIP() << "Read-only parameter enforcement is unavailable in this rclcpp version";
 #endif
 
