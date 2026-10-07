@@ -240,18 +240,17 @@ bool fill_cubic_spline_velocities(
   trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity = {});
 
 /**
- * \brief Check that at least the first \p count elements of \p values are finite.
+ * \brief Check that every element of \p values is finite.
  *
  * A hardware component can declare a state interface and never write it, leaving NaN (or +-inf)
  * in the handle; every consumer that assumes a normal float needs the same check, so it is
- * centralized here instead of repeated inline.
+ * centralized here instead of repeated inline. Callers are responsible for checking that
+ * \p values has the size they expect before relying on this; an empty vector is vacuously finite.
  *
- * \param values Vector to check; only the first \p count elements are inspected.
- * \param count Number of leading elements that must be present and finite.
- * \return false if \p values has fewer than \p count elements or any of the first \p count is
- *   not finite; true otherwise.
+ * \param values Vector to check, in full.
+ * \return false if any element of \p values is not finite; true otherwise (including when empty).
  */
-bool all_finite(const std::vector<double> & values, size_t count);
+bool all_finite(const std::vector<double> & values);
 
 }  // namespace joint_trajectory_controller
 

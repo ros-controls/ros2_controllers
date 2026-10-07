@@ -1450,40 +1450,32 @@ TEST(TestTrajectory, fill_cubic_spline_velocities_rejects_non_increasing_timing)
   }
 }
 
-TEST(TestAllFinite, empty_vector_with_zero_count_is_finite)
+TEST(TestAllFinite, empty_vector_is_finite)
 {
-  EXPECT_TRUE(joint_trajectory_controller::all_finite({}, 0));
+  EXPECT_TRUE(joint_trajectory_controller::all_finite({}));
 }
 
-TEST(TestAllFinite, shorter_than_count_is_not_finite)
+TEST(TestAllFinite, all_values_finite)
 {
-  EXPECT_FALSE(joint_trajectory_controller::all_finite({1.0, 2.0}, 3));
+  EXPECT_TRUE(joint_trajectory_controller::all_finite({1.0, 2.0, 3.0}));
 }
 
-TEST(TestAllFinite, all_values_finite_within_count)
-{
-  EXPECT_TRUE(joint_trajectory_controller::all_finite({1.0, 2.0, 3.0}, 3));
-}
-
-TEST(TestAllFinite, nan_within_count_is_not_finite)
+TEST(TestAllFinite, nan_is_not_finite)
 {
   EXPECT_FALSE(
-    joint_trajectory_controller::all_finite(
-      {1.0, std::numeric_limits<double>::quiet_NaN(), 3.0}, 3));
+    joint_trajectory_controller::all_finite({1.0, std::numeric_limits<double>::quiet_NaN(), 3.0}));
 }
 
-TEST(TestAllFinite, inf_within_count_is_not_finite)
+TEST(TestAllFinite, inf_is_not_finite)
 {
   EXPECT_FALSE(
-    joint_trajectory_controller::all_finite(
-      {1.0, std::numeric_limits<double>::infinity(), 3.0}, 3));
+    joint_trajectory_controller::all_finite({1.0, std::numeric_limits<double>::infinity(), 3.0}));
 }
 
-TEST(TestAllFinite, non_finite_past_count_is_ignored)
+TEST(TestAllFinite, nan_in_last_element_is_not_finite)
 {
-  // Only the first `count` elements matter -- a trailing non-finite value (e.g. an
-  // unused joint slot) must not fail the check.
-  EXPECT_TRUE(
-    joint_trajectory_controller::all_finite(
-      {1.0, 2.0, std::numeric_limits<double>::quiet_NaN()}, 2));
+  // Every element must be checked, not just a leading subrange -- a non-finite value in the
+  // last slot (e.g. a commanded joint that is not first in the vector) must still be caught.
+  EXPECT_FALSE(
+    joint_trajectory_controller::all_finite({1.0, 2.0, std::numeric_limits<double>::quiet_NaN()}));
 }

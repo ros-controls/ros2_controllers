@@ -588,12 +588,10 @@ bool Trajectory::has_nontrivial_msg() const
   return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
 }
 
-bool all_finite(const std::vector<double> & values, size_t count)
+bool all_finite(const std::vector<double> & values)
 {
-  return values.size() >= count &&
-         std::all_of(
-           values.cbegin(), values.cbegin() + static_cast<std::ptrdiff_t>(count),
-           [](double value) { return std::isfinite(value); });
+  return std::all_of(
+    values.cbegin(), values.cend(), [](double value) { return std::isfinite(value); });
 }
 
 }  // namespace joint_trajectory_controller

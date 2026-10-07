@@ -1597,12 +1597,6 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
-    // The robot was tracking when the cancel arrived, so anchor the stop to the last commanded
-    // point rather than the measured one; see select_hold_anchor(). Fault paths (cmd_timeout,
-    // tolerance violations, goal time exceeded) deliberately keep anchoring to the measured
-    // state instead -- after one of those the robot has demonstrably failed to track, and
-    // latching an unreachable command would sustain the error rather than give up where the
-    // robot actually is.
     if (should_decelerate_on_cancel_)
     {
       // calculate stopping position based on max deceleration
@@ -2209,7 +2203,9 @@ trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hol
   if (from_last_command)
   {
     const auto commanded = rt_last_commanded_state_.get();
-    if (all_finite(commanded.positions, num_cmd_joints_))
+    // positions is only sized to num_cmd_joints_ when there is a position command interface;
+    // otherwise it is left empty and the measured state must be used instead.
+    if (commanded.positions.size() >= num_cmd_joints_ && all_finite(commanded.positions))
     {
       return commanded;
     }
@@ -2224,7 +2220,9 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController
   // and never write it, leaving NaN in the handle; never latch that straight into the command
   // interfaces.
   const auto anchor = select_hold_anchor(from_last_command);
-  if (!all_finite(anchor.positions, num_cmd_joints_))
+  // positions is sized dof_ for the measured state or num_cmd_joints_ for the commanded one
+  // (empty with no position command interface); either way it must cover every commanded joint.
+  if (anchor.positions.size() < num_cmd_joints_ || !all_finite(anchor.positions))
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
@@ -2253,9 +2251,12 @@ JointTrajectoryController::decelerate_to_hold_position(const bool from_last_comm
 
   // NaN would otherwise propagate silently: std::max(0.0, NaN) is 0.0, so max_t_stop stays
   // finite, every `t < stop_time_[i]` comparison below is false, and the whole ramp fills with a
-  // NaN hold position that is written straight to the command interfaces.
-  const bool positions_ok = all_finite(p0, num_cmd_joints_);
-  const bool velocities_ok = all_finite(v0, num_cmd_joints_);
+  // NaN hold position that is written straight to the command interfaces. v0 is empty when there
+  // is no velocity state interface (resize_joint_trajectory_point only sizes velocities when
+  // has_velocity_state_interface_ is set), so both vectors must cover every commanded joint
+  // before indexing them below.
+  const bool positions_ok = p0.size() >= num_cmd_joints_ && all_finite(p0);
+  const bool velocities_ok = v0.size() >= num_cmd_joints_ && all_finite(v0);
   if (!positions_ok || !velocities_ok)
   {
     RCLCPP_ERROR_THROTTLE(
