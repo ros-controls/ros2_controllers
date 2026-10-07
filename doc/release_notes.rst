@@ -55,14 +55,7 @@ joint_trajectory_controller
 * Fixed the final segment of every trajectory being cut short: the next-cycle lookahead sample advanced the shared segment search cursor to the end, so the following cycle jumped the reference to the last waypoint and succeeded the goal early. Independent of ``allow_trajectory_replacement``. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
 * Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``  parameter. A trajectory arriving while another is executing is spliced into the active one instead of discarding it: the old path is followed up to the new start time, a velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal continue and finish their original motion. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
 * Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2491 <https://github.com/ros-controls/ros2_controllers/pull/2491>`_)
-* Added a non-lambda ``all_finite()`` helper, replacing the inline ``isfinite`` lambdas duplicated across the non-finite-state guards. (`#TODO_PR_ALL_FINITE
-  <https://github.com/ros-controls/ros2_controllers/pull/TODO_PR_ALL_FINITE>`_)
-* Fixed a NaN hazard in the zero-fill added in `#2043
-  <https://github.com/ros-controls/ros2_controllers/pull/2043>`_: that fix only fires when the velocity vector is empty, but a hardware component that declares a velocity state interface and never writes it reports back a present-but-NaN vector instead, which was passed straight into the first segment's cubic/quintic sampling. (`#TODO_PR_FIRST_SEGMENT_NAN
-  <https://github.com/ros-controls/ros2_controllers/pull/TODO_PR_FIRST_SEGMENT_NAN>`_)
-* ``set_hold_position``/``decelerate_to_hold_position`` now refuse to build a hold or a deceleration ramp from a non-finite measured position or velocity (a state interface a hardware component declared but never wrote), logging instead of silently commanding NaN to the hardware. (`#TODO_PR_HOLD_GUARD
-  <https://github.com/ros-controls/ros2_controllers/pull/TODO_PR_HOLD_GUARD>`_)
-* On cancel, the hold / decelerate-to-stop point is now anchored to the last commanded state instead of the measured one, so the command stream stays continuous across the transition. (`#2587 <https://github.com/ros-controls/ros2_controllers/pull/2587>`_)
+* On cancel or preempt, the hold and the deceleration ramp now start from the last commanded state instead of the measured one, so the command no longer steps back by the following error. A non-finite measured position or velocity no longer produces a NaN first segment or hold command. (`#2587 <https://github.com/ros-controls/ros2_controllers/pull/2587>`_)
 
 pid_controller
 **************

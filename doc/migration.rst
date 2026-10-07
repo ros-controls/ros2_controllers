@@ -29,7 +29,6 @@ joint_trajectory_controller
   The ``action_execution_timeout`` parameter is removed.
 * Cancelling a goal now holds, or decelerates to, the last commanded position instead of the last measured one.
   Anchoring to the measured position stepped the command backward by the following error in a single control period, which reads downstream as a large, unintended deceleration.
-  This only changes behaviour for setups with a persistent following error at the moment of cancel; in simulation, where the commanded and measured states match, nothing changes.
 
 position_controllers
 *****************************
