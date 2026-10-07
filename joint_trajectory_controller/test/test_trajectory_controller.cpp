@@ -3590,6 +3590,61 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_per_joint_calculati
   executor.cancel();
 }
 
+// command_joints = [joint3, joint1] is a non-prefix, reordered subset of joint_names_, so
+// map_cmd_to_joints_ = [2, 0]: command index i must not be used as the state index directly.
+TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_non_prefix_command_joints)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  constexpr double cmd_timeout = 0.1;
+  constexpr double max_decel = 10.0;
+  // distinct per-joint velocities: a wrong state index yields a visibly different hold position
+  const std::vector<double> initial_vel = {0.2, -0.3, 0.4};
+  const std::vector<std::string> command_joint_names{joint_names_[2], joint_names_[0]};
+
+  std::vector<rclcpp::Parameter> params = {
+    rclcpp::Parameter("command_joints", command_joint_names),
+    rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
+    rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
+    rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
+    rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
+    rclcpp::Parameter("constraints.decelerate_on_cancel", true)};
+
+  SetUpAndActivateTrajectoryController(
+    executor, params, false, 0.0, 1.0, INITIAL_POS_JOINTS, initial_vel);
+
+  ASSERT_TRUE(traj_controller_->has_velocity_state_interface());
+
+  constexpr auto FIRST_POINT_TIME = std::chrono::milliseconds(250);
+  builtin_interfaces::msg::Duration time_from_start{rclcpp::Duration(FIRST_POINT_TIME)};
+  std::vector<std::vector<double>> points{{INITIAL_POS_JOINTS}};
+  publish(time_from_start, points, rclcpp::Time(0, 0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
+
+  updateController(rclcpp::Duration(FIRST_POINT_TIME));
+  updateController(rclcpp::Duration::from_seconds(cmd_timeout + 0.05));
+  updateController(rclcpp::Duration::from_seconds(0.1));
+
+  const auto hold_for_state_index = [&](size_t state_index)
+  {
+    const double direction = (initial_vel[state_index] >= 0.0) ? 1.0 : -1.0;
+    const double stop_dist =
+      (initial_vel[state_index] * initial_vel[state_index]) / (2.0 * max_decel);
+    return INITIAL_POS_JOINTS[state_index] + direction * stop_dist;
+  };
+
+  // joint3 (state index 2) is command index 0; joint1 (state index 0) is command index 1.
+  EXPECT_NEAR(
+    hold_for_state_index(2), pos_cmd_interfaces_[2]->get_optional().value(), COMMON_THRESHOLD)
+    << "joint3 held using the wrong joint's state";
+  EXPECT_NEAR(
+    hold_for_state_index(0), pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
+    << "joint1 held using the wrong joint's state";
+
+  executor.cancel();
+}
+
 /**
  * @brief With a position+velocity command interface, verify that velocity commands
  * are ramped to zero during deceleration and that the position command reaches the
