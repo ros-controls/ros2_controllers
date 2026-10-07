@@ -18,6 +18,7 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -62,6 +63,20 @@ void Trajectory::set_point_before_trajectory_msg(
   if (current_point.velocities.empty() && !trajectory_msg_->points[0].velocities.empty())
   {
     state_before_traj_msg_.velocities.resize(trajectory_msg_->points[0].velocities.size(), 0.0);
+  }
+  else
+  {
+    // A hardware component can declare a velocity state interface and never write it, leaving
+    // NaN in the handle rather than an empty vector, so the branch above never fires. Zero-fill
+    // just those entries: otherwise NaN flows straight into the cubic/quintic coefficients for
+    // the whole first segment, not only this one joint's initial sample.
+    for (auto & velocity : state_before_traj_msg_.velocities)
+    {
+      if (!std::isfinite(velocity))
+      {
+        velocity = 0.0;
+      }
+    }
   }
   if (current_point.accelerations.empty() && !trajectory_msg_->points[0].accelerations.empty())
   {
@@ -571,6 +586,14 @@ bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nu
 bool Trajectory::has_nontrivial_msg() const
 {
   return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
+}
+
+bool all_finite(const std::vector<double> & values, size_t count)
+{
+  return values.size() >= count &&
+         std::all_of(
+           values.cbegin(), values.cbegin() + static_cast<std::ptrdiff_t>(count),
+           [](double value) { return std::isfinite(value); });
 }
 
 }  // namespace joint_trajectory_controller

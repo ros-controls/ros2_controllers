@@ -239,6 +239,20 @@ void wraparound_joint(
 bool fill_cubic_spline_velocities(
   trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity = {});
 
+/**
+ * \brief Check that at least the first \p count elements of \p values are finite.
+ *
+ * A hardware component can declare a state interface and never write it, leaving NaN (or +-inf)
+ * in the handle; every consumer that assumes a normal float needs the same check, so it is
+ * centralized here instead of repeated inline.
+ *
+ * \param values Vector to check; only the first \p count elements are inspected.
+ * \param count Number of leading elements that must be present and finite.
+ * \return false if \p values has fewer than \p count elements or any of the first \p count is
+ *   not finite; true otherwise.
+ */
+bool all_finite(const std::vector<double> & values, size_t count);
+
 }  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_

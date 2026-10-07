@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <cstdio>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -1599,7 +1598,11 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
     // The robot was tracking when the cancel arrived, so anchor the stop to the last commanded
-    // point to keep the command stream continuous. Fault paths deliberately do not do this.
+    // point rather than the measured one; see select_hold_anchor(). Fault paths (cmd_timeout,
+    // tolerance violations, goal time exceeded) deliberately keep anchoring to the measured
+    // state instead -- after one of those the robot has demonstrably failed to track, and
+    // latching an unreachable command would sustain the error rather than give up where the
+    // robot actually is.
     if (should_decelerate_on_cancel_)
     {
       // calculate stopping position based on max deceleration
@@ -2193,21 +2196,23 @@ void JointTrajectoryController::preempt_active_goal()
   }
 }
 
-const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::select_hold_anchor(
+trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hold_anchor(
   const bool from_last_command) const
 {
-  // state_current_ is feedback and lags the command by the following error. Anchoring a stop to it
-  // steps the command stream back by that error in one cycle, which downstream reads as a huge
-  // acceleration. last_commanded_state_ is what was last written, so it keeps the stream
-  // continuous.
-  if (
-    from_last_command && last_commanded_state_.positions.size() >= num_cmd_joints_ &&
-    std::all_of(
-      last_commanded_state_.positions.cbegin(),
-      last_commanded_state_.positions.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
-      [](double x) { return std::isfinite(x); }))
+  // state_current_ is feedback and lags the command by the following error. Anchoring a stop to
+  // it steps the command stream back by that error in a single control period -- small as a
+  // position, enormous as an acceleration. last_commanded_state_ is what was last written to the
+  // command interfaces, so it keeps the stream continuous. Only usable while the robot is still
+  // tracking, which is what from_last_command asserts; fall back to the measured state if it
+  // does not look sane. goal_cancelled_callback runs off the RT thread, so take the realtime-safe
+  // snapshot (rt_last_commanded_state_) rather than the raw last_commanded_state_ member.
+  if (from_last_command)
   {
-    return last_commanded_state_;
+    const auto commanded = rt_last_commanded_state_.get();
+    if (all_finite(commanded.positions, num_cmd_joints_))
+    {
+      return commanded;
+    }
   }
   return state_current_;
 }
@@ -2215,44 +2220,20 @@ const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::se
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
   const bool from_last_command)
 {
-  // Command to stay at current position. Never latch a non-finite position -- it would be written
-  // straight to the command interfaces; keep the previous target for those joints instead.
-  const auto & source = select_hold_anchor(from_last_command).positions;
-  auto & hold = hold_position_msg_ptr_->points[0].positions;
-  if (hold.size() != source.size())
-  {
-    hold.assign(source.size(), std::numeric_limits<double>::quiet_NaN());
-  }
-  // Name the offending joints in the single throttled message below rather than logging per joint:
-  // the throttle state is a function-local static, so a throttled log inside this loop would be
-  // shared across iterations and report only one joint per interval.
-  char offenders[256];
-  size_t offenders_len = 0;
-  for (size_t i = 0; i < source.size(); ++i)
-  {
-    if (std::isfinite(source[i]))
-    {
-      hold[i] = source[i];
-      continue;
-    }
-    if (offenders_len < sizeof(offenders) - 1)
-    {
-      const int written = snprintf(
-        offenders + offenders_len, sizeof(offenders) - offenders_len, "%s%s",
-        (offenders_len > 0) ? ", " : "", params_.joints[i].c_str());
-      offenders_len =
-        (written > 0)
-          ? std::min(offenders_len + static_cast<size_t>(written), sizeof(offenders) - 1)
-          : sizeof(offenders) - 1;
-    }
-  }
-  if (offenders_len > 0)
+  // Command to stay at the anchor position. A hardware component can declare a state interface
+  // and never write it, leaving NaN in the handle; never latch that straight into the command
+  // interfaces.
+  const auto anchor = select_hold_anchor(from_last_command);
+  if (!all_finite(anchor.positions, num_cmd_joints_))
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Non-finite position reported for joint(s) [%s]; holding the last valid target for them "
-      "instead. Does the hardware write to every state interface it exports?",
-      offenders);
+      "Cannot hold position: the anchor position is non-finite. Does the hardware write to "
+      "every state interface it exports? Keeping the previous hold target.");
+  }
+  else
+  {
+    hold_position_msg_ptr_->points[0].positions = anchor.positions;
   }
 
   // set flag, otherwise tolerances will be checked with holding position too
@@ -2264,36 +2245,30 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::decelerate_to_hold_position(const bool from_last_command)
 {
-  double max_t_stop = 0.0;
-  // Take p0 and v0 from the same point: a commanded p0 with a measured v0 leaves a slope
-  // discontinuity at the join, which is the same defect one derivative up.
-  const auto & anchor = select_hold_anchor(from_last_command);
+  // p0 and v0 come from the same point: a commanded p0 with a measured v0 would leave a slope
+  // discontinuity at the join, the same defect one derivative up.
+  const auto anchor = select_hold_anchor(from_last_command);
   const auto & p0 = anchor.positions;
   const auto & v0 = anchor.velocities;
 
-  // A hardware component can export a state interface and never write it, leaving NaN in the
-  // handle. NaN would propagate silently: std::max(0.0, NaN) is 0.0, so max_t_stop stays finite,
-  // every `t < stop_time_[i]` is false, and the whole ramp fills with a NaN hold position.
-  const auto finite_prefix = [this](const std::vector<double> & v)
-  {
-    return v.size() >= num_cmd_joints_ &&
-           std::all_of(
-             v.cbegin(), v.cbegin() + static_cast<std::ptrdiff_t>(num_cmd_joints_),
-             [](double x) { return std::isfinite(x); });
-  };
-  const bool positions_ok = finite_prefix(p0);
-  const bool velocities_ok = finite_prefix(v0);
+  // NaN would otherwise propagate silently: std::max(0.0, NaN) is 0.0, so max_t_stop stays
+  // finite, every `t < stop_time_[i]` comparison below is false, and the whole ramp fills with a
+  // NaN hold position that is written straight to the command interfaces.
+  const bool positions_ok = all_finite(p0, num_cmd_joints_);
+  const bool velocities_ok = all_finite(v0, num_cmd_joints_);
   if (!positions_ok || !velocities_ok)
   {
     RCLCPP_ERROR_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Cannot compute a deceleration ramp: %s non-finite or wrongly sized. Does the hardware "
-      "write to every state interface it exports? Holding position instead.",
-      (!positions_ok && !velocities_ok) ? "positions and velocities are"
-                                        : (!positions_ok ? "positions are" : "velocities are"));
+      "Cannot compute a deceleration ramp: the measured %s non-finite. Does the hardware write "
+      "to every state interface it exports? Holding position instead.",
+      (!positions_ok && !velocities_ok) ? "position and velocity are"
+      : !positions_ok                   ? "position is"
+                                        : "velocity is");
     return set_hold_position(from_last_command);
   }
 
+  double max_t_stop = 0.0;
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
     stop_direction_[i] = (v0[i] >= 0.0) ? 1.0 : -1.0;

@@ -3348,6 +3348,8 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_
 
   std::vector<rclcpp::Parameter> params = {
     rclcpp::Parameter("cmd_timeout", cmd_timeout),
+    // timeout only activates when cmd_timeout > constraints.goal_time
+    rclcpp::Parameter("constraints.goal_time", 0.001),
     rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", 10.0),
     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", 10.0),
     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0),

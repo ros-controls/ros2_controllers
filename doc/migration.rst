@@ -27,6 +27,9 @@ joint_trajectory_controller
   Configurations that relied on the old default or on ``goal_time: 0.0`` for an infinite timeout must set ``constraints.goal_time`` to a negative value (e.g. ``-1.0``) explicitly.
   Note that ``cmd_timeout`` only activates when ``cmd_timeout > constraints.goal_time``; with the new default timeout feature setups relying on ``cmd_timeout`` (e.g. to hold position at the end of the trajectory) must set ``constraints.goal_time`` accordingly.
   The ``action_execution_timeout`` parameter is removed.
+* Cancelling a goal now holds, or decelerates to, the last commanded position instead of the last measured one.
+  Anchoring to the measured position stepped the command backward by the following error in a single control period, which reads downstream as a large, unintended deceleration.
+  This only changes behaviour for setups with a persistent following error at the moment of cancel; in simulation, where the commanded and measured states match, nothing changes.
 
 position_controllers
 *****************************

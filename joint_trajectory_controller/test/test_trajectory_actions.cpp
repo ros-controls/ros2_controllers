@@ -15,6 +15,7 @@
 #ifndef _MSC_VER
 #include <cxxabi.h>
 #endif
+#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <future>
