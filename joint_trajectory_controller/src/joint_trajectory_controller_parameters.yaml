@@ -237,12 +237,11 @@ joint_trajectory_controller:
     }
     goal_time: {
       type: double,
-      default_value: 0.0,
+      default_value: 10.0,
       description: "Time tolerance for achieving trajectory goal before or after commanded time.
-        If set to zero, the controller will wait a potentially infinite amount of time.",
-      validation: {
-        gt_eq: [0.0],
-      }
+        Positive values set a finite grace period in seconds.
+        If set to a negative value, the controller will wait a potentially infinite amount of time.
+        If set to zero, no grace period is allowed, the goal must be reached on time.",
     }
     decelerate_on_cancel: {
       type: bool,

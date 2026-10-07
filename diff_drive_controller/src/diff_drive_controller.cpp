@@ -128,13 +128,17 @@ controller_interface::return_type DiffDriveController::update_reference_from_sub
   {
     ordered_exported_reference_interfaces_[0]->set_value(0.0);
     ordered_exported_reference_interfaces_[1]->set_value(0.0);
-    RCLCPP_WARN_THROTTLE(
-      logger, *get_node()->get_clock(), warning_throttle_ms,
-      "Velocity command timed out. Braking.");
+    // Warn on the transition only: the timeout holds until a new command arrives.
+    if (!command_timed_out_)
+    {
+      command_timed_out_ = true;
+      RCLCPP_WARN(logger, "Velocity command timed out. Braking.");
+    }
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.angular.z))
   {
+    command_timed_out_ = false;
     ordered_exported_reference_interfaces_[0]->set_value(command_msg_.twist.linear.x);
     ordered_exported_reference_interfaces_[1]->set_value(command_msg_.twist.angular.z);
   }
@@ -417,11 +421,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
 
   if (params_.publish_limited_velocity)
   {
-    limited_velocity_publisher_ = get_node()->create_publisher<TwistStamped>(
-      DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
     realtime_limited_velocity_publisher_ =
       std::make_shared<realtime_tools::RealtimePublisher<TwistStamped>>(
-        limited_velocity_publisher_);
+        get_node(), DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
   }
 
   // initialize command subscriber
@@ -474,11 +476,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // initialize odometry publisher and message
-  odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
-    DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
-      odometry_publisher_);
+      get_node(), DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
@@ -528,11 +528,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // initialize transform publisher and message
-  odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
-    DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
   realtime_odometry_transform_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
-      odometry_transform_publisher_);
+      get_node(), DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
 
   // keeping track of odom and base_link transforms only
   odometry_transform_message_.transforms.resize(1);
@@ -641,6 +639,7 @@ bool DiffDriveController::reset()
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
+  command_timed_out_ = false;
 
   return true;
 }
