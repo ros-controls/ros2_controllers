@@ -239,6 +239,9 @@ void wraparound_joint(
 bool fill_cubic_spline_velocities(
   trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity = {});
 
+/** \brief True iff every element of \p values is finite (vacuously true if empty). */
+bool all_finite(const std::vector<double> & values);
+
 }  // namespace joint_trajectory_controller
 
 #endif  // JOINT_TRAJECTORY_CONTROLLER__TRAJECTORY_HPP_
