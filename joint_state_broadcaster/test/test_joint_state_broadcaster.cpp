@@ -17,6 +17,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <shared_mutex>
 #include <string>
 #include <thread>
