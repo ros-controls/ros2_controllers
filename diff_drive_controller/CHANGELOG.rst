@@ -2,6 +2,21 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+* feat: migrate diff_drive_controller and joint_trajectory_controller to new RealtimePublisher constructor (`#2576 <https://github.com/ros-controls/ros2_controllers/issues/2576>`_)
+* Warn once per velocity command timeout in diff_drive_controller (`#2620 <https://github.com/ros-controls/ros2_controllers/issues/2620>`_)
+* test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
+* Contributors: Akshat Guduru, Souri Rishik, Tamaki Nishino
+
+6.9.0 (2026-08-12)
+------------------
+* Throttle speed limiter parameter error logs (`#2546 <https://github.com/ros-controls/ros2_controllers/issues/2546>`_)
+* Allow disabling diff drive command timeout (`#2503 <https://github.com/ros-controls/ros2_controllers/issues/2503>`_)
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Use new chainable controller exports API (`#2350 <https://github.com/ros-controls/ros2_controllers/issues/2350>`_)
+* Contributors: Dennis Lanov, Sai Kishor Kothakota, cyberjay
+
 6.8.0 (2026-07-01)
 ------------------
 * Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)

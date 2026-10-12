@@ -77,6 +77,14 @@ joint_trajectory_controller:
     default_value: false,
     description: "Allow joint goals defining trajectory for only some joints.",
   }
+  allow_trajectory_replacement: {
+    type: bool,
+    default_value: true,
+    description: "When a new trajectory arrives while one is still executing, blend with the old one
+      instead of hard-replacing it: joints not commanded by the new trajectory keep following the old
+      trajectory (instead of holding at the current position), and the transition uses the existing
+      bridge so it stays smooth even under speed scaling. Set to false to keep the legacy behavior.",
+  }
   interpolate_from_desired_state: {
     type: bool,
     default_value: false,
@@ -96,16 +104,6 @@ joint_trajectory_controller:
     type: bool,
     default_value: false,
     description: "Allow integration in goal trajectories to accept goals without position or velocity specified",
-  }
-  allow_trajectory_replacement: {
-    type: bool,
-    default_value: true,
-    description: "Port of the ROS 1 'update existing trajectory' behavior.
-      \n\n
-      If true (default), a trajectory whose ``header.stamp`` lies in the future is deferred: the
-      active trajectory keeps executing until that start time, then the new one is installed.
-      \n\n
-      If false, every incoming trajectory replaces the active one immediately (legacy behavior).",
   }
   set_last_command_interface_value_as_state_on_activation: {
     type: bool,
@@ -130,6 +128,27 @@ joint_trajectory_controller:
       one_of<>: [["splines", "none"]],
     }
   }
+  positions_upsampling:
+    enable: {
+      type: bool,
+      default_value: false,
+      read_only: true,
+      description: "Upsample positions-only messages on ``~/joint_trajectory`` into a smooth global C2
+        cubic spline by synthesizing knot velocities (a global tridiagonal solve with rest boundary
+        conditions ``v0 = v_{N-1} = 0``). Messages that already carry velocities are passed through
+        unchanged. Has no effect when ``interpolation_method`` is ``none``.",
+    }
+    policy_frequency: {
+      type: double,
+      default_value: 0.0,
+      description: "Frequency in Hz at which an AI policy emits action-chunk waypoints. When greater
+        than zero, ``time_from_start = (i + 1) / policy_frequency`` is synthesized for positions-only chunks
+        that arrive without timing. When zero, incoming chunks must already carry strictly-increasing
+        ``time_from_start``. Only used when ``positions_upsampling.enable`` is true.",
+      validation: {
+        gt_eq: [0.0],
+      }
+    }
   allow_nonzero_velocity_at_trajectory_end: {
     type: bool,
     default_value: false,
@@ -218,12 +237,11 @@ joint_trajectory_controller:
     }
     goal_time: {
       type: double,
-      default_value: 0.0,
+      default_value: 10.0,
       description: "Time tolerance for achieving trajectory goal before or after commanded time.
-        If set to zero, the controller will wait a potentially infinite amount of time.",
-      validation: {
-        gt_eq: [0.0],
-      }
+        Positive values set a finite grace period in seconds.
+        If set to a negative value, the controller will wait a potentially infinite amount of time.
+        If set to zero, no grace period is allowed, the goal must be reached on time.",
     }
     decelerate_on_cancel: {
       type: bool,

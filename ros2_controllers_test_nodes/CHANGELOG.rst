@@ -2,6 +2,12 @@
 Changelog for package ros2_controllers_test_nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+
+6.9.0 (2026-08-12)
+------------------
+
 6.8.0 (2026-07-01)
 ------------------
 * Fix SPDX license expression (`#2370 <https://github.com/ros-controls/ros2_controllers/issues/2370>`_)

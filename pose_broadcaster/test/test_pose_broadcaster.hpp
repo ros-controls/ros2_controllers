@@ -45,7 +45,7 @@ protected:
   const std::string frame_id_ = "pose_base_frame";
   const std::string tf_child_frame_id_ = "pose_frame";
 
-  std::array<double, 7> pose_values_ = {
+  const std::array<double, 7> pose_values_ = {
     {1.1, 2.2, 3.3, 0.39190382, 0.20056212, 0.53197575, 0.72331744}};
 
   hardware_interface::StateInterface::SharedPtr pose_position_x_;
