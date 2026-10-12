@@ -86,6 +86,8 @@ protected:
 
   std::vector<std::string> command_interface_types_;
 
+  size_t history_depth_ = 1u;
+
   // the realtime container to exchange the reference from subscriber
   realtime_tools::RealtimeThreadSafeBox<CmdType> rt_command_;
   // save the last reference in case of unable to get value from box
