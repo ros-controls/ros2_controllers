@@ -783,6 +783,132 @@ TEST(TestTrajectory, fill_point_before_with_same_degree_as_traj)
   }
 }
 
+TEST(TestTrajectory, fill_point_before_discards_real_acceleration_when_empty)
+{
+  auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  full_msg->header.stamp = rclcpp::Time(0);
+
+  // points[0] carries a real, nonzero acceleration - this is what blend_bridge_ looks like in
+  // the real controller, sampled from a still-executing old trajectory at the handoff instant.
+  // The "state before trajectory" point represents an unmeasured physical state (state
+  // interfaces never report acceleration), so it arrives with .accelerations empty - unlike
+  // fill_point_before_with_same_degree_as_traj, where points[0]'s own acceleration is also
+  // zero, so the zero-fill happens to be correct there and the bug doesn't show.
+  const double true_acceleration = -10.0;
+
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.time_from_start = rclcpp::Duration::from_seconds(1.0);
+  p1.positions.push_back(1.0);
+  p1.velocities.push_back(0.0);
+  p1.accelerations.push_back(true_acceleration);
+  full_msg->points.push_back(p1);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.time_from_start = rclcpp::Duration::from_seconds(2.0);
+  p2.positions.push_back(2.0);
+  p2.velocities.push_back(0.0);
+  p2.accelerations.push_back(0.0);
+  full_msg->points.push_back(p2);
+
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+
+  // Scenario A: the "before" point's acceleration is left empty, exactly like state_current_
+  // always is when there's no acceleration state interface. set_point_before_trajectory_msg()
+  // zero-fills it (#2043), discarding the fact that points[0] implies a real, nonzero
+  // acceleration at that same instant - the sample at t=0 snaps to 0.0 instead.
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
+    point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point_before_msg.positions.push_back(0.0);
+    point_before_msg.velocities.push_back(0.0);
+    // .accelerations left empty on purpose
+
+    auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+    trajectory_msgs::msg::JointTrajectoryPoint sampled;
+    traj.sample(time_now, DEFAULT_INTERPOLATION, sampled, start, end);
+    EXPECT_NEAR(0.0, sampled.accelerations[0], EPS)
+      << "zero-fill silently discarded the real acceleration - this is the #2043 bug";
+  }
+
+  // Scenario B: the caller backfills the "before" point's acceleration from the known real
+  // value first (in the real controller, this is blend_bridge_'s own sampled acceleration -
+  // see the backfill next to current_trajectory_->update() in
+  // JointTrajectoryController::update()), so the zero-fill guard never triggers because the
+  // field is no longer empty - the sample at t=0 correctly reflects the true value instead.
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
+    point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
+    point_before_msg.positions.push_back(0.0);
+    point_before_msg.velocities.push_back(0.0);
+    point_before_msg.accelerations.push_back(true_acceleration);
+
+    auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+    trajectory_msgs::msg::JointTrajectoryPoint sampled;
+    traj.sample(time_now, DEFAULT_INTERPOLATION, sampled, start, end);
+    EXPECT_NEAR(true_acceleration, sampled.accelerations[0], EPS)
+      << "backfilling the real acceleration keeps the sample continuous instead of snapping "
+         "to zero";
+  }
+}
+
+// Characterizes, not regression-tests: quantifies how hard JTC's spline must brake when a
+// bridge point (real, non-zero velocity sampled from a still-moving old trajectory) is
+// followed by a client-supplied point with velocity forced to exactly zero - the pattern an
+// MPC-style replanning client produces when it zeroes velocity/acceleration on every point to
+// avoid feeding solver noise into the command spline (see issue #2615 discussion). Both
+// endpoints carry accelerations here (0.0 on each), matching current behavior once the
+// bridge's accel-backfill fix (blend_with_active_trajectory) has filled in the new point's
+// acceleration - so this is quintic interpolation, the same branch the real controller takes.
+TEST(TestTrajectory, characterize_deceleration_from_bridge_to_forced_zero_velocity)
+{
+  struct Case
+  {
+    double bridge_velocity;  // rad/s, blend_bridge_'s velocity at the handoff instant
+    double gap_seconds;      // time from the bridge to the new trajectory's first point
+  };
+
+  const std::vector<Case> cases = {
+    {0.2, 0.3}, {0.5, 0.3}, {1.0, 0.3}, {0.2, 0.1}, {0.5, 0.1}, {1.0, 0.1}, {0.5, 0.05},
+  };
+
+  auto traj = joint_trajectory_controller::Trajectory();
+
+  for (const auto & c : cases)
+  {
+    trajectory_msgs::msg::JointTrajectoryPoint state_a;
+    state_a.positions.push_back(0.0);
+    state_a.velocities.push_back(c.bridge_velocity);
+    state_a.accelerations.push_back(0.0);
+
+    trajectory_msgs::msg::JointTrajectoryPoint state_b;
+    // Position the client would plausibly send for this gap: a straight-line extrapolation
+    // from the bridge state, same as an MPC solution sampled one Ts ahead would look like.
+    state_b.positions.push_back(c.bridge_velocity * c.gap_seconds);
+    state_b.velocities.push_back(0.0);
+    state_b.accelerations.push_back(0.0);
+
+    const rclcpp::Time time_a(0, 0, RCL_ROS_TIME);
+    const rclcpp::Time time_b = time_a + rclcpp::Duration::from_seconds(c.gap_seconds);
+
+    double peak_abs_accel = 0.0;
+    const int substeps = 50;
+    for (int i = 0; i <= substeps; ++i)
+    {
+      const rclcpp::Time sample_time =
+        time_a + rclcpp::Duration::from_seconds(c.gap_seconds * i / substeps);
+      trajectory_msgs::msg::JointTrajectoryPoint sampled;
+      traj.interpolate_between_points(time_a, state_a, time_b, state_b, sample_time, sampled);
+      ASSERT_FALSE(sampled.accelerations.empty());
+      ASSERT_TRUE(std::isfinite(sampled.accelerations[0]));
+      peak_abs_accel = std::max(peak_abs_accel, std::abs(sampled.accelerations[0]));
+    }
+
+    std::cout << "[characterize] bridge_v=" << c.bridge_velocity << " rad/s, gap=" << c.gap_seconds
+               << " s -> peak |acceleration| = " << peak_abs_accel << " rad/s^2\n";
+  }
+}
+
 TEST(TestTrajectory, skip_interpolation)
 {
   // Simple passthrough without extra interpolation

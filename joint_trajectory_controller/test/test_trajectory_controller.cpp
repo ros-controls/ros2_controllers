@@ -2212,6 +2212,56 @@ TEST_F(TrajectoryControllerTest, blend_no_position_jump_under_speed_scaling)
   }
 }
 
+TEST_F(TrajectoryControllerTest, blend_acceleration_continuous_across_splice)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // strong, non-constant curvature: velocity ramps +5 -> -5 over the segment, so the midpoint
+  // acceleration is large and clearly nonzero (cubic Hermite, since no accelerations are given).
+  // publish() offsets every point by one full duration increment (point[0] lands at
+  // t=duration, not t=0), so the point[0]->point[1] segment we actually want to land in runs
+  // from t=1.0s to t=2.0s here - advancing only 0.5s would still be in the "before first
+  // point" lead-in segment instead.
+  std::vector<std::vector<double>> old_traj{{{0., 0., 0.}, {10., 10., 10.}}};
+  std::vector<std::vector<double>> old_vel{{5., 5., 5.}, {-5., -5., -5.}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time(), {}, old_vel);
+  traj_controller_->wait_for_trajectory(executor);
+  // land mid-segment (t=1.5s), where the old trajectory's own acceleration is far from zero
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(1.5), start_time);
+  const auto ref_before = traj_controller_->get_state_reference();
+
+  // new trajectory: flat (zero velocity throughout) - if the splice silently falls back to
+  // cubic instead of quintic, sampling just after the splice would read close to this
+  // trajectory's own (zero) curvature instead of the old trajectory's real one
+  std::vector<std::vector<double>> new_traj{{{3., 3., 3.}, {3., 3., 3.}}};
+  std::vector<std::vector<double>> new_vel{{0., 0., 0.}, {0., 0., 0.}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time(), {}, new_vel);
+  traj_controller_->wait_for_trajectory(executor);
+  // sample as close to the splice instant as possible: the bridge segment's far end (peek)
+  // has a very different acceleration (~0, since new_traj is flat), so a quintic curve
+  // connecting them evolves quickly - a larger advance would pick up that natural evolution
+  // and look like a discontinuity even when the splice itself was continuous.
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.001), t);
+  const auto ref_after = traj_controller_->get_state_reference();
+
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "installed via the legacy path, so this test does not cover blending";
+
+  ASSERT_FALSE(ref_before.accelerations.empty());
+  ASSERT_FALSE(ref_after.accelerations.empty());
+  for (size_t i = 0; i < ref_before.accelerations.size(); ++i)
+  {
+    EXPECT_GT(std::abs(ref_before.accelerations[i]), 3.0)
+      << "test setup is broken: old trajectory should have strong acceleration, joint " << i;
+    EXPECT_NEAR(ref_before.accelerations[i], ref_after.accelerations[i], 2.0)
+      << "acceleration jumped at the splice instead of staying continuous, joint " << i;
+  }
+}
+
 TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_outlasts_shorter_new_trajectory)
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);

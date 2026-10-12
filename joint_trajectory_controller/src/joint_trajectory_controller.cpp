@@ -21,6 +21,7 @@
 #include <memory>
 #include <numeric>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -282,17 +283,30 @@ controller_interface::return_type JointTrajectoryController::update(
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
   rt_new_trajectory_msg_.try_get([&](auto & msg) { new_external_msg = msg; });
   // Discard, if a goal is pending but still not active (somewhere stuck in goal_handle_timer_)
+  // declared here (not inside the block below) so it's still visible at the
+  // set_point_before_trajectory_msg() call site further down, which needs to know whether
+  // blend_bridge_ was actually refreshed this cycle before trusting its contents.
+  bool blended = false;
   if (
     new_external_msg && current_trajectory_msg != new_external_msg &&
     (rt_has_pending_goal_ && !rt_active_goal_local_) == false)
   {
-    bool blended = false;
+    // Blend unless the active trajectory is literally the controller's own
+    // placeholder object (hold_position_msg_ptr_ is reused for every internal
+    // hold/success message) - pointer identity, not point count, so a real
+    // single-point client goal is still eligible to blend.
     if (
       params_.allow_trajectory_replacement && has_active_trajectory() &&
-      current_trajectory_->has_nontrivial_msg() && !rt_is_holding_)
+      current_trajectory_->get_trajectory_msg() != hold_position_msg_ptr_ && !rt_is_holding_)
     {
       blended = blend_with_active_trajectory(new_external_msg, time);
     }
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "[BLEND_DEBUG] update(): allow_replacement=%d has_active=%d rt_is_holding_=%d -> "
+      "blended=%d",
+      params_.allow_trajectory_replacement, has_active_trajectory(), rt_is_holding_.load(),
+      blended);
     if (!blended)
     {
       // legacy behavior: joints omitted from the new message hold at the current position
@@ -302,6 +316,10 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     // TODO(denis): Add here integration of position and velocity
     current_trajectory_->update(new_external_msg);
+    if (params_.allow_trajectory_replacement)
+    {
+      rt_is_holding_ = false;
+    }
   }
 
   // current state update
@@ -318,6 +336,19 @@ controller_interface::return_type JointTrajectoryController::update(
     if (!current_trajectory_->is_sampled_already())
     {
       first_sample = true;
+      // A freshly-sampled bridge point already carries the old trajectory's real
+      // acceleration at this same instant. Prefer it over set_point_before_trajectory_msg()'s
+      // zero-fill fallback (#2043), which only knows "unspecified", not "actually zero" -
+      // state interfaces never report acceleration, so without this the first sample of
+      // every trajectory-replacement splice snaps to exactly 0.0 for one control cycle.
+      auto & point_before_state =
+        params_.interpolate_from_desired_state ? last_commanded_state_ : state_current_;
+      if (
+        blended && !blend_bridge_.accelerations.empty() &&
+        point_before_state.accelerations.empty())
+      {
+        point_before_state.accelerations = blend_bridge_.accelerations;
+      }
       if (params_.interpolate_from_desired_state)
       {
         if (std::abs(last_commanded_time_.seconds()) < std::numeric_limits<float>::epsilon())
@@ -482,17 +513,20 @@ controller_interface::return_type JointTrajectoryController::update(
       if (rt_active_goal_local_)
       {
         // send feedback
-        rt_active_goal_local_->trySetFeedback(
-          [&](FollowJTrajAction::Feedback & feedback)
-          {
-            feedback.header.stamp = time;
-            feedback.actual = state_current_;
-            feedback.desired = state_desired_;
-            feedback.error = state_error_;
-            // report the index relative to the trajectory the client sent (a blend prepends points)
-            feedback.index = std::max(
-              0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
-          });
+        // Local compat shim: upstream's trySetFeedback() (#2610) needs a
+        // realtime_tools newer than what's packaged for this distro (5.3.0,
+        // 2026-09-15 - only has setFeedback()). Reverted to the
+        // preallocated_feedback_ pattern until a newer realtime_tools ships;
+        // functionally equivalent for our single-threaded feedback publish.
+        const auto & feedback = rt_active_goal_local_->preallocated_feedback_;
+        feedback->header.stamp = time;
+        feedback->actual = state_current_;
+        feedback->desired = state_desired_;
+        feedback->error = state_error_;
+        // report the index relative to the trajectory the client sent (a blend prepends points)
+        feedback->index = std::max(
+          0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
+        rt_active_goal_local_->setFeedback(feedback);
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -1534,10 +1568,15 @@ void JointTrajectoryController::synthesize_timing(
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
+  RCLCPP_INFO(
+    get_node()->get_logger(), "[TOPIC_DEBUG] topic_callback: received msg with %zu points, "
+    "subscriber_is_active=%d", msg->points.size(), static_cast<bool>(subscriber_is_active_));
+
   preprocess_incoming_trajectory(*msg);
 
   if (!validate_trajectory_msg(*msg))
   {
+    RCLCPP_INFO(get_node()->get_logger(), "[TOPIC_DEBUG] topic_callback: validate_trajectory_msg FAILED");
     return;
   }
   // http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement
@@ -1545,7 +1584,15 @@ void JointTrajectoryController::topic_callback(
   if (subscriber_is_active_)
   {
     add_new_trajectory_msg(msg);
-    rt_is_holding_ = false;
+    RCLCPP_INFO(get_node()->get_logger(), "[TOPIC_DEBUG] topic_callback: add_new_trajectory_msg called");
+    if (!params_.allow_trajectory_replacement)
+    {
+      rt_is_holding_ = false;
+    }
+  }
+  else
+  {
+    RCLCPP_INFO(get_node()->get_logger(), "[TOPIC_DEBUG] topic_callback: subscriber_is_active_ is FALSE, dropping");
   }
 }
 
@@ -1624,7 +1671,10 @@ void JointTrajectoryController::goal_accepted_callback(
       std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
     add_new_trajectory_msg(traj_msg);
-    rt_is_holding_ = false;
+    if (!params_.allow_trajectory_replacement)
+    {
+      rt_is_holding_ = false;
+    }
   }
 
   // Update the active goal
@@ -1910,6 +1960,40 @@ bool JointTrajectoryController::blend_with_active_trajectory(
         rclcpp::Duration(trajectory_msg->points.front().time_from_start))
     {
       prefix.push_back(blend_bridge_);
+
+      // The bridge->first-new-point segment only gets quintic (C2) interpolation if
+      // BOTH endpoints carry .accelerations (Trajectory::interpolate_between_points,
+      // has_accel). blend_bridge_ always has one; the new trajectory's first point
+      // usually doesn't (position+velocity-only goals) -> silently falls back to cubic,
+      // which recomputes its own start-acceleration from scratch -> a jump at the splice.
+      auto & first_new = trajectory_msg->points.front();
+      if (
+        !blend_bridge_.accelerations.empty() && first_new.accelerations.empty() &&
+        !first_new.velocities.empty())
+      {
+        if (
+          trajectory_msg->points.size() > 1 && !first_new.positions.empty() &&
+          !trajectory_msg->points[1].positions.empty())
+        {
+          // Peek: what acceleration would segment [0]->[1] start with anyway, under
+          // today's unmodified cubic interpolation? Reusing that value means the bridge
+          // ends exactly where the next, untouched segment already begins - no new jump
+          // introduced one step later.
+          JointTrajectoryPoint peek;
+          const rclcpp::Time t0(0, 0, time.get_clock_type());
+          const rclcpp::Time t1 =
+            t0 + (rclcpp::Duration(trajectory_msg->points[1].time_from_start) -
+                  rclcpp::Duration(first_new.time_from_start));
+          current_trajectory_->interpolate_between_points(
+            t0, first_new, t1, trajectory_msg->points[1], t0, peek);
+          first_new.accelerations = peek.accelerations;
+        }
+        else
+        {
+          // only one new point: assume zero curvature change across the bridge segment
+          first_new.accelerations = blend_bridge_.accelerations;
+        }
+      }
     }
   }
 
@@ -1935,6 +2019,38 @@ bool JointTrajectoryController::blend_with_active_trajectory(
         suffix.push_back(p);
       }
     }
+  }
+
+  {
+    auto fmt_vec = [](const std::vector<double> & v) -> std::string
+    {
+      std::ostringstream oss;
+      oss << "[";
+      for (size_t k = 0; k < v.size(); ++k)
+      {
+        if (k) oss << ",";
+        oss << v[k];
+      }
+      oss << "]";
+      return oss.str();
+    };
+    const double gap =
+      trajectory_msg->points.empty()
+        ? 0.0
+        : (rclcpp::Duration(trajectory_msg->points.front().time_from_start) -
+           rclcpp::Duration(blend_bridge_.time_from_start))
+            .seconds();
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "[BLEND_DEBUG] blend_with_active_trajectory(): have_bridge=%d prefix=%zu suffix=%zu "
+      "new_start-cursor=%.6f bridge_to_first_new_gap=%.6f\n"
+      "  bridge_v=%s\n  bridge_a=%s\n  first_new_p=%s\n  first_new_v=%s\n  first_new_a=%s",
+      have_bridge, prefix.size(), suffix.size(), (new_start - cursor).seconds(), gap,
+      fmt_vec(blend_bridge_.velocities).c_str(), fmt_vec(blend_bridge_.accelerations).c_str(),
+      trajectory_msg->points.empty() ? "[]" : fmt_vec(trajectory_msg->points.front().positions).c_str(),
+      trajectory_msg->points.empty() ? "[]" : fmt_vec(trajectory_msg->points.front().velocities).c_str(),
+      trajectory_msg->points.empty() ? "[]"
+                                      : fmt_vec(trajectory_msg->points.front().accelerations).c_str());
   }
 
   trajectory_msg->points.insert(trajectory_msg->points.begin(), prefix.begin(), prefix.end());
