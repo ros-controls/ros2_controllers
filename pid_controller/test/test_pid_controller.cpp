@@ -176,6 +176,32 @@ TEST_F(PidControllerTest, deactivate_success)
   ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
+TEST_F(PidControllerTest, reset_commands_at_deactivation)
+{
+  SetUpController("test_pid_controller_reset_commands_at_deactivation");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(controller_->params_.reset_commands_at_deactivation);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+}
+
+TEST_F(PidControllerTest, do_not_reset_commands_at_deactivation)
+{
+  SetUpController("test_pid_controller_do_not_reset_commands_at_deactivation");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_FALSE(controller_->params_.reset_commands_at_deactivation);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+}
+
 TEST_F(PidControllerTest, reactivate_success)
 {
   SetUpController();

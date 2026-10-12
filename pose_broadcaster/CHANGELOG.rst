@@ -2,6 +2,17 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+* Stop pose TF output after disabling it on reconfigure (`#2686 <https://github.com/ros-controls/ros2_controllers/issues/2686>`_)
+* test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
+* Contributors: Akshat Guduru, Yuhx141
+
+6.9.0 (2026-08-12)
+------------------
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Contributors: Sai Kishor Kothakota
+
 6.8.0 (2026-07-01)
 ------------------
 * Test fix - call appropriate lifecycle transitions in controller tests: admittance_controller, pose_broadcaster, tricycle_steering_controller (`#2345 <https://github.com/ros-controls/ros2_controllers/issues/2345>`_)
