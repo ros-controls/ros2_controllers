@@ -2282,7 +2282,6 @@ TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_tra
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
   // joint2 ramps 3.1→13.1 over 0-1.5 s then 13.1→23.1 over 1.5-3.0 s
-  // Two waypoints required so has_nontrivial_msg() is true and blend fires
   std::vector<std::vector<double>> old_traj{{{1.1, 2.1, 13.1}, {1.1, 2.1, 23.1}}};
   publish(rclcpp::Duration::from_seconds(1.5), old_traj, rclcpp::Time());
   traj_controller_->wait_for_trajectory(executor);
@@ -2314,7 +2313,7 @@ TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
   // future-stamped traj arrives while controller is in hold (no active trajectory).
-  // has_nontrivial_msg() is false for the hold traj so blend must not trigger.
+  // the hold traj sets rt_is_holding_ so blend must not trigger.
   std::vector<std::vector<double>> traj{{{4.0, 5.0, 6.0}}};
   publish(
     rclcpp::Duration::from_seconds(0.3), traj, start_time + rclcpp::Duration::from_seconds(0.5));
@@ -2403,6 +2402,63 @@ TEST_F(TrajectoryControllerTest, blend_immediate_full_goal)
     EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 0.3)
       << "reference stepped on install instead of bridging from the current state, joint " << i;
   }
+}
+
+// A single-point trajectory still executing is blended like a multi-point one (#2615), so repeated
+// "go here" goals hand off without a velocity step.
+TEST_F(TrajectoryControllerTest, blend_single_point_trajectory)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> old_traj{{{5.0, 5.0, 5.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+  const auto ref_before = traj_controller_->get_state_reference();
+
+  std::vector<std::vector<double>> new_traj{{{-5.0, -5.0, -5.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.03), t);
+  const auto ref_after = traj_controller_->get_state_reference();
+
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "a single-point trajectory that was still executing took the legacy path";
+
+  for (size_t i = 0; i < ref_before.positions.size(); ++i)
+  {
+    EXPECT_NEAR(ref_before.positions[i], ref_after.positions[i], 0.3)
+      << "reference stepped on install instead of bridging from the current state, joint " << i;
+  }
+}
+
+// Once the active trajectory has finished there is nothing left to blend with, so the new one is
+// installed from the current state like without allow_trajectory_replacement.
+TEST_F(TrajectoryControllerTest, no_blend_after_active_trajectory_finished)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // waypoints at 0.3 s and 0.6 s
+  std::vector<std::vector<double>> old_traj{{{5.0, 5.0, 5.0}, {6.0, 6.0, 6.0}}};
+  publish(rclcpp::Duration::from_seconds(0.3), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(1.0), start_time);
+
+  std::vector<std::vector<double>> new_traj{{{-5.0, -5.0, -5.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(0.03), t);
+
+  EXPECT_EQ(traj_controller_->get_blend_prefix_size(), 0u)
+    << "blended with a trajectory that had already finished";
 }
 
 // Needs all three to be visible: a partial goal, a new trajectory outlasting the old one, and a
