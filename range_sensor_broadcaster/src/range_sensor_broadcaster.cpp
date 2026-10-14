@@ -56,6 +56,12 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
+  if (params_.min_range > params_.max_range)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'min_range' must not exceed 'max_range'.");
+    return CallbackReturn::ERROR;
+  }
+
   range_sensor_ = std::make_unique<semantic_components::RangeSensor>(params_.sensor_name);
   try
   {
@@ -79,7 +85,7 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
   range_msg_.max_range = static_cast<float>(params_.max_range);
 // \note The versions conditioning is added here to support the source-compatibility with Humble
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
-  range_msg_.variance = params_.variance;
+  range_msg_.variance = static_cast<float>(params_.variance);
 #endif
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configure successful");
