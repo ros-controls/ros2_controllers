@@ -1299,6 +1299,48 @@ TEST(TestTrajectory, sample_after_fill_is_smooth_not_staircase)
     << "unfilled positions-only samples to a C0 staircase with far larger accel spikes";
 }
 
+// A start velocity clamps the first knot and is solved into the interior knots, so acceleration
+// stays continuous across a chunk seam.
+TEST(TestTrajectory, fill_cubic_spline_velocities_clamps_start_velocity)
+{
+  const std::vector<std::vector<double>> positions{{{0.0}}, {{0.1}}, {{0.2}}, {{0.3}}};
+  const double dt = 0.1;
+  const double start_velocity = 0.8;
+
+  auto rest = make_positions_chunk(positions, dt);
+  ASSERT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(rest));
+  EXPECT_NEAR(rest.points.front().velocities[0], 0.0, EPS) << "default is still the rest boundary";
+
+  auto clamped = make_positions_chunk(positions, dt);
+  ASSERT_TRUE(joint_trajectory_controller::fill_cubic_spline_velocities(clamped, {start_velocity}));
+  EXPECT_NEAR(clamped.points.front().velocities[0], start_velocity, EPS);
+  EXPECT_NEAR(clamped.points.back().velocities[0], 0.0, EPS) << "the end stays at rest";
+
+  // Overwriting velocities[0] after the solve would leave the interior untouched.
+  EXPECT_GT(std::abs(clamped.points[1].velocities[0] - rest.points[1].velocities[0]), 1e-6)
+    << "interior knots were not re-solved for the clamped start";
+
+  auto segment_acceleration =
+    [&](const trajectory_msgs::msg::JointTrajectory & traj, size_t i, bool leaving)
+  {
+    const double h = dt;
+    const double p0 = traj.points[i].positions[0];
+    const double v0 = traj.points[i].velocities[0];
+    const double p1 = traj.points[i + 1].positions[0];
+    const double v1 = traj.points[i + 1].velocities[0];
+    const double c2 = (-3.0 * p0 + 3.0 * p1 - 2.0 * v0 * h - v1 * h) / (h * h);
+    const double c3 = (2.0 * p0 - 2.0 * p1 + v0 * h + v1 * h) / (h * h * h);
+    return leaving ? 2.0 * c2 : 2.0 * c2 + 6.0 * c3 * h;
+  };
+  for (size_t knot = 1; knot + 1 < clamped.points.size(); ++knot)
+  {
+    EXPECT_NEAR(
+      segment_acceleration(clamped, knot - 1, false), segment_acceleration(clamped, knot, true),
+      EPS)
+      << "acceleration is discontinuous at interior knot " << knot;
+  }
+}
+
 // Edge cases: a two-point chunk is a valid single segment (rest-to-rest);
 // trajectories with < 2 points or inconsistent widths are a safe no-op; and
 // back-to-back chunks of different sizes both fill correctly.

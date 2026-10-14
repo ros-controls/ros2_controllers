@@ -79,7 +79,7 @@ struct SegmentTolerances
  *
  * \code
  * constraints:
- *  goal_time: 1.0                   # Defaults to zero
+ *  goal_time: 1.0                   # Defaults to 10.0, negative waits indefinitely
  *  stopped_velocity_tolerance: 0.02 # Defaults to 0.01
  *  foo_joint:
  *    trajectory: 0.05               # Defaults to zero (ie. the tolerance is not enforced)
@@ -98,7 +98,9 @@ SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Para
   auto const n_joints = params.joints.size();
 
   SegmentTolerances tolerances;
-  tolerances.goal_time_tolerance = constraints.goal_time;
+  // Negative goal_time means wait indefinitely for the goal to be reached
+  tolerances.goal_time_tolerance =
+    constraints.goal_time < 0.0 ? std::numeric_limits<double>::infinity() : constraints.goal_time;
   static auto logger = jtc_logger.get_child("tolerance");
   RCLCPP_DEBUG(logger, "goal_time %f", constraints.goal_time);
 
