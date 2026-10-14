@@ -9,3 +9,12 @@ test_force_torque_sensor_broadcaster_with_chain:
       filter1:
         name: dummy
         type: filters/IncrementFilterWrench
+
+test_force_torque_sensor_broadcaster_bad_chain:
+  ros__parameters:
+    frame_id: "fts_sensor_frame"
+    sensor_name: "fts_sensor"
+    sensor_filter_chain:
+      filter1:
+        name: broken
+        type: filters/ThisWrenchFilterDoesNotExist

@@ -2,6 +2,7 @@ force_torque_sensor_broadcaster:
   frame_id: {
     type: string,
     default_value: "",
+    read_only: true,
     description: "Sensor's frame_id in which values are published.",
     validation: {
       not_empty<>: null
