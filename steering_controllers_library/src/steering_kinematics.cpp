@@ -135,7 +135,7 @@ double SteeringKinematics::get_linear_velocity_double_traction_axle(
   const double right_traction_wheel_vel, const double left_traction_wheel_vel,
   const double steer_pos)
 {
-  double turning_radius = wheel_base_ / std::tan(steer_pos);
+  const double turning_radius = wheel_base_ / std::tan(steer_pos);
   const double vel_wheel_r = right_traction_wheel_vel * wheel_radius_;
   const double vel_wheel_l = left_traction_wheel_vel * wheel_radius_;
 
@@ -144,11 +144,19 @@ double SteeringKinematics::get_linear_velocity_double_traction_axle(
     return (vel_wheel_r + vel_wheel_l) * 0.5;
   }
 
-  // overdetermined, we take the average
-  const double vel_r =
-    vel_wheel_r * turning_radius / (turning_radius + wheel_track_traction_ * 0.5);
-  const double vel_l =
-    vel_wheel_l * turning_radius / (turning_radius - wheel_track_traction_ * 0.5);
+  const double right_radius = turning_radius + wheel_track_traction_ * 0.5;
+  const double left_radius = turning_radius - wheel_track_traction_ * 0.5;
+  if (std::abs(right_radius) < 1e-12)
+  {
+    return vel_wheel_l * turning_radius / left_radius;
+  }
+  if (std::abs(left_radius) < 1e-12)
+  {
+    return vel_wheel_r * turning_radius / right_radius;
+  }
+
+  const double vel_r = vel_wheel_r * turning_radius / right_radius;
+  const double vel_l = vel_wheel_l * turning_radius / left_radius;
   return (vel_r + vel_l) * 0.5;
 }
 

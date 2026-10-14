@@ -445,3 +445,23 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
 }
+
+
+TEST(TestSteeringOdometry, tricycle_inner_wheel_stationary_boundary)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  constexpr double wheel_radius = 1.0;
+  constexpr double wheelbase = 2.0;
+  constexpr double track = 1.0;
+  odom.set_wheel_params(wheel_radius, wheelbase, track, track);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+
+  const double steer = std::atan(wheelbase / (track / 2.0));
+  ASSERT_TRUE(odom.update_from_velocity(2.0, 0.0, steer, 1.0));
+
+  EXPECT_NEAR(odom.get_linear(), 1.0, 1e-9);
+  EXPECT_NEAR(odom.get_angular(), 2.0, 1e-9);
+  EXPECT_NEAR(odom.get_x(), std::sin(2.0) / 2.0, 1e-9);
+  EXPECT_NEAR(odom.get_y(), (1.0 - std::cos(2.0)) / 2.0, 1e-9);
+  EXPECT_NEAR(odom.get_heading(), 2.0, 1e-9);
+}
