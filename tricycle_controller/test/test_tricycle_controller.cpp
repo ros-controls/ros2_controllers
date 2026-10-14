@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <thread>
@@ -154,15 +155,19 @@ protected:
     }
   }
 
-  void assignResources()
+  void assignResources(bool reverse_order = false)
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(steering_joint_pos_state_, nullptr);
-    state_ifs.emplace_back(traction_joint_vel_state_, nullptr);
+    state_ifs.emplace_back(
+      reverse_order ? traction_joint_vel_state_ : steering_joint_pos_state_, nullptr);
+    state_ifs.emplace_back(
+      reverse_order ? steering_joint_pos_state_ : traction_joint_vel_state_, nullptr);
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(steering_joint_pos_cmd_, nullptr);
-    command_ifs.emplace_back(traction_joint_vel_cmd_, nullptr);
+    command_ifs.emplace_back(
+      reverse_order ? traction_joint_vel_cmd_ : steering_joint_pos_cmd_, nullptr);
+    command_ifs.emplace_back(
+      reverse_order ? steering_joint_pos_cmd_ : traction_joint_vel_cmd_, nullptr);
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -273,6 +278,85 @@ TEST_F(TestTricycleController, activate_succeeds_with_resources_assigned)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   assignResources();
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
+}
+
+TEST_F(TestTricycleController, reactivate_with_reassigned_interfaces)
+{
+  ASSERT_EQ(
+    InitController(
+      traction_joint_name, steering_joint_name,
+      {rclcpp::Parameter("wheel_radius", 1.0),
+       rclcpp::Parameter("velocity_rolling_window_size", 1)}),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->configure().id(), State::PRIMARY_STATE_INACTIVE);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  for (int cycle = 0; cycle < 3; ++cycle)
+  {
+    SCOPED_TRACE(cycle);
+    assignResources(cycle % 2 != 0);
+    ASSERT_EQ(controller_->get_node()->activate().id(), State::PRIMARY_STATE_ACTIVE);
+
+    const double velocity = 0.2 * (cycle + 1);
+    const double position = 0.1 * (cycle + 1);
+    ASSERT_TRUE(traction_joint_vel_state_->set_value(velocity));
+    ASSERT_TRUE(steering_joint_pos_state_->set_value(position));
+    publish(1.0, 0.0);
+    controller_->wait_for_twist(executor);
+    const auto command = controller_->getLastReceivedTwist();
+    ASSERT_NE(command, nullptr);
+    ASSERT_EQ(
+      controller_->update(command->header.stamp, rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    EXPECT_NEAR(controller_->odometry_.getLinear(), velocity * std::cos(position), 1e-6);
+    EXPECT_NEAR(controller_->odometry_.getAngular(), velocity * std::sin(position), 1e-6);
+    EXPECT_EQ(1.0, traction_joint_vel_cmd_->get_optional().value());
+    EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+
+    ASSERT_EQ(controller_->get_node()->deactivate().id(), State::PRIMARY_STATE_INACTIVE);
+    EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
+    EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+    controller_->release_interfaces();
+  }
+}
+
+TEST_F(TestTricycleController, activate_after_partial_interface_assignment)
+{
+  ASSERT_EQ(
+    InitController(
+      traction_joint_name, steering_joint_name, {rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->configure().id(), State::PRIMARY_STATE_INACTIVE);
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(traction_joint_vel_state_, nullptr);
+  state_ifs.emplace_back(steering_joint_pos_state_, nullptr);
+  std::vector<LoanedCommandInterface> command_ifs;
+  command_ifs.emplace_back(traction_joint_vel_cmd_, nullptr);
+  controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
+  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+  controller_->release_interfaces();
+
+  assignResources();
+  ASSERT_EQ(controller_->get_node()->activate().id(), State::PRIMARY_STATE_ACTIVE);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+  const auto command = controller_->getLastReceivedTwist();
+  ASSERT_NE(command, nullptr);
+  ASSERT_EQ(
+    controller_->update(command->header.stamp, rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(1.0, traction_joint_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+
+  ASSERT_EQ(controller_->get_node()->deactivate().id(), State::PRIMARY_STATE_INACTIVE);
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_->get_optional().value());
+  controller_->release_interfaces();
 }
 
 TEST_F(TestTricycleController, cleanup)
