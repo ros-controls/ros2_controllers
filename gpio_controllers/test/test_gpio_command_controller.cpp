@@ -11,11 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
+#include "control_msgs/action/gpio_command.hpp"
 #include "control_msgs/msg/dynamic_interface_group_values.hpp"
 #include "controller_interface/test_utils.hpp"
 #include "gmock/gmock.h"
@@ -29,6 +33,9 @@
 #include "rclcpp/utilities.hpp"
 #include "rclcpp/wait_result.hpp"
 #include "rclcpp/wait_set.hpp"
+#include "rclcpp_action/client.hpp"
+#include "rclcpp_action/client_goal_handle.hpp"
+#include "rclcpp_action/create_client.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
@@ -57,6 +64,8 @@ using controller_interface::configure_succeeds;
 using hardware_interface::CommandInterface;
 using hardware_interface::StateInterface;
 using lifecycle_msgs::msg::State;
+using GPIOCommandAction = control_msgs::action::GPIOCommand;
+using GPIOCommandGoalHandle = rclcpp_action::ClientGoalHandle<GPIOCommandAction>;
 
 namespace
 {
@@ -219,6 +228,53 @@ public:
       }
     }
     return max_sub_check_loop_count;
+  }
+
+  // Sends an action goal and returns its result, driving the controller's update() loop on a
+  // background thread while the executor services the goal request/feedback/result exchange.
+  GPIOCommandGoalHandle::WrappedResult send_action_goal_and_wait_for_result(
+    const GPIOCommandAction::Goal & goal,
+    std::chrono::seconds wait_timeout = std::chrono::seconds(2))
+  {
+    auto action_client = rclcpp_action::create_client<GPIOCommandAction>(
+      controller_->get_node()->get_node_base_interface(),
+      controller_->get_node()->get_node_graph_interface(),
+      controller_->get_node()->get_node_logging_interface(),
+      controller_->get_node()->get_node_waitables_interface(),
+      std::string(controller_->get_node()->get_name()) + "/gpio_command");
+    EXPECT_TRUE(action_client->wait_for_action_server(wait_timeout));
+
+    std::atomic<bool> stop_updating{false};
+    std::thread update_thread(
+      [&]()
+      {
+        while (!stop_updating.load())
+        {
+          controller_->update(
+            controller_->get_node()->get_clock()->now(), rclcpp::Duration::from_seconds(0.01));
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+      });
+
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(controller_->get_node()->get_node_base_interface());
+
+    auto goal_handle_future = action_client->async_send_goal(goal);
+    EXPECT_EQ(
+      executor.spin_until_future_complete(goal_handle_future, wait_timeout),
+      rclcpp::FutureReturnCode::SUCCESS);
+    auto goal_handle = goal_handle_future.get();
+    EXPECT_TRUE(goal_handle);
+
+    auto result_future = action_client->async_get_result(goal_handle);
+    EXPECT_EQ(
+      executor.spin_until_future_complete(result_future, wait_timeout),
+      rclcpp::FutureReturnCode::SUCCESS);
+
+    stop_updating.store(true);
+    update_thread.join();
+
+    return result_future.get();
   }
 
   std::unique_ptr<FriendGpioCommandController> controller_;
@@ -717,4 +773,151 @@ TEST_F(
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).interface_names.at(0), "ana.1");
   ASSERT_EQ(gpio_state_msg.interface_values.at(0).values.at(0), 1.0);
   ASSERT_EQ(gpio_state_msg.interface_values.at(1).values.at(0), 3.1);
+}
+
+TEST_F(GpioCommandControllerTestSuite, ActionGoalWritesCommandAndSucceedsWhenStateAtTarget)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  GPIOCommandAction::Goal goal;
+  goal.command_interface = "gpio1/dig.1";
+  goal.command_value = 5.0;
+  goal.state_interface = "gpio1/dig.1";
+  goal.state_value = gpio_states.at(0);
+  goal.tolerance = 0.05;
+  goal.timeout = 0.0;
+
+  const auto result = send_action_goal_and_wait_for_result(goal);
+
+  EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_TRUE(result.result);
+  EXPECT_TRUE(result.result->success);
+  EXPECT_EQ(gpio_1_1_dig_cmd->get_optional().value(), goal.command_value);
+}
+
+TEST_F(GpioCommandControllerTestSuite, ActionGoalWithUnknownCommandInterfaceIsRejected)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  auto action_client = rclcpp_action::create_client<GPIOCommandAction>(
+    controller_->get_node()->get_node_base_interface(),
+    controller_->get_node()->get_node_graph_interface(),
+    controller_->get_node()->get_node_logging_interface(),
+    controller_->get_node()->get_node_waitables_interface(),
+    std::string(controller_->get_node()->get_name()) + "/gpio_command");
+  ASSERT_TRUE(action_client->wait_for_action_server(std::chrono::seconds(2)));
+
+  GPIOCommandAction::Goal goal;
+  goal.command_interface = "gpio1/unknown_interface";
+  goal.command_value = 1.0;
+  goal.state_interface = "gpio1/dig.1";
+  goal.state_value = 1.0;
+  goal.tolerance = 0.05;
+  goal.timeout = 0.0;
+
+  auto goal_handle_future = action_client->async_send_goal(goal);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  ASSERT_EQ(
+    executor.spin_until_future_complete(goal_handle_future, std::chrono::seconds(2)),
+    rclcpp::FutureReturnCode::SUCCESS);
+
+  EXPECT_EQ(goal_handle_future.get(), nullptr);
+}
+
+TEST_F(GpioCommandControllerTestSuite, NewActionGoalPreemptsTheActiveOne)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  auto action_client = rclcpp_action::create_client<GPIOCommandAction>(
+    controller_->get_node()->get_node_base_interface(),
+    controller_->get_node()->get_node_graph_interface(),
+    controller_->get_node()->get_node_logging_interface(),
+    controller_->get_node()->get_node_waitables_interface(),
+    std::string(controller_->get_node()->get_name()) + "/gpio_command");
+  ASSERT_TRUE(action_client->wait_for_action_server(std::chrono::seconds(2)));
+
+  // Never reached: gpio_1_1_dig_state stays at gpio_states.at(0), never at 999.0.
+  GPIOCommandAction::Goal first_goal;
+  first_goal.command_interface = "gpio1/dig.1";
+  first_goal.command_value = 2.0;
+  first_goal.state_interface = "gpio1/dig.1";
+  first_goal.state_value = 999.0;
+  first_goal.tolerance = 0.01;
+  first_goal.timeout = 0.0;
+
+  GPIOCommandAction::Goal second_goal = first_goal;
+  second_goal.command_value = 5.0;
+  second_goal.state_value = gpio_states.at(0);
+
+  std::atomic<bool> stop_updating{false};
+  std::thread update_thread(
+    [&]()
+    {
+      while (!stop_updating.load())
+      {
+        controller_->update(
+          controller_->get_node()->get_clock()->now(), rclcpp::Duration::from_seconds(0.01));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+    });
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  auto first_goal_handle_future = action_client->async_send_goal(first_goal);
+  ASSERT_EQ(
+    executor.spin_until_future_complete(first_goal_handle_future, std::chrono::seconds(2)),
+    rclcpp::FutureReturnCode::SUCCESS);
+  auto first_goal_handle = first_goal_handle_future.get();
+  ASSERT_TRUE(first_goal_handle);
+  auto first_result_future = action_client->async_get_result(first_goal_handle);
+
+  auto second_goal_handle_future = action_client->async_send_goal(second_goal);
+  ASSERT_EQ(
+    executor.spin_until_future_complete(second_goal_handle_future, std::chrono::seconds(2)),
+    rclcpp::FutureReturnCode::SUCCESS);
+  auto second_goal_handle = second_goal_handle_future.get();
+  ASSERT_TRUE(second_goal_handle);
+  auto second_result_future = action_client->async_get_result(second_goal_handle);
+
+  ASSERT_EQ(
+    executor.spin_until_future_complete(first_result_future, std::chrono::seconds(2)),
+    rclcpp::FutureReturnCode::SUCCESS);
+  ASSERT_EQ(
+    executor.spin_until_future_complete(second_result_future, std::chrono::seconds(2)),
+    rclcpp::FutureReturnCode::SUCCESS);
+
+  stop_updating.store(true);
+  update_thread.join();
+
+  const auto first_result = first_result_future.get();
+  const auto second_result = second_result_future.get();
+
+  EXPECT_EQ(first_result.code, rclcpp_action::ResultCode::ABORTED);
+  ASSERT_TRUE(first_result.result);
+  EXPECT_FALSE(first_result.result->success);
+  EXPECT_THAT(first_result.result->message, ::testing::HasSubstr("preempted"));
+
+  EXPECT_EQ(second_result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_TRUE(second_result.result);
+  EXPECT_TRUE(second_result.result->success);
 }
