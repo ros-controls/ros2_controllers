@@ -204,8 +204,8 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
   EXPECT_DOUBLE_EQ(battery0.charge, 6000.0);
   EXPECT_DOUBLE_EQ(battery0.capacity, 12000.0);
   EXPECT_DOUBLE_EQ(battery0.design_capacity, 13000.0);
-  // percentage calculated (no interface) = (5.0 - 0.0) * 100 / (10.0 - 0.0) = 50
-  EXPECT_DOUBLE_EQ(battery0.percentage, 50.0);
+  // percentage calculated (no interface) = (5.0 - 0.0) / (10.0 - 0.0) = 0.5
+  EXPECT_FLOAT_EQ(battery0.percentage, 0.5F);
   EXPECT_EQ(battery0.power_supply_status, 3);  // from itfs_values_[3]
   EXPECT_EQ(battery0.power_supply_health, 0);  // from itfs_values_[4]
   EXPECT_EQ(battery0.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
@@ -222,7 +222,7 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
   EXPECT_DOUBLE_EQ(battery1.charge, 5000.0);
   EXPECT_DOUBLE_EQ(battery1.capacity, 17000.0);
   EXPECT_DOUBLE_EQ(battery1.design_capacity, 18000.0);
-  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_FLOAT_EQ(battery1.percentage, 0.66F);  // converted from itfs_values_[9]
   EXPECT_EQ(battery1.power_supply_status, 2);   // from itfs_values_[10]
   EXPECT_EQ(battery1.power_supply_health, 4);   // from itfs_values_[11]
   EXPECT_EQ(battery1.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
@@ -238,7 +238,7 @@ TEST_F(BatteryStateBroadcasterTest, publish_status_success)
   EXPECT_DOUBLE_EQ(battery_state_msg.charge, 11000.0);           // sum of 6000 + 5000
   EXPECT_DOUBLE_EQ(battery_state_msg.capacity, 29000.0);         // sum of 12000 + 17000
   EXPECT_DOUBLE_EQ(battery_state_msg.design_capacity, 31000.0);  // sum of 13000 + 18000
-  EXPECT_DOUBLE_EQ(battery_state_msg.percentage, 58.0);          // average of 50 + 66
+  EXPECT_FLOAT_EQ(battery_state_msg.percentage, 0.58F);           // average of 0.5 + 0.66
   EXPECT_EQ(battery_state_msg.power_supply_status, 3);           // max(3, 2)
   EXPECT_EQ(battery_state_msg.power_supply_health, 4);           // max(0, 4)
   EXPECT_EQ(battery_state_msg.power_supply_technology, BatteryState::POWER_SUPPLY_TECHNOLOGY_LIPO);
@@ -265,19 +265,19 @@ TEST_F(BatteryStateBroadcasterTest, update_broadcasted_success)
   // battery0
   const auto & battery0 = raw_battery_states_msg.battery_states[0];
   EXPECT_DOUBLE_EQ(battery0.voltage, 10.0);
-  // percentage calculated (no interface) = (10.0 - 0.0) * 100 / (10.0 - 0.0) = 100
-  EXPECT_DOUBLE_EQ(battery0.percentage, 100.0);
+  // percentage calculated (no interface) = (10.0 - 0.0) / (10.0 - 0.0) = 1
+  EXPECT_FLOAT_EQ(battery0.percentage, 1.0F);
   EXPECT_TRUE(battery0.present);  // voltage > 0.0
 
   // battery1
   const auto & battery1 = raw_battery_states_msg.battery_states[1];
   EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
-  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_FLOAT_EQ(battery1.percentage, 0.66F);  // converted from itfs_values_[9]
   EXPECT_TRUE(battery1.present);                // voltage > 0.0
 
   // Combined battery state message
   EXPECT_DOUBLE_EQ(battery_state_msg.voltage, 10.0);     // average of 10 + 10
-  EXPECT_DOUBLE_EQ(battery_state_msg.percentage, 83.0);  // average of 100 + 66
+  EXPECT_FLOAT_EQ(battery_state_msg.percentage, 0.83F);   // average of 1.0 + 0.66
   EXPECT_TRUE(battery_state_msg.present);                // voltage > 0.0
 }
 
@@ -305,13 +305,72 @@ TEST_F(BatteryStateBroadcasterTest, publish_nan_voltage)
   // battery1
   const auto & battery1 = raw_battery_states_msg.battery_states[1];
   EXPECT_DOUBLE_EQ(battery1.voltage, 10.0);
-  EXPECT_DOUBLE_EQ(battery1.percentage, 66.0);  // directly from itfs_values_[9]
+  EXPECT_FLOAT_EQ(battery1.percentage, 0.66F);  // converted from itfs_values_[9]
   EXPECT_TRUE(battery1.present);                // voltage > 0.0
 
   // Combined battery state message
   EXPECT_TRUE(std::isnan(battery_state_msg.voltage));     // average of nan + 10
-  EXPECT_TRUE(std::isnan(battery_state_msg.percentage));  // average of nan + 66
+  EXPECT_TRUE(std::isnan(battery_state_msg.percentage));  // average of nan + 0.66
   EXPECT_TRUE(battery_state_msg.present);
+}
+
+// Independent oracle: sensor_msgs/msg/BatteryState defines percentage on [0, 1].
+TEST_F(BatteryStateBroadcasterTest, empty_charge_is_zero_control)
+{
+  SetUpBatteryStateBroadcaster();
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(battery0_voltage_itf_->set_value(0.0));
+  ASSERT_TRUE(battery1_percentage_itf_->set_value(0.0));
+
+  RawBatteryStatesMsg raw;
+  BatteryStateMsg aggregate;
+  subscribe_and_get_messages(raw, aggregate);
+
+  ASSERT_EQ(raw.battery_states.size(), 2u);
+  EXPECT_DOUBLE_EQ(raw.battery_states[0].percentage, 0.0);
+  EXPECT_DOUBLE_EQ(raw.battery_states[1].percentage, 0.0);
+  EXPECT_DOUBLE_EQ(aggregate.percentage, 0.0);
+}
+
+TEST_F(BatteryStateBroadcasterTest, percentage_matches_sensor_msgs_contract)
+{
+  SetUpBatteryStateBroadcaster();
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
+
+  RawBatteryStatesMsg raw;
+  BatteryStateMsg aggregate;
+  subscribe_and_get_messages(raw, aggregate);
+
+  ASSERT_EQ(raw.battery_states.size(), 2u);
+  EXPECT_NEAR(raw.battery_states[0].percentage, 0.50, 1e-6);  // derived from 5 V in [0, 10]
+  EXPECT_NEAR(raw.battery_states[1].percentage, 0.66, 1e-6);  // direct 66 percent interface
+  EXPECT_NEAR(aggregate.percentage, 0.58, 1e-6);
+  EXPECT_GE(raw.battery_states[0].percentage, 0.0);
+  EXPECT_LE(raw.battery_states[0].percentage, 1.0);
+  EXPECT_GE(raw.battery_states[1].percentage, 0.0);
+  EXPECT_LE(raw.battery_states[1].percentage, 1.0);
+  EXPECT_GE(aggregate.percentage, 0.0);
+  EXPECT_LE(aggregate.percentage, 1.0);
+}
+
+TEST_F(BatteryStateBroadcasterTest, full_charge_is_one_in_sensor_msgs_contract)
+{
+  SetUpBatteryStateBroadcaster();
+  ASSERT_TRUE(configure_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(battery_state_broadcaster_));
+  ASSERT_TRUE(battery0_voltage_itf_->set_value(10.0));
+  ASSERT_TRUE(battery1_percentage_itf_->set_value(100.0));
+
+  RawBatteryStatesMsg raw;
+  BatteryStateMsg aggregate;
+  subscribe_and_get_messages(raw, aggregate);
+
+  ASSERT_EQ(raw.battery_states.size(), 2u);
+  EXPECT_NEAR(raw.battery_states[0].percentage, 1.0, 1e-6);
+  EXPECT_NEAR(raw.battery_states[1].percentage, 1.0, 1e-6);
+  EXPECT_NEAR(aggregate.percentage, 1.0, 1e-6);
 }
 
 int main(int argc, char ** argv)

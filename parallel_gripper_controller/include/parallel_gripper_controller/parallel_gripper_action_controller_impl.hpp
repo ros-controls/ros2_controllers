@@ -115,11 +115,19 @@ rclcpp_action::GoalResponse GripperActionController::goal_callback(
   {
     pre_alloc_result_ = std::make_shared<control_msgs::action::ParallelGripperCommand::Result>();
     pre_alloc_result_->state.position.resize(1);
-    pre_alloc_result_->state.effort.resize(1);
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Received action goal with wrong number of position values, expects 1, got %zu",
       goal_handle->command.position.size());
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+  if (
+    !goal_handle->command.name.empty() &&
+    (goal_handle->command.name.size() != 1 || goal_handle->command.name[0] != params_.joint))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Received action goal for a different joint; expected `%s`",
+      params_.joint.c_str());
     return rclcpp_action::GoalResponse::REJECT;
   }
 
@@ -222,9 +230,8 @@ void GripperActionController::check_for_success(
     return;
   }
 
-  if (fabs(error_position) < params_.goal_tolerance)
+  if (fabs(error_position) <= params_.goal_tolerance)
   {
-    pre_alloc_result_->state.effort[0] = computed_command_;
     pre_alloc_result_->state.position[0] = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
@@ -246,7 +253,6 @@ void GripperActionController::check_for_success(
         last_time_opt.has_value() &&
         (time - last_time_opt.value()).seconds() > params_.stall_timeout)
       {
-        pre_alloc_result_->state.effort[0] = computed_command_;
         pre_alloc_result_->state.position[0] = current_position;
         pre_alloc_result_->reached_goal = false;
         pre_alloc_result_->stalled = true;
@@ -398,7 +404,6 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   // Result
   pre_alloc_result_ = std::make_shared<control_msgs::action::ParallelGripperCommand::Result>();
   pre_alloc_result_->state.position.resize(1);
-  pre_alloc_result_->state.effort.resize(1);
   pre_alloc_result_->state.position[0] = command_struct_.position_cmd_;
   pre_alloc_result_->reached_goal = false;
   pre_alloc_result_->stalled = false;
@@ -419,6 +424,17 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
 controller_interface::CallbackReturn GripperActionController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const RealtimeGoalHandlePtr & goal) { active_goal = goal; });
+  if (active_goal)
+  {
+    active_goal->setAborted(std::make_shared<GripperCommandAction::Result>());
+    active_goal->runNonRealtime();
+    rt_active_goal_.set([](RealtimeGoalHandlePtr & stored_value)
+                        { stored_value = RealtimeGoalHandlePtr(); });
+  }
+  goal_handle_timer_.reset();
+  action_server_.reset();
   joint_position_command_interface_ = std::nullopt;
   joint_position_state_interface_ = std::nullopt;
   joint_velocity_state_interface_ = std::nullopt;
