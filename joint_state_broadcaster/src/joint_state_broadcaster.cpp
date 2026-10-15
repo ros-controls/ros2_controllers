@@ -14,6 +14,7 @@
 
 #include "joint_state_broadcaster/joint_state_broadcaster.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <memory>
@@ -21,8 +22,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include <cmath>
+#include <cstdint>
+#include <optional>
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/qos.hpp"
+
 #include "rclcpp/time.hpp"
 #include "std_msgs/msg/header.hpp"
 
@@ -37,6 +42,17 @@ const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
 using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
+
+namespace
+{
+/// Check if data type is accepted for the measurement time interfaces.
+bool is_supported_timestamp_data_type(hardware_interface::HandleDataType data_type)
+{
+  return data_type == hardware_interface::HandleDataType::DOUBLE ||
+         data_type == hardware_interface::HandleDataType::INT32 ||
+         data_type == hardware_interface::HandleDataType::UINT32;
+}
+}  // namespace
 
 JointStateBroadcaster::JointStateBroadcaster() {}
 
@@ -97,6 +113,13 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
     }
   }
 
+  // Claim the optional measurement time interfaces (if configured).
+  if (use_timestamp_interfaces())
+  {
+    state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.sec);
+    state_interfaces_config.names.push_back(params_.timestamp_state_interfaces.nsec);
+  }
+
   return state_interfaces_config;
 }
 
@@ -104,6 +127,17 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   params_ = param_listener_->get_params();
+
+  const bool timestamp_sec_configured = !params_.timestamp_state_interfaces.sec.empty();
+  const bool timestamp_nsec_configured = !params_.timestamp_state_interfaces.nsec.empty();
+  if (timestamp_sec_configured != timestamp_nsec_configured)
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Both 'timestamp_state_interfaces.sec' and 'timestamp_state_interfaces.nsec' must be set, "
+      "or both must be empty.");
+    return CallbackReturn::ERROR;
+  }
 
   if (use_urdf_joint_interfaces())
   {
@@ -232,6 +266,55 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_activate(
   init_auxiliary_data();
   init_joint_state_msg();
 
+  // Resolve the optional measurement time interfaces, if configured.
+  timestamp_sec_index_.reset();
+  timestamp_nsec_index_.reset();
+  if (use_timestamp_interfaces())
+  {
+    for (std::size_t i = 0; i < state_interfaces_.size(); ++i)
+    {
+      const auto name = state_interfaces_[i].get_name();
+      if (name == params_.timestamp_state_interfaces.sec)
+      {
+        timestamp_sec_index_ = i;
+      }
+      else if (name == params_.timestamp_state_interfaces.nsec)
+      {
+        timestamp_nsec_index_ = i;
+      }
+    }
+    // If configured but not claimed, or wrong type for the interface,
+    // warn and fall back to the controller manager time.
+    if (!timestamp_sec_index_.has_value() || !timestamp_nsec_index_.has_value())
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "timestamp_state_interfaces is set (sec='%s', nsec='%s') but the interface(s) were not "
+        "found among the claimed state interfaces; header.stamp will use the controller manager "
+        "time.",
+        params_.timestamp_state_interfaces.sec.c_str(),
+        params_.timestamp_state_interfaces.nsec.c_str());
+      timestamp_sec_index_.reset();
+      timestamp_nsec_index_.reset();
+    }
+    else if (
+      !is_supported_timestamp_data_type(state_interfaces_[*timestamp_sec_index_].get_data_type()) ||
+      !is_supported_timestamp_data_type(state_interfaces_[*timestamp_nsec_index_].get_data_type()))
+    {
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "timestamp_state_interfaces have an unsupported data type (sec='%s' is '%s', nsec='%s' is "
+        "'%s'); supported types are double, int32 and uint32. header.stamp will use the "
+        "controller manager time.",
+        params_.timestamp_state_interfaces.sec.c_str(),
+        state_interfaces_[*timestamp_sec_index_].get_data_type().to_string().c_str(),
+        params_.timestamp_state_interfaces.nsec.c_str(),
+        state_interfaces_[*timestamp_nsec_index_].get_data_type().to_string().c_str());
+      timestamp_sec_index_.reset();
+      timestamp_nsec_index_.reset();
+    }
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -240,6 +323,8 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
 {
   joint_names_.clear();
   name_if_value_mapping_.clear();
+  timestamp_sec_index_.reset();
+  timestamp_nsec_index_.reset();
 
   return CallbackReturn::SUCCESS;
 }
@@ -247,9 +332,12 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
 bool JointStateBroadcaster::init_joint_data()
 {
   joint_names_.clear();
-  if (state_interfaces_.empty())
+  const bool has_joint_state_interface = std::any_of(
+    state_interfaces_.cbegin(), state_interfaces_.cend(), [this](const auto & state_interface)
+    { return !is_timestamp_interface(state_interface.get_name()); });
+  if (!has_joint_state_interface)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "No state interfaces found to publish.");
+    RCLCPP_ERROR(get_node()->get_logger(), "No joint state interfaces found to publish.");
     return false;
   }
 
@@ -258,6 +346,11 @@ bool JointStateBroadcaster::init_joint_data()
     HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
   for (auto si = state_interfaces_.crbegin(); si != state_interfaces_.crend(); si++)
   {
+    // Skip the measurement time interfaces: they provide header.stamp, not joint state.
+    if (is_timestamp_interface(si->get_name()))
+    {
+      continue;
+    }
     if (si->get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       RCLCPP_WARN(
@@ -353,6 +446,12 @@ void JointStateBroadcaster::init_auxiliary_data()
   mapped_values_.clear();
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
+    // Keep the measurement time interfaces out of the mapping so it stays aligned with the read
+    // loop in update(), which skips them too.
+    if (is_timestamp_interface(state_interfaces_[i].get_name()))
+    {
+      continue;
+    }
     if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       continue;
@@ -416,12 +515,103 @@ bool JointStateBroadcaster::use_urdf_joint_interfaces() const
   return params_.joints.empty() || params_.interfaces.empty();
 }
 
+bool JointStateBroadcaster::use_timestamp_interfaces() const
+{
+  return !params_.timestamp_state_interfaces.sec.empty() &&
+         !params_.timestamp_state_interfaces.nsec.empty();
+}
+
+bool JointStateBroadcaster::is_timestamp_interface(const std::string & full_interface_name) const
+{
+  return full_interface_name == params_.timestamp_state_interfaces.sec ||
+         full_interface_name == params_.timestamp_state_interfaces.nsec;
+}
+
+std::optional<int64_t> JointStateBroadcaster::read_time_component(
+  std::size_t state_interface_index, int64_t minimum, int64_t maximum) const
+{
+  const auto & state_interface = state_interfaces_[state_interface_index];
+
+  const auto to_int64 = [minimum, maximum](const auto & opt) -> std::optional<int64_t>
+  {
+    if (!opt.has_value())
+    {
+      return std::nullopt;
+    }
+    const long double value = static_cast<long double>(opt.value());
+    if (
+      !std::isfinite(value) || value < static_cast<long double>(minimum) ||
+      value > static_cast<long double>(maximum) || std::trunc(value) != value)
+    {
+      return std::nullopt;
+    }
+    return static_cast<int64_t>(value);
+  };
+
+  // Read with the accessor that matches the declared type. A typed get_optional throws on a type
+  // mismatch, so dispatch on the data type. Supported types are validated at activation.
+  switch (state_interface.get_data_type())
+  {
+    case hardware_interface::HandleDataType::DOUBLE:
+      return to_int64(state_interface.get_optional<double>(0));
+    case hardware_interface::HandleDataType::INT32:
+      return to_int64(state_interface.get_optional<int32_t>(0));
+    case hardware_interface::HandleDataType::UINT32:
+      return to_int64(state_interface.get_optional<uint32_t>(0));
+    default:
+      // Unsupported type, already handled at activation. Fall back to the controller manager time.
+      return std::nullopt;
+  }
+}
+
+std::optional<rclcpp::Time> JointStateBroadcaster::read_measurement_time(
+  rcl_clock_type_t clock_type) const
+{
+  // Any seconds value is read. The meaning of the value is decided below.
+  const auto sec = read_time_component(
+    *timestamp_sec_index_, std::numeric_limits<int32_t>::min(),
+    std::numeric_limits<int32_t>::max());
+  const auto nsec = read_time_component(*timestamp_nsec_index_, 0, 999999999);
+  if (!sec.has_value() || !nsec.has_value())
+  {
+    return std::nullopt;
+  }
+
+  // An all-zero stamp means "no measurement time". Hardware writes it deliberately, and it is the
+  // ROS convention for an unset time.
+  if (sec.value() == 0 && nsec.value() == 0)
+  {
+    return std::nullopt;
+  }
+
+  // A negative time cannot be published: rclcpp::Time does not represent one. Treat it as no
+  // measurement time and report it, since it is not how absence is meant to be signalled.
+  if (sec.value() < 0)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "State interface '%s' holds a negative measurement time (%ld s), which is not a representable "
+      "ROS time. Write an all-zero stamp to signal that no measurement time is available.",
+      params_.timestamp_state_interfaces.sec.c_str(), static_cast<long>(sec.value()));
+    return std::nullopt;
+  }
+
+  return rclcpp::Time(
+    static_cast<int32_t>(sec.value()), static_cast<uint32_t>(nsec.value()), clock_type);
+}
+
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   size_t map_index = 0u;
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
+    // The measurement time interfaces feed header.stamp (below). Skip them here so this
+    // stays aligned with the mapping, which excludes them too.
+    if (is_timestamp_interface(state_interfaces_[i].get_name()))
+    {
+      continue;
+    }
     if (state_interfaces_[i].get_data_type() == hardware_interface::HandleDataType::DOUBLE)
     {
       // no retries, just try to get the latest value once
@@ -438,9 +628,29 @@ controller_interface::return_type JointStateBroadcaster::update(
     }
   }
 
+  // Once configured, header.stamp is the measurement time and nothing else. Without one there is no
+  // honest stamp for this cycle's data, so the cycle is skipped rather than published with a
+  // substitute or with an older measurement time that no longer describes the data.
+  rclcpp::Time stamp = time;
+  if (timestamp_sec_index_.has_value() && timestamp_nsec_index_.has_value())
+  {
+    const auto measurement_time = read_measurement_time(time.get_clock_type());
+    if (!measurement_time.has_value())
+    {
+      RCLCPP_ERROR_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "State interfaces '%s' and '%s' carry no valid measurement time. Not publishing joint "
+        "states until they do.",
+        params_.timestamp_state_interfaces.sec.c_str(),
+        params_.timestamp_state_interfaces.nsec.c_str());
+      return controller_interface::return_type::OK;
+    }
+    stamp = *measurement_time;
+  }
+
   if (realtime_joint_state_publisher_)
   {
-    joint_state_msg_.header.stamp = time;
+    joint_state_msg_.header.stamp = stamp;
 
     for (size_t i = 0; i < joint_names_.size(); ++i)
     {

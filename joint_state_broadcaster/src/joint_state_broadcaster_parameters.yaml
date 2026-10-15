@@ -64,3 +64,24 @@ joint_state_broadcaster:
     read_only: true,
     description: "The frame_id to be used in the published joint states. This parameter allows rviz2 to visualize the effort of the joints."
   }
+  timestamp_state_interfaces:
+    sec: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "[Optional] Full name of a state interface (e.g. 'measurement_clock/measurement_time_sec')
+      whose value is seconds of measurement time. When set, header.stamp is sourced from it instead of
+      the controller manager time. Empty (default) keeps the standard behavior. Must be set together
+      with nsec. The interface may be of type double, int32 or uint32 and must hold an integer.
+      An all-zero stamp, and only that, means no measurement time is available. Negative values are
+      rejected with an error. A cycle with no measurement time is not published at all, since no stamp
+      would describe its data. Hardware that wants the cycle published regardless can write any
+      timestamp it considers valid for it, including the controller time."
+    }
+    nsec: {
+      type: string,
+      default_value: "",
+      read_only: true,
+      description: "[Optional] Full name of a state interface holding the integer nanoseconds part
+      of the measurement time, from 0 through 999999999. See timestamp_state_interfaces.sec."
+    }
