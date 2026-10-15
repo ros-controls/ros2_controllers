@@ -1826,6 +1826,110 @@ TEST_P(TrajectoryControllerTestParameterized, test_partial_joint_list_not_allowe
 }
 
 /**
+ * @brief A joint left out of a partial goal holds where it was last commanded even when its
+ * position command interface reads NaN. Hardware that consumes commands (NaN = "no new command")
+ * leaves the interface NaN between writes, so the value there is not a position to hold at.
+ */
+TEST_P(
+  TrajectoryControllerTestParameterized,
+  test_partial_joint_list_missing_joint_holds_when_command_interface_is_nan)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // separate command and state values, so that a NaN command is not mirrored into the state
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters}, true);
+
+  const double joint3_last_command = pos_cmd_interfaces_[2]->get_optional().value();
+  ASSERT_FALSE(std::isnan(joint3_last_command));
+  // the hardware consumed the last command: the interface now reads NaN
+  std::ignore = pos_cmd_interfaces_[2]->set_value(std::numeric_limits<double>::quiet_NaN());
+
+  const double dt = 0.25;
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+  traj_msg.joint_names = {joint_names_[1], joint_names_[0]};
+  traj_msg.header.stamp = rclcpp::Time(0);
+  traj_msg.points.resize(1);
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
+  traj_msg.points[0].positions = {2.0, 1.0};
+  trajectory_publisher_->publish(traj_msg);
+
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(dt));
+
+  const auto reference = traj_controller_->get_state_reference();
+  ASSERT_EQ(joint_names_.size(), reference.positions.size());
+  EXPECT_FALSE(std::isnan(reference.positions[2])) << "Joint 3 reference must not be NaN";
+  EXPECT_NEAR(joint3_last_command, reference.positions[2], COMMON_THRESHOLD)
+    << "Joint 3 must be held where it was last commanded";
+
+  if (traj_controller_->has_position_command_interface())
+  {
+    const double joint3_command = pos_cmd_interfaces_[2]->get_optional().value();
+    EXPECT_FALSE(std::isnan(joint3_command)) << "Joint 3 must not be commanded NaN";
+    EXPECT_NEAR(joint3_last_command, joint3_command, COMMON_THRESHOLD)
+      << "Joint 3 command must be its last commanded position";
+    EXPECT_NEAR(
+      traj_msg.points[0].positions[1], pos_cmd_interfaces_[0]->get_optional().value(),
+      COMMON_THRESHOLD);
+    EXPECT_NEAR(
+      traj_msg.points[0].positions[0], pos_cmd_interfaces_[1]->get_optional().value(),
+      COMMON_THRESHOLD);
+  }
+
+  executor.cancel();
+}
+
+/**
+ * @brief A partial goal is REJECTED when a joint left out of it has no position to hold at
+ * (its command and its state are both NaN), instead of being executed with short points.
+ */
+TEST_P(
+  TrajectoryControllerTestParameterized,
+  test_partial_joint_list_rejected_when_missing_joint_has_no_position)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  // joint 3 has never had a position: command AND state (mirrored, not separate) are NaN
+  std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS;
+  initial_pos_joints[2] = std::numeric_limits<double>::quiet_NaN();
+  SetUpAndActivateTrajectoryController(
+    executor, {partial_joints_parameters}, false, 0.0, 1.0, initial_pos_joints);
+  ASSERT_TRUE(std::isnan(pos_cmd_interfaces_[2]->get_optional().value()));
+  ASSERT_TRUE(std::isnan(pos_state_interfaces_[2]->get_optional().value()));
+
+  const double dt = 0.25;
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+  traj_msg.joint_names = {joint_names_[1], joint_names_[0]};
+  traj_msg.header.stamp = rclcpp::Time(0);
+  traj_msg.points.resize(1);
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
+  traj_msg.points[0].positions = {2.0, 1.0};
+  trajectory_publisher_->publish(traj_msg);
+
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(dt));
+
+  // nothing of that goal may have been executed: joints 1 and 2 stay where they were
+  if (traj_controller_->has_position_command_interface())
+  {
+    EXPECT_NEAR(
+      initial_pos_joints[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD)
+      << "Joint 1 must not move on a rejected partial goal";
+    EXPECT_NEAR(
+      initial_pos_joints[1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD)
+      << "Joint 2 must not move on a rejected partial goal";
+  }
+  const auto reference = traj_controller_->get_state_reference();
+  ASSERT_EQ(joint_names_.size(), reference.positions.size());
+  EXPECT_NEAR(initial_pos_joints[0], reference.positions[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(initial_pos_joints[1], reference.positions[1], COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
 TEST_P(TrajectoryControllerTestParameterized, invalid_message)

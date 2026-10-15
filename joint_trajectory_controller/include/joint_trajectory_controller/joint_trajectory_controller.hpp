@@ -245,6 +245,8 @@ protected:
     const JointTrajectoryPoint & desired) const;
   // fill trajectory_msg so it matches joints controlled by this controller
   // positions set to current position, velocities, accelerations and efforts to 0.0
+  // not used by update(), which holds omitted joints at a controller-owned position instead;
+  // kept unchanged for ABI compatibility
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   // Fills omitted joints by sampling the active trajectory so they keep their old motion.
