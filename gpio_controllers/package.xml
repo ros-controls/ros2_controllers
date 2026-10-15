@@ -23,13 +23,15 @@
 
   <build_depend>ros2_control_cmake</build_depend>
 
+  <depend>control_msgs</depend>
   <depend>controller_interface</depend>
+  <depend>generate_parameter_library</depend>
   <depend>hardware_interface</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>control_msgs</depend>
   <depend>realtime_tools</depend>
-  <depend>generate_parameter_library</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
 
   <build_depend>pluginlib</build_depend>
 
