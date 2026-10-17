@@ -1,0 +1,24 @@
+test_cartesian_trajectory_controller:
+  ros__parameters:
+
+    joints:
+      - joint1
+      - joint2
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    kinematics:
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
+      plugin_package: kinematics_interface
+      base: base_link
+      tip: link2
+      alpha: 0.01
+
+    max_cartesian_speed: 0.1
+    max_angular_speed: 0.5
+    resample_dt: 0.01
