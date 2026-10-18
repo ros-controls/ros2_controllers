@@ -16,11 +16,7 @@
 
 #include <functional>
 #include <memory>
-<<<<<<< HEAD
-=======
 #include <numeric>
-#include <shared_mutex>
->>>>>>> 40098c5 (Add <numeric> for std::accumulate (#2695))
 #include <string>
 #include <thread>
 #include <tuple>
