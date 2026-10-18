@@ -71,8 +71,9 @@ controller_interface::CallbackReturn ForwardControllersBase::on_configure(
     return ret;
   }
 
+  auto qos = rclcpp::SystemDefaultsQoS().keep_last(history_depth_);
   joints_command_subscriber_ = get_node()->create_subscription<CmdType>(
-    "~/commands", rclcpp::SystemDefaultsQoS(),
+    "~/commands", qos,
     [this](const CmdType::SharedPtr msg)
     {
       if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
