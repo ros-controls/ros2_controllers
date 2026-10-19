@@ -21,6 +21,7 @@
 #include <chrono>
 #include <cmath>
 #include <limits>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -145,6 +146,32 @@ TEST_P(TrajectoryControllerTestParameterized, activate)
   ASSERT_EQ(state_if_conf.names.size(), joint_names_.size() * state_interface_types_.size());
   EXPECT_EQ(state_if_conf.type, controller_interface::interface_configuration_type::INDIVIDUAL);
 
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
+
+  executor.cancel();
+}
+
+TEST_P(TrajectoryControllerTestParameterized, reactivate_after_deactivate_returned_early)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+  AssignInterfaces();
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
+
+  // Hold the command handles of the first joint: on_deactivate only try-locks them, so its
+  // get_optional()/set_value() fail and it returns early, as it does when the update thread
+  // holds a handle at that moment.
+  {
+    std::scoped_lock lock(
+      pos_cmd_interfaces_[0]->get_mutex(), vel_cmd_interfaces_[0]->get_mutex(),
+      acc_cmd_interfaces_[0]->get_mutex(), eff_cmd_interfaces_[0]->get_mutex());
+    ASSERT_TRUE(deactivate_succeeds(traj_controller_));
+  }
+  traj_controller_->release_interfaces();
+
+  // A later activation must order exactly the interfaces it is given
   AssignInterfaces();
   ASSERT_TRUE(activate_succeeds(traj_controller_));
 
