@@ -80,6 +80,13 @@ if(BUILD_TESTING)
     ros2_control_test_assets::ros2_control_test_assets
   )
 
+  find_package(Threads REQUIRED)
+  ament_add_gmock(test_joint_ordering test/test_joint_ordering.cpp)
+  target_link_libraries(test_joint_ordering
+    joint_trajectory_controller
+    Threads::Threads
+  )
+
   ament_add_gmock(test_trajectory_controller
     test/test_trajectory_controller.cpp)
   set_tests_properties(test_trajectory_controller PROPERTIES TIMEOUT 240)
