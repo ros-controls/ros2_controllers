@@ -16,6 +16,7 @@
 
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <thread>
 #include <tuple>
