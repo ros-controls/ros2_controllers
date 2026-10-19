@@ -52,6 +52,7 @@ const char steering_joint_name[] = "steering_joint";
 class TestableTricycleController : public tricycle_controller::TricycleController
 {
 public:
+  using TricycleController::odometry_;
   using TricycleController::TricycleController;
   std::shared_ptr<geometry_msgs::msg::TwistStamped> getLastReceivedTwist()
   {
