@@ -22,6 +22,7 @@ find_package(backward_ros REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
+add_compile_definitions(SENSOR_MSGS_VERSION_MAJOR=${sensor_msgs_VERSION_MAJOR})
 
 
 generate_parameter_library(range_sensor_broadcaster_parameters
