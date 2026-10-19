@@ -1667,6 +1667,36 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
   }
 }
 
+
+TEST_F(MecanumDriveControllerTest, cleanup_resets_odometry)
+{
+  joint_state_values_.fill(1.0);
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  for (auto & interface : controller_->ordered_exported_reference_interfaces_)
+  {
+    ASSERT_TRUE(interface->set_value(0.0));
+  }
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(1, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(1.0)),
+    controller_interface::return_type::OK);
+  ASSERT_GT(std::abs(controller_->odometry_.getX()), 0.1);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getX(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getY(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getRz(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getVx(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getVy(), 0.0);
+  EXPECT_DOUBLE_EQ(controller_->odometry_.getWz(), 0.0);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

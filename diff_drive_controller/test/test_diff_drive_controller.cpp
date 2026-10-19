@@ -87,6 +87,7 @@ public:
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
   FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
+  FRIEND_TEST(TestDiffDriveController, position_feedback_uses_first_sample_as_baseline);
 };
 
 class TestDiffDriveController : public ::testing::Test
@@ -1389,13 +1390,18 @@ TEST_F(TestDiffDriveController, odometry_set_service)
   rclcpp::Time test_time(0, 0, RCL_ROS_TIME);
   rclcpp::Duration period = rclcpp::Duration::from_seconds(0.1);
 
-  // 1. Move the robot first
+  // 1. Establish the position baseline, then move both wheels.
   publish(1.0, 0.0);
   controller_->wait_for_twist(executor);
   controller_->update(test_time, period);
   test_time += period;
+  position_values_[0] += 0.1;
+  position_values_[1] += 0.1;
+  std::ignore = left_wheel_pos_state_->set_value(position_values_[0]);
+  std::ignore = right_wheel_pos_state_->set_value(position_values_[1]);
+  controller_->update(test_time, period);
+  test_time += period;
 
-  // verify initial movement
   ASSERT_GT(controller_->odometry_.getX(), 0.0);
 
   // 2. Stop and call odom set service
@@ -1554,6 +1560,36 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
   ASSERT_TRUE(deactivate_succeeds(controller_));
   ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, position_feedback_uses_first_sample_as_baseline)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  ASSERT_TRUE(left_wheel_pos_state_->set_value(1.0));
+  ASSERT_TRUE(right_wheel_pos_state_->set_value(1.0));
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(0.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+  const auto dt = rclcpp::Duration::from_seconds(0.01);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(1, 0, RCL_ROS_TIME), dt),
+    controller_interface::return_type::OK);
+  EXPECT_NEAR(controller_->odometry_.getX(), 0.0, 1e-12);
+  EXPECT_NEAR(controller_->odometry_.getY(), 0.0, 1e-12);
+  EXPECT_NEAR(controller_->odometry_.getHeading(), 0.0, 1e-12);
+
+  ASSERT_TRUE(left_wheel_pos_state_->set_value(1.2));
+  ASSERT_TRUE(right_wheel_pos_state_->set_value(1.2));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(1, 10000000, RCL_ROS_TIME), dt),
+    controller_interface::return_type::OK);
+  EXPECT_NEAR(controller_->odometry_.getX(), 0.02, 1e-12);
 }
 
 int main(int argc, char ** argv)

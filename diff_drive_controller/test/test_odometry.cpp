@@ -128,12 +128,13 @@ TEST_F(OdometryTest, TestOpenLoopUpdate)
 
 TEST_F(OdometryTest, TestUpdateFromPosition)
 {
-  // Left moves 0 -> 1.0, Right moves 0 -> 1.0 over 1.0s
-  // Implies vel = 1.0 for both
+  // The first absolute position sample establishes the encoder baseline.
+  EXPECT_FALSE(odometry_.update_from_pos(1.0, 1.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
 
-  bool result = odometry_.update_from_pos(1.0, 1.0, 1.0);
-
-  EXPECT_TRUE(result);
+  // Both wheels then move by one radian over one second.
+  EXPECT_TRUE(odometry_.update_from_pos(2.0, 2.0, 1.0));
   EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
 }
