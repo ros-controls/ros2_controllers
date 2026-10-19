@@ -61,80 +61,8 @@ auto interface_has_values = [](const auto & joint_interface) -> bool
 
 namespace
 {
-// fill trajectory_msg so it matches the controller's joints. A joint omitted from it holds at what
-// the controller last commanded it, else where it currently is; velocities, accelerations and
-// efforts are set to 0.0. A joint with neither gets no position, leaving its points short.
-// Used by update() instead of JointTrajectoryController::fill_partial_goal, which fills from the
-// position command interface and is kept unchanged for ABI compatibility.
-void fill_partial_goal_with_hold(
-  trajectory_msgs::msg::JointTrajectory & trajectory_msg, const std::vector<std::string> & joints,
-  const trajectory_msgs::msg::JointTrajectoryPoint & last_commanded_state,
-  const trajectory_msgs::msg::JointTrajectoryPoint & state_current)
-{
-  // joint names in the goal are a subset of existing joints, as checked in goal_callback
-  // so if the size matches, the goal contains all controller joints
-  if (joints.size() == trajectory_msg.joint_names.size())
-  {
-    return;
-  }
-
-  trajectory_msg.joint_names.reserve(joints.size());
-
-  for (size_t index = 0; index < joints.size(); ++index)
-  {
-    if (
-      std::find(
-        trajectory_msg.joint_names.begin(), trajectory_msg.joint_names.end(), joints[index]) !=
-      trajectory_msg.joint_names.end())
-    {
-      // joint found on msg
-      continue;
-    }
-    trajectory_msg.joint_names.push_back(joints[index]);
-
-    // The position an omitted joint holds at: what the controller last commanded it, else where it
-    // currently is. Both are the controller's own records. The command interface is deliberately
-    // NOT consulted: hardware that consumes its commands leaves NaN there between writes, and NaN
-    // is not a position to hold at.
-    double omitted_joint_hold = std::numeric_limits<double>::quiet_NaN();
-    if (
-      index < last_commanded_state.positions.size() &&
-      !std::isnan(last_commanded_state.positions[index]))
-    {
-      omitted_joint_hold = last_commanded_state.positions[index];
-    }
-    else if (index < state_current.positions.size() && !std::isnan(state_current.positions[index]))
-    {
-      omitted_joint_hold = state_current.positions[index];
-    }
-
-    for (auto & it : trajectory_msg.points)
-    {
-      // Assume hold position with 0 velocity and acceleration for missing joints. With no
-      // position to hold at, push nothing: the point stays short and update() rejects it.
-      if (!it.positions.empty() && !std::isnan(omitted_joint_hold))
-      {
-        it.positions.push_back(omitted_joint_hold);
-      }
-      if (!it.velocities.empty())
-      {
-        it.velocities.push_back(0.0);
-      }
-      if (!it.accelerations.empty())
-      {
-        it.accelerations.push_back(0.0);
-      }
-      if (!it.effort.empty())
-      {
-        it.effort.push_back(0.0);
-      }
-    }
-  }
-}
-
-// true if every point has a position for every joint named in the message.
-// fill_partial_goal_with_hold leaves a point short when a joint omitted from the goal has no
-// position to hold at.
+// true if every point has a position for every joint named in the message. fill_partial_goal
+// leaves a point short when a joint omitted from the goal has no position to hold at.
 bool every_point_has_all_positions(const trajectory_msgs::msg::JointTrajectory & trajectory_msg)
 {
   const auto num_joints = trajectory_msg.joint_names.size();
@@ -381,8 +309,7 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     if (!blended)
     {
-      fill_partial_goal_with_hold(
-        *new_external_msg, params_.joints, last_commanded_state_, state_current_);
+      fill_partial_goal(new_external_msg);
     }
     if (blended)
     {
@@ -1820,43 +1747,33 @@ void JointTrajectoryController::fill_partial_goal(
       }
       trajectory_msg->joint_names.push_back(params_.joints[index]);
 
+      // The position an omitted joint holds at: what this controller last commanded it, else
+      // where it currently is. Both are the controller's own records. The command interface is
+      // deliberately NOT consulted: hardware that consumes its commands leaves NaN there between
+      // writes, and NaN is not a position to hold at.
+      double omitted_joint_hold = std::numeric_limits<double>::quiet_NaN();
+      if (
+        index < last_commanded_state_.positions.size() &&
+        !std::isnan(last_commanded_state_.positions[index]))
+      {
+        omitted_joint_hold = last_commanded_state_.positions[index];
+      }
+      else if (
+        index < state_current_.positions.size() && !std::isnan(state_current_.positions[index]))
+      {
+        omitted_joint_hold = state_current_.positions[index];
+      }
+
       for (auto & it : trajectory_msg->points)
       {
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          if (has_position_command_interface_)
+          // No position to hold at: push nothing, leaving the point short. update() rejects a
+          // trajectory with short points rather than executing it.
+          if (!std::isnan(omitted_joint_hold))
           {
-            const auto position_command_value_op =
-              joint_command_interface_[0][index].get().get_optional();
-
-            if (!position_command_value_op.has_value())
-            {
-              RCLCPP_DEBUG(
-                get_node()->get_logger(),
-                "Unable to retrieve position command value of joint at index %zu", index);
-            }
-            else if (!std::isnan(position_command_value_op.value()))
-            {
-              it.positions.push_back(position_command_value_op.value());
-            }
-          }
-
-          else if (has_position_state_interface_)
-          {
-            // copy current state if state interface exists
-            const auto position_state_value_op =
-              joint_state_interface_[0][index].get().get_optional();
-            if (!position_state_value_op.has_value())
-            {
-              RCLCPP_DEBUG(
-                get_node()->get_logger(),
-                "Unable to retrieve position state value of joint at index %zu", index);
-            }
-            else if (!std::isnan(position_state_value_op.value()))
-            {
-              it.positions.push_back(position_state_value_op.value());
-            }
+            it.positions.push_back(omitted_joint_hold);
           }
         }
         if (!it.velocities.empty())
