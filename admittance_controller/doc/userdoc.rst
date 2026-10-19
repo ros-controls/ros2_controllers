@@ -35,7 +35,7 @@ Topics
 ~/wrench_reference (input topic) [geometry_msgs::msg::WrenchStamped]
   Target wrench offset (WrenchStamped has to be in the frame of the FT-sensor).
 
-~/state (output topic) [control_msgs::msg::AdmittanceControllerState]
+~/status (output topic) [control_msgs::msg::AdmittanceControllerState]
   Topic publishing internal states.
 
 
