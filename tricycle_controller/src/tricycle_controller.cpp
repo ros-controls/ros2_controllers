@@ -383,6 +383,8 @@ CallbackReturn TricycleController::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_node()->get_logger(), "On activate: Initialize Joints");
 
   // Initialize the joints
+  traction_joint_.clear();
+  steering_joint_.clear();
   const auto wheel_front_result = get_traction(params_.traction_joint_name, traction_joint_);
   const auto steering_result = get_steering(params_.steering_joint_name, steering_joint_);
   if (wheel_front_result == CallbackReturn::ERROR || steering_result == CallbackReturn::ERROR)
