@@ -105,6 +105,17 @@ test_pid_controller_with_feedforward_gain_dual_interface:
       joint1: {p: 0.5, i: 0.3, d: 0.4, feedforward_gain: 1.0}
       joint2: {p: 0.5, i: 0.3, d: 0.4, feedforward_gain: 1.0}
 
+test_pid_controller_external_measured_dual_interface:
+  ros__parameters:
+    dof_names: [joint1, joint2]
+    command_interface: velocity
+    reference_and_state_interfaces: [position, velocity]
+    set_current_state_as_first_setpoint: false
+    use_external_measured_states: true
+    gains:
+      joint1: {p: 0.5, i: 0.0, d: 0.0}
+      joint2: {p: 0.5, i: 0.0, d: 0.0}
+
 test_save_i_term_off:
   ros__parameters:
     dof_names:
