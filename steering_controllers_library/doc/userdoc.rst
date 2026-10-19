@@ -38,7 +38,7 @@ Currently implemented kinematics
 --------------------------------------------------------------
 
 * Bicycle - with one steering and one drive joints;
-* Tricycle - with one steering and two drive joints;
+* Tricycle - with one steering and one or two drive joints;
 * Ackermann - with two steering and two drive joints.
 
 .. toctree::
