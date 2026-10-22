@@ -67,7 +67,7 @@ It is designed for industrial grippers, pneumatic clamps, lifts, brakes, and any
 
 The controller exposes a high-level *engage* / *disengage* interface and an optional *reconfigure* interface.
 All transitions are executed through a deterministic six-step state machine that sets commands, waits for hardware confirmation, and handles timeouts and errors safely.
-Reconfiguration (switching between physical tool configurations, e.g., jaw width) is only permitted in the *disengaged* state.
+Reconfiguration (switching between physical tool configurations, e.g., jaw width) is only permitted in the *disengaged* state, unless ``enable_config_engaged`` is set to ``true``.
 
 Pluginlib-Library: gpio_controllers
 
@@ -79,35 +79,19 @@ State machine
 Every engage, disengage, or reconfigure action is executed as an ordered sequence of steps.
 The current step is tracked in the ``GPIOToolTransition`` enum and published on ``~/controller_state``.
 
-.. code-block:: text
+.. include:: gpio_tool_controller_state_machine.md
+   :parser: myst_parser.sphinx_
 
-   ┌──────────────────────────────────────────────────────────┐
-   │                       IDLE                               │
-   │  (continuously verifies current state in the background) │
-   └────────────────┬─────────────────────────────────────────┘
-                    │  engage / disengage / reconfigure request
-                    ▼
-          SET_BEFORE_COMMAND   ← set preparatory commands (e.g., release brake)
-                    │
-                    ▼
-         CHECK_BEFORE_COMMAND  ← wait for preparatory state confirmation
-                    │
-                    ▼
-              SET_COMMAND      ← set main action commands (e.g., open/close valve)
-                    │
-                    ▼
-             CHECK_COMMAND     ← wait for hardware to confirm new state
-                    │
-                    ▼
-          SET_AFTER_COMMAND    ← set post-action commands (e.g., re-engage brake)
-                    │
-                    ▼
-         CHECK_AFTER_COMMAND   ─── success ──► IDLE
-                    │
-                    └─────────── timeout ─────► HALTED
+The controller transitions to **HALTED** from any step if:
 
-If any ``CHECK_*`` step does not reach the expected state within ``timeout`` seconds, or if the action is canceled, the controller transitions to **HALTED**.
+- a ``CHECK_*`` step does not reach the expected state within ``timeout`` seconds from the start of the transition,
+- a ``SET_*`` step fails to write a command interface,
+- the running action is canceled, or
+- the tool state or configuration cannot be determined while IDLE.
+
 In HALTED, all commands are frozen and no new requests are accepted until the operator calls the ``~/reset_halted`` service.
+After the reset the controller returns to IDLE and determines the current tool state from the hardware.
+If the state still cannot be determined, the controller goes back to HALTED.
 
 For the *engage* direction the final state is not known in advance (e.g., a gripper may land in ``close_empty`` or ``close_full`` depending on whether a part was detected).
 The controller therefore accepts any state listed in ``possible_engaged_states`` as a valid result of CHECK_COMMAND.
@@ -120,9 +104,11 @@ Two high-level actions drive the state machine:
 - **Disengage** — moves the tool to its disengaged state (e.g., open gripper, lower lift).
 - **Engage** — moves the tool to one of its possible engaged states (e.g., close gripper, raise lift).
 
-If a new request arrives while an action is already running, the opposite action overrides it (e.g., a disengage request while engaging).
+If a new request arrives while an action is already running, the opposite action overrides it and the sequence restarts at SET_BEFORE_COMMAND (e.g., a disengage request while engaging).
 A request for the same action that is already running is rejected.
-Reconfigure requests are rejected if the tool is not idle and disengaged.
+A request for the state the tool is already in succeeds immediately without a transition.
+Engage and disengage requests are rejected while the tool is reconfiguring.
+Reconfigure requests are rejected if the tool is not idle, or if it is not disengaged and ``enable_config_engaged`` is ``false``.
 
 .. note::
 
