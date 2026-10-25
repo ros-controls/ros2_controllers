@@ -2,6 +2,9 @@
 Changelog for package ros2_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+
 6.9.0 (2026-08-12)
 ------------------
 * Add battery_state_broadcaster (`#2086 <https://github.com/ros-controls/ros2_controllers/issues/2086>`_)

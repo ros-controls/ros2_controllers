@@ -17,6 +17,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <shared_mutex>
 #include <string>
 #include <thread>
@@ -32,6 +33,7 @@
 #include "rclcpp/executor.hpp"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/utilities.hpp"
+#include "realtime_tools/realtime_helpers.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 #include "test_joint_state_broadcaster.hpp"
 
