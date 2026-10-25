@@ -261,6 +261,17 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
   }
   // wheel speed
   Ws = v_bx / wheel_radius_;
+  if (config_type_ == TRICYCLE_CONFIG && get_tricycle_nr_traction_wheels() == 1)
+  {
+    if (is_close_to_zero(v_bx) && !is_close_to_zero(omega_bz))
+    {
+      Ws = abs(omega_bz) * wheel_base_ / wheel_radius_;
+    }
+    else
+    {
+      Ws /= std::cos(phi_IK);
+    }
+  }
 
   if (!open_loop && reduce_wheel_speed_until_steering_reached)
   {
@@ -294,15 +305,6 @@ std::tuple<std::vector<double>, std::vector<double>> SteeringKinematics::get_com
 
     if (get_tricycle_nr_traction_wheels() == 1)
     {
-      // if traction is on the steering axis
-      if (is_close_to_zero(v_bx) && !is_close_to_zero(omega_bz))
-      {
-        Ws = abs(omega_bz) * wheel_base_ / wheel_radius_;
-      }
-      else
-      {
-        Ws /= std::cos(phi_IK);
-      }
       traction_commands = {Ws};
     }
     else
