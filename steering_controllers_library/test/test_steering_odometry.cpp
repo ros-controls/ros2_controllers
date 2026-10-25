@@ -574,3 +574,27 @@ TEST(TestSteeringOdometry, tricycle_single_odometry)
   EXPECT_NEAR(odom.get_x(), .1, 1e-3);
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
 }
+
+TEST(TestSteeringOdometry, tricycle_single_spin_respects_steering_speed_reduction)
+{
+  steering_kinematics::SteeringKinematics odom(1);
+  odom.set_wheel_params(1., 2., 0.);
+  odom.set_odometry_type(steering_kinematics::TRICYCLE_CONFIG);
+  odom.set_tricycle_nr_traction_wheels(1);
+
+  for (const double angular_velocity : {-1., 1.})
+  {
+    ASSERT_TRUE(odom.update_from_velocity(0., 0., 0.1));
+    const auto unrestricted = odom.get_commands(0., angular_velocity, false, false);
+    const auto reduced = odom.get_commands(0., angular_velocity, false, true);
+    EXPECT_DOUBLE_EQ(std::get<0>(unrestricted)[0], 2.);
+    EXPECT_GT(std::get<0>(reduced)[0], 0.);
+    EXPECT_LT(std::get<0>(reduced)[0], std::get<0>(unrestricted)[0]);
+
+    const double steering = angular_velocity > 0. ? M_PI_2 : -M_PI_2;
+    EXPECT_DOUBLE_EQ(std::get<1>(reduced)[0], steering);
+    ASSERT_TRUE(odom.update_from_velocity(0., steering, 0.1));
+    EXPECT_DOUBLE_EQ(std::get<0>(odom.get_commands(0., angular_velocity, false, true))[0], 2.);
+    EXPECT_DOUBLE_EQ(std::get<0>(odom.get_commands(0., angular_velocity, true, true))[0], 2.);
+  }
+}
