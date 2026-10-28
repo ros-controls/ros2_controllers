@@ -1965,43 +1965,33 @@ void JointTrajectoryController::sort_to_local_joint_order(
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
-  auto remap = [this](
-                 const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double>
+  auto remap = [this, &mapping_vector](std::vector<double> & to_remap)
   {
     if (to_remap.empty())
     {
-      return to_remap;
+      return;
     }
-    if (to_remap.size() != mapping.size())
+    if (to_remap.size() != mapping_vector.size())
     {
       RCLCPP_WARN(
         get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
-      return to_remap;
+      return;
     }
-    // Each call owns its buffer: controller instances can reorder concurrently.
-    std::vector<double> output(mapping.size(), 0.0);
-    for (size_t index = 0; index < mapping.size(); ++index)
+    // Don't make this static: it would be shared across all controller instances
+    std::vector<double> output(to_remap.size());
+    for (size_t index = 0; index < mapping_vector.size(); ++index)
     {
-      auto map_index = mapping[index];
-      output[map_index] = to_remap[index];
+      output[mapping_vector[index]] = to_remap[index];
     }
-    return output;
+    to_remap = std::move(output);
   };
 
-  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
+  for (auto & point : trajectory_msg->points)
   {
-    trajectory_msg->points[index].positions =
-      remap(trajectory_msg->points[index].positions, mapping_vector);
-
-    trajectory_msg->points[index].velocities =
-      remap(trajectory_msg->points[index].velocities, mapping_vector);
-
-    trajectory_msg->points[index].accelerations =
-      remap(trajectory_msg->points[index].accelerations, mapping_vector);
-
-    trajectory_msg->points[index].effort =
-      remap(trajectory_msg->points[index].effort, mapping_vector);
+    remap(point.positions);
+    remap(point.velocities);
+    remap(point.accelerations);
+    remap(point.effort);
   }
 }
 

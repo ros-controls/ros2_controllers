@@ -16,6 +16,8 @@
 #define _USE_MATH_DEFINES
 #endif
 
+#include <algorithm>
+#include <atomic>
 #include <cstddef>
 
 #include <chrono>
@@ -3657,4 +3659,62 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_velocity_command_ra
   }
 
   executor.cancel();
+}
+
+/**
+ * @brief sort_to_local_joint_order must be safe to call concurrently from different controller
+ * instances, e.g. two controller managers in one process. Detection is probabilistic: a shared
+ * buffer shows up as wrong values, wrong sizes or heap corruption under this load.
+ */
+TEST_F(TrajectoryControllerTest, concurrent_sort_to_local_joint_order)
+{
+  // different dofs, so a shared buffer is also resized while the other instance uses it
+  auto make_controller = [this](const std::vector<std::string> & joints)
+  {
+    joint_names_ = joints;
+    controller_name_ = "jtc_" + std::to_string(joints.size());
+    EXPECT_EQ(SetUpTrajectoryControllerLocal(), controller_interface::return_type::OK);
+    EXPECT_TRUE(configure_succeeds(traj_controller_));
+    return std::move(traj_controller_);
+  };
+  auto controller_a = make_controller({"joint1", "joint2", "joint3"});
+  auto controller_b = make_controller({"joint1", "joint2"});
+
+  std::atomic<bool> go{false};
+  std::atomic<bool> failed{false};
+  auto run =
+    [&](test_trajectory_controllers::TestableJointTrajectoryController & controller, double offset)
+  {
+    const auto joints = controller.get_node()->get_parameter("joints").as_string_array();
+    std::vector<double> expected(joints.size());
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+      expected[i] = offset + static_cast<double>(i);
+    }
+    trajectory_msgs::msg::JointTrajectory msg;
+    msg.joint_names.assign(joints.rbegin(), joints.rend());
+    msg.points.resize(1);
+    msg.points[0].positions.assign(expected.rbegin(), expected.rend());
+    msg.points[0].velocities = msg.points[0].positions;
+
+    while (!go.load())
+    {
+      std::this_thread::yield();
+    }
+    for (size_t i = 0; i < 100000 && !failed.load(); ++i)
+    {
+      auto sorted = std::make_shared<trajectory_msgs::msg::JointTrajectory>(msg);
+      controller.sort_to_local_joint_order(sorted);
+      if (sorted->points[0].positions != expected || sorted->points[0].velocities != expected)
+      {
+        failed.store(true);
+      }
+    }
+  };
+  std::thread thread_a(run, std::ref(*controller_a), 100.0);
+  std::thread thread_b(run, std::ref(*controller_b), 200.0);
+  go.store(true);
+  thread_a.join();
+  thread_b.join();
+  EXPECT_FALSE(failed.load());
 }
