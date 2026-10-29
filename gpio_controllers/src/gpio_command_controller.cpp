@@ -37,7 +37,7 @@ void print_interface(const rclcpp::Logger & logger, const T & command_interfaces
 void reset_controller_reference_msg(
   gpio_controllers::CmdType & msg, const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node)
 {
-  msg.header.stamp = node->now();
+  msg.header.stamp = rclcpp::Time(0, 0, node->get_clock()->get_clock_type());
   msg.interface_groups.clear();
   msg.interface_values.clear();
 }
