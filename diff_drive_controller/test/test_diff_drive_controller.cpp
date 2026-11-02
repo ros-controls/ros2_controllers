@@ -1607,6 +1607,17 @@ TEST_F(TestDiffDriveController, concurrent_deactivation_and_update)
   assignResourcesPosFeedback();
   ASSERT_TRUE(activate_succeeds(controller_));
 
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(1.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(1.0, right_wheel_vel_cmd_->get_optional().value());
+
   std::atomic<bool> stop_updating{false};
   std::atomic<int> update_count{0};
 
@@ -1624,11 +1635,12 @@ TEST_F(TestDiffDriveController, concurrent_deactivation_and_update)
 
   // Deactivate controller concurrently while updates are running
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  ASSERT_TRUE(deactivate_succeeds(controller_));
+  const bool deactivated = deactivate_succeeds(controller_);
 
   stop_updating.store(true);
   update_thread.join();
 
+  ASSERT_TRUE(deactivated);
   EXPECT_GT(update_count.load(), 0);
   EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
     << "Wheels should be halted on deactivate()";
@@ -1655,13 +1667,23 @@ TEST_F(TestDiffDriveController, update_after_deactivation_in_chained_mode)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+  EXPECT_EQ(1.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(1.0, right_wheel_vel_cmd_->get_optional().value());
 
   ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
 
-  // Even if update is called after deactivation with non-NaN references, it should not abort
+  // Restore finite chained references after deactivation: even with non-NaN references,
+  // updates after deactivation should not abort or overwrite halted wheel commands.
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+
   EXPECT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
 }
 
 int main(int argc, char ** argv)

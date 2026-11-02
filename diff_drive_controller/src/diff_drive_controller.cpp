@@ -21,6 +21,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -158,6 +159,24 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
   auto logger = get_node()->get_logger();
+
+  if (!is_active_.load(std::memory_order_acquire))
+  {
+    return controller_interface::return_type::OK;
+  }
+
+  struct UpdateGuard
+  {
+    std::atomic<int> & count;
+    ~UpdateGuard() { count.fetch_sub(1, std::memory_order_release); }
+  };
+  updates_in_progress_.fetch_add(1, std::memory_order_acquire);
+  UpdateGuard guard{updates_in_progress_};
+
+  if (!is_active_.load(std::memory_order_acquire))
+  {
+    return controller_interface::return_type::OK;
+  }
 
   if (
     registered_left_wheel_handles_.size() < static_cast<size_t>(wheels_per_side_) ||
@@ -340,6 +359,11 @@ controller_interface::return_type DiffDriveController::update_and_write_commands
     (linear_command - angular_command * wheel_separation / 2.0) / left_wheel_radius;
   const double velocity_right =
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
+
+  if (!is_active_.load(std::memory_order_acquire))
+  {
+    return controller_interface::return_type::OK;
+  }
 
   // Set wheels velocities:
   bool set_command_result = true;
@@ -568,6 +592,7 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     left_result == controller_interface::CallbackReturn::ERROR ||
     right_result == controller_interface::CallbackReturn::ERROR)
   {
+    is_active_.store(false, std::memory_order_release);
     registered_left_wheel_handles_.clear();
     registered_right_wheel_handles_.clear();
     return controller_interface::CallbackReturn::ERROR;
@@ -578,11 +603,13 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     RCLCPP_ERROR(
       get_node()->get_logger(),
       "Either left wheel interfaces, right wheel interfaces are non existent");
+    is_active_.store(false, std::memory_order_release);
     registered_left_wheel_handles_.clear();
     registered_right_wheel_handles_.clear();
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  is_active_.store(true, std::memory_order_release);
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
@@ -592,7 +619,14 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
 controller_interface::CallbackReturn DiffDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
+  is_active_.store(false, std::memory_order_release);
   subscriber_is_active_ = false;
+
+  while (updates_in_progress_.load(std::memory_order_acquire) > 0)
+  {
+    std::this_thread::yield();
+  }
+
   halt();
   reset_buffers();
   return controller_interface::CallbackReturn::SUCCESS;
@@ -642,6 +676,7 @@ void DiffDriveController::set_odometry(
 
 bool DiffDriveController::reset()
 {
+  is_active_.store(false, std::memory_order_release);
   odometry_.setOdometry(0.0, 0.0, 0.0);
 
   reset_buffers();
