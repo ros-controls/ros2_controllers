@@ -446,7 +446,6 @@ TEST(TestSteeringOdometry, tricycle_odometry)
   EXPECT_NEAR(odom.get_heading(), .01, 1e-3);
 }
 
-
 TEST(TestSteeringOdometry, tricycle_inner_wheel_stationary_boundary)
 {
   steering_kinematics::SteeringKinematics odom(1);

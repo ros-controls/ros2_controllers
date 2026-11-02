@@ -100,10 +100,9 @@ private:
   double left_wheel_radius_;
   double right_wheel_radius_;
 
-  // Previous wheel position/state [rad]:
+  // NaN marks an uninitialized position baseline without changing the class layout.
   double left_wheel_old_pos_;
   double right_wheel_old_pos_;
-  bool position_feedback_initialized_;
 
   // Rolling mean accumulators for the linear and angular velocities:
   size_t velocity_rolling_window_size_;

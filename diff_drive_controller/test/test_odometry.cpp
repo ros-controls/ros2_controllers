@@ -161,6 +161,24 @@ TEST_F(OdometryTest, TestTimestampPositionBaselineAtInitialization)
 }
 #pragma GCC diagnostic pop
 
+TEST_F(OdometryTest, TestPositionBaselineAfterReset)
+{
+  EXPECT_FALSE(odometry_.update_from_pos(10.0, 20.0, 1.0));
+  EXPECT_TRUE(odometry_.update_from_pos(11.0, 21.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+
+  odometry_.reset_position_feedback();
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_FALSE(odometry_.update_from_pos(-5.0, -7.0, 0.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
+
+  EXPECT_TRUE(odometry_.update_from_pos(-4.0, -6.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 2.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getAngular(), 0.0);
+}
+
 TEST_F(OdometryTest, TestReset)
 {
   // 1. Move the robot somewhere

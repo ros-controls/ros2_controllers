@@ -1667,7 +1667,6 @@ TEST_F(MecanumDriveControllerTest, test_speed_limiter_runtime_update)
   }
 }
 
-
 TEST_F(MecanumDriveControllerTest, cleanup_resets_odometry)
 {
   joint_state_values_.fill(1.0);
