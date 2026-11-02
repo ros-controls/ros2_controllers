@@ -139,6 +139,28 @@ TEST_F(OdometryTest, TestUpdateFromPosition)
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+TEST_F(OdometryTest, TestTimestampPositionBaselineAtInitialization)
+{
+  odometry_.setWheelParams(1.0, 0.1, 0.1);
+  const rclcpp::Time start(1, 0, RCL_ROS_TIME);
+  odometry_.init(start);
+
+  EXPECT_FALSE(odometry_.update(1.0, 1.0, start));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+
+  EXPECT_FALSE(odometry_.update(1.1, 1.1, start + rclcpp::Duration::from_seconds(0.00005)));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+
+  EXPECT_TRUE(odometry_.update(1.2, 1.2, start + rclcpp::Duration::from_seconds(0.01)));
+  EXPECT_NEAR(odometry_.getX(), 0.02, 1e-12);
+  EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
+  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.0);
+  EXPECT_NEAR(odometry_.getLinear(), 2.0, 1e-12);
+}
+#pragma GCC diagnostic pop
+
 TEST_F(OdometryTest, TestReset)
 {
   // 1. Move the robot somewhere

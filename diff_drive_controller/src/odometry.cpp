@@ -51,13 +51,6 @@ void Odometry::init(const rclcpp::Time & time)
 
 bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & time)
 {
-  // We cannot estimate the speed with very small time intervals:
-  const double dt = time.seconds() - timestamp_.seconds();
-  if (dt < 0.0001)
-  {
-    return false;  // Interval too small to integrate with
-  }
-
   // Get current wheel joint positions:
   const double left_wheel_cur_pos = left_pos * left_wheel_radius_;
   const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
@@ -69,6 +62,13 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
     timestamp_ = time;
     position_feedback_initialized_ = true;
     return false;
+  }
+
+  // We cannot estimate the speed with very small time intervals:
+  const double dt = time.seconds() - timestamp_.seconds();
+  if (dt < 0.0001)
+  {
+    return false;  // Interval too small to integrate with
   }
 
   // Estimate velocity of wheels using old and current position:
