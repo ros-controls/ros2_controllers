@@ -20,6 +20,7 @@
 
 
 import threading
+import time
 
 import rclpy
 from controller_manager_msgs.srv import ListControllers
@@ -236,7 +237,7 @@ class ControllerLister:
         >>> running_bar_ctrl = filter_by_type(running_ctrl, 'bar_base/bar')
     """
 
-    def __init__(self, node, namespace="/controller_manager"):
+    def __init__(self, node, namespace="/controller_manager", timeout_sec=2.0):
         """
         Store the injected node and namespace, and create the list_controllers client.
 
@@ -249,8 +250,13 @@ class ControllerLister:
 
         @param namespace Namespace of controller manager to monitor.
         @type namespace str
+
+        @param timeout_sec Maximum time (in seconds) __call__ waits for a response.
+        It is called from the GUI thread, which is blocked while waiting.
+        @type timeout_sec float
         """
         self._node = node
+        self._timeout_sec = timeout_sec
         self._srv_name = namespace + "/" + _LIST_CONTROLLERS_STR
         self._srv_client = self._create_client()
 
@@ -261,11 +267,17 @@ class ControllerLister:
 
     def __call__(self):
         try:
+            # A request to a missing controller manager would never be answered
+            if not self._srv_client.service_is_ready():
+                return []
             future = self._srv_client.call_async(ListControllers.Request())
             # Wait without spinning the shared rqt node.
             done_event = threading.Event()
             future.add_done_callback(lambda _future: done_event.set())
-            while self._node.context.ok() and not done_event.is_set():
+            deadline = time.monotonic() + self._timeout_sec
+            while (
+                self._node.context.ok() and not done_event.is_set() and time.monotonic() < deadline
+            ):
                 done_event.wait(timeout=0.1)
             future.cancel()
             result = future.result()

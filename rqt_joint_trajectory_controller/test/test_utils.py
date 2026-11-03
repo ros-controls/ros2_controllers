@@ -129,6 +129,10 @@ class _FakeListControllersClient:
         self.requests = []
         self.last_future = None
         self.pending_requests = {}
+        self.ready = True
+
+    def service_is_ready(self):
+        return self.ready
 
     def call_async(self, request):
         self.requests.append(request)
@@ -168,6 +172,9 @@ class _FakeControllerListerNode:
 class _RaisingClient:
     def __init__(self, exc):
         self._exc = exc
+
+    def service_is_ready(self):
+        return True
 
     def call_async(self, request):
         raise self._exc
@@ -338,13 +345,10 @@ def test_controller_lister_call_stops_waiting_and_cleans_up_pending_request_on_c
     _no_spin,
 ):
     """
-    While node.context.ok(), __call__() must keep waiting for a response
-    indefinitely, same as the spin_until_future_complete() call it replaces.
-    Once the node's own context goes not-ok (shutdown), it must stop waiting
-    promptly rather than block forever on a future that will now never
-    complete, fall back to an empty list like a call with no result, and --
-    unlike a bare timeout -- must not leave the request sitting in the
-    client's pending-requests table afterwards.
+    Once the node's own context goes not-ok (shutdown), __call__() must stop
+    waiting promptly rather than wait for the timeout, fall back to an empty
+    list like a call with no result, and must not leave the request sitting in
+    the client's pending-requests table afterwards.
     """
     remaining_ok_checks = {"count": 2}
 
@@ -359,5 +363,40 @@ def test_controller_lister_call_stops_waiting_and_cleans_up_pending_request_on_c
     result = list_controllers()
 
     assert result == []
+    assert node.client.pending_requests == {}
+    assert node.client.last_future.cancelled()
+
+
+# ---------------------------------------------------------------------------
+# ControllerLister: bounded wait, __call__() runs in the GUI thread
+# ---------------------------------------------------------------------------
+
+
+def _call_in_thread(list_controllers, timeout=2.0):
+    """Call list_controllers() in a thread, so a hanging call fails the test instead of pytest."""
+    result = {}
+    thread = threading.Thread(target=lambda: result.update(value=list_controllers()), daemon=True)
+    thread.start()
+    thread.join(timeout=timeout)
+    assert not thread.is_alive(), "ControllerLister.__call__() did not return"
+    return result["value"]
+
+
+def test_controller_lister_call_returns_empty_list_if_service_is_not_ready(_no_spin):
+    node = _FakeControllerListerNode()
+    list_controllers = utils.ControllerLister(node)
+    node.client.ready = False
+
+    assert _call_in_thread(list_controllers) == []
+    assert node.client.requests == []
+
+
+def test_controller_lister_call_times_out_if_response_never_arrives(_no_spin):
+    node = _FakeControllerListerNode()
+    list_controllers = utils.ControllerLister(node, timeout_sec=0.2)
+
+    start = time.monotonic()
+    assert _call_in_thread(list_controllers) == []
+    assert time.monotonic() - start < 1.0
     assert node.client.pending_requests == {}
     assert node.client.last_future.cancelled()
