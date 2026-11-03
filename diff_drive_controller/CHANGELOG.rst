@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.43.0 (2026-10-05)
+-------------------
+* Warn once per velocity command timeout in diff_drive_controller (backport `#2620 <https://github.com/ros-controls/ros2_controllers/issues/2620>`_) (`#2628 <https://github.com/ros-controls/ros2_controllers/issues/2628>`_)
+* test: cleanup controller fixture member variables (backport `#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_) (`#2565 <https://github.com/ros-controls/ros2_controllers/issues/2565>`_)
+* Contributors: mergify[bot]
+
 4.42.1 (2026-08-12)
 -------------------
 
