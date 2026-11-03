@@ -151,7 +151,7 @@ protected:
   const rclcpp::Parameter sensor_name_param_ = rclcpp::Parameter("sensor_name", "gps_sensor");
   const std::string sensor_name_ = sensor_name_param_.get_value<std::string>();
   const rclcpp::Parameter frame_id_ = rclcpp::Parameter("frame_id", "gps_sensor_frame");
-  std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
+  const std::array<double, 8> sensor_values_ = {{1.0, 1.0, 1.1, 2.2, 3.3, 0.5, 0.7, 0.9}};
   hardware_interface::StateInterface::SharedPtr gps_status_;
   hardware_interface::StateInterface::SharedPtr gps_service_;
   hardware_interface::StateInterface::SharedPtr gps_latitude_;

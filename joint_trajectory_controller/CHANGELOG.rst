@@ -2,6 +2,27 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.0 (2026-10-05)
+-------------------
+* feat: migrate diff_drive_controller and joint_trajectory_controller to new RealtimePublisher constructor (`#2576 <https://github.com/ros-controls/ros2_controllers/issues/2576>`_)
+* fix(jtc): Use trySetFeedback for goal handle feedback (`#2610 <https://github.com/ros-controls/ros2_controllers/issues/2610>`_)
+* [JTC] cross chunk continuity for positions upsampling (`#2573 <https://github.com/ros-controls/ros2_controllers/issues/2573>`_)
+* [JTC] Redefine constraints.goal_time semantics and default to 10s (`#2592 <https://github.com/ros-controls/ros2_controllers/issues/2592>`_)
+* fix: migrate active goal and tolerances to thread safe box in JTC (`#2484 <https://github.com/ros-controls/ros2_controllers/issues/2484>`_)
+* [JTC] Add positions_upsampling feature for positions-only trajectories (`#2491 <https://github.com/ros-controls/ros2_controllers/issues/2491>`_)
+* [JTC] Add thread-safe snapshot of last commanded state (`#2564 <https://github.com/ros-controls/ros2_controllers/issues/2564>`_)
+* Trajectory replacement with full blending at message arrival time (`#2419 <https://github.com/ros-controls/ros2_controllers/issues/2419>`_)
+* Contributors: Christoph Fröhlich, Souri Rishik, Vedh, kamal2730
+
+6.9.0 (2026-08-12)
+------------------
+* Use preallocated feedback from JTC to avoid heap allocation (`#2160 <https://github.com/ros-controls/ros2_controllers/issues/2160>`_)
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* [JTC] Fix segfault when continuous joint has no URDF limits (`#2480 <https://github.com/ros-controls/ros2_controllers/issues/2480>`_) (`#2523 <https://github.com/ros-controls/ros2_controllers/issues/2523>`_)
+* fix(joint-trajectory-controller): use active tolerances in update step (`#2101 <https://github.com/ros-controls/ros2_controllers/issues/2101>`_)
+* Refactor JTC command interface assignment (`#2489 <https://github.com/ros-controls/ros2_controllers/issues/2489>`_)
+* Contributors: Dennis Lanov, Dominic Reber, Jeremy McKeehen, Sai Kishor Kothakota
+
 6.8.0 (2026-07-01)
 ------------------
 * Trajectory blending with new trajectory deferral (`#2401 <https://github.com/ros-controls/ros2_controllers/issues/2401>`_)
