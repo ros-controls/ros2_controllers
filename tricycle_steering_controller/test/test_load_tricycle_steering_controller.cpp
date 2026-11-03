@@ -32,12 +32,12 @@ TEST(TestLoadTricycleSteeringController, load_controller)
   const std::string test_file_path =
     std::string(TEST_FILES_DIRECTORY) + "/tricycle_steering_controller_params.yaml";
 
-  cm.set_parameter({"test_tricycle_steering_controller.params_file", test_file_path});
+  cm.set_parameter({"test_tricycle_steering_controller_dual_traction.params_file", test_file_path});
   cm.set_parameter(
-    {"test_tricycle_steering_controller.type",
+    {"test_tricycle_steering_controller_dual_traction.type",
      "tricycle_steering_controller/TricycleSteeringController"});
 
-  ASSERT_NE(cm.load_controller("test_tricycle_steering_controller"), nullptr);
+  ASSERT_NE(cm.load_controller("test_tricycle_steering_controller_dual_traction"), nullptr);
 }
 
 int main(int argc, char ** argv)

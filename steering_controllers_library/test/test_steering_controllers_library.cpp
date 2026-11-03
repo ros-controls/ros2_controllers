@@ -21,7 +21,7 @@
 #include "test_steering_controllers_library.hpp"
 
 class SteeringControllersLibraryTest
-: public SteeringControllersLibraryFixture<TestableSteeringControllersLibrary>
+: public SteeringControllersLibraryFixture<TestableAckermannSteeringController>
 {
 };
 

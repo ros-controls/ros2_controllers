@@ -1,4 +1,4 @@
-test_tricycle_steering_controller:
+test_tricycle_steering_controller_dual_traction_preceding:
   ros__parameters:
     reference_timeout: 2.0
     open_loop: false

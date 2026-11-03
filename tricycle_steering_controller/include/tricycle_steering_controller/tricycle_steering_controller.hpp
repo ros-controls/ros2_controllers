@@ -28,16 +28,20 @@ namespace tricycle_steering_controller
 // name constants for state interfaces
 static constexpr size_t STATE_TRACTION_RIGHT_WHEEL = 0;
 static constexpr size_t STATE_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t STATE_STEER_AXIS = 2;
+static constexpr size_t STATE_DUAL_TRACTION_STEER_AXIS = 2;
 
 // name constants for command interfaces
 static constexpr size_t CMD_TRACTION_RIGHT_WHEEL = 0;
 static constexpr size_t CMD_TRACTION_LEFT_WHEEL = 1;
-static constexpr size_t CMD_STEER_WHEEL = 2;
+static constexpr size_t CMD_DUAL_TRACTION_STEER_WHEEL = 2;
 
-static constexpr size_t NR_STATE_ITFS = 3;
-static constexpr size_t NR_CMD_ITFS = 3;
-static constexpr size_t NR_REF_ITFS = 2;
+// name constants for state interfaces
+static constexpr size_t STATE_TRACTION_SINGLE_WHEEL = 0;
+static constexpr size_t STATE_SINGLE_TRACTION_STEER_AXIS = 1;
+
+// name constants for command interfaces
+static constexpr size_t CMD_TRACTION_SINGLE_WHEEL = 0;
+static constexpr size_t CMD_SINGLE_TRACTION_STEER_WHEEL = 1;
 
 class TricycleSteeringController : public steering_controllers_library::SteeringControllersLibrary
 {

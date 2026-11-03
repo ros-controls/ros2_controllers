@@ -46,5 +46,9 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <deprecated>
+      This package will be removed in ROS 2 Lyrical Luth, use tricycle_steering_controller instead.
+      For migration guides see https://control.ros.org/lyrical/doc/ros2_controllers/doc/migration.html
+    </deprecated>
   </export>
 </package>
