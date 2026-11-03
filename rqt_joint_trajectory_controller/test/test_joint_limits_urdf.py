@@ -362,6 +362,26 @@ def test_missing_velocity_raises():
 # ---------------------------------------------------------------------------
 
 
+class _TestLogger:
+    def __init__(self):
+        self.info_messages = []
+        self.warning_messages = []
+
+    def info(self, msg):
+        self.info_messages.append(msg)
+
+    def warning(self, msg):
+        self.warning_messages.append(msg)
+
+
+class _TestNode:
+    def __init__(self, logger):
+        self._logger = logger
+
+    def get_logger(self):
+        return self._logger
+
+
 class _FakeMsg:
     def __init__(self, data):
         self.data = data
