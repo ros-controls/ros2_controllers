@@ -212,7 +212,7 @@ public:
     const double time_in_seconds = time.seconds();
     return static_cast<size_t>(std::distance(
       times_vector.begin(),
-      std::lower_bound(times_vector.begin(), times_vector.end(), time_in_seconds)));
+      std::upper_bound(times_vector.begin(), times_vector.end(), time_in_seconds)));
   }
 };
 
