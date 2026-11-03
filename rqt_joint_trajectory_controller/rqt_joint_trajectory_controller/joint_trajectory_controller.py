@@ -94,6 +94,8 @@ class JointTrajectoryController(Plugin):
     _cmd_pub_freq = 10.0  # Hz
     _widget_update_freq = 30.0  # Hz
     _ctrlrs_update_freq = 1  # Hz
+    # Timeout (in seconds) for the controller manager's list_controllers response
+    _list_controllers_timeout = 2.0 / _ctrlrs_update_freq
     _min_traj_dur = 5.0 / _cmd_pub_freq  # Minimum trajectory duration
 
     jointStateChanged = Signal([dict])
@@ -307,7 +309,9 @@ class JointTrajectoryController(Plugin):
         self._cm_ns = cm_ns
         self._unregister_list_controllers()
         if cm_ns:
-            self._list_controllers = ControllerLister(self._node, cm_ns)
+            self._list_controllers = ControllerLister(
+                self._node, cm_ns, self._list_controllers_timeout
+            )
             # NOTE: Clear below is important, as different controller managers
             # might have controllers with the same name but different
             # configurations. Clearing forces controller re-discovery
