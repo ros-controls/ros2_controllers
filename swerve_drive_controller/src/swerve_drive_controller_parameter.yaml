@@ -53,7 +53,7 @@ swerve_drive_controller:
     default_value: 0.85,
     description: "Wheelbase is the distance between front and rear wheels.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
@@ -62,7 +62,7 @@ swerve_drive_controller:
     default_value: 0.75,
     description: "Trackwidth is the distance between left and right wheels.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
@@ -77,14 +77,8 @@ swerve_drive_controller:
     default_value: 0.040,
     description: "Radius of the wheels.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
-    read_only: true
-  }
-  center_of_rotation: {
-    type: double_array,
-    default_value: [0.0, 0.0],
-    description: "Center of rotation (x,y) of robot",
     read_only: true
   }
   cmd_vel_timeout: {
@@ -92,7 +86,7 @@ swerve_drive_controller:
     default_value: 10.0,
     description: "Timeout in seconds before velocity commands are considered stale.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
@@ -106,6 +100,12 @@ swerve_drive_controller:
     type: string,
     default_value: "base_footprint",
     description: "Name of the frame for base footprint.",
+    read_only: true
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description: "(optional) Prefix to be appended to the tf frames, will be added to odom and base_footprint before publishing. A tilde ('~') is replaced with the controller's namespace. If the parameter is empty, controller's namespace will be used.",
     read_only: true
   }
   enable_odom_tf: {
@@ -123,36 +123,36 @@ swerve_drive_controller:
   front_left_velocity_threshold: {
     type: double,
     default_value: 2.0,
-    description: "Max velocity for front left wheel",
+    description: "Max linear speed (m/s) of the front left wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
   front_right_velocity_threshold: {
     type: double,
     default_value: 2.0,
-    description: "Max velocity for front right wheel",
+    description: "Max linear speed (m/s) of the front right wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
   rear_left_velocity_threshold: {
     type: double,
     default_value: 2.0,
-    description: "Max velocity for rear left wheel",
+    description: "Max linear speed (m/s) of the rear left wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }
   rear_right_velocity_threshold: {
     type: double,
     default_value: 2.0,
-    description: "Max velocity for rear right wheel",
+    description: "Max linear speed (m/s) of the rear right wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
     validation: {
-      "swerve_drive_controller::gt<>": [0.0]
+      gt<>: [0.0]
     },
     read_only: true
   }

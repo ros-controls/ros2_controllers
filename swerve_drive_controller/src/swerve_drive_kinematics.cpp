@@ -28,6 +28,12 @@ void SwerveDriveKinematics::calculate_wheel_position(
   wheel_positions_[1] = {half_length - x_offset, -half_width - y_offset};   // Front Right (+x, -y)
   wheel_positions_[2] = {-half_length - x_offset, half_width - y_offset};   // Rear Left   (-x, +y)
   wheel_positions_[3] = {-half_length - x_offset, -half_width - y_offset};  // Rear Right  (-x, -y)
+
+  sum_of_squared_wheel_distances_ = 0.0;
+  for (const auto & [wx, wy] : wheel_positions_)
+  {
+    sum_of_squared_wheel_distances_ += wx * wx + wy * wy;
+  }
 }
 
 std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
@@ -35,12 +41,6 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
   double wheel_radius)
 {
   std::array<WheelCommand, 4> wheel_commands;
-
-  if (wheel_radius <= 0.0)
-  {
-    std::cerr << "invalid wheel_radius <= 0.0\n";
-    // fallthrough: compute but set angular velocities to 0 to avoid div-by-zero
-  }
 
   for (std::size_t i = 0; i < 4; i++)
   {
@@ -54,14 +54,7 @@ std::array<WheelCommand, 4> SwerveDriveKinematics::compute_wheel_commands(
 
     wheel_commands[i].drive_velocity = linear_speed;
 
-    if (wheel_radius > 0.0)
-    {
-      wheel_commands[i].drive_angular_velocity = linear_speed / wheel_radius;  // rad/s
-    }
-    else
-    {
-      wheel_commands[i].drive_angular_velocity = 0.0;  // safe fallback
-    }
+    wheel_commands[i].drive_angular_velocity = linear_speed / wheel_radius;  // rad/s
 
     wheel_commands[i].steering_angle = steering;
   }
@@ -112,61 +105,37 @@ OdometryState SwerveDriveKinematics::update_odometry(
     wz_sum += (vy * wheel_positions_[i].first - vx * wheel_positions_[i].second);
   }
 
-  double vx_robot = vx_sum / 4.0;
-  double vy_robot = vy_sum / 4.0;
+  odometry_.vx = vx_sum / 4.0;
+  odometry_.vy = vy_sum / 4.0;
+  odometry_.wz = wz_sum / sum_of_squared_wheel_distances_;
 
-  double wz_denominator = 0.0;
-  for (std::size_t i = 0; i < 4; i++)
+  if (std::fabs(dt) < 1e-6)
   {
-    wz_denominator +=
-      (wheel_positions_[i].first * wheel_positions_[i].first +
-       wheel_positions_[i].second * wheel_positions_[i].second);
+    return odometry_;
   }
-  double wz_robot = wz_sum / wz_denominator;
 
-  // Compute linear displacement in robot frame
-  double dx_robot = vx_robot * dt;
-  double dy_robot = vy_robot * dt;
-  double dtheta = wz_robot * dt;
+  const double dx = odometry_.vx * dt;
+  const double dy = odometry_.vy * dt;
+  const double dtheta = odometry_.wz * dt;
 
-  // Integrate using Exact integration for rotation, RK2 fallback for near-zero angular velocity
   if (std::fabs(dtheta) < 1e-6)
   {
-    // RK2 (Runge-Kutta 2nd order) integration for small angular changes
-    // Use midpoint heading for better accuracy
-    double mid_theta = odometry_.theta + dtheta * 0.5;
-    double cos_mid = std::cos(mid_theta);
-    double sin_mid = std::sin(mid_theta);
-
-    odometry_.x += dx_robot * cos_mid - dy_robot * sin_mid;
-    odometry_.y += dx_robot * sin_mid + dy_robot * cos_mid;
+    // For very small heading changes, approximate to straight-line motion
+    odometry_.x += dx * std::cos(odometry_.theta) - dy * std::sin(odometry_.theta);
+    odometry_.y += dx * std::sin(odometry_.theta) + dy * std::cos(odometry_.theta);
     odometry_.theta += dtheta;
   }
   else
   {
-    // Exact integration for arc motion
-    // When the robot rotates, it follows an arc trajectory
-    // This computes the exact displacement along that arc
-    double theta_old = odometry_.theta;
-    double theta_new = theta_old + dtheta;
-
-    double sin_new = std::sin(theta_new);
-    double sin_old = std::sin(theta_old);
-    double cos_new = std::cos(theta_new);
-    double cos_old = std::cos(theta_old);
-
-    // Exact integration formula for simultaneous translation and rotation
-    // Derived from integrating velocity over the arc
-    odometry_.x += (dx_robot * (sin_new - sin_old) + dy_robot * (cos_new - cos_old)) / dtheta;
-    odometry_.y += (dx_robot * (cos_old - cos_new) + dy_robot * (sin_new - sin_old)) / dtheta;
-    odometry_.theta = theta_new;
+    // Exact integration along the arc the robot drives while turning
+    const double theta_old = odometry_.theta;
+    odometry_.theta += dtheta;
+    odometry_.x += (dx / dtheta) * (std::sin(odometry_.theta) - std::sin(theta_old)) +
+                   (dy / dtheta) * (std::cos(odometry_.theta) - std::cos(theta_old));
+    odometry_.y += -(dx / dtheta) * (std::cos(odometry_.theta) - std::cos(theta_old)) +
+                   (dy / dtheta) * (std::sin(odometry_.theta) - std::sin(theta_old));
   }
 
-  // Normalize theta to [-pi, pi]
-  odometry_.theta = angles::normalize_angle(odometry_.theta);
-  odometry_.vx = vx_robot;
-  odometry_.vy = vy_robot;
-  odometry_.wz = wz_robot;
   return odometry_;
 }
 }  // namespace swerve_drive_controller

@@ -92,6 +92,9 @@ if(BUILD_TESTING)
     ${nav_msgs_TARGETS}
   )
 
+  ament_add_gmock(test_swerve_drive_kinematics test/test_swerve_drive_kinematics.cpp)
+  target_link_libraries(test_swerve_drive_kinematics swerve_drive_controller)
+
   add_definitions(-DTEST_FILES_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/test")
 
   ament_add_gmock(test_load_swerve_drive_controller test/test_load_swerve_drive_controller.cpp)

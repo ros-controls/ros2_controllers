@@ -16,18 +16,17 @@
 
 #include "swerve_drive_controller/swerve_drive_kinematics.hpp"
 
-#include <chrono>
-#include <cmath>
+#include <array>
+#include <functional>
 #include <memory>
-#include <queue>
 #include <string>
 #include <vector>
 
-#include <hardware_interface/loaned_command_interface.hpp>
 #include "controller_interface/chainable_controller_interface.hpp"
-#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "hardware_interface/handle.hpp"
+#include "hardware_interface/loaned_command_interface.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
@@ -41,48 +40,39 @@
 namespace swerve_drive_controller
 {
 
-enum class WheelAxleIndex : std::size_t
-{
-  FRONT_LEFT = 0,
-  FRONT_RIGHT = 1,
-  REAR_LEFT = 2,
-  REAR_RIGHT = 3
-};
-
 using CallbackReturn = controller_interface::CallbackReturn;
 
-class Wheel
+/**
+ * @brief One corner of the robot: a drive wheel and the steering joint that turns it.
+ */
+class SwerveModule
 {
 public:
-  Wheel(
-    std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity,
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback,
-    std::string name);
+  SwerveModule(
+    hardware_interface::LoanedCommandInterface & wheel_velocity_command,
+    const hardware_interface::LoanedStateInterface & wheel_velocity_state,
+    hardware_interface::LoanedCommandInterface & steering_position_command,
+    const hardware_interface::LoanedStateInterface & steering_position_state);
 
-  void set_velocity(double velocity);
-  double get_feedback();
+  /**
+   * @brief Send a new command to the module.
+   * @param wheel_velocity Wheel angular velocity (rad/s).
+   * @param steering_angle Steering angle (rad).
+   * @return false if any of the two commands could not be written.
+   */
+  [[nodiscard]] bool set_command(double wheel_velocity, double steering_angle);
 
-private:
-  std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity_;
-  std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback_;
-  std::string name_;
-};
+  /// @brief Measured wheel angular velocity (rad/s).
+  double get_wheel_velocity() const;
 
-class Axle
-{
-public:
-  Axle(
-    std::reference_wrapper<hardware_interface::LoanedCommandInterface> position,
-    std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback,
-    std::string name);
-
-  void set_position(double position);
-  double get_feedback();
+  /// @brief Measured steering angle (rad).
+  double get_steering_angle() const;
 
 private:
-  std::reference_wrapper<hardware_interface::LoanedCommandInterface> position_;
-  std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback_;
-  std::string name_;
+  std::reference_wrapper<hardware_interface::LoanedCommandInterface> wheel_velocity_command_;
+  std::reference_wrapper<const hardware_interface::LoanedStateInterface> wheel_velocity_state_;
+  std::reference_wrapper<hardware_interface::LoanedCommandInterface> steering_position_command_;
+  std::reference_wrapper<const hardware_interface::LoanedStateInterface> steering_position_state_;
 };
 
 class SwerveController : public controller_interface::ChainableControllerInterface
@@ -114,124 +104,48 @@ public:
 
   CallbackReturn on_error(const rclcpp_lifecycle::State & previous_state) override;
 
-  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
-
 protected:
   bool on_set_chained_mode(bool chained_mode) override;
 
-  std::vector<hardware_interface::CommandInterface> on_export_reference_interfaces() override;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
 
-private:
-  template <typename T>
-  std::optional<T> get_interface_object(
-    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
-    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
-    const std::string & name, const std::string & /*interface_suffix*/,
-    const std::string & hw_if_type)
-  {
-    auto logger = rclcpp::get_logger("SwerveController");
+  void reset();
+  void halt();
 
-    if (name.empty())
-    {
-      RCLCPP_ERROR(logger, "Joint name not given. Make sure all joints are specified.");
-      return std::nullopt;
-    }
+  // Order of all per-module arrays: front_left, front_right, rear_left, rear_right
+  static constexpr std::size_t NUM_MODULES = 4;
+  std::vector<std::string> wheel_joint_names_;
+  std::vector<std::string> steering_joint_names_;
+  std::array<double, NUM_MODULES> max_wheel_speeds_{};  // m/s
 
-    // Use get_prefix_name() to match joint name and get_interface_name() to match interface type
-    // This matches the pattern used in diff_drive_controller
-    auto command_handle = std::find_if(
-      command_interfaces.begin(), command_interfaces.end(),
-      [&name, &hw_if_type](const auto & interface)
-      {
-        return interface.get_prefix_name() == name && interface.get_interface_name() == hw_if_type;
-      });
+  // Filled on activate, emptied on deactivate
+  std::vector<SwerveModule> modules_;
 
-    if (command_handle == command_interfaces.end())
-    {
-      RCLCPP_ERROR(
-        logger, "Unable to find command interface for: %s (expected: %s/%s, type: %s)",
-        name.c_str(), name.c_str(), hw_if_type.c_str(), hw_if_type.c_str());
-      return std::nullopt;
-    }
-    auto state_handle = std::find_if(
-      state_interfaces.begin(), state_interfaces.end(),
-      [&name, &hw_if_type](const auto & interface)
-      {
-        return interface.get_prefix_name() == name && interface.get_interface_name() == hw_if_type;
-      });
-
-    if (state_handle == state_interfaces.end())
-    {
-      RCLCPP_ERROR(
-        logger, "Unable to find state interface for: %s (expected: %s/%s, type: %s)", name.c_str(),
-        name.c_str(), hw_if_type.c_str(), hw_if_type.c_str());
-      return std::nullopt;
-    }
-    return T(std::ref(*command_handle), std::ref(*state_handle), name);
-  }
-
-  inline std::optional<Wheel> get_wheel(
-    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
-    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
-    const std::string & name)
-  {
-    return get_interface_object<Wheel>(
-      command_interfaces, state_interfaces, name, "/velocity", "velocity");
-  }
-
-  inline std::optional<Axle> get_axle(
-    std::vector<hardware_interface::LoanedCommandInterface> & command_interfaces,
-    const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
-    const std::string & name)
-  {
-    return get_interface_object<Axle>(
-      command_interfaces, state_interfaces, name, "/position", "position");
-  }
-
-protected:
-  // Handles for four wheels and their axles
-  std::vector<std::optional<Wheel>> wheel_handles_;
-  std::vector<std::optional<Axle>> axle_handles_;
-  std::array<std::string, 4> wheel_joint_names{};
-  std::array<std::string, 4> axle_joint_names{};
-
-  const double EPS = 1e-6;
-  std::array<double, 4> previous_steering_angles_{};
+  std::array<double, NUM_MODULES> previous_steering_angles_{};
 
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
-  SwerveDriveKinematics swerveDriveKinematics_;
-  std::queue<TwistStamped> previous_commands_;  // last two commands
-  rclcpp::Duration publish_period_ = rclcpp::Duration::from_nanoseconds(0);
-  rclcpp::Time previous_publish_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
+  SwerveDriveKinematics swerve_drive_kinematics_;
+  OdometryState odometry_{};
 
-  // Timeout to consider cmd_vel commands old
-  std::chrono::milliseconds cmd_vel_timeout_{500};
-  rclcpp::Time previous_update_timestamp_{0};
+  rclcpp::Duration cmd_vel_timeout_ = rclcpp::Duration::from_seconds(0.5);
+  rclcpp::Time previous_update_timestamp_{0, 0, RCL_CLOCK_UNINITIALIZED};
 
-  OdometryState odometry_;
-
-  // Topic Subscription
-  bool subscriber_is_active_ = false;
   rclcpp::Subscription<TwistStamped>::SharedPtr velocity_command_subscriber_ = nullptr;
   realtime_tools::RealtimeThreadSafeBox<TwistStamped> received_velocity_msg_;
   TwistStamped command_msg_;
-  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::Odometry>> odometry_publisher_ = nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
-    realtime_odometry_publisher_ = nullptr;
 
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometry_publisher_ = nullptr;
+  std::unique_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
+    realtime_odometry_publisher_ = nullptr;
   nav_msgs::msg::Odometry odometry_message_;
 
-  std::shared_ptr<rclcpp::Publisher<tf2_msgs::msg::TFMessage>> odometry_transform_publisher_ =
-    nullptr;
-  std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
+  rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr odometry_transform_publisher_ = nullptr;
+  std::unique_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>
     realtime_odometry_transform_publisher_ = nullptr;
   tf2_msgs::msg::TFMessage odometry_transform_message_;
-
-  bool is_halted_ = false;
-  bool reset();
-  void halt();
 };
 
 }  // namespace swerve_drive_controller

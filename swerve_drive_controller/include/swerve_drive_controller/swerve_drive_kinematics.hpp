@@ -17,7 +17,6 @@
 #include <angles/angles.h>
 #include <array>
 #include <cmath>
-#include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -110,7 +109,8 @@ public:
 
 private:
   std::array<std::pair<double, double>, 4> wheel_positions_;  // Wheel Positions
-  OdometryState odometry_;                                    // Current Odometry of the robot
+  double sum_of_squared_wheel_distances_ = 1.0;  // Used to get the robot's turning speed
+  OdometryState odometry_;                       // Current Odometry of the robot
 };
 }  // namespace swerve_drive_controller
 

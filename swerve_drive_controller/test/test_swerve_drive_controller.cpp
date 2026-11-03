@@ -24,6 +24,39 @@ namespace swerve_drive_controller
 
 class SwerveDriveControllerTest : public SwerveDriveControllerFixture<TestableSwerveDriveController>
 {
+protected:
+  void activate_controller(rclcpp::executors::SingleThreadedExecutor & executor)
+  {
+    executor.add_node(controller_->get_node()->get_node_base_interface());
+    ASSERT_EQ(controller_->get_node()->configure().id(), State::PRIMARY_STATE_INACTIVE);
+    assignResources();
+    ASSERT_EQ(controller_->get_node()->activate().id(), State::PRIMARY_STATE_ACTIVE);
+    waitForSetup();
+  }
+
+  void run_update(const rclcpp::Time & time)
+  {
+    const auto period = rclcpp::Duration::from_seconds(0.01);
+    ASSERT_EQ(
+      controller_->update_reference_from_subscribers(time, period),
+      controller_interface::return_type::OK);
+    ASSERT_EQ(
+      controller_->update_and_write_commands(time, period), controller_interface::return_type::OK);
+  }
+
+  // Sends a command stamped at 10 s and runs one update right after it
+  void send_command_and_update(
+    rclcpp::executors::SingleThreadedExecutor & executor, double vx, double vy, double wz)
+  {
+    const rclcpp::Time command_time(10, 0, RCL_ROS_TIME);
+    publish_twist_timestamped(command_time, vx, vy, wz);
+    controller_->wait_for_twist(executor);
+    run_update(command_time + rclcpp::Duration::from_seconds(0.01));
+  }
+
+  // Command interfaces are ordered: 4 wheel velocities, then 4 steering positions
+  double wheel_command(size_t i) { return command_itfs_[i]->get_optional().value(); }
+  double steering_command(size_t i) { return command_itfs_[4 + i]->get_optional().value(); }
 };
 
 // cppcheck-suppress syntaxError
@@ -91,7 +124,7 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_with_namespace)
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 }
 
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespace)
+TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_frame_id = "base_footprint";
@@ -100,8 +133,7 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespac
   ASSERT_EQ(
     InitController(
       wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+      {rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
        rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))}),
     controller_interface::return_type::OK);
@@ -109,38 +141,11 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespac
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  // Namespace is "/", so no prefix
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_frame_id);
+  ASSERT_EQ(odom_msg.header.frame_id, "test_prefix/odom");
+  ASSERT_EQ(odom_msg.child_frame_id, "test_prefix/base_footprint");
 }
 
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_no_namespace)
-{
-  std::string odom_id = "odom";
-  std::string base_frame_id = "base_footprint";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))}),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_frame_id);
-}
-
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace)
+TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace)
 {
   std::string odom_id = "odom";
   std::string base_frame_id = "base_footprint";
@@ -149,8 +154,7 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_nam
   ASSERT_EQ(
     InitController(
       wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+      {rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
        rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))}),
     controller_interface::return_type::OK);
@@ -158,13 +162,11 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_nam
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  ASSERT_EQ(test_odom_frame_id, odom_id);
-  ASSERT_EQ(test_base_frame_id, base_frame_id);
+  ASSERT_EQ(odom_msg.header.frame_id, "odom");
+  ASSERT_EQ(odom_msg.child_frame_id, "base_footprint");
 }
 
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespace)
+TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
@@ -174,8 +176,7 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespa
   ASSERT_EQ(
     InitController(
       wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(false)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+      {rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
        rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))},
       test_namespace),
@@ -184,39 +185,11 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespa
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
-  ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
+  ASSERT_EQ(odom_msg.header.frame_id, "test_prefix/odom");
+  ASSERT_EQ(odom_msg.child_frame_id, "test_prefix/base_footprint");
 }
 
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_set_namespace)
-{
-  std::string test_namespace = "/test_namespace";
-  std::string odom_id = "odom";
-  std::string base_frame_id = "base_footprint";
-  std::string frame_prefix = "test_prefix";
-
-  ASSERT_EQ(
-    InitController(
-      wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
-       rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
-       rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))},
-      test_namespace),
-    controller_interface::return_type::OK);
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
-
-  const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
-  ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
-}
-
-TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace)
+TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_set_namespace)
 {
   std::string test_namespace = "/test_namespace";
   std::string odom_id = "odom";
@@ -226,8 +199,7 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_na
   ASSERT_EQ(
     InitController(
       wheel_joint_names_, steering_joint_names_,
-      {rclcpp::Parameter("tf_frame_prefix_enable", rclcpp::ParameterValue(true)),
-       rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+      {rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
        rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
        rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))},
       test_namespace),
@@ -236,10 +208,31 @@ TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_na
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
 
   const auto & odom_msg = controller_->get_odometry_message();
-  std::string test_odom_frame_id = odom_msg.header.frame_id;
-  std::string test_base_frame_id = odom_msg.child_frame_id;
-  ASSERT_EQ(test_odom_frame_id, "/test_namespace/odom");
-  ASSERT_EQ(test_base_frame_id, "/test_namespace/base_footprint");
+  ASSERT_EQ(odom_msg.header.frame_id, "test_namespace/odom");
+  ASSERT_EQ(odom_msg.child_frame_id, "test_namespace/base_footprint");
+}
+
+TEST_F(SwerveDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace)
+{
+  std::string test_namespace = "/test_namespace";
+  std::string odom_id = "odom";
+  std::string base_frame_id = "base_footprint";
+  std::string frame_prefix = "~/test_prefix";
+
+  ASSERT_EQ(
+    InitController(
+      wheel_joint_names_, steering_joint_names_,
+      {rclcpp::Parameter("tf_frame_prefix", rclcpp::ParameterValue(frame_prefix)),
+       rclcpp::Parameter("odom", rclcpp::ParameterValue(odom_id)),
+       rclcpp::Parameter("base_footprint", rclcpp::ParameterValue(base_frame_id))},
+      test_namespace),
+    controller_interface::return_type::OK);
+
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), NODE_SUCCESS);
+
+  const auto & odom_msg = controller_->get_odometry_message();
+  ASSERT_EQ(odom_msg.header.frame_id, "test_namespace/test_prefix/odom");
+  ASSERT_EQ(odom_msg.child_frame_id, "test_namespace/test_prefix/base_footprint");
 }
 
 TEST_F(SwerveDriveControllerTest, activate_fails_without_resources_assigned)
@@ -291,12 +284,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()].get_optional().value(),
+      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
       expected_steering_pos_cmds[i]);
   }
 
@@ -313,7 +306,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   state = controller_->get_node()->activate();
@@ -323,7 +316,7 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
 
   for (size_t i = 0; i < command_itfs_.size(); i++)
   {
-    EXPECT_EQ(command_itfs_[i].get_optional().value(), 0.0);
+    EXPECT_EQ(command_itfs_[i]->get_optional().value(), 0.0);
   }
 
   publish_twist(1.0, 0.0, 0.0);  // Forward motion
@@ -339,12 +332,12 @@ TEST_F(SwerveDriveControllerTest, deactivate_then_activate)
     controller_interface::return_type::OK);
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()].get_optional().value(),
+      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
       expected_steering_pos_cmds[i]);
   }
 
@@ -389,12 +382,12 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
   std::vector<double> expected_steering_pos_cmds = {0.0, 0.0, 0.0, 0.0};
   for (size_t i = 0; i < wheel_vel_cmds_.size(); i++)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i].get_optional().value(), expected_wheel_vel_cmds[i]);
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), expected_wheel_vel_cmds[i]);
   }
   for (size_t i = 0; i < steering_pos_cmds_.size(); i++)
   {
     EXPECT_DOUBLE_EQ(
-      command_itfs_[i + wheel_vel_cmds_.size()].get_optional().value(),
+      command_itfs_[i + wheel_vel_cmds_.size()]->get_optional().value(),
       expected_steering_pos_cmds[i]);
   }
 
@@ -406,12 +399,90 @@ TEST_F(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_w
   executor.cancel();
 }
 
+TEST_F(SwerveDriveControllerTest, speed_limit_slows_down_too_fast_command)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  activate_controller(executor);
+
+  // 5 m/s forward, but every wheel is limited to 2 m/s (default) -> 2 m/s / 0.1 m = 20 rad/s
+  send_command_and_update(executor, 5.0, 0.0, 0.0);
+
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(wheel_command(i), 20.0, 1e-9);
+    EXPECT_NEAR(steering_command(i), 0.0, 1e-9);
+  }
+}
+
+TEST_F(SwerveDriveControllerTest, speed_limit_works_when_driving_backward)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  activate_controller(executor);
+
+  // Backward: the wheels stay at 0 rad and spin backward, still limited to 2 m/s -> -20 rad/s
+  send_command_and_update(executor, -5.0, 0.0, 0.0);
+
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(wheel_command(i), -20.0, 1e-9);
+    EXPECT_NEAR(std::abs(steering_command(i)), 0.0, 1e-9);
+  }
+}
+
+TEST_F(SwerveDriveControllerTest, speed_limit_slows_all_wheels_by_same_factor)
+{
+  // Only the front left wheel has a lower limit of 1 m/s
+  ASSERT_EQ(
+    InitController(
+      wheel_joint_names_, steering_joint_names_,
+      {rclcpp::Parameter("front_left_velocity_threshold", rclcpp::ParameterValue(1.0))}),
+    controller_interface::return_type::OK);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  activate_controller(executor);
+
+  // 1.5 m/s is too fast for the front left wheel, so all wheels slow down to 1 m/s -> 10 rad/s
+  send_command_and_update(executor, 1.5, 0.0, 0.0);
+
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(wheel_command(i), 10.0, 1e-9);
+  }
+}
+
+TEST_F(SwerveDriveControllerTest, robot_stops_when_command_is_too_old)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  activate_controller(executor);
+
+  // The command is sent at 10 s, the timeout is 0.5 s
+  const rclcpp::Time command_time(10, 0, RCL_ROS_TIME);
+  publish_twist_timestamped(command_time, 1.0, 0.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  // At 10.1 s the command is still fresh: 1 m/s / 0.1 m = 10 rad/s
+  run_update(command_time + rclcpp::Duration::from_seconds(0.1));
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(wheel_command(i), 10.0, 1e-9);
+  }
+
+  // At 11 s the command is too old, so the wheels stop
+  run_update(command_time + rclcpp::Duration::from_seconds(1.0));
+  for (size_t i = 0; i < 4; i++)
+  {
+    EXPECT_NEAR(wheel_command(i), 0.0, 1e-9);
+    EXPECT_NEAR(steering_command(i), 0.0, 1e-9);
+  }
+}
+
+}  // namespace swerve_drive_controller
+
 int main(int argc, char ** argv)
 {
-  ::testing::InitGoogleTest(&argc, argv);
-  rclcpp::init(argc, argv);
-  int result = RUN_ALL_TESTS();
-  rclcpp::shutdown();
-  return result;
+  // rclcpp is initialized in SetUpTestCase of the test fixture
+  ::testing::InitGoogleMock(&argc, argv);
+  return RUN_ALL_TESTS();
 }
-}  // namespace swerve_drive_controller

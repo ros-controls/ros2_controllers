@@ -13,6 +13,10 @@ state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
 
+swerve_drive_controller
+***********************
+* 🚀 The swerve_drive_controller was added 🎉 (`#1694 <https://github.com/ros-controls/ros2_controllers/pull/1694>`_).
+
 force_torque_sensor_broadcaster
 *******************************
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
@@ -44,16 +48,6 @@ omni_wheel_drive_controller
 * Set odometry service added to be used at runtime. (`#2148 <https://github.com/ros-controls/ros2_controllers/pull/2148>`_).
 
 joint_trajectory_controller
-*******************************
-* The controller now supports the new anti-windup strategy of the PID class, which allows for more flexible control of the anti-windup behavior. (`#1759 <https://github.com/ros-controls/ros2_controllers/pull/1759>`__).
-* Scaling support was added in `#1191
-  <https://github.com/ros-controls/ros2_controllers/pull/1191>`__. With this the controller
-  "stretches the time" with which it progresses in the trajectory. Scaling can either be set
-  manually or it can be synchronized with the hardware. See :ref:`jtc_speed_scaling` for details.
-
-omni_wheel_drive_controller
-*********************************
-* 🚀 The omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
 ***************************
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)

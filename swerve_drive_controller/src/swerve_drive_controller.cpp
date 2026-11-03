@@ -13,14 +13,15 @@
 
 #include "swerve_drive_controller/swerve_drive_controller.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
-#include <queue>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 
+#include "controller_interface/helpers.hpp"
+#include "controller_interface/tf_prefix.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
@@ -30,71 +31,84 @@ namespace
 {
 
 constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
-constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "~/cmd_vel_unstamped";
 constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+
+// Size of one side of the 6x6 odometry covariance matrices
+constexpr std::size_t NUM_DIMENSIONS = 6;
+
+// Commands smaller than this are treated as "stop"
+constexpr double STOP_EPSILON = 1e-6;
+
+// A wheel that is not yet pointing in its target direction only pushes the robot that way with
+// cos(steering_error) of its speed, the rest pushes sideways. Up to 30 degrees of error that loss
+// is small (cos(30 deg) = 0.87), so the wheel keeps full speed. Above that the wheel speed is
+// scaled by cos(steering_error) / cos(30 deg), which is 1.0 at 30 degrees, so there is no jump.
+constexpr double FULL_SPEED_STEERING_ERROR = M_PI / 6.0;  // 30 degrees
+
+// Close to 90 degrees of error cos() goes to zero. Keep a small minimum speed factor so the
+// wheel does not stop completely while the steering is still turning.
+constexpr double MIN_STEERING_SPEED_FACTOR = 0.01;
+
+const std::array<const char *, 4> MODULE_LABELS = {
+  {"front_left", "front_right", "rear_left", "rear_right"}};
 
 }  // namespace
 
 namespace swerve_drive_controller
 {
 
-using namespace std::chrono_literals;
 using controller_interface::interface_configuration_type;
 using controller_interface::InterfaceConfiguration;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
-using lifecycle_msgs::msg::State;
 
-Wheel::Wheel(
-  std::reference_wrapper<hardware_interface::LoanedCommandInterface> velocity,
-  std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback, std::string name)
-: velocity_(velocity), feedback_(feedback), name_(std::move(name))
+SwerveModule::SwerveModule(
+  hardware_interface::LoanedCommandInterface & wheel_velocity_command,
+  const hardware_interface::LoanedStateInterface & wheel_velocity_state,
+  hardware_interface::LoanedCommandInterface & steering_position_command,
+  const hardware_interface::LoanedStateInterface & steering_position_state)
+: wheel_velocity_command_(wheel_velocity_command),
+  wheel_velocity_state_(wheel_velocity_state),
+  steering_position_command_(steering_position_command),
+  steering_position_state_(steering_position_state)
 {
 }
 
-void Wheel::set_velocity(double velocity) { velocity_.get().set_value(velocity); }
-
-double Wheel::get_feedback() { return Wheel::feedback_.get().get_optional().value(); }
-
-Axle::Axle(
-  std::reference_wrapper<hardware_interface::LoanedCommandInterface> position,
-  std::reference_wrapper<const hardware_interface::LoanedStateInterface> feedback, std::string name)
-: position_(position), feedback_(feedback), name_(std::move(name))
+bool SwerveModule::set_command(double wheel_velocity, double steering_angle)
 {
+  const bool wheel_ok = wheel_velocity_command_.get().set_value(wheel_velocity);
+  const bool steering_ok = steering_position_command_.get().set_value(steering_angle);
+  return wheel_ok && steering_ok;
 }
 
-void Axle::set_position(double position) { position_.get().set_value(position); }
-
-double Axle::get_feedback() { return Axle::feedback_.get().get_optional().value(); }
-
-SwerveController::SwerveController()
-
-: controller_interface::ChainableControllerInterface()
+double SwerveModule::get_wheel_velocity() const
 {
+  return wheel_velocity_state_.get().get_optional().value();
 }
+
+double SwerveModule::get_steering_angle() const
+{
+  return steering_position_state_.get().get_optional().value();
+}
+
+SwerveController::SwerveController() : controller_interface::ChainableControllerInterface() {}
 
 CallbackReturn SwerveController::on_init()
 {
-  auto node = get_node();
-  if (!node)
-  {
-    RCLCPP_ERROR(node->get_logger(), "Node is null in on_init");
-    return controller_interface::CallbackReturn::ERROR;
-  }
   try
   {
-    // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
 
-    swerveDriveKinematics_.calculate_wheel_position(
+    swerve_drive_kinematics_.calculate_wheel_position(
       params_.wheelbase, params_.trackwidth, params_.offset[0], params_.offset[1]);
   }
   catch (const std::exception & e)
   {
-    fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Exception thrown during init stage with message: %s", e.what());
+    return CallbackReturn::ERROR;
   }
   return CallbackReturn::SUCCESS;
 }
@@ -132,86 +146,45 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
   auto logger = get_node()->get_logger();
   try
   {
-    if (params_.front_left_wheel_joint.empty())
+    wheel_joint_names_ = {
+      params_.front_left_wheel_joint, params_.front_right_wheel_joint,
+      params_.rear_left_wheel_joint, params_.rear_right_wheel_joint};
+    steering_joint_names_ = {
+      params_.front_left_axle_joint, params_.front_right_axle_joint, params_.rear_left_axle_joint,
+      params_.rear_right_axle_joint};
+    max_wheel_speeds_ = {
+      {params_.front_left_velocity_threshold, params_.front_right_velocity_threshold,
+       params_.rear_left_velocity_threshold, params_.rear_right_velocity_threshold}};
+
+    for (std::size_t i = 0; i < NUM_MODULES; i++)
     {
-      RCLCPP_ERROR(logger, "front_left_wheel_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.front_right_wheel_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "front_right_wheel_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.rear_left_wheel_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_left_wheel_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.rear_right_wheel_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_right_wheel_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.front_left_axle_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "front_left_axle_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.front_right_axle_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "front_right_axle_joint_name is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.rear_left_axle_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_left_axle_joint_name_ is not set");
-      return CallbackReturn::ERROR;
-    }
-    if (params_.rear_right_axle_joint.empty())
-    {
-      RCLCPP_ERROR(logger, "rear_right_axle_joint_name_ is not set");
-      return CallbackReturn::ERROR;
-    }
-    wheel_joint_names[0] = params_.front_left_wheel_joint;
-    wheel_joint_names[1] = params_.front_right_wheel_joint;
-    wheel_joint_names[2] = params_.rear_left_wheel_joint;
-    wheel_joint_names[3] = params_.rear_right_wheel_joint;
-    axle_joint_names[0] = params_.front_left_axle_joint;
-    axle_joint_names[1] = params_.front_right_axle_joint;
-    axle_joint_names[2] = params_.rear_left_axle_joint;
-    axle_joint_names[3] = params_.rear_right_axle_joint;
-    cmd_vel_timeout_ =
-      std::chrono::milliseconds(static_cast<int>(params_.cmd_vel_timeout * 1000.0));
-    if (!reset())
-    {
-      return CallbackReturn::ERROR;
+      if (wheel_joint_names_[i].empty())
+      {
+        RCLCPP_ERROR(logger, "%s_wheel_joint is not set", MODULE_LABELS[i]);
+        return CallbackReturn::ERROR;
+      }
+      if (steering_joint_names_[i].empty())
+      {
+        RCLCPP_ERROR(logger, "%s_axle_joint is not set", MODULE_LABELS[i]);
+        return CallbackReturn::ERROR;
+      }
     }
 
-    // Allocate reference interfaces for chainable controller (linear.x, linear.y, angular.z)
-    const int nr_ref_itfs = 3;
-    reference_interfaces_.resize(nr_ref_itfs, std::numeric_limits<double>::quiet_NaN());
+    // Reserve here so that on_activate does not need to grow the vector
+    modules_.reserve(NUM_MODULES);
 
-    TwistStamped empty_twist;
-    empty_twist.header.stamp = get_node()->now();
-    empty_twist.twist.linear.x = 0.0;
-    empty_twist.twist.linear.y = 0.0;
-    empty_twist.twist.angular.z = 0.0;
-    command_msg_ = empty_twist;
-    received_velocity_msg_.set(empty_twist);
+    cmd_vel_timeout_ = rclcpp::Duration::from_seconds(params_.cmd_vel_timeout);
+
+    reset();
 
     velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this, logger](const std::shared_ptr<TwistStamped> msg) -> void
+      [this](const std::shared_ptr<TwistStamped> msg) -> void
       {
-        if (!subscriber_is_active_)
-        {
-          RCLCPP_WARN(logger, "Can't accept new commands. subscriber is inactive");
-          return;
-        }
         if ((msg->header.stamp.sec == 0) && (msg->header.stamp.nanosec == 0))
         {
           RCLCPP_WARN_ONCE(
-            logger,
+            get_node()->get_logger(),
             "Received TwistStamped with zero timestamp, setting it to current "
             "time, this message will only be shown once");
           msg->header.stamp = get_node()->get_clock()->now();
@@ -221,43 +194,38 @@ CallbackReturn SwerveController::on_configure(const rclcpp_lifecycle::State & /*
 
     odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
       DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
-
     realtime_odometry_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
+      std::make_unique<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
         odometry_publisher_);
 
-    std::string tf_prefix = "";
-    tf_prefix = std::string(get_node()->get_namespace());
-    if (tf_prefix == "/")
+    // An empty tf_frame_prefix means: use the controller's namespace ("~")
+    std::string tf_frame_prefix = params_.tf_frame_prefix;
+    if (tf_frame_prefix.empty())
     {
-      tf_prefix = "";
+      tf_frame_prefix = "~";
     }
-    else
-    {
-      tf_prefix = tf_prefix + "/";
-    }
+    const std::string tf_prefix =
+      controller_interface::resolve_tf_prefix(tf_frame_prefix, get_node()->get_namespace());
 
     const auto odom_frame_id = tf_prefix + params_.odom;
     const auto base_frame_id = tf_prefix + params_.base_footprint;
-    // odometry_message_ = realtime_odometry_publisher_->msg_;
     odometry_message_.header.frame_id = odom_frame_id;
     odometry_message_.child_frame_id = base_frame_id;
 
     odometry_message_.twist =
       geometry_msgs::msg::TwistWithCovariance(rosidl_runtime_cpp::MessageInitialization::ALL);
 
-    constexpr std::size_t NUM_DIMENSIONS = 6;
-    for (std::size_t index = 0; index < 6; ++index)
+    for (std::size_t index = 0; index < NUM_DIMENSIONS; ++index)
     {
       const std::size_t diagonal_index = NUM_DIMENSIONS * index + index;
       odometry_message_.pose.covariance[diagonal_index] = params_.pose_covariance_diagonal[index];
       odometry_message_.twist.covariance[diagonal_index] = params_.twist_covariance_diagonal[index];
     }
+
     odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
       DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
-
     realtime_odometry_transform_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
+      std::make_unique<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
         odometry_transform_publisher_);
 
     odometry_transform_message_.transforms.resize(1);
@@ -279,41 +247,50 @@ CallbackReturn SwerveController::on_activate(const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
 
-  wheel_handles_.resize(4);
-  for (std::size_t i = 0; i < 4; i++)
+  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> wheel_commands;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> wheel_states;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> steering_commands;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> steering_states;
+  wheel_commands.reserve(NUM_MODULES);
+  wheel_states.reserve(NUM_MODULES);
+  steering_commands.reserve(NUM_MODULES);
+  steering_states.reserve(NUM_MODULES);
+
+  const bool found_all =
+    controller_interface::get_ordered_interfaces(
+      command_interfaces_, wheel_joint_names_, HW_IF_VELOCITY, wheel_commands) &&
+    controller_interface::get_ordered_interfaces(
+      state_interfaces_, wheel_joint_names_, HW_IF_VELOCITY, wheel_states) &&
+    controller_interface::get_ordered_interfaces(
+      command_interfaces_, steering_joint_names_, HW_IF_POSITION, steering_commands) &&
+    controller_interface::get_ordered_interfaces(
+      state_interfaces_, steering_joint_names_, HW_IF_POSITION, steering_states);
+  if (!found_all)
   {
-    wheel_handles_[i] = get_wheel(command_interfaces_, state_interfaces_, wheel_joint_names[i]);
+    RCLCPP_ERROR(
+      logger,
+      "Could not find all wheel velocity and steering position interfaces. Expected %zu "
+      "wheel and %zu steering joints.",
+      NUM_MODULES, NUM_MODULES);
+    return CallbackReturn::ERROR;
   }
 
-  axle_handles_.resize(4);
-  for (std::size_t i = 0; i < 4; i++)
+  modules_.clear();
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
-    axle_handles_[i] = get_axle(command_interfaces_, state_interfaces_, axle_joint_names[i]);
-  }
+    modules_.emplace_back(
+      wheel_commands[i].get(), wheel_states[i].get(), steering_commands[i].get(),
+      steering_states[i].get());
 
-  for (std::size_t i = 0; i < wheel_handles_.size(); ++i)
-  {
-    if (!wheel_handles_[i])
+    if (!modules_[i].set_command(0.0, 0.0))
     {
-      RCLCPP_ERROR(logger, "ERROR IN FETCHING wheel handle for: %s", wheel_joint_names[i].c_str());
+      RCLCPP_ERROR(logger, "Failed to set initial command for %s module", MODULE_LABELS[i]);
+      modules_.clear();
       return CallbackReturn::ERROR;
     }
-    wheel_handles_[i]->set_velocity(0.0);
+    previous_steering_angles_[i] = modules_[i].get_steering_angle();
   }
 
-  for (std::size_t i = 0; i < axle_handles_.size(); ++i)
-  {
-    if (!axle_handles_[i])
-    {
-      RCLCPP_ERROR(logger, "ERROR IN FETCHING axle handle for: %s", axle_joint_names[i].c_str());
-      return CallbackReturn::ERROR;
-    }
-    axle_handles_[i]->set_position(0.0);
-    previous_steering_angles_[i] = axle_handles_[i]->get_feedback();
-  }
-
-  is_halted_ = false;
-  subscriber_is_active_ = true;
   RCLCPP_INFO(logger, "Subscriber and publisher are now active.");
   return CallbackReturn::SUCCESS;
 }
@@ -333,23 +310,37 @@ controller_interface::return_type SwerveController::update_reference_from_subscr
   // Brake if cmd_vel has timeout, override the stored command
   if (age_of_last_command > cmd_vel_timeout_)
   {
-    reference_interfaces_[0] = 0.0;
-    reference_interfaces_[1] = 0.0;
-    reference_interfaces_[2] = 0.0;
+    for (auto & reference_interface : ordered_exported_reference_interfaces_)
+    {
+      if (!reference_interface->set_value(0.0))
+      {
+        RCLCPP_WARN_THROTTLE(
+          logger, *get_node()->get_clock(), 1000, "Failed to reset reference interface %s",
+          reference_interface->get_name().c_str());
+      }
+    }
   }
   else if (
     std::isfinite(command_msg_.twist.linear.x) && std::isfinite(command_msg_.twist.linear.y) &&
     std::isfinite(command_msg_.twist.angular.z))
   {
-    reference_interfaces_[0] = command_msg_.twist.linear.x;
-    reference_interfaces_[1] = command_msg_.twist.linear.y;
-    reference_interfaces_[2] = command_msg_.twist.angular.z;
+    const std::array<double, 3> new_reference = {
+      {command_msg_.twist.linear.x, command_msg_.twist.linear.y, command_msg_.twist.angular.z}};
+    for (std::size_t i = 0; i < new_reference.size(); i++)
+    {
+      if (!ordered_exported_reference_interfaces_[i]->set_value(new_reference[i]))
+      {
+        RCLCPP_WARN_THROTTLE(
+          logger, *get_node()->get_clock(), 1000, "Failed to set reference interface %s",
+          ordered_exported_reference_interfaces_[i]->get_name().c_str());
+      }
+    }
   }
   else
   {
     RCLCPP_WARN_SKIPFIRST_THROTTLE(
       logger, *get_node()->get_clock(),
-      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.count()),
+      static_cast<rcutils_duration_value_t>(cmd_vel_timeout_.nanoseconds() / 1000000),
       "Command message contains NaNs. Not updating reference interfaces.");
   }
 
@@ -361,15 +352,19 @@ controller_interface::return_type SwerveController::update_and_write_commands(
 {
   auto logger = get_node()->get_logger();
 
-  // If handles are empty (controller deactivated), return early
-  if (wheel_handles_.empty() || axle_handles_.empty())
+  // The modules only exist while the controller is active
+  if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     return controller_interface::return_type::OK;
   }
 
-  double linear_x_cmd = reference_interfaces_[0];
-  double linear_y_cmd = reference_interfaces_[1];
-  double angular_cmd = reference_interfaces_[2];
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  const double linear_x_cmd =
+    ordered_exported_reference_interfaces_[0]->get_optional<double>().value_or(nan);
+  const double linear_y_cmd =
+    ordered_exported_reference_interfaces_[1]->get_optional<double>().value_or(nan);
+  const double angular_cmd =
+    ordered_exported_reference_interfaces_[2]->get_optional<double>().value_or(nan);
 
   if (!std::isfinite(linear_x_cmd) || !std::isfinite(linear_y_cmd) || !std::isfinite(angular_cmd))
   {
@@ -377,115 +372,90 @@ controller_interface::return_type SwerveController::update_and_write_commands(
     return controller_interface::return_type::OK;
   }
 
-  auto wheel_command = swerveDriveKinematics_.compute_wheel_commands(
+  auto wheel_command = swerve_drive_kinematics_.compute_wheel_commands(
     linear_x_cmd, linear_y_cmd, angular_cmd, params_.wheel_radius);
 
-  std::array<double, 4> current_steering_angles{};
-  for (std::size_t i = 0; i < 4; ++i)
+  std::array<double, NUM_MODULES> current_steering_angles{};
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
-    if (axle_handles_[i].has_value())
-    {
-      current_steering_angles[i] = axle_handles_[i]->get_feedback();
-    }
-    else
-    {
-      current_steering_angles[i] = previous_steering_angles_[i];
-    }
+    current_steering_angles[i] = modules_[i].get_steering_angle();
   }
 
   wheel_command =
-    swerveDriveKinematics_.optimize_wheel_commands(wheel_command, current_steering_angles);
+    swerve_drive_kinematics_.optimize_wheel_commands(wheel_command, current_steering_angles);
 
-  std::vector<std::tuple<WheelCommand &, double, std::string>> wheel_data = {
-    {wheel_command[0], params_.front_left_velocity_threshold / params_.wheel_radius,
-     "front_left_wheel"},
-    {wheel_command[1], params_.front_right_velocity_threshold / params_.wheel_radius,
-     "front_right_wheel"},
-    {wheel_command[2], params_.rear_left_velocity_threshold / params_.wheel_radius,
-     "rear_left_wheel"},
-    {wheel_command[3], params_.rear_right_velocity_threshold / params_.wheel_radius,
-     "rear_right_wheel"}};
-
-  for (const auto & [wheel_command_, threshold, label] : wheel_data)
+  // If any wheel is too fast, slow all wheels down by the same factor,
+  // so the robot keeps moving in the commanded direction.
+  double velocity_limit_scale = 1.0;
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
-    if (wheel_command_.drive_velocity > threshold)
+    const double wheel_speed = std::abs(wheel_command[i].drive_velocity);
+    if (wheel_speed > max_wheel_speeds_[i])
     {
-      wheel_command_.drive_velocity = threshold;
+      velocity_limit_scale = std::min(velocity_limit_scale, max_wheel_speeds_[i] / wheel_speed);
     }
   }
 
-  const double min_steering_error = M_PI / 6.0;  // 30 degrees
-  for (std::size_t i = 0; i < 4; i++)
+  // Slow down wheels that are still turning towards their target direction
+  const double cos_full_speed_steering_error = std::cos(FULL_SPEED_STEERING_ERROR);
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
-    double steering_error = std::abs(
+    const double steering_error = std::abs(
       angles::shortest_angular_distance(
         current_steering_angles[i], wheel_command[i].steering_angle));
 
-    double velocity_scale = 1.0;
-    if (steering_error > min_steering_error)
+    double steering_scale = 1.0;
+    if (steering_error > FULL_SPEED_STEERING_ERROR)
     {
-      if (steering_error >= 1.5608)  // ~89.5 degrees
-      {
-        // cos(1.5608) = 0.01
-        velocity_scale = 0.01 / std::cos(min_steering_error);
-      }
-      else
-      {
-        // Scale velocity based on steering error using cosine function
-        velocity_scale = std::cos(steering_error) / std::cos(min_steering_error);
-      }
+      steering_scale = std::max(std::cos(steering_error), MIN_STEERING_SPEED_FACTOR) /
+                       cos_full_speed_steering_error;
     }
 
-    // Apply velocity scaling
-    wheel_command[i].drive_velocity *= velocity_scale;
-    wheel_command[i].drive_angular_velocity *= velocity_scale;
+    wheel_command[i].drive_velocity *= velocity_limit_scale * steering_scale;
+    wheel_command[i].drive_angular_velocity *= velocity_limit_scale * steering_scale;
   }
 
-  for (std::size_t i = 0; i < 4; i++)
+  // When the robot is told to stop, keep the wheels pointing where they are
+  const bool is_stop = (std::fabs(linear_x_cmd) < STOP_EPSILON) &&
+                       (std::fabs(linear_y_cmd) < STOP_EPSILON) &&
+                       (std::fabs(angular_cmd) < STOP_EPSILON);
+
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
-    if (!axle_handles_[i].has_value() || !wheel_handles_[i].has_value())
+    if (!is_stop)
     {
-      throw std::runtime_error(
-        "Axle or Wheel handle is nullptr for: " + axle_joint_names[i] + " / " +
-        wheel_joint_names[i]);
-    }
-
-    const bool is_stop = (std::fabs(linear_x_cmd) < EPS) && (std::fabs(linear_y_cmd) < EPS) &&
-                         (std::fabs(angular_cmd) < EPS);
-
-    if (is_stop)
-    {
-      axle_handles_[i]->set_position(previous_steering_angles_[i]);
-    }
-    else
-    {
-      axle_handles_[i]->set_position(wheel_command[i].steering_angle);
       previous_steering_angles_[i] = wheel_command[i].steering_angle;
     }
-    wheel_handles_[i]->set_velocity(wheel_command[i].drive_angular_velocity);
+
+    if (!modules_[i].set_command(
+          wheel_command[i].drive_angular_velocity, previous_steering_angles_[i]))
+    {
+      RCLCPP_WARN_THROTTLE(
+        logger, *get_node()->get_clock(), 1000, "Failed to write command for %s module",
+        MODULE_LABELS[i]);
+    }
   }
 
   const auto update_dt = time - previous_update_timestamp_;
   previous_update_timestamp_ = time;
 
-  std::array<double, 4> velocity_array{};
-  std::array<double, 4> steering_angle_array{};
-
-  for (std::size_t i = 0; i < 4; ++i)
+  std::array<double, NUM_MODULES> wheel_speeds{};  // m/s
+  std::array<double, NUM_MODULES> steering_angles{};
+  for (std::size_t i = 0; i < NUM_MODULES; i++)
   {
     if (params_.open_loop)
     {
-      velocity_array[i] = wheel_command[i].drive_velocity;
-      steering_angle_array[i] = wheel_command[i].steering_angle;
+      wheel_speeds[i] = wheel_command[i].drive_velocity;
+      steering_angles[i] = wheel_command[i].steering_angle;
     }
     else
     {
-      velocity_array[i] = wheel_handles_[i]->get_feedback() * params_.wheel_radius;
-      steering_angle_array[i] = axle_handles_[i]->get_feedback();
+      wheel_speeds[i] = modules_[i].get_wheel_velocity() * params_.wheel_radius;
+      steering_angles[i] = modules_[i].get_steering_angle();
     }
   }
-  odometry_ = swerveDriveKinematics_.update_odometry(
-    velocity_array, steering_angle_array, update_dt.seconds());
+  odometry_ =
+    swerve_drive_kinematics_.update_odometry(wheel_speeds, steering_angles, update_dt.seconds());
 
   tf2::Quaternion orientation;
   orientation.setRPY(0.0, 0.0, odometry_.theta);
@@ -518,90 +488,72 @@ controller_interface::return_type SwerveController::update_and_write_commands(
     transform.transform.rotation.w = orientation.w();
     realtime_odometry_transform_publisher_->try_publish(odometry_transform_message_);
   }
-  previous_publish_timestamp_ = time;
+
   return controller_interface::return_type::OK;
 }
 
 CallbackReturn SwerveController::on_deactivate(const rclcpp_lifecycle::State &)
 {
-  subscriber_is_active_ = false;
   halt();
-  wheel_handles_.clear();
-  axle_handles_.clear();
+  modules_.clear();
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn SwerveController::on_cleanup(const rclcpp_lifecycle::State &)
 {
-  if (!reset())
-  {
-    return CallbackReturn::ERROR;
-  }
-
-  TwistStamped empty_twist;
-  received_velocity_msg_.set(empty_twist);
+  reset();
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn SwerveController::on_error(const rclcpp_lifecycle::State &)
 {
-  if (!reset())
-  {
-    return CallbackReturn::ERROR;
-  }
+  reset();
   return CallbackReturn::SUCCESS;
 }
 
-bool SwerveController::reset()
+void SwerveController::reset()
 {
-  subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
 
   TwistStamped zero_twist;
   zero_twist.header.stamp = get_node()->get_clock()->now();
-  zero_twist.twist.linear.x = 0.0;
-  zero_twist.twist.linear.y = 0.0;
-  zero_twist.twist.angular.z = 0.0;
   command_msg_ = zero_twist;
   received_velocity_msg_.set(zero_twist);
-  is_halted_ = false;
-  return true;
-}
-
-CallbackReturn SwerveController::on_shutdown(const rclcpp_lifecycle::State &)
-{
-  return CallbackReturn::SUCCESS;
 }
 
 void SwerveController::halt()
 {
-  for (std::size_t i = 0; i < wheel_handles_.size(); ++i)
+  for (std::size_t i = 0; i < modules_.size(); i++)
   {
-    wheel_handles_[i]->set_velocity(0.0);
-  }
-  for (std::size_t i = 0; i < axle_handles_.size(); ++i)
-  {
-    axle_handles_[i]->set_position(0.0);
+    if (!modules_[i].set_command(0.0, 0.0))
+    {
+      RCLCPP_WARN(get_node()->get_logger(), "Failed to stop %s module", MODULE_LABELS[i]);
+    }
   }
 }
 
 bool SwerveController::on_set_chained_mode(bool /*chained_mode*/) { return true; }
 
-std::vector<hardware_interface::CommandInterface> SwerveController::on_export_reference_interfaces()
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+SwerveController::on_export_reference_interfaces_list()
 {
-  reference_interfaces_.resize(3, std::numeric_limits<double>::quiet_NaN());
+  const std::vector<std::string> reference_interface_names = {
+    "/linear/x", "/linear/y", "/angular/z"};
 
-  std::vector<hardware_interface::CommandInterface> reference_interfaces;
-  reference_interfaces.reserve(reference_interfaces_.size());
+  std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
+  reference_interfaces.reserve(reference_interface_names.size());
 
-  std::vector<std::string> reference_interface_names = {"/linear/x", "/linear/y", "/angular/z"};
-
-  for (size_t i = 0; i < reference_interfaces_.size(); ++i)
+  for (const auto & name : reference_interface_names)
   {
-    reference_interfaces.push_back(
-      hardware_interface::CommandInterface(
-        get_node()->get_name() + reference_interface_names[i], hardware_interface::HW_IF_VELOCITY,
-        &reference_interfaces_[i]));
+    auto reference_interface = std::make_shared<hardware_interface::CommandInterface>(
+      get_node()->get_name() + name, hardware_interface::HW_IF_VELOCITY);
+    if (!reference_interface->set_value(std::numeric_limits<double>::quiet_NaN()))
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(), "Failed to initialize reference interface %s",
+        reference_interface->get_name().c_str());
+    }
+    reference_interfaces.push_back(reference_interface);
   }
 
   return reference_interfaces;

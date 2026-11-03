@@ -20,6 +20,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 #include "hardware_interface/handle.hpp"
@@ -54,24 +55,17 @@ class TestableSwerveDriveController : public SwerveController
   FRIEND_TEST(SwerveDriveControllerTest, configure_fails_with_missing_wheels);
   FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_no_namespace);
   FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_with_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_no_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_no_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_no_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_false_set_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_true_set_namespace);
-  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_true_set_namespace);
+  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_no_namespace);
+  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_no_namespace);
+  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_prefix_set_namespace);
+  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_blank_prefix_set_namespace);
+  FRIEND_TEST(SwerveDriveControllerTest, configure_succeeds_tf_tilde_prefix_set_namespace);
   FRIEND_TEST(SwerveDriveControllerTest, activate_fails_without_resources_assigned);
   FRIEND_TEST(SwerveDriveControllerTest, activate_succeeds_with_resources_assigned);
   FRIEND_TEST(SwerveDriveControllerTest, deactivate_then_activate);
   FRIEND_TEST(SwerveDriveControllerTest, command_with_zero_timestamp_is_accepted_with_warning);
 
 public:
-  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
-  get_realtime_odometry_publisher() const
-  {
-    return realtime_odometry_publisher_;
-  }
-
   /**
    * @brief wait_for_twist block until a new twist is received.
    * Requires that the executor is not spinned elsewhere between the
@@ -176,71 +170,49 @@ protected:
   {
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     state_ifs.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
-    state_itfs_.clear();
-    state_itfs_.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     command_ifs.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
+
+    // The interfaces own their values, so keep them alive in member vectors
+    state_itfs_.clear();
+    state_itfs_.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
     command_itfs_.clear();
     command_itfs_.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
-
-    // Clear and reserve storage for shared_ptrs to keep interfaces alive
-    state_interface_ptrs_.clear();
-    state_interface_ptrs_.reserve(wheel_vel_states_.size() + steering_pos_states_.size());
-    command_interface_ptrs_.clear();
-    command_interface_ptrs_.reserve(wheel_vel_cmds_.size() + steering_pos_cmds_.size());
 
     // Wheel velocity interfaces
     for (size_t i = 0; i < wheel_vel_states_.size(); ++i)
     {
-      // Create state interface for member storage
-      state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
-          wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]));
+      auto state_itf =
+        std::make_shared<hardware_interface::StateInterface>(wheel_joint_names_[i], HW_IF_VELOCITY);
+      std::ignore = state_itf->set_value(wheel_vel_states_[i]);
+      state_itfs_.push_back(state_itf);
+      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_itf));
 
-      // Create shared pointer for loaned interface and store in member
-      auto state_ptr = std::make_shared<hardware_interface::StateInterface>(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_states_[i]);
-      state_interface_ptrs_.push_back(state_ptr);
-      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_ptr));
-
-      // Create command interface for member storage
-      command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
-          wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]));
-
-      // Create shared pointer for loaned interface and store in member
-      auto cmd_ptr = std::make_shared<hardware_interface::CommandInterface>(
-        wheel_joint_names_[i], HW_IF_VELOCITY, &wheel_vel_cmds_[i]);
-      command_interface_ptrs_.push_back(cmd_ptr);
-      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(cmd_ptr));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        wheel_joint_names_[i], HW_IF_VELOCITY);
+      std::ignore = command_itf->set_value(wheel_vel_cmds_[i]);
+      command_itfs_.push_back(command_itf);
+      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(command_itf));
     }
 
     // Steering position interfaces
     for (size_t i = 0; i < steering_pos_states_.size(); ++i)
     {
-      // Create state interface for member storage
-      state_itfs_.emplace_back(
-        hardware_interface::StateInterface(
-          steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        steering_joint_names_[i], HW_IF_POSITION);
+      std::ignore = state_itf->set_value(steering_pos_states_[i]);
+      state_itfs_.push_back(state_itf);
+      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_itf));
 
-      // Create shared pointer for loaned interface and store in member
-      auto state_ptr = std::make_shared<hardware_interface::StateInterface>(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_states_[i]);
-      state_interface_ptrs_.push_back(state_ptr);
-      state_ifs.emplace_back(hardware_interface::LoanedStateInterface(state_ptr));
-
-      // Create command interface for member storage
-      command_itfs_.emplace_back(
-        hardware_interface::CommandInterface(
-          steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]));
-
-      // Create shared pointer for loaned interface and store in member
-      auto cmd_ptr = std::make_shared<hardware_interface::CommandInterface>(
-        steering_joint_names_[i], HW_IF_POSITION, &steering_pos_cmds_[i]);
-      command_interface_ptrs_.push_back(cmd_ptr);
-      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(cmd_ptr));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        steering_joint_names_[i], HW_IF_POSITION);
+      std::ignore = command_itf->set_value(steering_pos_cmds_[i]);
+      command_itfs_.push_back(command_itf);
+      command_ifs.emplace_back(hardware_interface::LoanedCommandInterface(command_itf));
     }
 
+    // The controller manager normally does this after configure
+    controller_->export_reference_interfaces();
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
@@ -310,12 +282,8 @@ protected:
   std::vector<double> steering_pos_states_ = {0.0, 0.0, 0.0, 0.0};
   std::vector<double> steering_pos_cmds_ = {0.0, 0.0, 0.0, 0.0};
 
-  std::vector<hardware_interface::StateInterface> state_itfs_;
-  std::vector<hardware_interface::CommandInterface> command_itfs_;
-
-  // Shared pointers to keep interfaces alive for loaned interfaces
-  std::vector<std::shared_ptr<hardware_interface::StateInterface>> state_interface_ptrs_;
-  std::vector<std::shared_ptr<hardware_interface::CommandInterface>> command_interface_ptrs_;
+  std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
+  std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
   std::unique_ptr<CtrlType> controller_;
   rclcpp::Node::SharedPtr cmd_vel_publisher_node_;
