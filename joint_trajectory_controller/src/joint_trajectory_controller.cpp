@@ -1195,6 +1195,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
     }
   }
 
+  // Clear the ordered interfaces: they may hold references to loans already released, e.g.
+  // when on_deactivate returned early or a previous activation failed. Capacity is kept.
+  for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
+  {
+    joint_command_interface_[index].clear();
+    joint_state_interface_[index].clear();
+  }
+
   // order all joints in the storage
   for (const auto & interface : params_.command_interfaces)
   {
