@@ -46,10 +46,10 @@ protected:
   std::unique_ptr<FriendGripperController> controller_;
   // dummy joint state values used for tests
   const std::string joint_name_ = "joint1";
-  std::vector<double> joint_states_ = {1.1, 2.1};
-  std::vector<double> joint_commands_ = {3.1};
-  std::vector<double> joint_effort_commands_ = {0.0};
-  std::vector<double> joint_speed_commands_ = {0.0};
+  const std::vector<double> joint_states_ = {1.1, 2.1};
+  const std::vector<double> joint_commands_ = {3.1};
+  const std::vector<double> joint_effort_commands_ = {0.0};
+  const std::vector<double> joint_speed_commands_ = {0.0};
   hardware_interface::StateInterface::SharedPtr joint_1_pos_state_;
   hardware_interface::StateInterface::SharedPtr joint_1_vel_state_;
   hardware_interface::CommandInterface::SharedPtr joint_1_cmd_;

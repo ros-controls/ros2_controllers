@@ -253,7 +253,7 @@ protected:
   std::unique_ptr<TestableDiffDriveController> controller_;
 
   std::vector<double> position_values_ = {0.1, 0.2};
-  std::vector<double> velocity_values_ = {0.01, 0.02};
+  const std::vector<double> velocity_values_ = {0.01, 0.02};
 
   hardware_interface::StateInterface::SharedPtr left_wheel_pos_state_;
   hardware_interface::StateInterface::SharedPtr right_wheel_pos_state_;

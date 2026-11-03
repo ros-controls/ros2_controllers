@@ -51,7 +51,7 @@ protected:
 
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"wheel_left", "wheel_right"};
-  std::vector<double> joint_states_ = {1.1, 2.2};
+  const std::vector<double> joint_states_ = {1.1, 2.2};
 
   StateInterface::SharedPtr joint_1_pos_;
   StateInterface::SharedPtr joint_2_pos_;
