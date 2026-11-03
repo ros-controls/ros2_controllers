@@ -23,6 +23,7 @@
 # upper is an optional attribute, so I don't understand what's going on
 # See comments in https://github.com/ros/urdfdom/issues/36
 
+import threading
 import xml.dom.minidom
 from math import pi
 
@@ -30,19 +31,22 @@ import rclpy
 from std_msgs.msg import String
 
 description = ""
+_description_received = threading.Event()
 
 
 def callback(msg):
     global description
     description = msg.data
+    _description_received.set()
 
 
 def subscribe_to_robot_description(node, key="robot_description"):
+    """Create and return the robot_description subscription; caller owns its lifetime."""
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    return node.create_subscription(String, key, callback, qos_profile)
 
 
 def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True):
@@ -163,19 +167,25 @@ def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True
     return free_joints
 
 
-def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+def get_joint_limits(node, joints_names, use_smallest_joint_limits=True, timeout_sec=10.0):
     """
     ROS-aware wrapper around parse_joint_limits.
 
     Waits for the robot_description topic to publish, then delegates all
     real parsing work to parse_joint_limits(). This separation means
     parse_joint_limits() can be tested without any ROS infrastructure.
+
+    node's own spin/executor is never touched here: node may be context.node,
+    which rqt_gui_py already spins continuously on another thread, so the
+    robot_description subscription callback (set up by
+    subscribe_to_robot_description()) is relied on to deliver the message and
+    signal _description_received instead.
     """
-    count = 0
-    while description == "" and count < 10:
+    if description == "":
         print("Waiting for the robot_description!")
-        count += 1
-        rclpy.spin_once(node, timeout_sec=1.0)
+        _description_received.clear()
+        if description == "":
+            _description_received.wait(timeout=timeout_sec)
 
     if description == "":
         return {}
