@@ -120,3 +120,31 @@ def test_update_cmd_cb_sends_nothing_before_first_controller_state(monkeypatch):
     JointTrajectoryController._update_cmd_cb(plugin)
 
     plugin._cmd_pub.publish.assert_not_called()
+
+
+def test_load_jtc_logs_joint_name_if_widget_creation_fails(monkeypatch):
+    def failing_editor(min_val, max_val):
+        raise AssertionError("min_val < max_val")
+
+    monkeypatch.setattr(jtc_module, "DoubleEditor", failing_editor)
+    jtc = SimpleNamespace(name="arm_controller", required_state_interfaces=["joint1/position"])
+    plugin = SimpleNamespace(
+        _running_jtc=[jtc],
+        _jtc_name="arm_controller",
+        _cm_ns="/controller_manager",
+        _joint_pos={},
+        _robot_joint_limits={"joint1": {"min_position": 1.0, "max_position": 1.0}},
+        _widget=SimpleNamespace(joint_group=Mock()),
+        _node=Mock(),
+        _on_jtc_enabled=Mock(),
+        _state_cb=Mock(),
+        _on_joint_state_change=Mock(),
+        jointStateChanged=Mock(),
+    )
+
+    JointTrajectoryController._load_jtc(plugin)
+
+    plugin._node.get_logger().error.assert_called_once()
+    message = plugin._node.get_logger().error.call_args.args[0]
+    assert "joint1" in message
+    assert "min_val < max_val" in message
