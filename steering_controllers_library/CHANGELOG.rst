@@ -2,6 +2,11 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: Add missing includes (`#2706 <https://github.com/ros-controls/ros2_controllers/issues/2706>`_)
+* Contributors: Christoph Fröhlich
+
 6.10.0 (2026-10-05)
 -------------------
 * Add closed-form steering integration tests (`#2567 <https://github.com/ros-controls/ros2_controllers/issues/2567>`_)

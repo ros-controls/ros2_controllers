@@ -3,6 +3,9 @@ Changelog for package battery_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 6.10.0 (2026-10-05)
 -------------------
 

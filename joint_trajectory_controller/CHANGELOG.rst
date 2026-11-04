@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix memory access crashes in joint trajectory controller (`#2705 <https://github.com/ros-controls/ros2_controllers/issues/2705>`_)
+* test(joint_trajectory_controller): fix feedback index boundary (`#2689 <https://github.com/ros-controls/ros2_controllers/issues/2689>`_)
+* [JTC] Clear ordered interfaces before re-ordering them in on_activate (`#2692 <https://github.com/ros-controls/ros2_controllers/issues/2692>`_)
+* Contributors: Luke Pitt, Thibault Poignonec, anwei
+
 6.10.0 (2026-10-05)
 -------------------
 * feat: migrate diff_drive_controller and joint_trajectory_controller to new RealtimePublisher constructor (`#2576 <https://github.com/ros-controls/ros2_controllers/issues/2576>`_)

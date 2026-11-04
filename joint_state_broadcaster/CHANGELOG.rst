@@ -2,6 +2,12 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix: Add missing includes (`#2706 <https://github.com/ros-controls/ros2_controllers/issues/2706>`_)
+* Add <numeric> for std::accumulate (`#2695 <https://github.com/ros-controls/ros2_controllers/issues/2695>`_)
+* Contributors: Christoph Fröhlich
+
 6.10.0 (2026-10-05)
 -------------------
 * test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)

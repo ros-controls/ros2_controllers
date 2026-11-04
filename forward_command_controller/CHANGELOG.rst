@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 6.10.0 (2026-10-05)
 -------------------
 * feat: warn when ForwardCommandController receives commands while inactive (`#2488 <https://github.com/ros-controls/ros2_controllers/issues/2488>`_)
