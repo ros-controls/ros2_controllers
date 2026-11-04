@@ -2,6 +2,12 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Setting command interfaces to 0 instead of NaN on deactivate (mecanum_drive_controller) (backport `#2578 <https://github.com/ros-controls/ros2_controllers/issues/2578>`_) (`#2704 <https://github.com/ros-controls/ros2_controllers/issues/2704>`_)
+  Co-authored-by: nathandunk <n8dunk@gmail.com>
+* Contributors: mergify[bot]
+
 5.18.0 (2026-10-05)
 -------------------
 * Fix/mecanum zero all wheels (backport `#2624 <https://github.com/ros-controls/ros2_controllers/issues/2624>`_) (`#2640 <https://github.com/ros-controls/ros2_controllers/issues/2640>`_)

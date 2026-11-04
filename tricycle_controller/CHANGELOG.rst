@@ -2,6 +2,11 @@
 Changelog for package tricycle_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix tricycle controller interface rebinding on activation (backport `#2697 <https://github.com/ros-controls/ros2_controllers/issues/2697>`_) (`#2717 <https://github.com/ros-controls/ros2_controllers/issues/2717>`_)
+* Contributors: mergify[bot]
+
 5.18.0 (2026-10-05)
 -------------------
 * test: cleanup controller fixture member variables (backport `#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_) (`#2566 <https://github.com/ros-controls/ros2_controllers/issues/2566>`_)
