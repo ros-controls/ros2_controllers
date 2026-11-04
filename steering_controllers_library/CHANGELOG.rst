@@ -2,8 +2,8 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.18.1 (2026-11-04)
+-------------------
 * fix: Add missing includes (backport `#2706 <https://github.com/ros-controls/ros2_controllers/issues/2706>`_) (`#2711 <https://github.com/ros-controls/ros2_controllers/issues/2711>`_)
 * Contributors: mergify[bot]
 
