@@ -104,3 +104,41 @@ def test_restore_settings_selects_saved_jtc_once_controller_list_arrives(monkeyp
     plugin._update_jtc_list()  # next timer tick, response has arrived
 
     assert plugin._widget.jtc_combo.currentText() == "arm_controller"
+
+
+def test_restore_settings_selects_saved_jtc_once_robot_description_arrives(monkeypatch):
+    def fake_update_combo(combo, names):
+        combo.items = list(names)
+
+    joint_limits = iter([{}, {"joint1": {}}])  # first call: no robot_description received yet
+    monkeypatch.setattr(jtc_module, "update_combo", fake_update_combo)
+    monkeypatch.setattr(jtc_module, "get_joint_limits", lambda *args: next(joint_limits))
+    jtc = SimpleNamespace(
+        name="arm_controller",
+        type="joint_trajectory_controller/JointTrajectoryController",
+        state="active",
+        required_state_interfaces=["joint1/position"],
+    )
+    plugin = SimpleNamespace(
+        _list_controllers=lambda: [jtc],
+        _widget=SimpleNamespace(
+            cm_combo=_FakeCombo(["/controller_manager"]), jtc_combo=_FakeCombo()
+        ),
+        _node=None,
+        _robot_joint_limits={},
+        _running_jtc=[],
+        _pending_jtc_name=None,
+        _update_cm_list=lambda: None,
+    )
+    plugin._running_jtc_info = lambda: JointTrajectoryController._running_jtc_info(plugin)
+    plugin._update_jtc_list = lambda: JointTrajectoryController._update_jtc_list(plugin)
+    settings = SimpleNamespace(
+        value={"cm_ns": "/controller_manager", "jtc_name": "arm_controller"}.get
+    )
+
+    JointTrajectoryController.restore_settings(plugin, None, settings)
+    assert plugin._widget.jtc_combo.currentText() == ""
+
+    plugin._update_jtc_list()  # next timer tick, robot_description has arrived
+
+    assert plugin._widget.jtc_combo.currentText() == "arm_controller"

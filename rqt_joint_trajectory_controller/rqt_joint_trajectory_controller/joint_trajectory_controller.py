@@ -296,6 +296,8 @@ class JointTrajectoryController(Plugin):
         # Update widget
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
+        if running_jtc and not self._robot_joint_limits:
+            return  # keep the pending selection until the robot_description is received
         # Only the first known controller list is checked, as before the list became async
         pending_jtc_name, self._pending_jtc_name = self._pending_jtc_name, None
         if pending_jtc_name in valid_jtc_names:
