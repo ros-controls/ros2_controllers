@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.43.1 (2026-11-04)
+-------------------
 * rqt-jtc: reuse shared rqt node (backport `#2558 <https://github.com/ros-controls/ros2_controllers/issues/2558>`_) (`#2729 <https://github.com/ros-controls/ros2_controllers/issues/2729>`_)
 * Contributors: mergify[bot]
 

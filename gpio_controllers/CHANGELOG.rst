@@ -2,8 +2,8 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+4.43.1 (2026-11-04)
+-------------------
 * Fix userdocs for admittance_controller topic name and gpio_controllers message type (backport `#2701 <https://github.com/ros-controls/ros2_controllers/issues/2701>`_) (`#2718 <https://github.com/ros-controls/ros2_controllers/issues/2718>`_)
 * Contributors: mergify[bot]
 
