@@ -2,6 +2,9 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.43.0 (2026-10-05)
 -------------------
 * Warn once per velocity command timeout in diff_drive_controller (backport `#2620 <https://github.com/ros-controls/ros2_controllers/issues/2620>`_) (`#2628 <https://github.com/ros-controls/ros2_controllers/issues/2628>`_)

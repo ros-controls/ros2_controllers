@@ -2,6 +2,11 @@
 Changelog for package admittance_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix userdocs for admittance_controller topic name and gpio_controllers message type (backport `#2701 <https://github.com/ros-controls/ros2_controllers/issues/2701>`_) (`#2718 <https://github.com/ros-controls/ros2_controllers/issues/2718>`_)
+* Contributors: mergify[bot]
+
 4.43.0 (2026-10-05)
 -------------------
 * test: cleanup controller fixture member variables (backport `#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_) (`#2565 <https://github.com/ros-controls/ros2_controllers/issues/2565>`_)

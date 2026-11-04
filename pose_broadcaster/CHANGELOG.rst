@@ -2,6 +2,9 @@
 Changelog for package pose_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 4.43.0 (2026-10-05)
 -------------------
 * Stop pose TF output after disabling it on reconfigure (backport `#2686 <https://github.com/ros-controls/ros2_controllers/issues/2686>`_) (`#2687 <https://github.com/ros-controls/ros2_controllers/issues/2687>`_)

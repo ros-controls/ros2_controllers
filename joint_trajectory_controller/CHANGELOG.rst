@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix memory access crashes in joint trajectory controller (backport `#2705 <https://github.com/ros-controls/ros2_controllers/issues/2705>`_) (`#2734 <https://github.com/ros-controls/ros2_controllers/issues/2734>`_)
+* [JTC] Clear ordered interfaces before re-ordering them in on_activate (backport `#2692 <https://github.com/ros-controls/ros2_controllers/issues/2692>`_) (`#2708 <https://github.com/ros-controls/ros2_controllers/issues/2708>`_)
+* Contributors: mergify[bot]
+
 4.43.0 (2026-10-05)
 -------------------
 * fix(jtc): Use trySetFeedback for goal handle feedback (backport `#2610 <https://github.com/ros-controls/ros2_controllers/issues/2610>`_) (`#2625 <https://github.com/ros-controls/ros2_controllers/issues/2625>`_)
