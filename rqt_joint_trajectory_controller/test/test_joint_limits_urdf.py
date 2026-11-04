@@ -537,7 +537,7 @@ def test_subscribe_to_robot_description_returns_owned_subscription(_clean_descri
 def test_get_joint_limits_does_not_call_spin_once(_node, _no_spin_once):
     joint_limits_urdf.description = _minimal_urdf()
 
-    result = get_joint_limits(_node, ["j1"])
+    result = get_joint_limits(_node)
 
     assert "j1" in result
     _no_spin_once.assert_not_called()
@@ -549,7 +549,7 @@ def test_get_joint_limits_returns_empty_dict_immediately_without_description(_no
     robot_description. The plugin retries on its next controller list update.
     """
     start = time.monotonic()
-    result = get_joint_limits(_node, ["j1"])
+    result = get_joint_limits(_node)
 
     assert result == {}
     assert time.monotonic() - start < 1.0
@@ -557,8 +557,32 @@ def test_get_joint_limits_returns_empty_dict_immediately_without_description(_no
 
 
 def test_get_joint_limits_uses_description_received_later(_node):
-    assert get_joint_limits(_node, ["j1"]) == {}
+    assert get_joint_limits(_node) == {}
 
     robot_description_callback(_FakeMsg(_minimal_urdf()))
 
-    assert "j1" in get_joint_limits(_node, ["j1"])
+    assert "j1" in get_joint_limits(_node)
+
+
+def test_get_joint_limits_includes_incomplete_limits_of_all_joints(_node):
+    """
+    The limits are read once for all controllers, including those activated later,
+    so joints with incomplete limits must not depend on which joints are requested.
+    """
+    robot_description_callback(
+        _FakeMsg(
+            _robot(
+                _revolute("j1", -1.0, 1.0, 1.0),
+                '<link name="j2_link"/>'
+                '<joint name="j2" type="revolute">'
+                '<parent link="base"/><child link="j2_link"/>'
+                '<limit velocity="1.0" effort="5"/>'
+                "</joint>",
+            )
+        )
+    )
+
+    result = get_joint_limits(_node)
+
+    assert result["j1"]["has_position_limits"]
+    assert not result["j2"]["has_position_limits"]
