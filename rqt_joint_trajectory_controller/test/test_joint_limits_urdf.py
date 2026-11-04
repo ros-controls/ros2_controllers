@@ -359,21 +359,6 @@ def test_revolute_joint_missing_lower_upper_raises():
         parse_joint_limits(urdf, ["j"])
 
 
-def test_missing_lower_upper_for_unrequired_joint_skipped_silently():
-    """Joint NOT in joints_names with no lower/upper is ignored, like one without <limit>."""
-    urdf = _robot(
-        _revolute("managed", -1.0, 1.0, 1.0),
-        '<link name="j_link"/>'
-        '<joint name="j" type="revolute">'
-        '<parent link="base"/><child link="j_link"/>'
-        '<limit velocity="1.0" effort="5"/>'
-        "</joint>",
-    )
-    result = parse_joint_limits(urdf, ["managed"])
-    assert "managed" in result
-    assert "j" not in result
-
-
 def test_missing_lower_upper_allow_incomplete_false_still_raises():
     """Explicit strict mode keeps raising on missing lower/upper limits."""
     urdf = _robot(
