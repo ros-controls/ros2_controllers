@@ -157,6 +157,7 @@ class JointTrajectoryController(Plugin):
         self._joint_names = []  # Ordered list of selected controller joints
         self._robot_joint_limits = {}  # Lazily evaluated on first use
         self._running_jtc = []  # Running controllers of the last controller list update
+        self._pending_jtc_name = None  # Restored controller to select once the list is known
 
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
@@ -222,16 +223,10 @@ class JointTrajectoryController(Plugin):
         try:
             idx = cm_list.index(cm_ns)
             cm_combo.setCurrentIndex(idx)
-            # Restore last session's controller, if running
+            # Restore last session's controller, if running. The controller list arrives
+            # asynchronously, so _update_jtc_list() selects it once the list is known.
+            self._pending_jtc_name = instance_settings.value("jtc_name")
             self._update_jtc_list()
-            jtc_name = instance_settings.value("jtc_name")
-            jtc_combo = self._widget.jtc_combo
-            jtc_list = [jtc_combo.itemText(i) for i in range(jtc_combo.count())]
-            try:
-                idx = jtc_list.index(jtc_name)
-                jtc_combo.setCurrentIndex(idx)
-            except ValueError:
-                pass
         except ValueError:
             pass
 
@@ -301,6 +296,13 @@ class JointTrajectoryController(Plugin):
         # Update widget
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
+        # Only the first known controller list is checked, as before the list became async
+        pending_jtc_name, self._pending_jtc_name = self._pending_jtc_name, None
+        if pending_jtc_name in valid_jtc_names:
+            self._widget.jtc_combo.setCurrentIndex(
+                self._widget.jtc_combo.findText(pending_jtc_name)
+            )
+
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
@@ -311,6 +313,7 @@ class JointTrajectoryController(Plugin):
 
     def _on_cm_change(self, cm_ns):
         self._cm_ns = cm_ns
+        self._pending_jtc_name = None  # belongs to the previously selected controller manager
         self._unregister_list_controllers()
         if cm_ns:
             self._list_controllers = ControllerLister(

@@ -45,3 +45,62 @@ def test_load_jtc_ignores_controller_that_is_not_running_anymore():
     JointTrajectoryController._load_jtc(plugin)
 
     assert plugin._joint_names == []
+
+
+class _FakeCombo:
+    """Minimal QComboBox stand-in: a list of items and a selected index."""
+
+    def __init__(self, items=()):
+        self.items = list(items)
+        self.index = 0 if self.items else -1
+
+    def count(self):
+        return len(self.items)
+
+    def itemText(self, i):
+        return self.items[i]
+
+    def findText(self, text):
+        return self.items.index(text) if text in self.items else -1
+
+    def setCurrentIndex(self, i):
+        self.index = i
+
+    def currentText(self):
+        return self.items[self.index] if self.index >= 0 else ""
+
+
+def test_restore_settings_selects_saved_jtc_once_controller_list_arrives(monkeypatch):
+    def fake_update_combo(combo, names):
+        combo.items = list(names)
+
+    monkeypatch.setattr(jtc_module, "update_combo", fake_update_combo)
+    jtc = SimpleNamespace(
+        name="arm_controller",
+        type="joint_trajectory_controller/JointTrajectoryController",
+        state="active",
+        required_state_interfaces=["joint1/position"],
+    )
+    responses = iter([None, [jtc]])  # first call: no response received yet
+    plugin = SimpleNamespace(
+        _list_controllers=lambda: next(responses),
+        _widget=SimpleNamespace(
+            cm_combo=_FakeCombo(["/controller_manager"]), jtc_combo=_FakeCombo()
+        ),
+        _robot_joint_limits={"joint1": {}},
+        _running_jtc=[],
+        _pending_jtc_name=None,
+        _update_cm_list=lambda: None,
+    )
+    plugin._running_jtc_info = lambda: JointTrajectoryController._running_jtc_info(plugin)
+    plugin._update_jtc_list = lambda: JointTrajectoryController._update_jtc_list(plugin)
+    settings = SimpleNamespace(
+        value={"cm_ns": "/controller_manager", "jtc_name": "arm_controller"}.get
+    )
+
+    JointTrajectoryController.restore_settings(plugin, None, settings)
+    assert plugin._widget.jtc_combo.currentText() == ""
+
+    plugin._update_jtc_list()  # next timer tick, response has arrived
+
+    assert plugin._widget.jtc_combo.currentText() == "arm_controller"
