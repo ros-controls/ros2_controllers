@@ -2,8 +2,8 @@
 Changelog for package mecanum_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+6.10.1 (2026-11-04)
+-------------------
 * [mecanum_drive_controller] Setting command interfaces to 0 instead of NaN on deactivate (`#2578 <https://github.com/ros-controls/ros2_controllers/issues/2578>`_)
 * Contributors: nathandunk
 
