@@ -519,7 +519,7 @@ class JointTrajectoryController(Plugin):
             self._cmd_pub.publish(traj)
         except Exception as e:
             # Ignore teardown races on Ctrl+C where context/publisher may vanish mid-callback.
-            if "context is not valid" in str(e) or "destruction was requested" in str(e):
+            if is_shutdown_context_error(e):
                 self._update_cmd_timer.stop()
                 return
             raise
