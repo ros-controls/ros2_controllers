@@ -175,6 +175,9 @@ def parse_joint_limits(
                     "max_velocity": 1.0,
                 }
                 continue
+            elif name not in joints_names:
+                # Joint is not managed by this controller, so we skip silently
+                continue
             else:
                 raise Exception(
                     f"Missing lower/upper position limits for the joint"
