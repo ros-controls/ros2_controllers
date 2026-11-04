@@ -156,6 +156,7 @@ class JointTrajectoryController(Plugin):
         self._joint_pos = {}  # name->pos map for joints of selected controller
         self._joint_names = []  # Ordered list of selected controller joints
         self._robot_joint_limits = {}  # Lazily evaluated on first use
+        self._running_jtc = []  # Running controllers of the last controller list update
 
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
@@ -275,6 +276,9 @@ class JointTrajectoryController(Plugin):
                 self._update_jtc_list_timer.stop()
                 return
             raise
+        if running_jtc is None:
+            return  # keep the selection until the controller list is known again
+        self._running_jtc = running_jtc
 
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
@@ -380,10 +384,10 @@ class JointTrajectoryController(Plugin):
 
     def _load_jtc(self):
         # Initialize joint data corresponding to selected controller
-        running_jtc = self._running_jtc_info()
-        self._joint_names = next(
-            _jtc_joint_names(x) for x in running_jtc if x.name == self._jtc_name
-        )
+        jtc_info = next((x for x in self._running_jtc if x.name == self._jtc_name), None)
+        if jtc_info is None:
+            return  # stopped since the last controller list update
+        self._joint_names = _jtc_joint_names(jtc_info)
         for name in self._joint_names:
             self._joint_pos[name] = {}
 
@@ -456,6 +460,8 @@ class JointTrajectoryController(Plugin):
         from .utils import filter_by_type, filter_by_state
 
         controller_list = self._list_controllers()
+        if controller_list is None:
+            return None
         jtc_list = filter_by_type(
             controller_list, "JointTrajectoryController", match_substring=True
         )
