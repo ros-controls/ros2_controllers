@@ -20,7 +20,7 @@ get_controller_managers(), ControllerManagerLister and ControllerLister used
 to each create their own private rclpy node. They now take a node supplied by
 the caller (e.g. rqt's shared context.node) and never spin it themselves.
 These tests exercise that contract -- including ControllerLister's owned
-service client lifetime (close()) and its context-shutdown-aware wait -- with
+service client lifetime (close()) and its non-blocking requests -- with
 minimal fake node/client/future stubs, so no live ROS node, context, or
 executor is involved. In particular, none of these tests call rclpy.init(),
 so any regression that reintroduces private node creation would fail here
@@ -30,7 +30,6 @@ Run with:
     pytest rqt_joint_trajectory_controller/test/test_utils.py -v
 """
 
-import threading
 import time
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -99,6 +98,9 @@ class _FakeFuture:
 
     def result(self):
         return self._result
+
+    def done(self):
+        return self._done
 
     def cancelled(self):
         return self._cancelled
@@ -247,7 +249,7 @@ def test_controller_manager_lister_uses_injected_node(_rclpy_ok):
 
 
 # ---------------------------------------------------------------------------
-# ControllerLister: node injection, and Event-based (non-spinning) wait
+# ControllerLister: node injection, and non-blocking requests
 # ---------------------------------------------------------------------------
 
 
@@ -266,27 +268,28 @@ def test_controller_lister_creates_client_on_injected_node():
     ]
 
 
-def test_controller_lister_call_waits_for_future_without_spinning(_no_spin):
+def test_controller_lister_call_returns_response_on_later_call_without_spinning(_no_spin):
     node = _FakeControllerListerNode()
     list_controllers = utils.ControllerLister(node)
-    fake_result = SimpleNamespace(controller=["ctrl_a", "ctrl_b"])
 
-    def deliver_after_delay():
-        while node.client.last_future is None:
-            time.sleep(0.01)
-        time.sleep(0.05)
-        node.client.last_future.complete(fake_result)
+    # __call__() runs in the GUI thread, it must not wait for the response
+    assert list_controllers() is None
+    node.client.last_future.complete(SimpleNamespace(controller=["ctrl_a", "ctrl_b"]))
 
-    thread = threading.Thread(target=deliver_after_delay, daemon=True)
-    thread.start()
-
-    result = list_controllers()
-    thread.join(timeout=1.0)
-
-    assert result == ["ctrl_a", "ctrl_b"]
+    assert list_controllers() == ["ctrl_a", "ctrl_b"]
     spin_once, spin_until_future_complete = _no_spin
     spin_once.assert_not_called()
     spin_until_future_complete.assert_not_called()
+
+
+def test_controller_lister_keeps_at_most_one_request_in_flight():
+    node = _FakeControllerListerNode()
+    list_controllers = utils.ControllerLister(node)
+
+    for _ in range(3):
+        list_controllers()
+
+    assert len(node.client.requests) == 1
 
 
 def test_controller_lister_call_returns_empty_list_on_shutdown_context_error():
@@ -341,62 +344,29 @@ def test_repeated_controller_lister_replacement_does_not_accumulate_clients():
     assert node.client_instances[-1] not in node.destroyed_clients
 
 
-def test_controller_lister_call_stops_waiting_and_cleans_up_pending_request_on_context_shutdown(
-    _no_spin,
-):
-    """
-    Once the node's own context goes not-ok (shutdown), __call__() must stop
-    waiting promptly rather than wait for the timeout, fall back to an empty
-    list like a call with no result, and must not leave the request sitting in
-    the client's pending-requests table afterwards.
-    """
-    remaining_ok_checks = {"count": 2}
-
-    class _ShuttingDownContext:
-        def ok(self):
-            remaining_ok_checks["count"] -= 1
-            return remaining_ok_checks["count"] >= 0
-
-    node = _FakeControllerListerNode(context=_ShuttingDownContext())
-    list_controllers = utils.ControllerLister(node)
-
-    result = list_controllers()
-
-    assert result == []
-    assert node.client.pending_requests == {}
-    assert node.client.last_future.cancelled()
-
-
-# ---------------------------------------------------------------------------
-# ControllerLister: bounded wait, __call__() runs in the GUI thread
-# ---------------------------------------------------------------------------
-
-
-def _call_in_thread(list_controllers, timeout=2.0):
-    """Call list_controllers() in a thread, so a hanging call fails the test instead of pytest."""
-    result = {}
-    thread = threading.Thread(target=lambda: result.update(value=list_controllers()), daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-    assert not thread.is_alive(), "ControllerLister.__call__() did not return"
-    return result["value"]
-
-
-def test_controller_lister_call_returns_empty_list_if_service_is_not_ready(_no_spin):
+def test_controller_lister_call_returns_empty_list_if_service_is_not_ready():
     node = _FakeControllerListerNode()
     list_controllers = utils.ControllerLister(node)
     node.client.ready = False
 
-    assert _call_in_thread(list_controllers) == []
+    assert list_controllers() == []
     assert node.client.requests == []
 
 
-def test_controller_lister_call_times_out_if_response_never_arrives(_no_spin):
+def test_controller_lister_call_returns_none_after_timeout_and_recovers():
     node = _FakeControllerListerNode()
-    list_controllers = utils.ControllerLister(node, timeout_sec=0.2)
+    list_controllers = utils.ControllerLister(node, timeout_sec=0.05)
+    list_controllers()
+    node.client.last_future.complete(SimpleNamespace(controller=["ctrl_a"]))
+    assert list_controllers() == ["ctrl_a"]
+    timed_out = node.client.last_future
 
-    start = time.monotonic()
-    assert _call_in_thread(list_controllers) == []
-    assert time.monotonic() - start < 1.0
-    assert node.client.pending_requests == {}
-    assert node.client.last_future.cancelled()
+    time.sleep(0.1)
+    # unknown, not empty: the caller must keep its selection on a transient delay
+    assert list_controllers() is None
+    assert timed_out.cancelled()
+    assert node.client.pending_requests.get(1) is None
+    assert len(node.client.requests) == 3  # a new request replaces the timed out one
+
+    node.client.last_future.complete(SimpleNamespace(controller=["ctrl_a"]))
+    assert list_controllers() == ["ctrl_a"]
