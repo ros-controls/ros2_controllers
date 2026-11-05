@@ -21,6 +21,13 @@ The admittance controller uses the `generate_parameter_library <https://github.c
 
 .. generate_parameter_library_details:: ../src/admittance_controller_parameters.yaml
 
+Wrench filtering
+""""""""""""""""
+The measured wrench is processed by a filter chain defined in the ``sensor_filter_chain`` parameter namespace, e.g., with ``control_filters/GravityCompensationWrench`` and ``control_filters/LowPassFilterWrench`` from `control_toolbox <https://github.com/ros-controls/control_toolbox>`_. Without filters, the measured wrench is used as is.
+The output of the chain must be in ``ft_sensor.frame.id``. If the sensor measures in another frame (``ft_sensor.measurement_frame.id``), a filter of the chain has to transform the wrench accordingly.
+
+The parameters ``gravity_compensation.*``, ``fixed_world_frame.frame.id`` and ``ft_sensor.filter_coefficient`` are deprecated. If ``gravity_compensation.frame.id`` is set, the old built-in gravity compensation and exponential filter are used instead of the filter chain.
+
 An example parameter file for this controller can be found in `the test folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/admittance_controller/test/test_params.yaml>`_:
 
 .. literalinclude:: ../test/test_params.yaml

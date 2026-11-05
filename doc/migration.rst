@@ -4,6 +4,36 @@ Migration Guides: Kilted Kaiju to Lyrical Luth
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases, where changes to user code might be necessary.
 
+admittance_controller
+*****************************
+* The built-in gravity compensation and exponential filter are deprecated in favor of a configurable ``sensor_filter_chain`` (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`_).
+  The parameters ``gravity_compensation.*``, ``fixed_world_frame.frame.id`` and ``ft_sensor.filter_coefficient`` still work, but print a deprecation warning and will be removed in a future release.
+  While ``gravity_compensation.frame.id`` is set, ``sensor_filter_chain`` is ignored. To migrate, remove those parameters and add the equivalent filters from ``control_toolbox``:
+
+  .. code-block:: yaml
+
+    sensor_filter_chain:
+      filter1:
+        type: "control_filters/LowPassFilterWrench"  # replaces ft_sensor.filter_coefficient
+        name: "low_pass_filter"
+        params:
+          sampling_frequency: 100.0
+          damping_frequency: 20.0
+          damping_intensity: 1.0
+      filter2:
+        type: "control_filters/GravityCompensationWrench"  # replaces gravity_compensation
+        name: "gravity_compensation"
+        params:
+          world_frame: "world"            # was fixed_world_frame.frame.id
+          sensor_frame: "ft_sensor_link"  # frame of the measured wrench
+          tool:
+            CoG: [0.0, 0.0, 0.1]          # was gravity_compensation.CoG.pos, now in sensor_frame
+            gravity_field: [0.0, 0.0, -9.81]  # in world_frame
+            mass: 1.0                     # was gravity_compensation.CoG.force / 9.81, now in kg
+
+  Note that the filters use ``tf2`` instead of the kinematics plugin to look up the frames.
+  The new optional parameter ``ft_sensor.measurement_frame.id`` defines the frame of the measured wrench, if it differs from ``ft_sensor.frame.id`` (e.g., due to the sensor thickness). In that case, a filter must transform the wrench into ``ft_sensor.frame.id``.
+
 joint_state_broadcaster
 *****************************
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_).
