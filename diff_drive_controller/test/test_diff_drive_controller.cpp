@@ -14,8 +14,10 @@
 
 #include <gmock/gmock.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -87,6 +89,7 @@ public:
   FRIEND_TEST(TestDiffDriveController, chainable_controller_unchained_mode);
   FRIEND_TEST(TestDiffDriveController, chainable_controller_chained_mode);
   FRIEND_TEST(TestDiffDriveController, deactivate_then_activate);
+  FRIEND_TEST(TestDiffDriveController, update_after_deactivation_in_chained_mode);
 };
 
 class TestDiffDriveController : public ::testing::Test
@@ -1554,6 +1557,133 @@ TEST_F(TestDiffDriveController, test_open_loop_odometry_with_unclamped_input)
   ASSERT_TRUE(deactivate_succeeds(controller_));
   ASSERT_TRUE(cleanup_succeeds(controller_));
   executor.cancel();
+}
+
+TEST_F(TestDiffDriveController, reactivate_with_reassigned_interfaces)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  for (int cycle = 0; cycle < 3; ++cycle)
+  {
+    SCOPED_TRACE(cycle);
+    assignResourcesPosFeedback();
+    ASSERT_TRUE(activate_succeeds(controller_));
+
+    const double linear = 1.0 * (cycle + 1);
+    publish(linear, 0.0);
+    controller_->wait_for_twist(executor);
+
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    EXPECT_EQ(linear, left_wheel_vel_cmd_->get_optional().value());
+    EXPECT_EQ(linear, right_wheel_vel_cmd_->get_optional().value());
+
+    ASSERT_TRUE(deactivate_succeeds(controller_));
+    EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
+    EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
+    controller_->release_interfaces();
+  }
+}
+
+TEST_F(TestDiffDriveController, concurrent_deactivation_and_update)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  publish(1.0, 0.0);
+  controller_->wait_for_twist(executor);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(1.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(1.0, right_wheel_vel_cmd_->get_optional().value());
+
+  std::atomic<bool> stop_updating{false};
+  std::atomic<int> update_count{0};
+
+  // Run update loop concurrently on another thread to simulate the real-time control loop
+  std::thread update_thread(
+    [&]()
+    {
+      while (!stop_updating.load(std::memory_order_relaxed))
+      {
+        controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01));
+        update_count++;
+        std::this_thread::yield();
+      }
+    });
+
+  // Deactivate controller concurrently while updates are running
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  const bool deactivated = deactivate_succeeds(controller_);
+
+  stop_updating.store(true);
+  update_thread.join();
+
+  ASSERT_TRUE(deactivated);
+  EXPECT_GT(update_count.load(), 0);
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should be halted on deactivate()";
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value())
+    << "Wheels should be halted on deactivate()";
+}
+
+TEST_F(TestDiffDriveController, update_after_deactivation_in_chained_mode)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 1.0)}),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(configure_succeeds(controller_));
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(1.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(1.0, right_wheel_vel_cmd_->get_optional().value());
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
+
+  // Restore finite chained references after deactivation: even with non-NaN references,
+  // updates after deactivation should not abort or overwrite halted wheel commands.
+  controller_->ordered_exported_reference_interfaces_[0]->set_value(1.0);
+  controller_->ordered_exported_reference_interfaces_[1]->set_value(0.0);
+
+  EXPECT_EQ(
+    controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
+  EXPECT_EQ(0.0, right_wheel_vel_cmd_->get_optional().value());
 }
 
 int main(int argc, char ** argv)
