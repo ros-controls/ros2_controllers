@@ -333,13 +333,15 @@ bool JointStateBroadcaster::init_joint_data()
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
-  // name_if_value_mapping_ if it is not already there
+  // name_if_value_mapping_ if it is not already published
   for (const auto & extra_joint_name : params_.extra_joints)
   {
-    if (name_if_value_mapping_.count(extra_joint_name) == 0)
+    if (std::find(joint_names_.begin(), joint_names_.end(), extra_joint_name) == joint_names_.end())
     {
-      name_if_value_mapping_[extra_joint_name] = {
-        {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+      auto & values = name_if_value_mapping_[extra_joint_name];
+      values[HW_IF_POSITION] = 0.0;
+      values[HW_IF_VELOCITY] = 0.0;
+      values[HW_IF_EFFORT] = 0.0;
       joint_names_.push_back(extra_joint_name);
     }
   }
