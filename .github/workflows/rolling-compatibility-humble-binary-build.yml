@@ -36,5 +36,6 @@ jobs:
     with:
       ros_distro: humble
       ros_repo: testing
-      upstream_workspace: ros2_controllers.rolling.repos
+      # ros-humble-pinocchio is missing in the testing repo, and kinematics_interface_pinocchio is not needed here
+      upstream_workspace: ros2_controllers.rolling.repos -kinematics_interface/kinematics_interface_pinocchio
       ref_for_scheduled_build: master
