@@ -186,3 +186,20 @@ def test_load_jtc_logs_joint_name_if_widget_creation_fails(monkeypatch):
     message = plugin._node.get_logger().error.call_args.args[0]
     assert "joint1" in message
     assert "min_val < max_val" in message
+
+
+def test_update_cmd_cb_stops_on_any_shutdown_context_error(monkeypatch):
+    monkeypatch.setattr(jtc_module.rclpy, "ok", lambda: True)
+    plugin = SimpleNamespace(
+        _cmd_pub=Mock(publish=Mock(side_effect=RuntimeError("context is invalid"))),
+        _update_cmd_timer=Mock(),
+        _joint_names=["joint1"],
+        _joint_pos={"joint1": {"position": 0.0}},
+        _robot_joint_limits={"joint1": {"max_velocity": 1.0}},
+        _min_traj_dur=0.5,
+        _speed_scale=0.5,
+    )
+
+    JointTrajectoryController._update_cmd_cb(plugin)
+
+    plugin._update_cmd_timer.stop.assert_called_once()
