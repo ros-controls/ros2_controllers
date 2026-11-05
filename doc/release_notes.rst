@@ -13,6 +13,10 @@ state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
 
+swerve_drive_controller
+***********************
+* 🚀 The swerve_drive_controller was added 🎉 (`#1694 <https://github.com/ros-controls/ros2_controllers/pull/1694>`_).
+
 force_torque_sensor_broadcaster
 *******************************
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
