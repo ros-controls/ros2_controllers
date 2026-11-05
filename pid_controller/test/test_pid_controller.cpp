@@ -17,7 +17,9 @@
 
 #include "test_pid_controller.hpp"
 
+#include <chrono>
 #include <limits>
+#include <thread>
 #include <memory>
 #include <string>
 #include <vector>
@@ -793,6 +795,71 @@ TEST_F(PidControllerTest, test_activate_set_current_state_as_first_setpoint_fals
     const auto val = interface->get_optional<double>();
     EXPECT_TRUE(!val.has_value() || std::isnan(val.value()));
   }
+}
+
+
+class ExternalFirstSetpointPidController : public pid_controller::PidController
+{
+public:
+  control_msgs::msg::MultiDOFCommand latest_measured_state() { return measured_state_.get(); }
+};
+
+TEST_F(PidControllerTest, activation_uses_latest_external_state_as_first_setpoint)
+{
+  ExternalFirstSetpointPidController controller;
+  controller_interface::ControllerInterfaceParams params;
+  params.controller_name = "pid_external_first_setpoint";
+  params.robot_description = "";
+  params.update_rate = 100;
+  params.node_namespace = "";
+  params.node_options = controller.define_custom_node_options();
+  params.node_options.parameter_overrides({
+    rclcpp::Parameter("dof_names", std::vector<std::string>{"joint1"}),
+    rclcpp::Parameter("command_interface", "position"),
+    rclcpp::Parameter("reference_and_state_interfaces", std::vector<std::string>{"position"}),
+    rclcpp::Parameter("use_external_measured_states", true),
+    rclcpp::Parameter("set_current_state_as_first_setpoint", true),
+    rclcpp::Parameter("gains.joint1.p", 1.0),
+    rclcpp::Parameter("gains.joint1.i", 0.0),
+    rclcpp::Parameter("gains.joint1.d", 0.0)});
+
+  ASSERT_EQ(controller.init(params), controller_interface::return_type::OK);
+  ASSERT_EQ(
+    controller.on_configure(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  auto references = controller.export_reference_interfaces();
+  controller.export_state_interfaces();
+
+  auto publisher_node = std::make_shared<rclcpp::Node>("external_state_publisher");
+  auto publisher = publisher_node->create_publisher<control_msgs::msg::MultiDOFCommand>(
+    "/pid_external_first_setpoint/measured_state", rclcpp::SystemDefaultsQoS());
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller.get_node()->get_node_base_interface());
+  executor.add_node(publisher_node);
+  for (int i = 0; i < 100 && publisher->get_subscription_count() == 0; ++i)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  ASSERT_GT(publisher->get_subscription_count(), 0u);
+
+  control_msgs::msg::MultiDOFCommand msg;
+  msg.dof_names = {"joint1"};
+  msg.values = {3.0};
+  publisher->publish(msg);
+  for (int i = 0; i < 100; ++i)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(controller.latest_measured_state().values, (std::vector<double>{3.0}));
+
+  ASSERT_EQ(
+    controller.on_activate(rclcpp_lifecycle::State()),
+    controller_interface::CallbackReturn::SUCCESS);
+  ASSERT_EQ(references.size(), 1u);
+  ASSERT_TRUE(references[0]->get_optional<double>().has_value());
+  EXPECT_DOUBLE_EQ(references[0]->get_optional<double>().value(), 3.0);
 }
 
 int main(int argc, char ** argv)
