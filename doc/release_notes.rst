@@ -35,7 +35,7 @@ joint_state_broadcaster
 * Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_)
-* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
+* ``dynamic_joint_states`` is not published anymore, and the parameter ``publish_dynamic_joint_states`` was removed.(`#2187 <https://github.com/ros-controls/ros2_controllers/pull/2187>`_)
 
 omni_wheel_drive_controller
 *****************************
@@ -45,6 +45,7 @@ omni_wheel_drive_controller
 
 joint_trajectory_controller
 ***************************
+* The default of ``constraints.goal_time`` changed from ``0.0`` to ``10.0`` seconds, and its semantics changed: negative values wait indefinitely, ``0.0`` disables the grace period. The ``action_execution_timeout`` parameter was removed. See the migration guide. (`#2592 <https://github.com/ros-controls/ros2_controllers/pull/2592>`_)
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
@@ -68,4 +69,8 @@ steering_controllers_library
 
 magnetometer_broadcaster
 ************************
-New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``. (`#2214 <https://github.com/ros-controls/ros2_controllers/pull/2214>`_)
+
+position_controllers, velocity_controllers, effort_controllers
+**************************************************************
+* ``JointGroupPositionController``, ``JointGroupVelocityController``, and ``JointGroupEffortController`` are removed. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_, `#2016 <https://github.com/ros-controls/ros2_controllers/pull/2016>`_)
