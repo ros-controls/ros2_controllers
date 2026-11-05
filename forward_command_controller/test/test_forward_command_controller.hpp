@@ -69,7 +69,7 @@ protected:
 
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
-  std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
+  const std::vector<double> joint_commands_ = {1.1, 2.1, 3.1};
 
   CommandInterface::SharedPtr joint_1_pos_cmd_;
   CommandInterface::SharedPtr joint_2_pos_cmd_;

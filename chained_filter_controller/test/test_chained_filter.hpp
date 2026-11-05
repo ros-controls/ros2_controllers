@@ -54,7 +54,7 @@ protected:
 
   // dummy joint state values used for tests
   const std::vector<std::string> joint_names_ = {"wheel_left"};
-  std::vector<double> joint_states_ = {1.1};
+  const std::vector<double> joint_states_ = {1.1};
 
   StateInterface::SharedPtr joint_1_pos_;
   rclcpp::executors::SingleThreadedExecutor executor;

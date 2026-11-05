@@ -97,6 +97,7 @@ class TestableJointTrajectoryController
 {
 public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
+  using joint_trajectory_controller::JointTrajectoryController::sort_to_local_joint_order;
   using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
   controller_interface::CallbackReturn on_configure(
@@ -176,7 +177,7 @@ public:
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
-    return *(active_tolerances_.readFromRT());
+    return rt_goal_tolerances_.get();
   }
 
   std::vector<PidPtr> get_pids() const { return pids_; }
@@ -196,6 +197,13 @@ public:
   bool has_nontrivial_traj()
   {
     return has_active_trajectory() && current_trajectory_->has_nontrivial_msg();
+  }
+
+  size_t get_blend_prefix_size() const { return blend_prefix_size_; }
+
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_installed_trajectory_msg() const
+  {
+    return has_active_trajectory() ? current_trajectory_->get_trajectory_msg() : nullptr;
   }
 
   double get_cmd_timeout() { return cmd_timeout_; }
