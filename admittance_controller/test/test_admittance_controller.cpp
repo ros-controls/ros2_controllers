@@ -369,6 +369,36 @@ TEST_F(AdmittanceControllerTest, compensation_success)
   EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, COMMON_THRESHOLD);
 }
 
+// The deprecated gravity_compensation / fixed_world_frame / filter_coefficient parameters
+// must keep working without a sensor_filter_chain
+TEST_F(AdmittanceControllerTest, legacy_compensation_success)
+{
+  // set the force on the force torque sensor to simulate gravity pulling
+  // (before SetUpController, because the state interfaces are initialized from it)
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  ASSERT_EQ(
+    SetUpController("test_admittance_controller_legacy"), controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world,
+  // without compensation force.z would be -23
+  constexpr double tol = 0.05;
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, tol);
+}
+
 TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController("test_admittance_controller_no_mass");

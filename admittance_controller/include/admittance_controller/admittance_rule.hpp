@@ -159,6 +159,19 @@ protected:
    */
   bool process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench);
 
+  /**
+   * \deprecated Used only if the deprecated ``gravity_compensation.frame.id`` parameter is set.
+   * Updates internal estimate of wrench in world frame `wrench_world_` given the new measurement
+   * `measured_wrench`, applying gravity compensation and exponential smoothing.
+   * \param[in] measured_wrench most recent measured wrench from force torque sensor
+   * \param[in] sensor_world_rot rotation matrix from world frame to sensor frame
+   * \param[in] cog_world_rot rotation matrix from world frame to center of gravity frame
+   */
+  void process_wrench_measurements_deprecated(
+    const geometry_msgs::msg::Wrench & measured_wrench,
+    const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
+    const Eigen::Matrix<double, 3, 3> & cog_world_rot);
+
   template <typename T1, typename T2>
   void vec_to_eigen(const std::vector<T1> & data, T2 & matrix);
 
@@ -177,6 +190,13 @@ protected:
   // filtered wrench in sensor_frame
   geometry_msgs::msg::WrenchStamped measured_wrench_filtered_;
   Eigen::Matrix<double, 6, 1> wrench_filtered_ft_;
+
+  // deprecated gravity compensation: filtered wrench in world frame
+  Eigen::Matrix<double, 6, 1> wrench_world_;
+  // deprecated gravity compensation: position of center of gravity in cog_frame
+  Eigen::Vector3d cog_pos_;
+  // deprecated gravity compensation: force applied to sensor due to weight of end effector
+  Eigen::Vector3d end_effector_weight_;
 
   // admittance controllers internal state
   AdmittanceState admittance_state_{0};

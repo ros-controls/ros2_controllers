@@ -335,6 +335,17 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     get_interface_list(admittance_->parameters_.command_interfaces).c_str(),
     get_interface_list(admittance_->parameters_.state_interfaces).c_str());
 
+  if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "The parameters 'gravity_compensation.*', 'fixed_world_frame.frame.id' and "
+      "'ft_sensor.filter_coefficient' are deprecated and will be removed in a future release. "
+      "Use 'sensor_filter_chain' with the 'control_filters/GravityCompensationWrench' and "
+      "'control_filters/LowPassFilterWrench' filters instead. "
+      "While 'gravity_compensation.frame.id' is set, 'sensor_filter_chain' is ignored.");
+  }
+
   // configure filters
   if (!filter_chain_->configure(
         "sensor_filter_chain", get_node()->get_node_logging_interface(),

@@ -187,6 +187,96 @@ test_admittance_controller:
         - 214.5
         - 214.6
 
+test_admittance_controller_legacy:
+  # same as test_admittance_controller, but with the deprecated gravity compensation parameters
+  # contains minimal needed parameters for kuka_kr6
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    chainable_command_interfaces:
+      - position
+      - velocity
+
+    kinematics:
+      plugin_name: kinematics_interface_kdl/KinematicsInterfaceKDL
+      plugin_package: kinematics_interface
+      base: base_link # Assumed to be stationary
+      tip: tool0
+      group_name: arm
+      alpha: 0.0005
+
+    ft_sensor:
+      name: ft_sensor_name
+      frame:
+        id: link_6  # Wrench measurements are in this frame
+        external: false # force torque frame exists within URDF kinematic chain
+      filter_coefficient: 1.0  # deprecated, no smoothing to get the result after one update
+
+    # deprecated: use sensor_filter_chain with control_filters/GravityCompensationWrench instead
+    fixed_world_frame:   # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
+      frame:
+        id: base_link
+
+    # deprecated: use sensor_filter_chain with control_filters/GravityCompensationWrench instead
+    gravity_compensation:
+      frame:
+        id: link_6
+      CoG:
+        pos: [0.0, 0.1, 0.0]
+        force: 23.0 # mass * 9.81
+
+    control:
+      frame:
+        id: tool0 # Admittance calcs (displacement etc) are done in this frame. Usually the tool or end-effector
+        external: false # control frame exists within URDF kinematic chain
+
+    admittance:
+      selected_axes:
+        - true # x
+        - true # y
+        - true # z
+        - true # rx
+        - true # ry
+        - true # rz
+
+      # Having ".0" at the end is MUST, otherwise there is a loading error
+      # F = M*a + D*v + S*(x - x_d)
+      mass:
+        - 5.5
+        - 6.6
+        - 7.7
+        - 8.8
+        - 9.9
+        - 10.10
+
+      damping_ratio: # damping can be used instead: zeta = D / (2 * sqrt( M * S ))
+        - 2.828427 # x
+        - 2.828427 # y
+        - 2.828427 # z
+        - 2.828427 # rx
+        - 2.828427 # ry
+        - 2.828427 # rz
+
+      stiffness:
+        - 214.1
+        - 214.2
+        - 214.3
+        - 214.4
+        - 214.5
+        - 214.6
+
 test_admittance_controller_no_mass:
   # contains minimal needed parameters for kuka_kr6 with no mass at end-effector (causes deviations for some tests)
   ros__parameters:

@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "control_toolbox/filters.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/utilities.hpp"
@@ -113,6 +114,8 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
 
   // reset forces
   wrench_base_.setZero();
+  wrench_world_.setZero();
+  end_effector_weight_.setZero();
 
   // load/initialize Eigen types from parameters
   apply_parameters_update();
@@ -125,6 +128,8 @@ void AdmittanceRule::apply_parameters_update()
   parameter_handler_->try_get_params(parameters_);
 
   // update param values
+  end_effector_weight_[2] = -parameters_.gravity_compensation.CoG.force;
+  vec_to_eigen(parameters_.gravity_compensation.CoG.pos, cog_pos_);
   vec_to_eigen(parameters_.admittance.mass, admittance_state_.mass);
   vec_to_eigen(parameters_.admittance.stiffness, admittance_state_.stiffness);
   vec_to_eigen(parameters_.admittance.selected_axes, admittance_state_.selected_axes);
@@ -173,25 +178,47 @@ controller_interface::return_type AdmittanceRule::update(
     current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
   const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
 
-  // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
-  if (!process_wrench_measurements(measured_wrench))
+  if (!parameters_.gravity_compensation.frame.id.empty())
   {
-    desired_joint_state = reference_joint_state;
-    return controller_interface::return_type::ERROR;
-  }
-  // fill the Wrench (there is no fromMsg for wrench)
-  wrench_filtered_ft_(0) = measured_wrench_filtered_.wrench.force.x;
-  wrench_filtered_ft_(1) = measured_wrench_filtered_.wrench.force.y;
-  wrench_filtered_ft_(2) = measured_wrench_filtered_.wrench.force.z;
-  wrench_filtered_ft_(3) = measured_wrench_filtered_.wrench.torque.x;
-  wrench_filtered_ft_(4) = measured_wrench_filtered_.wrench.torque.y;
-  wrench_filtered_ft_(5) = measured_wrench_filtered_.wrench.torque.z;
+    // deprecated: built-in gravity compensation and exponential filter, computed in world frame
+    success &= kinematics_->calculate_link_transform(
+      current_joint_state.positions, parameters_.fixed_world_frame.frame.id, tf);
+    const Eigen::Matrix3d rot_world_base = tf.rotation();
+    success &= kinematics_->calculate_link_transform(
+      current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf);
+    const Eigen::Matrix3d rot_tf_cog = tf.rotation();
 
-  // Rotate (and not transform) to the base frame, explanation lower
-  admittance_state_.wrench_base.block<3, 1>(0, 0) =
-    rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(0, 0);
-  admittance_state_.wrench_base.block<3, 1>(3, 0) =
-    rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(3, 0);
+    process_wrench_measurements_deprecated(
+      measured_wrench, rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
+
+    // transform filtered wrench into the robot base frame
+    admittance_state_.wrench_base.block<3, 1>(0, 0) =
+      rot_world_base.transpose() * wrench_world_.block<3, 1>(0, 0);
+    admittance_state_.wrench_base.block<3, 1>(3, 0) =
+      rot_world_base.transpose() * wrench_world_.block<3, 1>(3, 0);
+  }
+  else
+  {
+    // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
+    if (!process_wrench_measurements(measured_wrench))
+    {
+      desired_joint_state = reference_joint_state;
+      return controller_interface::return_type::ERROR;
+    }
+    // fill the Wrench (there is no fromMsg for wrench)
+    wrench_filtered_ft_(0) = measured_wrench_filtered_.wrench.force.x;
+    wrench_filtered_ft_(1) = measured_wrench_filtered_.wrench.force.y;
+    wrench_filtered_ft_(2) = measured_wrench_filtered_.wrench.force.z;
+    wrench_filtered_ft_(3) = measured_wrench_filtered_.wrench.torque.x;
+    wrench_filtered_ft_(4) = measured_wrench_filtered_.wrench.torque.y;
+    wrench_filtered_ft_(5) = measured_wrench_filtered_.wrench.torque.z;
+
+    // Rotate (and not transform) to the base frame, explanation lower
+    admittance_state_.wrench_base.block<3, 1>(0, 0) =
+      rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(0, 0);
+    admittance_state_.wrench_base.block<3, 1>(3, 0) =
+      rot_tf_base_ft * wrench_filtered_ft_.block<3, 1>(3, 0);
+  }
 
   // populate current joint positions in the state
   vec_to_eigen(current_joint_state.positions, admittance_state_.current_joint_pos);
@@ -325,7 +352,9 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
 bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrench & measured_wrench)
 {
   // pass the measured_wrench in its ft_sensor measurement_frame
-  measured_wrench_.header.frame_id = parameters_.ft_sensor.measurement_frame.id;
+  measured_wrench_.header.frame_id = parameters_.ft_sensor.measurement_frame.id.empty()
+                                       ? parameters_.ft_sensor.frame.id
+                                       : parameters_.ft_sensor.measurement_frame.id;
   measured_wrench_.wrench = measured_wrench;
   // output should be ft_sensor frame (because kinematics is only up to there)
   measured_wrench_filtered_.header.frame_id = parameters_.ft_sensor.frame.id;
@@ -345,6 +374,34 @@ bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrenc
     return false;
   }
   return ret;
+}
+
+void AdmittanceRule::process_wrench_measurements_deprecated(
+  const geometry_msgs::msg::Wrench & measured_wrench,
+  const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
+  const Eigen::Matrix<double, 3, 3> & cog_world_rot)
+{
+  Eigen::Matrix<double, 3, 2, Eigen::ColMajor> new_wrench;
+  new_wrench(0, 0) = measured_wrench.force.x;
+  new_wrench(1, 0) = measured_wrench.force.y;
+  new_wrench(2, 0) = measured_wrench.force.z;
+  new_wrench(0, 1) = measured_wrench.torque.x;
+  new_wrench(1, 1) = measured_wrench.torque.y;
+  new_wrench(2, 1) = measured_wrench.torque.z;
+
+  // transform to world frame
+  Eigen::Matrix<double, 3, 2> new_wrench_base = sensor_world_rot * new_wrench;
+
+  // apply gravity compensation
+  new_wrench_base(2, 0) -= end_effector_weight_[2];
+  new_wrench_base.block<3, 1>(0, 1) -= (cog_world_rot * cog_pos_).cross(end_effector_weight_);
+
+  // apply smoothing filter
+  for (Eigen::Index i = 0; i < 6; ++i)
+  {
+    wrench_world_(i) = filters::exponentialSmoothing(
+      new_wrench_base(i), wrench_world_(i), parameters_.ft_sensor.filter_coefficient);
+  }
 }
 
 const control_msgs::msg::AdmittanceControllerState & AdmittanceRule::get_controller_state()
