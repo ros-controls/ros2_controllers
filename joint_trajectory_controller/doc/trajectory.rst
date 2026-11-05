@@ -141,6 +141,9 @@ Joint trajectory messages allow to specify the time at which a new trajectory sh
   executed, while the header timestamp still selects *when* the handoff occurs: it is honoured as a
   wall-clock instant whatever the scaling factor. The handoff anchor is sampled from the active
   trajectory at that instant, so the transition is velocity-continuous and free of position jumps.
+  This applies while the active trajectory is still executing, whatever its number of waypoints.
+  Once it has finished, a new trajectory starts from the current state as if the parameter was
+  disabled.
 
 .. warning::
   One difference from ROS 1 remains: because ROS 2 uses a single monolithic trajectory, joints
