@@ -920,6 +920,26 @@ TEST_F(OmniWheelDriveControllerTest, odometry_set_service)
   EXPECT_TRUE(deactivate_succeeds(controller_));
 }
 
+TEST_F(OmniWheelDriveControllerTest, activation_without_reference_zeros_commands)
+{
+  wheels_pos_states_ = {0.0, 0.0, 0.0, 0.0};
+  wheels_vel_cmds_ = {0.1, 0.2, 0.3, 0.4};
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->export_reference_interfaces();
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(controller_->set_chained_mode(true));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(1, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  for (const auto & interface : command_itfs_)
+  {
+    EXPECT_DOUBLE_EQ(interface->get_optional().value(), 0.0);
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

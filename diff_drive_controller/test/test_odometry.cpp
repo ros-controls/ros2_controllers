@@ -128,14 +128,55 @@ TEST_F(OdometryTest, TestOpenLoopUpdate)
 
 TEST_F(OdometryTest, TestUpdateFromPosition)
 {
-  // Left moves 0 -> 1.0, Right moves 0 -> 1.0 over 1.0s
-  // Implies vel = 1.0 for both
+  // The first absolute position sample establishes the encoder baseline.
+  EXPECT_FALSE(odometry_.update_from_pos(1.0, 1.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
 
-  bool result = odometry_.update_from_pos(1.0, 1.0, 1.0);
-
-  EXPECT_TRUE(result);
+  // Both wheels then move by one radian over one second.
+  EXPECT_TRUE(odometry_.update_from_pos(2.0, 2.0, 1.0));
   EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
+}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+TEST_F(OdometryTest, TestTimestampPositionBaselineAtInitialization)
+{
+  odometry_.setWheelParams(1.0, 0.1, 0.1);
+  const rclcpp::Time start(1, 0, RCL_ROS_TIME);
+  odometry_.init(start);
+
+  EXPECT_FALSE(odometry_.update(1.0, 1.0, start));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+
+  EXPECT_FALSE(odometry_.update(1.1, 1.1, start + rclcpp::Duration::from_seconds(0.00005)));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 0.0);
+
+  EXPECT_TRUE(odometry_.update(1.2, 1.2, start + rclcpp::Duration::from_seconds(0.01)));
+  EXPECT_NEAR(odometry_.getX(), 0.02, 1e-12);
+  EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
+  EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.0);
+  EXPECT_NEAR(odometry_.getLinear(), 2.0, 1e-12);
+}
+#pragma GCC diagnostic pop
+
+TEST_F(OdometryTest, TestPositionBaselineAfterReset)
+{
+  EXPECT_FALSE(odometry_.update_from_pos(10.0, 20.0, 1.0));
+  EXPECT_TRUE(odometry_.update_from_pos(11.0, 21.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+
+  odometry_.reset_position_feedback();
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_FALSE(odometry_.update_from_pos(-5.0, -7.0, 0.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
+
+  EXPECT_TRUE(odometry_.update_from_pos(-4.0, -6.0, 1.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 2.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getAngular(), 0.0);
 }
 
 TEST_F(OdometryTest, TestReset)
