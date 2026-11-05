@@ -606,6 +606,114 @@ TEST_F(
   ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), 30.0);
 }
 
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenPartialCommandsForDifferentGpiosReceivedViaTopicThenBothShouldBeApplied)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  auto command_pub = node->create_publisher<CmdType>(
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+
+  const auto command1 =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1"}, {0.0})});
+  const auto command2 =
+    createGpioCommand({"gpio2"}, {createInterfaceValue({"ana.1"}, {30.0})});
+
+  while (command_pub->get_subscription_count() == 0)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  command_pub->publish(command1);
+  wait_one_miliseconds_for_timeout();
+  command_pub->publish(command2);
+  wait_one_miliseconds_for_timeout();
+  update_controller_loop();
+
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), gpio_commands.at(1));
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), 30.0);
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenPartialCommandsForSameGpioDifferentInterfacesReceivedViaTopicThenBothShouldBeApplied)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  auto command_pub = node->create_publisher<CmdType>(
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+
+  const auto command1 =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1"}, {0.0})});
+  const auto command2 =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.2"}, {1.0})});
+
+  while (command_pub->get_subscription_count() == 0)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  command_pub->publish(command1);
+  wait_one_miliseconds_for_timeout();
+  command_pub->publish(command2);
+  wait_one_miliseconds_for_timeout();
+  update_controller_loop();
+
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 0.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), gpio_commands.at(2));
+}
+
+TEST_F(
+  GpioCommandControllerTestSuite,
+  WhenSuccessiveCommandsForSameInterfaceReceivedViaTopicThenLatestShouldBeApplied)
+{
+  const auto node_options = create_node_options_with_overriden_parameters(
+    {{"gpios", gpio_names},
+     {"command_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"command_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}},
+     {"state_interfaces.gpio1.interfaces", std::vector<std::string>{"dig.1", "dig.2"}},
+     {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
+  move_to_activate_state(controller_->init(create_ctrl_params(node_options)));
+
+  auto command_pub = node->create_publisher<CmdType>(
+    std::string(controller_->get_node()->get_name()) + "/commands", rclcpp::SystemDefaultsQoS());
+
+  const auto command1 =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1"}, {0.0})});
+  const auto command2 =
+    createGpioCommand({"gpio1"}, {createInterfaceValue({"dig.1"}, {1.0})});
+
+  while (command_pub->get_subscription_count() == 0)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  command_pub->publish(command1);
+  wait_one_miliseconds_for_timeout();
+  command_pub->publish(command2);
+  wait_one_miliseconds_for_timeout();
+  update_controller_loop();
+
+  ASSERT_EQ(gpio_1_1_dig_cmd->get_optional().value(), 1.0);
+  ASSERT_EQ(gpio_1_2_dig_cmd->get_optional().value(), gpio_commands.at(1));
+  ASSERT_EQ(gpio_2_ana_cmd->get_optional().value(), gpio_commands.at(2));
+}
+
 TEST_F(GpioCommandControllerTestSuite, ControllerShouldPublishGpioStatesWithCurrentValues)
 {
   const auto node_options = create_node_options_with_overriden_parameters(

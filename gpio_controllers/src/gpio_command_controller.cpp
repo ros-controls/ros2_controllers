@@ -53,6 +53,57 @@ std::vector<hardware_interface::ComponentInfo> extract_gpios_from_hardware_info(
   }
   return result;
 }
+
+void merge_gpio_commands(
+  gpio_controllers::CmdType & current_cmd, const gpio_controllers::CmdType & new_cmd)
+{
+  current_cmd.header = new_cmd.header;
+  for (std::size_t new_group_idx = 0; new_group_idx < new_cmd.interface_groups.size();
+       ++new_group_idx)
+  {
+    if (new_group_idx >= new_cmd.interface_values.size())
+    {
+      continue;
+    }
+    const auto & group_name = new_cmd.interface_groups[new_group_idx];
+    const auto & new_interface_values = new_cmd.interface_values[new_group_idx];
+
+    auto group_it = std::find(
+      current_cmd.interface_groups.begin(), current_cmd.interface_groups.end(), group_name);
+
+    if (group_it == current_cmd.interface_groups.end()) {
+      current_cmd.interface_groups.push_back(group_name);
+      current_cmd.interface_values.push_back(new_interface_values);
+    } else {
+      auto group_idx = std::distance(current_cmd.interface_groups.begin(), group_it);
+      auto & current_interface_values = current_cmd.interface_values[group_idx];
+
+      for (std::size_t new_iface_idx = 0;
+           new_iface_idx < new_interface_values.interface_names.size(); ++new_iface_idx)
+      {
+        if (new_iface_idx >= new_interface_values.values.size())
+        {
+          continue;
+        }
+        const auto & iface_name = new_interface_values.interface_names[new_iface_idx];
+        const auto iface_val = new_interface_values.values[new_iface_idx];
+
+        auto iface_it = std::find(
+          current_interface_values.interface_names.begin(),
+          current_interface_values.interface_names.end(), iface_name);
+
+        if (iface_it == current_interface_values.interface_names.end()) {
+          current_interface_values.interface_names.push_back(iface_name);
+          current_interface_values.values.push_back(iface_val);
+        } else {
+          auto iface_idx =
+            std::distance(current_interface_values.interface_names.begin(), iface_it);
+          current_interface_values.values[iface_idx] = iface_val;
+        }
+      }
+    }
+  }
+}
 }  // namespace
 
 namespace gpio_controllers
@@ -94,7 +145,14 @@ try
   {
     gpios_command_subscriber_ = get_node()->create_subscription<CmdType>(
       "~/commands", rclcpp::SystemDefaultsQoS(),
-      [this](const CmdType::SharedPtr msg) { rt_command_.set(*msg); });
+      [this](const CmdType::SharedPtr msg)
+      {
+        rt_command_.set(
+          [msg](CmdType & current_cmd)
+          {
+            merge_gpio_commands(current_cmd, *msg);
+          });
+      });
   }
 
   gpio_state_publisher_ =
