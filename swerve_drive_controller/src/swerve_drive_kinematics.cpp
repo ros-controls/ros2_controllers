@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#define _USE_MATH_DEFINES
+
 #include "swerve_drive_controller/swerve_drive_kinematics.hpp"
 
 namespace swerve_drive_controller

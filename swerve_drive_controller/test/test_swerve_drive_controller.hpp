@@ -156,13 +156,15 @@ protected:
     constexpr std::chrono::seconds TIMEOUT{2};
     auto clock = cmd_vel_publisher_node_->get_clock();
     auto start = clock->now();
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(cmd_vel_publisher_node_);
     while (cmd_vel_publisher_->get_subscription_count() <= 0)
     {
       if ((clock->now() - start) > TIMEOUT)
       {
         FAIL();
       }
-      rclcpp::spin_some(cmd_vel_publisher_node_);
+      executor.spin_some();
     }
   }
 
@@ -274,7 +276,13 @@ protected:
     parameter_overrides.insert(parameter_overrides.end(), parameters.begin(), parameters.end());
     node_options.parameter_overrides(parameter_overrides);
 
-    return controller_->init("test_swerve_drive_controller", "", 0, ns, node_options);
+    controller_interface::ControllerInterfaceParams params;
+    params.controller_name = "test_swerve_drive_controller";
+    params.robot_description = "";
+    params.update_rate = 0;
+    params.node_namespace = ns;
+    params.node_options = node_options;
+    return controller_->init(params);
   }
 
   std::vector<double> wheel_vel_states_ = {1.0, 1.0, 1.0, 1.0};
