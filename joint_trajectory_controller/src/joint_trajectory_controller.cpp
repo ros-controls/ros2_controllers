@@ -14,6 +14,7 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -57,6 +58,19 @@ auto interface_has_values = [](const auto & joint_interface) -> bool
              return !interface_op.has_value() || !std::isfinite(interface_op.value());
            }) == joint_interface.end();
 };
+
+namespace
+{
+// true if every point has a position for every joint named in the message. fill_partial_goal
+// leaves a point short when a joint omitted from the goal has no position to hold at.
+bool every_point_has_all_positions(const trajectory_msgs::msg::JointTrajectory & trajectory_msg)
+{
+  const auto num_joints = trajectory_msg.joint_names.size();
+  return std::all_of(
+    trajectory_msg.points.begin(), trajectory_msg.points.end(), [num_joints](const auto & point)
+    { return point.positions.empty() || point.positions.size() == num_joints; });
+}
+}  // namespace
 
 JointTrajectoryController::JointTrajectoryController()
 : controller_interface::ControllerInterface(), dof_(0), num_cmd_joints_(0)
@@ -295,13 +309,42 @@ controller_interface::return_type JointTrajectoryController::update(
     }
     if (!blended)
     {
-      // legacy behavior: joints omitted from the new message hold at the current position
       fill_partial_goal(new_external_msg);
+    }
+    if (blended)
+    {
+      // TODO(denis): Add here integration of position and velocity
+      current_trajectory_->update(new_external_msg);
+    }
+    else if (every_point_has_all_positions(*new_external_msg))
+    {
+      // legacy behavior: joints omitted from the new message hold at the position this controller
+      // holds them at
       sort_to_local_joint_order(new_external_msg);
       blend_prefix_size_ = 0;
+      // TODO(denis): Add here integration of position and velocity
+      current_trajectory_->update(new_external_msg);
     }
-    // TODO(denis): Add here integration of position and velocity
-    current_trajectory_->update(new_external_msg);
+    else
+    {
+      // An omitted joint has no position to hold at, so the points are still short. Executing a
+      // short point would read past its end and command that joint to whatever is there.
+      RCLCPP_ERROR(
+        logger,
+        "Rejecting the trajectory: a joint omitted from it has no known position to hold at "
+        "(never commanded by this controller, and no finite position on its state interface)");
+      if (rt_active_goal_local_)
+      {
+        auto result = std::make_shared<FollowJTrajAction::Result>();
+        result->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+        result->set__error_string(
+          "Aborted: a joint omitted from the goal has no known position to hold at");
+        rt_active_goal_local_->setAborted(result);
+        rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
+        rt_has_pending_goal_ = false;
+      }
+      rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
+    }
   }
 
   // current state update
@@ -1712,43 +1755,33 @@ void JointTrajectoryController::fill_partial_goal(
       }
       trajectory_msg->joint_names.push_back(params_.joints[index]);
 
+      // The position an omitted joint holds at: what this controller last commanded it, else
+      // where it currently is. Both are the controller's own records. The command interface is
+      // deliberately NOT consulted: hardware that consumes its commands leaves NaN there between
+      // writes, and NaN is not a position to hold at.
+      double omitted_joint_hold = std::numeric_limits<double>::quiet_NaN();
+      if (
+        index < last_commanded_state_.positions.size() &&
+        !std::isnan(last_commanded_state_.positions[index]))
+      {
+        omitted_joint_hold = last_commanded_state_.positions[index];
+      }
+      else if (
+        index < state_current_.positions.size() && !std::isnan(state_current_.positions[index]))
+      {
+        omitted_joint_hold = state_current_.positions[index];
+      }
+
       for (auto & it : trajectory_msg->points)
       {
         // Assume hold position with 0 velocity and acceleration for missing joints
         if (!it.positions.empty())
         {
-          if (has_position_command_interface_)
+          // No position to hold at: push nothing, leaving the point short. update() rejects a
+          // trajectory with short points rather than executing it.
+          if (!std::isnan(omitted_joint_hold))
           {
-            const auto position_command_value_op =
-              joint_command_interface_[0][index].get().get_optional();
-
-            if (!position_command_value_op.has_value())
-            {
-              RCLCPP_DEBUG(
-                get_node()->get_logger(),
-                "Unable to retrieve position command value of joint at index %zu", index);
-            }
-            else if (!std::isnan(position_command_value_op.value()))
-            {
-              it.positions.push_back(position_command_value_op.value());
-            }
-          }
-
-          else if (has_position_state_interface_)
-          {
-            // copy current state if state interface exists
-            const auto position_state_value_op =
-              joint_state_interface_[0][index].get().get_optional();
-            if (!position_state_value_op.has_value())
-            {
-              RCLCPP_DEBUG(
-                get_node()->get_logger(),
-                "Unable to retrieve position state value of joint at index %zu", index);
-            }
-            else if (!std::isnan(position_state_value_op.value()))
-            {
-              it.positions.push_back(position_state_value_op.value());
-            }
+            it.positions.push_back(omitted_joint_hold);
           }
         }
         if (!it.velocities.empty())

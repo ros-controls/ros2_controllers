@@ -244,7 +244,10 @@ protected:
     JointTrajectoryPoint & error, const size_t index, const JointTrajectoryPoint & current,
     const JointTrajectoryPoint & desired) const;
   // fill trajectory_msg so it matches joints controlled by this controller
-  // positions set to current position, velocities, accelerations and efforts to 0.0
+  // positions set to the position the joint is held at (last commanded, else current state),
+  // velocities, accelerations and efforts to 0.0
+  // an omitted joint with no known position to hold at gets no position, so its points stay
+  // short and must not be executed
   void fill_partial_goal(
     std::shared_ptr<trajectory_msgs::msg::JointTrajectory> trajectory_msg) const;
   // Fills omitted joints by sampling the active trajectory so they keep their old motion.
