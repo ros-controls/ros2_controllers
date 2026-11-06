@@ -461,3 +461,34 @@ TEST_F(TestTolerancesFixture, test_invalid_joints_goal_tolerance)
     logger, default_tolerances, goal_msg, params.joints);
   expectDefaultTolerances(active_tolerances);
 }
+
+TEST(TestTolerances, test_per_joint_stopped_velocity_threshold)
+{
+  using joint_trajectory_controller::Params;
+
+  rclcpp::Logger logger = rclcpp::get_logger("test_tolerances");
+  auto params = joint_trajectory_controller::Params();
+  params.joints = {"a", "b"};
+  params.constraints.stopped_velocity_tolerance = 1.0;
+  params.constraints.joints_map = {
+    {"a",
+     Params::Constraints::MapJoints{
+       .trajectory = 1.0,
+       .goal = 0.1,
+       .max_deceleration_on_cancel = 3.0,
+       .stopped_velocity_tolerance = 0,
+     }},
+    {"b",
+     Params::Constraints::MapJoints{
+       .trajectory = 1.0,
+       .goal = 0.1,
+       .max_deceleration_on_cancel = 3.0,
+       .stopped_velocity_tolerance = 2.0,
+     }},
+  };
+
+  auto constraints = joint_trajectory_controller::get_segment_tolerances(logger, params);
+  ASSERT_EQ(constraints.goal_state_tolerance.size(), 2);
+  EXPECT_EQ(constraints.goal_state_tolerance[0].velocity, 1.0);
+  EXPECT_EQ(constraints.goal_state_tolerance[1].velocity, 2.0);
+}
