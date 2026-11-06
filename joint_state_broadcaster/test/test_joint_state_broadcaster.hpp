@@ -60,6 +60,18 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesSourceHeaderStamp);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUnsetKeepsControllerManagerTime);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesIntegerType);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUnsupportedTypeUsesControllerTime);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesInvalidValuesAreSafe);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesUint32OverflowIsSafe);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesReadFailureSkipsCycle);
+  FRIEND_TEST(
+    JointStateBroadcasterTest, TimestampStateInterfacesNoPublishUntilFirstValidMeasurement);
+  FRIEND_TEST(
+    JointStateBroadcasterTest, TimestampStateInterfacesZeroSecondsWithNanosecondsIsValid);
+  FRIEND_TEST(JointStateBroadcasterTest, TimestampStateInterfacesAbsentValueDoesNotPublish);
 };
 
 // Minimal 3-joint URDF covering the joint_names_ used in tests
@@ -119,6 +131,10 @@ public:
     const std::vector<std::string> & joint_names = {},
     const std::vector<std::string> & interfaces = {});
 
+  void assign_state_interfaces_with_timestamp(
+    const hardware_interface::StateInterface::SharedPtr & sec,
+    const hardware_interface::StateInterface::SharedPtr & nsec);
+
   void test_published_joint_state_message(const std::string & topic);
 
   void activate_and_get_joint_state_message(
@@ -147,6 +163,16 @@ protected:
   hardware_interface::StateInterface::SharedPtr joint_1_moving_state_ =
     std::make_shared<hardware_interface::StateInterface>(
       joint_names_[0], "is_moving", "bool", "false");
+
+  // Measurement time interfaces for the timestamp_state_interfaces feature.
+  double measurement_sec_value_ = 1234.0;
+  double measurement_nsec_value_ = 567000000.0;
+  hardware_interface::StateInterface::SharedPtr measurement_sec_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "measurement_clock", "measurement_time_sec", &measurement_sec_value_);
+  hardware_interface::StateInterface::SharedPtr measurement_nsec_state_ =
+    std::make_shared<hardware_interface::StateInterface>(
+      "measurement_clock", "measurement_time_nsec", &measurement_nsec_value_);
 
   std::vector<hardware_interface::StateInterface::SharedPtr> test_interfaces_;
 
