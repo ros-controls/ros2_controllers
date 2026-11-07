@@ -476,9 +476,11 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   }
 
   // initialize odometry publisher and message
+  // Use explicit reliable + volatile QoS. SystemDefaultsQoS leaves durability to the RMW,
+  // and Fast DDS turns it into transient local.
   realtime_odometry_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
-      get_node(), DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
+      get_node(), DEFAULT_ODOMETRY_TOPIC, rclcpp::QoS(10).reliable().durability_volatile());
 
   // resolve prefix: substitute tilde (~) with the namespace if contains and normalize slashes (/)
   std::string tf_prefix = "";
@@ -530,7 +532,9 @@ controller_interface::CallbackReturn DiffDriveController::on_configure(
   // initialize transform publisher and message
   realtime_odometry_transform_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
-      get_node(), DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
+      get_node(), DEFAULT_TRANSFORM_TOPIC,
+      // same profile as tf2_ros::DynamicBroadcasterQoS
+      rclcpp::QoS(100).reliable().durability_volatile());
 
   // keeping track of odom and base_link transforms only
   odometry_transform_message_.transforms.resize(1);
