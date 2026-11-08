@@ -2,6 +2,9 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.1 (2026-11-04)
+-------------------
+
 6.10.0 (2026-10-05)
 -------------------
 * feat: migrate diff_drive_controller and joint_trajectory_controller to new RealtimePublisher constructor (`#2576 <https://github.com/ros-controls/ros2_controllers/issues/2576>`_)
