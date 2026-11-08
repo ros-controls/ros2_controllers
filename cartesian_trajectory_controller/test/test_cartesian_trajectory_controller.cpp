@@ -43,6 +43,7 @@
 using namespace std::chrono_literals;
 
 using controller_interface::activate_succeeds;
+using controller_interface::cleanup_succeeds;
 using controller_interface::configure_succeeds;
 using controller_interface::deactivate_succeeds;
 
@@ -271,7 +272,8 @@ protected:
         ros2_control_test_assets::valid_6d_robot_urdf, fk_node_->get_node_parameters_interface(),
         "kinematics");
     }
-    const Eigen::VectorXd qv = Eigen::Map<const Eigen::VectorXd>(q.data(), q.size());
+    const Eigen::VectorXd qv =
+      Eigen::Map<const Eigen::VectorXd>(q.data(), static_cast<Eigen::Index>(q.size()));
     Eigen::Isometry3d x;
     EXPECT_TRUE(fk_kinematics_->calculate_link_transform(qv, TIP, x));
     return x;
@@ -515,14 +517,18 @@ TEST_F(CartesianTrajectoryControllerTest, rejects_non_increasing_times)
   const Eigen::Isometry3d x0 = fk(HOME);
   const auto p1 = offset_pose(x0, {0.03, 0.0, 0.0}, 0.0);
   const auto p2 = offset_pose(x0, {0.06, 0.0, 0.0}, 0.0);
+  const auto p3 = offset_pose(x0, {0.09, 0.0, 0.0}, 0.0);
+  // only the first point may sit at t=0
   for (const auto & times :
        {std::vector<double>{0.5, 0.5}, std::vector<double>{1.0, 0.5},
-        std::vector<double>{-0.5, 1.0}})
+        std::vector<double>{-0.5, 1.0}, std::vector<double>{0.0, 0.0, 1.0}})
   {
-    const auto msg = make_multi_pose_msg(BASE, {p1, p2}, times);
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Quaterniond>> poses = {p1, p2, p3};
+    poses.resize(times.size());
+    const auto msg = make_multi_pose_msg(BASE, poses, times);
     trajectory_msgs::msg::JointTrajectory joint_traj;
     EXPECT_FALSE(controller_->build_joint_trajectory(*msg, joint_traj))
-      << "accepted times " << times[0] << ", " << times[1];
+      << "accepted times " << ::testing::PrintToString(times);
     controller_->reference_callback(msg);
   }
   run(150);
@@ -696,6 +702,24 @@ TEST_F(CartesianTrajectoryControllerTest, deactivate_and_reactivate)
   controller_->reference_callback(make_pose_msg(BASE, tgt.first, tgt.second, 1.0));
   run(200);
   EXPECT_GT(joint_travel(), 0.01);
+  EXPECT_LT((fk(joint_values_).translation() - tgt.first).norm(), 1e-3);
+}
+
+// The kinematics plugin survives a cleanup/configure cycle and the controller still moves.
+TEST_F(CartesianTrajectoryControllerTest, reconfigure_reloads_kinematics)
+{
+  setup_controller();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  ASSERT_TRUE(configure_succeeds(controller_));
+  assign_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  run(1);
+
+  const Eigen::Isometry3d x0 = fk(HOME);
+  const auto tgt = offset_pose(x0, {0.03, 0.02, -0.02}, 0.10);
+  controller_->reference_callback(make_pose_msg(BASE, tgt.first, tgt.second, 1.0));
+  run(200);
   EXPECT_LT((fk(joint_values_).translation() - tgt.first).norm(), 1e-3);
 }
 

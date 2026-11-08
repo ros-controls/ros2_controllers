@@ -73,6 +73,8 @@ controller_interface::CallbackReturn CartesianTrajectoryController::on_configure
 
   try
   {
+    // destroy the old instance while its loader still keeps the library loaded
+    kinematics_.reset();
     kinematics_loader_ =
       std::make_shared<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>(
         ctc_params_.kinematics.plugin_package, "kinematics_interface::KinematicsInterface");
@@ -144,8 +146,8 @@ bool CartesianTrajectoryController::build_joint_trajectory(
 
   // the trajectory starts from the commanded state, NaN until the first update() has commanded
   const auto commanded = rt_last_commanded_state_.get();
-  const Eigen::VectorXd q_seed =
-    Eigen::Map<const Eigen::VectorXd>(commanded.positions.data(), commanded.positions.size());
+  const Eigen::VectorXd q_seed = Eigen::Map<const Eigen::VectorXd>(
+    commanded.positions.data(), static_cast<Eigen::Index>(commanded.positions.size()));
   if (q_seed.size() != static_cast<Eigen::Index>(dof_) || !q_seed.allFinite())
   {
     RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: no commanded state yet.");
@@ -183,7 +185,8 @@ bool CartesianTrajectoryController::build_joint_trajectory(
   if (
     !start_velocity.empty() &&
     kinematics_->convert_joint_deltas_to_cartesian_deltas(
-      q_seed, Eigen::Map<const Eigen::VectorXd>(start_velocity.data(), dof_),
+      q_seed,
+      Eigen::Map<const Eigen::VectorXd>(start_velocity.data(), static_cast<Eigen::Index>(dof_)),
       ctc_params_.kinematics.tip, twist))
   {
     initial_velocity = twist.head<3>();
@@ -230,8 +233,9 @@ bool CartesianTrajectoryController::build_cartesian_waypoints(
     msg.points.begin(), msg.points.end(), [](const auto & point)
     { return point.time_from_start.sec != 0 || point.time_from_start.nanosec != 0u; });
 
-  for (const auto & point : msg.points)
+  for (size_t i = 0; i < msg.points.size(); ++i)
   {
+    const auto & point = msg.points[i];
     if (point.transforms.empty())
     {
       RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: a point has no transform.");
@@ -255,7 +259,7 @@ bool CartesianTrajectoryController::build_cartesian_waypoints(
       t = rclcpp::Duration(point.time_from_start).seconds();
       if (t <= times.back())
       {
-        if (t == 0.0 && times.size() == 1)
+        if (t == 0.0 && i == 0)
         {
           continue;  // waypoint 0 is already the current pose
         }
@@ -299,7 +303,7 @@ bool CartesianTrajectoryController::solve_ik_along_path(
 
   Eigen::Vector3d target_position;
   Eigen::Quaterniond target_orientation;
-  Eigen::VectorXd delta_q = Eigen::VectorXd::Zero(dof_);
+  Eigen::VectorXd delta_q = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(dof_));
   for (size_t k = 1; k <= steps; ++k)
   {
     const double t = (k == steps) ? path.duration() : static_cast<double>(k) * dt;

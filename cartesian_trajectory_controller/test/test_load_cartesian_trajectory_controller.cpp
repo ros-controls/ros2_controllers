@@ -54,6 +54,13 @@ TEST(TestLoadCartesianTrajectoryController, load_and_configure)
     cm.configure_controller("test_cartesian_trajectory_controller"),
     controller_interface::return_type::OK);
 
+  EXPECT_EQ(
+    cm.cleanup_controller("test_cartesian_trajectory_controller"),
+    controller_interface::return_type::OK);
+  EXPECT_EQ(
+    cm.configure_controller("test_cartesian_trajectory_controller"),
+    controller_interface::return_type::OK);
+
   rclcpp::shutdown();
 }
 
