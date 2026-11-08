@@ -43,8 +43,7 @@ The conversion runs once per message in the subscription callback, not in the co
 real-time path is unchanged from the joint trajectory controller.
 
 .. warning::
-   Joint limits are not checked, so a clamped joint makes the end effector leave the path without an
-   error. Redundancy, unreachable poses and singularities are not handled either.
+   Joint limits are not checked, see :ref:`cartesian_trajectory_controller_limitations`.
 
 .. note::
    Higher ``kinematics.alpha`` lags the path more; lower is less stable near singularities.
@@ -62,8 +61,11 @@ pose and skipped.
 
 If the message carries no timing, the controller synthesizes it from ``max_cartesian_speed`` and
 ``max_angular_speed``.
-Each segment is given the time needed to cover it without exceeding either limit, with a floor of
-``resample_dt`` so that coincident poses still advance in time.
+Each segment is given the time it needs to stay within both limits when moving from rest to rest,
+with a floor of ``resample_dt`` so that coincident poses still advance in time.
+This is exact for a single target reached from rest; when the arm is already moving, or the message
+holds several poses, the limits can be exceeded, see
+:ref:`cartesian_trajectory_controller_limitations`.
 
 Choosing ``resample_dt``
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -74,13 +76,31 @@ message.
 As a starting point, keep it below the spacing of the incoming poses, otherwise the controller
 samples the path more coarsely than it was given and some of the commanded poses are passed over.
 
+.. _cartesian_trajectory_controller_limitations:
+
+Known limitations
+-----------------
+
+* Only the ``~/cartesian_reference`` topic is handled; a Cartesian action interface is future work.
+* Joint limits are not checked, so a joint clamped by the controller manager makes the end effector
+  leave the path without an error.
+* There is no redundancy resolution, singularity detection or inverse kinematics convergence check,
+  so an unreachable pose is not rejected.
+* A future ``header.stamp`` is only exact if the robot is at rest until then, since the trajectory
+  is built from the state at arrival.
+* If building the trajectory takes longer than the rest of the current control cycle, the handoff
+  from the previous trajectory lags by the missed cycles, so the arm briefly stalls or steps back.
+* The cubic spline can overshoot between waypoints whose segment durations differ a lot, in
+  translation and rotation alike, and a message without timing can then exceed
+  ``max_cartesian_speed`` and ``max_angular_speed``.
+
 Using the Cartesian Trajectory Controller
 -----------------------------------------
 
 The controller expects at least position feedback from the hardware, and a robot description that
 contains the chain between ``kinematics.base`` and ``kinematics.tip``.
-``joints`` has to list exactly the joints of that chain, so joints outside it, such as a gripper, need
-their own controller.
+``joints`` has to list exactly the joints of that chain, in order from base to tip, so joints outside
+it, such as a gripper, need their own controller.
 
 Because the controller inherits from the joint trajectory controller, it takes that controller's
 parameters as well as its own.
