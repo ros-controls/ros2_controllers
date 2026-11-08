@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -138,22 +139,25 @@ protected:
     ASSERT_EQ(controller_->init(params), controller_interface::return_type::OK);
   }
 
-  // Command and state share the same storage, so a commanded position is immediately reflected in
-  // the state the next cycle - the behaviour of mock_components/GenericSystem for a position joint.
+  // Position joints that start at HOME; run() copies each command into the state.
   void assign_interfaces()
   {
     joint_values_ = HOME;
+    command_storage_.clear();
+    state_storage_.clear();
     std::vector<hardware_interface::LoanedCommandInterface> command_ifs;
     std::vector<hardware_interface::LoanedStateInterface> state_ifs;
     for (size_t i = 0; i < JOINTS.size(); ++i)
     {
       command_storage_.emplace_back(
         std::make_shared<hardware_interface::CommandInterface>(
-          JOINTS[i], hardware_interface::HW_IF_POSITION, &joint_values_[i]));
+          JOINTS[i], hardware_interface::HW_IF_POSITION));
+      std::ignore = command_storage_.back()->set_value(HOME[i]);
       command_ifs.emplace_back(command_storage_.back(), nullptr);
       state_storage_.emplace_back(
         std::make_shared<hardware_interface::StateInterface>(
-          JOINTS[i], hardware_interface::HW_IF_POSITION, &joint_values_[i]));
+          JOINTS[i], hardware_interface::HW_IF_POSITION));
+      std::ignore = state_storage_.back()->set_value(HOME[i]);
       state_ifs.emplace_back(state_storage_.back(), nullptr);
     }
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
@@ -185,6 +189,12 @@ protected:
     {
       ASSERT_EQ(controller_->update(time_, period), controller_interface::return_type::OK);
       time_ = time_ + period;
+      // the joint reaches the commanded position by the next cycle, like mock_components
+      for (size_t i = 0; i < JOINTS.size(); ++i)
+      {
+        joint_values_[i] = command_storage_[i]->get_optional().value();
+        ASSERT_TRUE(state_storage_[i]->set_value(joint_values_[i]));
+      }
     }
   }
 
