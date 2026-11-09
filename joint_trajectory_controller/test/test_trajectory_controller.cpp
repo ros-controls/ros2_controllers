@@ -2245,8 +2245,10 @@ TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_outlasts_short
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::Parameter follow_parameters("omitted_joints_follow_active_trajectory", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+  SetUpAndActivateTrajectoryController(
+    executor, {partial_joints_parameters, blending_parameters, follow_parameters});
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
@@ -2305,8 +2307,10 @@ TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_tra
 {
   rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
   rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::Parameter follow_parameters("omitted_joints_follow_active_trajectory", true);
   rclcpp::executors::SingleThreadedExecutor executor;
-  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+  SetUpAndActivateTrajectoryController(
+    executor, {partial_joints_parameters, blending_parameters, follow_parameters});
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
@@ -2332,6 +2336,69 @@ TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_during_new_tra
 
   EXPECT_GT(omitted_second, omitted_first + 0.5)
     << "omitted joint froze during the new trajectory's execution window";
+}
+
+TEST_P(TrajectoryControllerTestParameterized, blend_omitted_joint_holds_at_handoff_by_default)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+  rclcpp::Parameter blending_parameters("allow_trajectory_replacement", true);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(executor, {partial_joints_parameters, blending_parameters});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  // joint3 ramps linearly 3.1→13.1 over 0-1.5 s, then on to 23.1 at 3.0 s
+  std::vector<std::vector<double>> old_traj{{{1.1, 2.1, 13.1}, {1.1, 2.1, 23.1}}};
+  publish(rclcpp::Duration::from_seconds(1.5), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+
+  // partial traj (joints 0,1) hands off at 0.7 s and ends at 1.2 s, long before the old one
+  std::vector<std::vector<double>> new_traj{{{-3.0, -3.0}}};
+  publish(
+    rclcpp::Duration::from_seconds(0.5), new_traj,
+    start_time + rclcpp::Duration::from_seconds(0.7));
+  traj_controller_->wait_for_trajectory(executor);
+
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.6), t);
+  const double during = traj_controller_->get_state_reference().positions[2];
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(1.0), t);
+  const double after = traj_controller_->get_state_reference().positions[2];
+
+  EXPECT_NEAR(3.1 + 10.0 * 0.7 / 1.5, during, 0.05)
+    << "omitted joint is not held where the old trajectory was at the handoff";
+  EXPECT_NEAR(during, after, COMMON_THRESHOLD)
+    << "omitted joint resumed the old trajectory after the new one ended";
+}
+
+TEST_F(TrajectoryControllerTest, blend_immediate_partial_goal_holds_omitted_joint_by_default)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
+               rclcpp::Parameter("allow_partial_joints_goal", true)});
+
+  const rclcpp::Time start_time = traj_controller_->get_node()->now();
+
+  std::vector<std::vector<double>> old_traj{{{5.0, 5.0, 5.0}, {50.0, 50.0, 50.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), old_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  auto t = updateControllerAsync(rclcpp::Duration::from_seconds(0.3), start_time);
+  const double at_arrival = traj_controller_->get_state_reference().positions[2];
+
+  std::vector<std::vector<double>> new_traj{{{-5.0, -5.0}}};
+  publish(rclcpp::Duration::from_seconds(1.0), new_traj, rclcpp::Time());
+  traj_controller_->wait_for_trajectory(executor);
+  t = updateControllerAsync(rclcpp::Duration::from_seconds(0.5), t);
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "the partial goal took the legacy path, so this test does not cover the blend";
+  const double during = traj_controller_->get_state_reference().positions[2];
+  // past the end of both trajectories
+  updateControllerAsync(rclcpp::Duration::from_seconds(1.5), t);
+  const double after = traj_controller_->get_state_reference().positions[2];
+
+  EXPECT_NEAR(at_arrival, during, COMMON_THRESHOLD);
+  EXPECT_NEAR(at_arrival, after, COMMON_THRESHOLD);
 }
 
 TEST_F(TrajectoryControllerTest, blend_no_active_trajectory_falls_back_to_legacy)
@@ -2441,7 +2508,8 @@ TEST_F(TrajectoryControllerTest, blend_partial_goal_outlasting_old_trajectory)
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
     executor, {rclcpp::Parameter("allow_trajectory_replacement", true),
-               rclcpp::Parameter("allow_partial_joints_goal", true)});
+               rclcpp::Parameter("allow_partial_joints_goal", true),
+               rclcpp::Parameter("omitted_joints_follow_active_trajectory", true)});
 
   const rclcpp::Time start_time = traj_controller_->get_node()->now();
 
