@@ -215,14 +215,19 @@ void wraparound_joint(
  * For each joint independently, solves the knot velocities that make the
  * acceleration continuous across every interior knot -- an O(n) tridiagonal
  * (Thomas) solve over the waypoint positions and their ``time_from_start`` --
- * using rest boundary conditions ``v[0] = v[n-1] = 0``, and writes the result
- * into ``points[i].velocities``. Once velocities are present, the per-segment
+ * and writes the result into ``points[i].velocities``. The end is always at
+ * rest (``v[n-1] = 0``); the start is at rest too unless \p start_velocity is
+ * given, which clamps it instead. Once velocities are present, the per-segment
  * cubic-Hermite sampling in \ref Trajectory::sample reproduces the global cubic
  * spline, so a positions-only trajectory is upgraded from linear (C0) to C2.
  *
  * \param[in,out] traj Trajectory whose points carry positions; velocities are filled.
+ * \param[in] start_velocity Velocity at the first knot, one entry per joint. Empty (the default)
+ *   keeps the rest condition ``v[0] = 0``; passing the current velocity clamps the start instead,
+ *   so a streamed chunk continues the ongoing motion with acceleration still continuous.
  * \return true if velocities were written; false (trajectory left untouched) if it has
- *   fewer than two points, inconsistent widths, or non-strictly-increasing timing.
+ *   fewer than two points, inconsistent widths, non-strictly-increasing timing, or a
+ *   start_velocity whose size does not match the joint count.
  *
  * \code
  *   trajectory_msgs::msg::JointTrajectory msg;  // positions-only waypoints, with time_from_start
@@ -231,7 +236,8 @@ void wraparound_joint(
  *   traj.sample(t, interpolation_methods::DEFAULT_INTERPOLATION, out, start, end);
  * \endcode
  */
-bool fill_cubic_spline_velocities(trajectory_msgs::msg::JointTrajectory & traj);
+bool fill_cubic_spline_velocities(
+  trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity = {});
 
 }  // namespace joint_trajectory_controller
 

@@ -97,6 +97,7 @@ class TestableJointTrajectoryController
 {
 public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
+  using joint_trajectory_controller::JointTrajectoryController::sort_to_local_joint_order;
   using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
   controller_interface::CallbackReturn on_configure(
@@ -199,6 +200,11 @@ public:
   }
 
   size_t get_blend_prefix_size() const { return blend_prefix_size_; }
+
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> get_installed_trajectory_msg() const
+  {
+    return has_active_trajectory() ? current_trajectory_->get_trajectory_msg() : nullptr;
+  }
 
   double get_cmd_timeout() { return cmd_timeout_; }
 

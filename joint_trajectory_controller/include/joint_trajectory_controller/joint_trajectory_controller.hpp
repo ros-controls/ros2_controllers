@@ -195,7 +195,6 @@ protected:
   using ControllerStateMsg = control_msgs::msg::JointTrajectoryControllerState;
   using StatePublisher = realtime_tools::RealtimePublisher<ControllerStateMsg>;
   using StatePublisherPtr = std::unique_ptr<StatePublisher>;
-  rclcpp::Publisher<ControllerStateMsg>::SharedPtr publisher_;
   StatePublisherPtr state_publisher_;
   ControllerStateMsg state_msg_;
 
@@ -219,6 +218,9 @@ protected:
   bool is_positions_only(const trajectory_msgs::msg::JointTrajectory & traj) const;
   // fill time_from_start from positions_upsampling.policy_frequency when timing is absent
   void synthesize_timing(trajectory_msgs::msg::JointTrajectory & traj) const;
+  // prepends the last commanded state as knot 0 at t=0; false if there is none usable yet
+  bool prepend_commanded_state(
+    trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const;
 
   // callbacks for action_server_
   rclcpp_action::GoalResponse goal_received_callback(

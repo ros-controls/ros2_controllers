@@ -52,7 +52,7 @@ The spline interpolator uses the following interpolation strategies depending on
   velocities. Enabling ``positions_upsampling`` avoids this for positions-only inputs: the controller
   pre-solves the knot velocities of a global cubic spline (``fill_cubic_spline_velocities``) and
   writes them into the trajectory, so the cubic strategy is used instead and the sampled motion is
-  continuous in acceleration across the trajectory's own waypoints. See :ref:`Ingesting
+  continuous in acceleration from the last commanded state onwards. See :ref:`Ingesting
   positions-only action chunks <joint_trajectory_controller_userdoc>`.
 
 Trajectories with velocity fields only, velocity and acceleration only, or acceleration fields only can be processed and are accepted, if ``allow_integration_in_goal_trajectories`` is true. Position (and velocity) is then integrated from velocity (or acceleration, respectively) by Heun's method.
@@ -72,7 +72,8 @@ To visualize the difference of the different interpolation methods and their inp
 
 .. note::
   The linear strategy reports no acceleration, so only the enabled series is drawn in the bottom
-  plot. Its step at ``t=0.5`` is the hand-off from the initial point, which is not part of the solve.
+  plot. The last commanded state joins the solve as a waypoint at ``t=0``, so the motion leaves the
+  initial point without a step in acceleration.
 
 .. image:: spline_position_upsampling.png
   :alt: Sampled trajectory with positions-only points, with and without positions_upsampling
@@ -197,5 +198,17 @@ In this case, the first waypoint is discarded and only the second one is realize
   :alt: Trajectory start time in the past.
 
 |
+
+Internally, the controller assembles the merged trajectory from four regions, shown in the diagram below.
+*Prefix* waypoints are the old trajectory between the current playback position (*cursor*) and the handoff.
+The *bridge* point is sampled from the old trajectory at the handoff instant, providing velocity continuity into the new trajectory.
+*New points* are the waypoints from the incoming message.
+
+If the new trajectory is a partial goal (not all joints are commanded), the controller must reconcile the shared timeline.
+The *suffix* carries old waypoints that fall after the new trajectory ends and only exists for partial-joint goals:
+commanded joints are held at their final new value with zero velocity, while omitted joints keep their original waypoints so they can finish uninterrupted.
+
+.. image:: trajectory_blending.png
+  :alt: Structure of the merged trajectory message showing prefix, bridge, new points, and suffix regions.
 
 .. [#f1] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_

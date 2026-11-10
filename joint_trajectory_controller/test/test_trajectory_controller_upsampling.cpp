@@ -14,7 +14,9 @@
 
 #include <gmock/gmock.h>
 
+#include <limits>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "test_trajectory_controller_utils.hpp"
@@ -35,6 +37,7 @@ class UpsamplingHelpers : public joint_trajectory_controller::JointTrajectoryCon
 {
 public:
   using JointTrajectoryController::is_positions_only;
+  using JointTrajectoryController::prepend_commanded_state;
   using JointTrajectoryController::preprocess_incoming_trajectory;
   using JointTrajectoryController::synthesize_timing;
 
@@ -42,6 +45,19 @@ public:
   {
     params_.positions_upsampling.enable = enabled;
     params_.positions_upsampling.policy_frequency = policy_frequency;
+  }
+
+  // Stand in for an active controller that has already commanded a state.
+  void configure_commanded_state(
+    const std::vector<std::string> & joints, const std::vector<double> & positions,
+    const std::vector<double> & velocities)
+  {
+    params_.joints = joints;
+    dof_ = joints.size();
+    trajectory_msgs::msg::JointTrajectoryPoint commanded;
+    commanded.positions = positions;
+    commanded.velocities = velocities;
+    rt_last_commanded_state_.set(commanded);
   }
 };
 
@@ -65,6 +81,77 @@ double time_at(const trajectory_msgs::msg::JointTrajectory & traj, size_t i)
   return rclcpp::Duration(traj.points[i].time_from_start).seconds();
 }
 }  // namespace
+
+// The start velocity follows the sender's joint order: the message is not sorted until install.
+trajectory_msgs::msg::JointTrajectory anchorable_chunk(const std::vector<std::string> & joints)
+{
+  trajectory_msgs::msg::JointTrajectory traj;
+  traj.joint_names = joints;
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  point.positions.assign(joints.size(), 0.0);
+  point.time_from_start = rclcpp::Duration::from_seconds(0.1);
+  traj.points.push_back(point);
+  return traj;
+}
+
+// a mismatch between the two would pair a joint with another joint's state
+TEST(JtcUpsamplingHelpers, anchor_follows_the_message_joint_order)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_state({"joint1", "joint2", "joint3"}, {1.0, 2.0, 3.0}, {0.1, 0.2, 0.3});
+
+  auto traj = anchorable_chunk({"joint3", "joint1", "joint2"});  // reordered
+  std::vector<double> start_velocity;
+  ASSERT_TRUE(c.prepend_commanded_state(traj, start_velocity));
+
+  ASSERT_EQ(start_velocity.size(), 3u);
+  EXPECT_NEAR(start_velocity[0], 0.3, 1e-12);
+  EXPECT_NEAR(start_velocity[1], 0.1, 1e-12);
+  EXPECT_NEAR(start_velocity[2], 0.2, 1e-12);
+
+  ASSERT_EQ(traj.points.size(), 2u);
+  EXPECT_DOUBLE_EQ(time_at(traj, 0), 0.0);
+  ASSERT_EQ(traj.points[0].positions.size(), 3u);
+  EXPECT_NEAR(traj.points[0].positions[0], 3.0, 1e-12);
+  EXPECT_NEAR(traj.points[0].positions[1], 1.0, 1e-12);
+  EXPECT_NEAR(traj.points[0].positions[2], 2.0, 1e-12);
+}
+
+TEST(JtcUpsamplingHelpers, anchor_skipped_when_commanded_state_is_not_finite)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_state(
+    {"joint1", "joint2"}, {1.0, 2.0}, {0.1, std::numeric_limits<double>::quiet_NaN()});
+
+  auto traj = anchorable_chunk({"joint1", "joint2"});
+  std::vector<double> start_velocity;
+  EXPECT_FALSE(c.prepend_commanded_state(traj, start_velocity));
+  EXPECT_EQ(traj.points.size(), 1u);
+}
+
+TEST(JtcUpsamplingHelpers, anchor_skipped_when_the_stamp_is_not_zero)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_state({"joint1"}, {1.0}, {0.1});
+
+  auto traj = anchorable_chunk({"joint1"});
+  traj.header.stamp = rclcpp::Time(5, 0, RCL_ROS_TIME);
+  std::vector<double> start_velocity;
+  EXPECT_FALSE(c.prepend_commanded_state(traj, start_velocity));
+  EXPECT_EQ(traj.points.size(), 1u);
+}
+
+TEST(JtcUpsamplingHelpers, anchor_skipped_when_the_first_waypoint_is_at_zero)
+{
+  UpsamplingHelpers c;
+  c.configure_commanded_state({"joint1"}, {1.0}, {0.1});
+
+  auto traj = anchorable_chunk({"joint1"});
+  traj.points[0].time_from_start = rclcpp::Duration(0, 0);
+  std::vector<double> start_velocity;
+  EXPECT_FALSE(c.prepend_commanded_state(traj, start_velocity));
+  EXPECT_EQ(traj.points.size(), 1u);
+}
 
 // Untimed chunks get time_from_start = (i + 1) / policy_frequency.
 TEST(JtcUpsamplingHelpers, synthesizes_timing_from_policy_frequency)
@@ -230,10 +317,13 @@ TEST_F(TrajectoryControllerTest, upsampling_enabled_accepts_untimed_positions_on
   const auto state_reference = traj_controller_->get_state_reference();
   EXPECT_EQ(state_reference.velocities.size(), joint_names_.size());
 
-  // a second chunk blends: the bridge survives only if the first waypoint is at dt, not 0
+  // a second chunk gets the anchor prepended: one point more than published, at t=0
   publish(zero_delay, points, rclcpp::Time(0, 0, RCL_STEADY_TIME));
   traj_controller_->wait_for_trajectory(executor);
   updateController(rclcpp::Duration::from_seconds(0.02));
-  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u);
+  const auto installed = traj_controller_->get_installed_trajectory_msg();
+  ASSERT_NE(installed, nullptr);
+  EXPECT_EQ(installed->points.size(), points.size() + 1);
+  EXPECT_DOUBLE_EQ(rclcpp::Duration(installed->points.front().time_from_start).seconds(), 0.0);
   executor.cancel();
 }

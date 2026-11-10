@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -481,15 +482,17 @@ controller_interface::return_type JointTrajectoryController::update(
       if (rt_active_goal_local_)
       {
         // send feedback
-        const auto & feedback = rt_active_goal_local_->preallocated_feedback_;
-        feedback->header.stamp = time;
-        feedback->actual = state_current_;
-        feedback->desired = state_desired_;
-        feedback->error = state_error_;
-        // report the index relative to the trajectory the client sent (a blend prepends points)
-        feedback->index = std::max(
-          0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
-        rt_active_goal_local_->setFeedback(feedback);
+        rt_active_goal_local_->trySetFeedback(
+          [&](FollowJTrajAction::Feedback & feedback)
+          {
+            feedback.header.stamp = time;
+            feedback.actual = state_current_;
+            feedback.desired = state_desired_;
+            feedback.error = state_error_;
+            // report the index relative to the trajectory the client sent (a blend prepends points)
+            feedback.index = std::max(
+              0, static_cast<int32_t>(next_point_index) - static_cast<int32_t>(blend_prefix_size_));
+          });
 
         // check abort
         if (tolerance_violated_while_moving)
@@ -1028,9 +1031,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
-  publisher_ = get_node()->create_publisher<ControllerStateMsg>(
-    "~/controller_state", rclcpp::SystemDefaultsQoS());
-  state_publisher_ = std::make_unique<StatePublisher>(publisher_);
+  state_publisher_ =
+    std::make_unique<StatePublisher>(get_node(), "~/controller_state", rclcpp::SystemDefaultsQoS());
 
   state_msg_.joint_names = params_.joints;
   state_msg_.reference.positions.resize(dof_);
@@ -1191,6 +1193,14 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
         params_.speed_scaling.command_interface.c_str());
       return CallbackReturn::ERROR;
     }
+  }
+
+  // Clear the ordered interfaces: they may hold references to loans already released, e.g.
+  // when on_deactivate returned early or a previous activation failed. Capacity is kept.
+  for (size_t index = 0; index < allowed_interface_types_.size(); ++index)
+  {
+    joint_command_interface_[index].clear();
+    joint_state_interface_[index].clear();
   }
 
   // order all joints in the storage
@@ -1426,7 +1436,58 @@ void JointTrajectoryController::preprocess_incoming_trajectory(
     return;
   }
   synthesize_timing(msg);
-  fill_cubic_spline_velocities(msg);
+  // with nothing to anchor on start_velocity stays empty, which is the rest boundary
+  std::vector<double> start_velocity;
+  prepend_commanded_state(msg, start_velocity);
+  fill_cubic_spline_velocities(msg, start_velocity);
+}
+
+bool JointTrajectoryController::prepend_commanded_state(
+  trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const
+{
+  start_velocity.clear();
+  // only a zero stamp puts the trajectory's t=0 at "now", where the commanded state belongs
+  if (traj.header.stamp.sec != 0 || traj.header.stamp.nanosec != 0u)
+  {
+    return false;
+  }
+  // the anchor needs room ahead of the first waypoint
+  if (
+    traj.points.empty() ||
+    rclcpp::Duration(traj.points.front().time_from_start) <= rclcpp::Duration(0, 0))
+  {
+    return false;
+  }
+  const auto commanded = rt_last_commanded_state_.get();
+  if (commanded.positions.size() != dof_ || commanded.velocities.size() != dof_)
+  {
+    return false;
+  }
+  // not sorted into the controller's joint order until install, so index by the sender's order
+  const auto joint_map = mapping(traj.joint_names, params_.joints);
+  if (joint_map.size() != traj.joint_names.size())
+  {
+    return false;
+  }
+  trajectory_msgs::msg::JointTrajectoryPoint anchor;
+  anchor.positions.resize(joint_map.size());
+  std::vector<double> anchor_velocities(joint_map.size());
+  for (size_t i = 0; i < joint_map.size(); ++i)
+  {
+    // NaN before the first update(), and while the hardware exposes no velocity state
+    if (
+      !std::isfinite(commanded.positions[joint_map[i]]) ||
+      !std::isfinite(commanded.velocities[joint_map[i]]))
+    {
+      return false;
+    }
+    anchor.positions[i] = commanded.positions[joint_map[i]];
+    anchor_velocities[i] = commanded.velocities[joint_map[i]];
+  }
+  anchor.time_from_start = rclcpp::Duration(0, 0);
+  traj.points.insert(traj.points.begin(), std::move(anchor));
+  start_velocity = std::move(anchor_velocities);
+  return true;
 }
 
 bool JointTrajectoryController::is_positions_only(
@@ -1574,11 +1635,13 @@ void JointTrajectoryController::goal_accepted_callback(
   }
 
   // Update the active goal
-  RealtimeGoalHandlePtr rt_goal = std::make_shared<RealtimeGoalHandle>(goal_handle);
-  rt_goal->preallocated_feedback_->joint_names = params_.joints;
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->actual, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->desired, dof_);
-  resize_joint_trajectory_point(rt_goal->preallocated_feedback_->error, dof_);
+  auto feedback = std::make_shared<FollowJTrajAction::Feedback>();
+  feedback->joint_names = params_.joints;
+  resize_joint_trajectory_point(feedback->actual, dof_);
+  resize_joint_trajectory_point(feedback->desired, dof_);
+  resize_joint_trajectory_point(feedback->error, dof_);
+  RealtimeGoalHandlePtr rt_goal =
+    std::make_shared<RealtimeGoalHandle>(goal_handle, nullptr, feedback);
   rt_goal->execute();
   rt_active_goal_.set([&](auto & goal) { goal = rt_goal; });
 
@@ -1902,47 +1965,33 @@ void JointTrajectoryController::sort_to_local_joint_order(
 {
   // rearrange all points in the trajectory message based on mapping
   std::vector<size_t> mapping_vector = mapping(trajectory_msg->joint_names, params_.joints);
-  auto remap = [this](
-                 const std::vector<double> & to_remap,
-                 const std::vector<size_t> & mapping) -> std::vector<double>
+  auto remap = [this, &mapping_vector](std::vector<double> & to_remap)
   {
     if (to_remap.empty())
     {
-      return to_remap;
+      return;
     }
-    if (to_remap.size() != mapping.size())
+    if (to_remap.size() != mapping_vector.size())
     {
       RCLCPP_WARN(
         get_node()->get_logger(), "Invalid input size (%zu) for sorting", to_remap.size());
-      return to_remap;
+      return;
     }
-    static std::vector<double> output(dof_, 0.0);
-    // Only resize if necessary since it's an expensive operation
-    if (output.size() != mapping.size())
+    // Don't make this static: it would be shared across all controller instances
+    std::vector<double> output(to_remap.size());
+    for (size_t index = 0; index < mapping_vector.size(); ++index)
     {
-      output.resize(mapping.size(), 0.0);
+      output[mapping_vector[index]] = to_remap[index];
     }
-    for (size_t index = 0; index < mapping.size(); ++index)
-    {
-      auto map_index = mapping[index];
-      output[map_index] = to_remap[index];
-    }
-    return output;
+    to_remap = std::move(output);
   };
 
-  for (size_t index = 0; index < trajectory_msg->points.size(); ++index)
+  for (auto & point : trajectory_msg->points)
   {
-    trajectory_msg->points[index].positions =
-      remap(trajectory_msg->points[index].positions, mapping_vector);
-
-    trajectory_msg->points[index].velocities =
-      remap(trajectory_msg->points[index].velocities, mapping_vector);
-
-    trajectory_msg->points[index].accelerations =
-      remap(trajectory_msg->points[index].accelerations, mapping_vector);
-
-    trajectory_msg->points[index].effort =
-      remap(trajectory_msg->points[index].effort, mapping_vector);
+    remap(point.positions);
+    remap(point.velocities);
+    remap(point.accelerations);
+    remap(point.effort);
   }
 }
 
