@@ -7,7 +7,7 @@ This list summarizes important changes between Kilted Kaiju (previous) and Lyric
 
 admittance_controller
 **********************
-* Add a configurable ``sensor_filter_chain`` for the measured wrench, e.g., with the gravity compensation and low-pass filters from ``control_toolbox``. The built-in gravity compensation and exponential filter are deprecated, see the migration guide (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`__).
+* Add a configurable ``sensor_filter_chain`` for the measured wrench, e.g., with the gravity compensation and low-pass filters from ``control_toolbox``, as an alternative to the built-in gravity compensation. The built-in one is real-time safe but needs all frames in the kinematic chain, the filter chain also supports other frames but might not be real-time safe (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`__).
 
 battery_state_broadcaster
 *************************
