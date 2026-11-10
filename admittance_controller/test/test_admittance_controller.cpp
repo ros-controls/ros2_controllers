@@ -423,6 +423,16 @@ TEST_F(AdmittanceControllerTest, ft_sensor_frame_is_read_only)
                  .successful);
 }
 
+// stateful filters throw if the frame of their input changes between updates
+TEST_F(AdmittanceControllerTest, measurement_frame_is_read_only)
+{
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  EXPECT_FALSE(controller_->get_node()
+                 ->set_parameter(rclcpp::Parameter("ft_sensor.measurement_frame.id", "other_frame"))
+                 .successful);
+}
+
 // the filter chain must be configurable again after a cleanup
 TEST_F(AdmittanceControllerTest, reconfigure_after_cleanup)
 {

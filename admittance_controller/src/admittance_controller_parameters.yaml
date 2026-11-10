@@ -70,6 +70,7 @@ admittance_controller:
       id: {
         type: string,
         default_value: "",
+        read_only: true,
         description: "Specifies the measurement frame of the force torque sensor (depends on sensor thickness). If empty, ``ft_sensor.frame.id`` is used. If it differs from ``ft_sensor.frame.id``, a filter in ``sensor_filter_chain`` has to transform the wrench into ``ft_sensor.frame.id``."
       }
     filter_coefficient: {
