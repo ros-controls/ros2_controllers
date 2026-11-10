@@ -27,8 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/test_utils.hpp"
@@ -46,9 +44,7 @@
 #include "semantic_components/force_torque_sensor.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
-using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
@@ -121,8 +117,6 @@ public:
     force_command_publisher_ =
       command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
         "/test_admittance_controller_no_mass/force_references", rclcpp::SystemDefaultsQoS());
-    // pose_command_publisher_ =command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
-    //    "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
     joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
       "/test_admittance_controller_no_mass/joint_references", rclcpp::SystemDefaultsQoS());
 
@@ -337,38 +331,6 @@ protected:
       }
     };
 
-    // TODO(destogl): comment in when using unified mode
-    //     if (controller_->admittance_->unified_mode_) {
-    //       wait_for_topic(force_command_publisher_->get_topic_name());
-    //     }
-
-    //    wait_for_topic(pose_command_publisher_->get_topic_name());
-
-    ControllerCommandWrenchMsg force_msg;
-    force_msg.header.frame_id = sensor_frame_;
-    force_msg.wrench.force.x = 0.1;
-    force_msg.wrench.force.y = 0.2;
-    force_msg.wrench.force.z = 0.3;
-    force_msg.wrench.torque.x = 3.1;
-    force_msg.wrench.torque.y = 3.2;
-    force_msg.wrench.torque.z = 3.3;
-
-    ControllerCommandPoseMsg pose_msg;
-    pose_msg.header.frame_id = endeffector_frame_;
-    pose_msg.pose.position.x = 0.1;
-    pose_msg.pose.position.y = 0.2;
-    pose_msg.pose.position.z = 0.3;
-    pose_msg.pose.orientation.x = 0;
-    pose_msg.pose.orientation.y = 0;
-    pose_msg.pose.orientation.z = 0;
-    pose_msg.pose.orientation.w = 1;
-
-    // TODO(destogl): comment in when using unified mode
-    //     if (controller_->admittance_->unified_mode_) {
-    //       force_command_publisher_->publish(force_msg);
-    //     }
-    //    pose_command_publisher_->publish(pose_msg);
-
     wait_for_topic(joint_command_publisher_->get_topic_name());
 
     ControllerCommandJointMsg joint_msg;
@@ -387,8 +349,6 @@ protected:
   }
 
 protected:
-  // TODO(anyone): adjust the members as needed
-
   // Controller-related parameters
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3",
                                                  "joint4", "joint5", "joint6"};
@@ -421,7 +381,6 @@ protected:
   std::unique_ptr<TestableAdmittanceController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerCommandWrenchMsg>::SharedPtr force_command_publisher_;
-  //  rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
   rclcpp::Publisher<ControllerCommandJointMsg>::SharedPtr joint_command_publisher_;
   rclcpp::Node::SharedPtr test_subscription_node_;
   rclcpp::Node::SharedPtr test_broadcaster_node_;

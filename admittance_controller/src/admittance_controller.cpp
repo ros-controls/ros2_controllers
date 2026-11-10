@@ -669,8 +669,6 @@ void AdmittanceController::write_state_to_hardware(
 void AdmittanceController::read_state_reference_interfaces(
   trajectory_msgs::msg::JointTrajectoryPoint & state_reference)
 {
-  // TODO(destogl): check why is this here?
-
   // if any interface has nan values, assume state_reference is the last set reference
   for (size_t i = 0; i < num_joints_; ++i)
   {
