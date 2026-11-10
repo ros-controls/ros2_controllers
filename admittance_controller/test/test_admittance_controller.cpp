@@ -455,31 +455,25 @@ TEST_F(AdmittanceControllerTest, reactivation_resets_filter_chain)
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
   broadcast_tfs();
-  auto update_and_get_force_z = [this]()
-  {
-    EXPECT_EQ(
-      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
-      controller_interface::return_type::OK);
-    ControllerStateMsg msg;
-    subscribe_and_get_messages(msg);
-    return msg.wrench_base.wrench.force.z;
-  };
-  const double first_force_z = update_and_get_force_z();
-  // let the low-pass filter converge, so its history differs from a fresh filter
+  // let the low-pass filter converge to the gravity-only reading
   for (int i = 0; i < 50; ++i)
   {
     ASSERT_EQ(
       controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
       controller_interface::return_type::OK);
   }
-  ASSERT_GT(std::abs(update_and_get_force_z() - first_force_z), 1.0);
   ASSERT_TRUE(deactivate_succeeds(controller_));
 
+  // 10 N pushing on the sensor while the controller is inactive
+  fts_state_values_[2] = -13.0;
   assign_interfaces();
   ASSERT_TRUE(activate_succeeds(controller_));
   // the reconfigured gravity compensation filter has a new tf buffer
   broadcast_tfs();
-  EXPECT_NEAR(update_and_get_force_z(), first_force_z, COMMON_THRESHOLD);
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);  // runs the first update after the reactivation
+  // with the stale history, the filter output would still be close to the old reading (~1.5 N)
+  EXPECT_GT(msg.wrench_base.wrench.force.z, 9.0);
 }
 
 // the filter chain must be configurable again after a cleanup
