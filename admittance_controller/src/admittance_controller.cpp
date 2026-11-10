@@ -647,8 +647,6 @@ void AdmittanceController::write_state_to_hardware(
     (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
 
-  auto logger = get_node()->get_logger();
-
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     bool success = true;
@@ -669,7 +667,9 @@ void AdmittanceController::write_state_to_hardware(
     }
     if (!success)
     {
-      RCLCPP_WARN(logger, "Error while setting command for joint %zu.", joint_ind);
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Error while setting command for joint %zu.", joint_ind);
     }
   }
   last_commanded_ = state_commanded;
