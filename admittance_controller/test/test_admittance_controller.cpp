@@ -412,6 +412,17 @@ TEST_F(AdmittanceControllerTest, legacy_ignores_invalid_filter_chain)
   ASSERT_TRUE(configure_succeeds(controller_));
 }
 
+// the wrench reference callback validates against the configured ft_sensor.frame.id, so the
+// frame must not change at runtime
+TEST_F(AdmittanceControllerTest, ft_sensor_frame_is_read_only)
+{
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  EXPECT_FALSE(controller_->get_node()
+                 ->set_parameter(rclcpp::Parameter("ft_sensor.frame.id", "other_frame"))
+                 .successful);
+}
+
 TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController("test_admittance_controller_no_mass");

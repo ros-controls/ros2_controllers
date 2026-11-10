@@ -63,6 +63,7 @@ admittance_controller:
     frame:
       id: {
         type: string,
+        read_only: true,
         description: "Specifies the frame/link name of the force torque sensor."
       }
     measurement_frame:

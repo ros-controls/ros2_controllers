@@ -345,7 +345,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_wrench_command_subscriber_ =
     get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
-      // copy the frame: parameters_ may be rewritten by the RT loop while this callback runs
+      // copy the read-only frame: parameters_ may be rewritten by the RT loop while this runs
       [this, ft_frame = admittance_->parameters_.ft_sensor.frame.id](
         const geometry_msgs::msg::WrenchStamped & msg)
       {
