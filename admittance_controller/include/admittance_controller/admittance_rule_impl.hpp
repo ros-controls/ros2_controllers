@@ -319,7 +319,7 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   auto X_dot = Eigen::Matrix<double, 6, 1>(admittance_state.admittance_velocity.data());
 
   // external force expressed in the base frame
-  auto F_base = admittance_state.wrench_base;
+  const auto & F_base = admittance_state.wrench_base;
 
   // zero out any forces in the control frame
   Eigen::Matrix<double, 6, 1> F_control;
@@ -329,10 +329,6 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
 
   // zero out forces/torques for axes not in selected_axes
   F_control = F_control.cwiseProduct(admittance_state.selected_axes);
-
-  // rotate to base frame
-  F_base.block<3, 1>(0, 0) = rot_base_control * F_control.block<3, 1>(0, 0);
-  F_base.block<3, 1>(3, 0) = rot_base_control * F_control.block<3, 1>(3, 0);
 
   // Compute admittance control law in the base frame:
   // F_control = M*R^T*x_ddot + D*R^T*x_dot + K*R^T*x,
