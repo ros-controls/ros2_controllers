@@ -27,7 +27,6 @@
 #include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
-#include "tf2_ros/buffer.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace
