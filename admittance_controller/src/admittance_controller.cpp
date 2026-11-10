@@ -353,17 +353,17 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_wrench_command_subscriber_ =
     get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
-      [&](const geometry_msgs::msg::WrenchStamped & msg)
+      // copy the frame: parameters_ may be rewritten by the RT loop while this callback runs
+      [this, ft_frame = admittance_->parameters_.ft_sensor.frame.id](
+        const geometry_msgs::msg::WrenchStamped & msg)
       {
-        if (
-          msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
-          !msg.header.frame_id.empty())
+        if (msg.header.frame_id != ft_frame && !msg.header.frame_id.empty())
         {
           RCLCPP_ERROR(
             get_node()->get_logger(),
             "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: "
             "%s",
-            msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
+            msg.header.frame_id.c_str(), ft_frame.c_str());
           return;
         }
         input_wrench_command_.set(msg);
