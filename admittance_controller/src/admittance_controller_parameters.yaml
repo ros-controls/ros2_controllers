@@ -91,7 +91,7 @@ admittance_controller:
       id: {
         type: string,
         default_value: "",
-        description: "Specifies the world frame used for the built-in gravity compensation. Gravity must point down in this frame. It must be part of the kinematic chain."
+        description: "Specifies the world frame used for the built-in gravity compensation, required if ``gravity_compensation.frame.id`` is set. Gravity must point down in this frame. It must be part of the kinematic chain."
       }
 
   gravity_compensation:

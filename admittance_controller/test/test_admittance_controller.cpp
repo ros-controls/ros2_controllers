@@ -423,6 +423,16 @@ TEST_F(AdmittanceControllerTest, ft_sensor_frame_is_read_only)
                  .successful);
 }
 
+// the built-in gravity compensation looks up the world frame via the kinematics plugin
+TEST_F(AdmittanceControllerTest, builtin_requires_world_frame)
+{
+  ASSERT_EQ(
+    SetUpController(
+      "test_admittance_controller_builtin", {rclcpp::Parameter("fixed_world_frame.frame.id", "")}),
+    controller_interface::return_type::OK);
+  ASSERT_FALSE(configure_succeeds(controller_));
+}
+
 // stateful filters throw if the frame of their input changes between updates
 TEST_F(AdmittanceControllerTest, measurement_frame_is_read_only)
 {

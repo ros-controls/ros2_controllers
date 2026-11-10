@@ -313,6 +313,13 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   // gravity_compensation.frame.id is read-only, so the mode cannot change after configuration
   if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
   {
+    if (admittance_->parameters_.fixed_world_frame.frame.id.empty())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "'fixed_world_frame.frame.id' is required by the built-in gravity compensation.");
+      return CallbackReturn::FAILURE;
+    }
     RCLCPP_INFO(
       get_node()->get_logger(),
       "Using the built-in gravity compensation and exponential filter, 'sensor_filter_chain' is "
