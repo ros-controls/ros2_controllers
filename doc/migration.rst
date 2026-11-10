@@ -32,6 +32,7 @@ admittance_controller
             mass: 1.0                     # was gravity_compensation.CoG.force / 9.81, now in kg
 
   Note that the filters use ``tf2`` instead of the kinematics plugin to look up the frames.
+  With ``sensor_filter_chain``, the wrench reference from ``~/wrench_reference`` is added after the filters, so it is no longer low-pass filtered.
   The new optional parameter ``ft_sensor.measurement_frame.id`` defines the frame of the measured wrench, if it differs from ``ft_sensor.frame.id`` (e.g., due to the sensor thickness). In that case, a filter must transform the wrench into ``ft_sensor.frame.id``.
 
 joint_state_broadcaster

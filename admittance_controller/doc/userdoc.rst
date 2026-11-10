@@ -40,7 +40,7 @@ Topics
   Target joint commands when controller is not in chained mode.
 
 ~/wrench_reference (input topic) [geometry_msgs::msg::WrenchStamped]
-  Target wrench offset (WrenchStamped has to be in the frame of the FT-sensor).
+  Target wrench offset (WrenchStamped has to be in ``ft_sensor.frame.id``). It is added to the measured wrench after ``sensor_filter_chain``, or before the deprecated built-in gravity compensation and exponential filter.
 
 ~/status (output topic) [control_msgs::msg::AdmittanceControllerState]
   Topic publishing internal states.

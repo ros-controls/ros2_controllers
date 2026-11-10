@@ -54,22 +54,6 @@ void reset_wrench_msg(
 namespace admittance_controller
 {
 
-geometry_msgs::msg::Wrench add_wrenches(
-  const geometry_msgs::msg::Wrench & a, const geometry_msgs::msg::Wrench & b)
-{
-  geometry_msgs::msg::Wrench res;
-
-  res.force.x = a.force.x + b.force.x;
-  res.force.y = a.force.y + b.force.y;
-  res.force.z = a.force.z + b.force.z;
-
-  res.torque.x = a.torque.x + b.torque.x;
-  res.torque.y = a.torque.y + b.torque.y;
-  res.torque.z = a.torque.z + b.torque.z;
-
-  return res;
-}
-
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
   // initialize controller config
@@ -506,10 +490,10 @@ controller_interface::return_type AdmittanceController::update_and_write_command
     wrench_command_msg_ = wrench_command_op.value();
   }
 
-  auto offsetted_ft_values = add_wrenches(ft_values_, wrench_command_msg_.wrench);
-
   // apply admittance control to reference to determine desired state
-  admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
+  admittance_->update(
+    joint_state_, ft_values_, wrench_command_msg_.wrench, reference_, period,
+    reference_admittance_);
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);

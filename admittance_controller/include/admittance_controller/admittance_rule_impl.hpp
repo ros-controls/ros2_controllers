@@ -148,6 +148,7 @@ void AdmittanceRule::apply_parameters_update()
 controller_interface::return_type AdmittanceRule::update(
   const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
   const geometry_msgs::msg::Wrench & measured_wrench,
+  const geometry_msgs::msg::Wrench & wrench_reference,
   const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
   const rclcpp::Duration & period, trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_state)
 {
@@ -188,8 +189,16 @@ controller_interface::return_type AdmittanceRule::update(
       current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf);
     const Eigen::Matrix3d rot_tf_cog = tf.rotation();
 
+    // without measurement_frame, the wrench reference is in the same frame as the measurement
+    geometry_msgs::msg::Wrench offsetted_wrench = measured_wrench;
+    offsetted_wrench.force.x += wrench_reference.force.x;
+    offsetted_wrench.force.y += wrench_reference.force.y;
+    offsetted_wrench.force.z += wrench_reference.force.z;
+    offsetted_wrench.torque.x += wrench_reference.torque.x;
+    offsetted_wrench.torque.y += wrench_reference.torque.y;
+    offsetted_wrench.torque.z += wrench_reference.torque.z;
     process_wrench_measurements_deprecated(
-      measured_wrench, rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
+      offsetted_wrench, rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
 
     // transform filtered wrench into the robot base frame
     admittance_state_.wrench_base.block<3, 1>(0, 0) =
@@ -205,13 +214,14 @@ controller_interface::return_type AdmittanceRule::update(
       desired_joint_state = reference_joint_state;
       return controller_interface::return_type::ERROR;
     }
-    // fill the Wrench (there is no fromMsg for wrench)
-    wrench_filtered_ft_(0) = measured_wrench_filtered_.wrench.force.x;
-    wrench_filtered_ft_(1) = measured_wrench_filtered_.wrench.force.y;
-    wrench_filtered_ft_(2) = measured_wrench_filtered_.wrench.force.z;
-    wrench_filtered_ft_(3) = measured_wrench_filtered_.wrench.torque.x;
-    wrench_filtered_ft_(4) = measured_wrench_filtered_.wrench.torque.y;
-    wrench_filtered_ft_(5) = measured_wrench_filtered_.wrench.torque.z;
+    // fill the Wrench (there is no fromMsg for wrench) and add the reference, which is already
+    // in ft_sensor.frame, unlike the raw measurement in ft_sensor.measurement_frame
+    wrench_filtered_ft_(0) = measured_wrench_filtered_.wrench.force.x + wrench_reference.force.x;
+    wrench_filtered_ft_(1) = measured_wrench_filtered_.wrench.force.y + wrench_reference.force.y;
+    wrench_filtered_ft_(2) = measured_wrench_filtered_.wrench.force.z + wrench_reference.force.z;
+    wrench_filtered_ft_(3) = measured_wrench_filtered_.wrench.torque.x + wrench_reference.torque.x;
+    wrench_filtered_ft_(4) = measured_wrench_filtered_.wrench.torque.y + wrench_reference.torque.y;
+    wrench_filtered_ft_(5) = measured_wrench_filtered_.wrench.torque.z + wrench_reference.torque.z;
 
     // Rotate (and not transform) to the base frame, explanation lower
     admittance_state_.wrench_base.block<3, 1>(0, 0) =

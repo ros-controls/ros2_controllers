@@ -84,6 +84,7 @@ public:
   }
 
   // Expose protected members for testing
+  using AdmittanceRule::admittance_state_;
   using AdmittanceRule::calculate_admittance_rule;
   using AdmittanceRule::kinematics_;
   using AdmittanceRule::parameters_;
@@ -448,6 +449,54 @@ TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_resp
   // Sanity checks: both cases should produce non-zero motion
   EXPECT_GT(motion_low, 0.0) << "Low mass should produce measurable motion";
   EXPECT_GT(motion_high, 0.0) << "High mass should still produce some motion";
+}
+
+// Joint state with all positions/velocities/accelerations set to `value`
+trajectory_msgs::msg::JointTrajectoryPoint make_joint_state(double value)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  point.positions.assign(6, value);
+  point.velocities.assign(6, value);
+  point.accelerations.assign(6, value);
+  return point;
+}
+
+// The wrench reference is given in ft_sensor.frame.id and must be added after the filter chain,
+// i.e., it must not be treated as a raw measurement in ft_sensor.measurement_frame.id
+TEST_F(MassMatrixTransformationTest, wrench_reference_added_in_ft_frame)
+{
+  // switch from the deprecated gravity compensation to the (empty) filter chain
+  node_->set_parameter(rclcpp::Parameter("gravity_compensation.frame.id", std::string("")));
+  admittance_rule_->apply_parameters_update();
+  ASSERT_TRUE(admittance_rule_->filter_chain_->configure(
+    "sensor_filter_chain", node_->get_node_logging_interface(),
+    node_->get_node_parameters_interface()));
+
+  // ft_sensor frame rotated by 90 deg around z w.r.t. base
+  Eigen::Isometry3d link_transform = Eigen::Isometry3d::Identity();
+  link_transform.linear() = Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ()).matrix();
+  setupMockKinematics(link_transform);
+
+  const auto state = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench wrench_reference;
+  wrench_reference.force.x = 1.0;
+  wrench_reference.torque.x = 2.0;
+  auto desired = make_joint_state(0.0);
+
+  ASSERT_EQ(
+    admittance_rule_->update(
+      state, geometry_msgs::msg::Wrench(), wrench_reference, state,
+      rclcpp::Duration::from_seconds(DEFAULT_DT), desired),
+    controller_interface::return_type::OK);
+
+  // x in ft frame is y in base frame
+  const auto & wrench_base = admittance_rule_->admittance_state_.wrench_base;
+  EXPECT_NEAR(wrench_base[0], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[1], 1.0, 1e-9);
+  EXPECT_NEAR(wrench_base[2], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[3], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[4], 2.0, 1e-9);
+  EXPECT_NEAR(wrench_base[5], 0.0, 1e-9);
 }
 
 }  // namespace test

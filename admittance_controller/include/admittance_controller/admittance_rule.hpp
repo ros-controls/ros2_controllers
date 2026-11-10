@@ -110,7 +110,10 @@ public:
    * need for an intermediate transform struct.
    *
    * \param[in] current_joint_state current joint state of the robot
-   * \param[in] measured_wrench most recent measured wrench from force torque sensor
+   * \param[in] measured_wrench most recent measured wrench from force torque sensor, in
+   * ft_sensor.measurement_frame.id
+   * \param[in] wrench_reference wrench offset in ft_sensor.frame.id, added to the measured wrench
+   * after the filter chain
    * \param[in] reference_joint_state input joint state reference
    * \param[in] period time in seconds since last controller update
    * \param[out] desired_joint_state joint state reference after the admittance offset is applied to
@@ -119,6 +122,7 @@ public:
   controller_interface::return_type update(
     const trajectory_msgs::msg::JointTrajectoryPoint & current_joint_state,
     const geometry_msgs::msg::Wrench & measured_wrench,
+    const geometry_msgs::msg::Wrench & wrench_reference,
     const trajectory_msgs::msg::JointTrajectoryPoint & reference_joint_state,
     const rclcpp::Duration & period,
     trajectory_msgs::msg::JointTrajectoryPoint & desired_joint_states);
