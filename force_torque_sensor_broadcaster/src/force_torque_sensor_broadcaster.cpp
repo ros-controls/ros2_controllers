@@ -106,8 +106,14 @@ controller_interface::CallbackReturn ForceTorqueSensorBroadcaster::on_configure(
     "sensor_filter_chain", get_node()->get_node_logging_interface(),
     get_node()->get_node_parameters_interface());
 
+  if (!filter_chain_configured)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to configure sensor filter chain.");
+    return CallbackReturn::ERROR;
+  }
+
   // Even on successful configure, if empty, the chain won't be used
-  has_filter_chain_ = filter_chain_configured && filter_chain_->get_length() > 0;
+  has_filter_chain_ = filter_chain_->get_length() > 0;
 
   RCLCPP_INFO_EXPRESSION(
     get_node()->get_logger(), has_filter_chain_, "Filter active with %zu filters!",
