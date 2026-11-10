@@ -482,8 +482,9 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   }
 
   // apply admittance control to reference to determine desired state
-  // on failure, reference_admittance_ keeps the last command. Return OK anyway: an ERROR would
-  // deactivate the controller, e.g., when the tf data of a filter is not yet available
+  // on failure, reference_admittance_ keeps the last positions with zero velocity/acceleration.
+  // Return OK anyway: an ERROR would deactivate the controller, e.g., when the tf data of a filter
+  // is not yet available
   if (
     admittance_->update(
       joint_state_, ft_values_, wrench_command_msg_.wrench, reference_, period,

@@ -117,7 +117,8 @@ public:
    * \param[in] reference_joint_state input joint state reference
    * \param[in] period time in seconds since last controller update
    * \param[in,out] desired_joint_state joint state reference after the admittance offset is applied
-   * to the input reference. Left unchanged if the update fails, so the last command is held.
+   * to the input reference. If the update fails, the positions are left unchanged (the last command
+   * is held) and the velocities and accelerations are set to zero.
    * \returns ERROR if a kinematics call or the filter chain failed, OK otherwise
    */
   controller_interface::return_type update(

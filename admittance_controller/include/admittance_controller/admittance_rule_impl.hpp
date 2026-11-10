@@ -19,6 +19,7 @@
 
 #include "admittance_controller/admittance_rule.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -155,6 +156,16 @@ controller_interface::return_type AdmittanceRule::update(
     apply_parameters_update();
   }
 
+  // on failure, keep the last commanded positions (jumping to the reference would drop the
+  // admittance offset), but stop: replaying the last velocity would keep the robot moving
+  auto hold_position = [&desired_joint_state]()
+  {
+    std::fill(desired_joint_state.velocities.begin(), desired_joint_state.velocities.end(), 0.0);
+    std::fill(
+      desired_joint_state.accelerations.begin(), desired_joint_state.accelerations.end(), 0.0);
+    return controller_interface::return_type::ERROR;
+  };
+
   bool success = true;
 
   // Reusable transform variable
@@ -175,7 +186,7 @@ controller_interface::return_type AdmittanceRule::update(
   const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
   if (!success)
   {
-    return controller_interface::return_type::ERROR;
+    return hold_position();
   }
 
   if (!parameters_.gravity_compensation.frame.id.empty())
@@ -190,7 +201,7 @@ controller_interface::return_type AdmittanceRule::update(
     if (!success)
     {
       // don't feed the exponential filter with invalid rotations
-      return controller_interface::return_type::ERROR;
+      return hold_position();
     }
 
     // without measurement_frame, the wrench reference is in the same frame as the measurement
@@ -215,8 +226,7 @@ controller_interface::return_type AdmittanceRule::update(
     // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
     if (!process_wrench_measurements(measured_wrench))
     {
-      // keep desired_joint_state (= last command), jumping to the reference would drop the offset
-      return controller_interface::return_type::ERROR;
+      return hold_position();
     }
     // fill the Wrench (there is no fromMsg for wrench) and add the reference, which is already
     // in ft_sensor.frame, unlike the raw measurement in ft_sensor.measurement_frame
@@ -246,8 +256,7 @@ controller_interface::return_type AdmittanceRule::update(
   if (!success)
   {
     admittance_state_ = admittance_state_backup_;
-    // keep desired_joint_state (= last command), jumping to the reference would drop the offset
-    return controller_interface::return_type::ERROR;
+    return hold_position();
   }
 
   // Update final desired_joint_state using the computed transforms

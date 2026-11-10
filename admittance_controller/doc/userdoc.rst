@@ -29,7 +29,7 @@ The output of the chain must be in ``ft_sensor.frame.id``. If the sensor measure
 .. note::
   ``control_filters/GravityCompensationWrench`` looks up its frames via ``tf2`` in every update, i.e., inside the real-time loop. These lookups lock the tf buffer, which is shared with the tf listener thread, so they are not real-time safe and can cause jitter on a busy tf tree. The tf data also lags behind the joint states used by the kinematics plugin.
 
-If an update fails (e.g., a kinematics call fails or a filter cannot look up its frames), the controller holds its last command and logs an error.
+If an update fails (e.g., a kinematics call fails or a filter cannot look up its frames), the controller holds its last commanded positions, commands zero velocities and accelerations, and logs an error.
 
 The parameters ``gravity_compensation.*``, ``fixed_world_frame.frame.id`` and ``ft_sensor.filter_coefficient`` are deprecated. If ``gravity_compensation.frame.id`` is set, the old built-in gravity compensation and exponential filter are used instead of the filter chain.
 

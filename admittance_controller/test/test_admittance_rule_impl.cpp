@@ -487,7 +487,7 @@ trajectory_msgs::msg::JointTrajectoryPoint make_joint_state(double value)
 }
 
 // A failed update (e.g. kinematics or filter failure) must not drop the admittance offset,
-// otherwise the robot jumps to the reference and back
+// otherwise the robot jumps to the reference and back. It must stop the robot, though.
 TEST_F(MassMatrixTransformationTest, failed_update_holds_last_command)
 {
   bool kinematics_fails = false;
@@ -541,9 +541,12 @@ TEST_F(MassMatrixTransformationTest, failed_update_holds_last_command)
     admittance_rule_->update(
       current, measured, geometry_msgs::msg::Wrench(), reference, period, desired),
     controller_interface::return_type::ERROR);
+  // hold the position, but stop: replaying the last velocity would keep a velocity-controlled
+  // robot moving
+  ASSERT_NE(last_desired.velocities[0], 0.0);
   EXPECT_EQ(desired.positions, last_desired.positions);
-  EXPECT_EQ(desired.velocities, last_desired.velocities);
-  EXPECT_EQ(desired.accelerations, last_desired.accelerations);
+  EXPECT_EQ(desired.velocities, std::vector<double>(6, 0.0));
+  EXPECT_EQ(desired.accelerations, std::vector<double>(6, 0.0));
 }
 
 // Failed updates must not integrate the internal admittance state, otherwise the accumulated
