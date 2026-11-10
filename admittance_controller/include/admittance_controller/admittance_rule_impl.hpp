@@ -191,7 +191,7 @@ controller_interface::return_type AdmittanceRule::update(
 
   if (!parameters_.gravity_compensation.frame.id.empty())
   {
-    // deprecated: built-in gravity compensation and exponential filter, computed in world frame
+    // built-in gravity compensation and exponential filter, computed in world frame
     success &= kinematics_->calculate_link_transform(
       current_joint_state.positions, parameters_.fixed_world_frame.frame.id, tf);
     const Eigen::Matrix3d rot_world_base = tf.rotation();
@@ -212,7 +212,7 @@ controller_interface::return_type AdmittanceRule::update(
     offsetted_wrench.torque.x += wrench_reference.torque.x;
     offsetted_wrench.torque.y += wrench_reference.torque.y;
     offsetted_wrench.torque.z += wrench_reference.torque.z;
-    process_wrench_measurements_deprecated(
+    process_wrench_measurements_builtin(
       offsetted_wrench, rot_world_base * rot_tf_base_ft, rot_world_base * rot_tf_cog);
 
     // transform filtered wrench into the robot base frame
@@ -389,7 +389,7 @@ bool AdmittanceRule::process_wrench_measurements(const geometry_msgs::msg::Wrenc
   return ret;
 }
 
-void AdmittanceRule::process_wrench_measurements_deprecated(
+void AdmittanceRule::process_wrench_measurements_builtin(
   const geometry_msgs::msg::Wrench & measured_wrench,
   const Eigen::Matrix<double, 3, 3> & sensor_world_rot,
   const Eigen::Matrix<double, 3, 3> & cog_world_rot)

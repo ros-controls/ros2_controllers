@@ -187,8 +187,8 @@ test_admittance_controller:
         - 214.5
         - 214.6
 
-test_admittance_controller_legacy:
-  # same as test_admittance_controller, but with the deprecated gravity compensation parameters
+test_admittance_controller_builtin:
+  # same as test_admittance_controller, but with the built-in gravity compensation
   # contains minimal needed parameters for kuka_kr6
   ros__parameters:
     joints:
@@ -222,14 +222,12 @@ test_admittance_controller_legacy:
       frame:
         id: link_6  # Wrench measurements are in this frame
         external: false # force torque frame exists within URDF kinematic chain
-      filter_coefficient: 1.0  # deprecated, no smoothing to get the result after one update
+      filter_coefficient: 1.0  # no smoothing to get the result after one update
 
-    # deprecated: use sensor_filter_chain with control_filters/GravityCompensationWrench instead
     fixed_world_frame:   # Gravity points down (neg. Z) in this frame (Usually: world or base_link)
       frame:
         id: base_link
 
-    # deprecated: use sensor_filter_chain with control_filters/GravityCompensationWrench instead
     gravity_compensation:
       frame:
         id: link_6

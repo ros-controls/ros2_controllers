@@ -75,7 +75,7 @@ admittance_controller:
     filter_coefficient: {
       type: double,
       default_value: 0.05,
-      description: "DEPRECATED: Only used together with the deprecated ``gravity_compensation`` parameters. Use a ``control_filters/LowPassFilterWrench`` in ``sensor_filter_chain`` instead. Specifies the filter coefficient for the sensor's exponential filter."
+      description: "Specifies the filter coefficient for the sensor's exponential filter. Only used with the built-in gravity compensation, i.e., if ``gravity_compensation.frame.id`` is set."
     }
 
   control:
@@ -90,7 +90,7 @@ admittance_controller:
       id: {
         type: string,
         default_value: "",
-        description: "DEPRECATED: Use a ``control_filters/GravityCompensationWrench`` in ``sensor_filter_chain`` instead. Specifies the world frame use for admittance calculation. Gravity must point down in this frame."
+        description: "Specifies the world frame used for the built-in gravity compensation. Gravity must point down in this frame. It must be part of the kinematic chain."
       }
 
   gravity_compensation:
@@ -99,13 +99,13 @@ admittance_controller:
         type: string,
         default_value: "",
         read_only: true,
-        description: "DEPRECATED: Use a ``control_filters/GravityCompensationWrench`` in ``sensor_filter_chain`` instead. Specifies the frame which center of gravity (CoG) is defined in. Normally, the force torque sensor frame should be used. If set, the deprecated gravity compensation and exponential filter are used and ``sensor_filter_chain`` is ignored."
+        description: "Specifies the frame which center of gravity (CoG) is defined in. Normally, the force torque sensor frame should be used. If set, the built-in gravity compensation and exponential filter are used (real-time safe, frames from the kinematics plugin) and ``sensor_filter_chain`` is ignored. If empty, ``sensor_filter_chain`` is used."
       }
     CoG:
       pos: {
         type: double_array,
         default_value: [0.0, 0.0, 0.0],
-        description: "DEPRECATED: Use a ``control_filters/GravityCompensationWrench`` in ``sensor_filter_chain`` instead. Specifies the position of the center of gravity (CoG) of the end effector in the gravity compensation frame.",
+        description: "Specifies the position of the center of gravity (CoG) of the end effector in the gravity compensation frame.",
         validation: {
           fixed_size<>: 3
         }
@@ -113,7 +113,7 @@ admittance_controller:
       force: {
         type: double,
         default_value: 0.0,
-        description: "DEPRECATED: Use a ``control_filters/GravityCompensationWrench`` in ``sensor_filter_chain`` instead. Specifies the weight of the end effector, e.g mass * 9.81."
+        description: "Specifies the weight of the end effector, e.g mass * 9.81."
       }
 
   admittance:

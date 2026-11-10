@@ -620,7 +620,7 @@ TEST_F(MassMatrixTransformationTest, failed_update_does_not_integrate_state)
 // i.e., it must not be treated as a raw measurement in ft_sensor.measurement_frame.id
 TEST_F(MassMatrixTransformationTest, wrench_reference_added_in_ft_frame)
 {
-  // switch from the deprecated gravity compensation to the (empty) filter chain. The parameter
+  // switch from the built-in gravity compensation to the (empty) filter chain. The parameter
   // is read-only, so change the rule's copy directly
   admittance_rule_->parameters_.gravity_compensation.frame.id = "";
   ASSERT_TRUE(admittance_rule_->filter_chain_->configure(

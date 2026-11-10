@@ -313,16 +313,12 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   // gravity_compensation.frame.id is read-only, so the mode cannot change after configuration
   if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
   {
-    RCLCPP_WARN(
+    RCLCPP_INFO(
       get_node()->get_logger(),
-      "The parameters 'gravity_compensation.*', 'fixed_world_frame.frame.id' and "
-      "'ft_sensor.filter_coefficient' are deprecated and will be removed in a future release. "
-      "Use 'sensor_filter_chain' with the 'control_filters/GravityCompensationWrench' and "
-      "'control_filters/LowPassFilterWrench' filters instead. "
-      "While 'gravity_compensation.frame.id' is set, 'sensor_filter_chain' is ignored.");
+      "Using the built-in gravity compensation and exponential filter, 'sensor_filter_chain' is "
+      "ignored.");
   }
-
-  // configure filters, unused with the deprecated gravity compensation.
+  // configure filters, unused with the built-in gravity compensation.
   // clear() first, otherwise configuring again after a cleanup fails
   else if (
     !filter_chain_->clear() || !filter_chain_->configure(
