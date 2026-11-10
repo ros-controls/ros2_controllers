@@ -29,6 +29,8 @@
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
+  <depend>eigen</depend>
+  <depend>filters</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
