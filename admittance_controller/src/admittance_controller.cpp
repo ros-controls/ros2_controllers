@@ -310,6 +310,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     get_interface_list(admittance_->parameters_.command_interfaces).c_str(),
     get_interface_list(admittance_->parameters_.state_interfaces).c_str());
 
+  // gravity_compensation.frame.id is read-only, so the mode cannot change after configuration
   if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
   {
     RCLCPP_WARN(
@@ -321,10 +322,10 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "While 'gravity_compensation.frame.id' is set, 'sensor_filter_chain' is ignored.");
   }
 
-  // configure filters
-  if (!filter_chain_->configure(
-        "sensor_filter_chain", get_node()->get_node_logging_interface(),
-        get_node()->get_node_parameters_interface()))
+  // configure filters, unused with the deprecated gravity compensation
+  else if (!filter_chain_->configure(
+             "sensor_filter_chain", get_node()->get_node_logging_interface(),
+             get_node()->get_node_parameters_interface()))
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),

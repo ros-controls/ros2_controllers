@@ -97,6 +97,7 @@ admittance_controller:
       id: {
         type: string,
         default_value: "",
+        read_only: true,
         description: "DEPRECATED: Use a ``control_filters/GravityCompensationWrench`` in ``sensor_filter_chain`` instead. Specifies the frame which center of gravity (CoG) is defined in. Normally, the force torque sensor frame should be used. If set, the deprecated gravity compensation and exponential filter are used and ``sensor_filter_chain`` is ignored."
       }
     CoG:

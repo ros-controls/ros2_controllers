@@ -8,7 +8,7 @@ admittance_controller
 *****************************
 * The built-in gravity compensation and exponential filter are deprecated in favor of a configurable ``sensor_filter_chain`` (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`_).
   The parameters ``gravity_compensation.*``, ``fixed_world_frame.frame.id`` and ``ft_sensor.filter_coefficient`` still work, but print a deprecation warning and will be removed in a future release.
-  While ``gravity_compensation.frame.id`` is set, ``sensor_filter_chain`` is ignored. To migrate, remove those parameters and add the equivalent filters from ``control_toolbox``:
+  While ``gravity_compensation.frame.id`` is set, ``sensor_filter_chain`` is ignored. ``gravity_compensation.frame.id`` is now read-only. To migrate, remove those parameters and add the equivalent filters from ``control_toolbox``:
 
   .. code-block:: yaml
 

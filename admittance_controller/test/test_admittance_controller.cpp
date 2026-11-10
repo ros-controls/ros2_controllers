@@ -399,6 +399,19 @@ TEST_F(AdmittanceControllerTest, legacy_compensation_success)
   EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, tol);
 }
 
+// sensor_filter_chain is ignored with the deprecated gravity compensation, so an invalid chain
+// must not prevent the controller from configuring
+TEST_F(AdmittanceControllerTest, legacy_ignores_invalid_filter_chain)
+{
+  ASSERT_EQ(
+    SetUpController(
+      "test_admittance_controller_legacy",
+      {rclcpp::Parameter("sensor_filter_chain.filter1.type", "not_a_package/NotAFilter"),
+       rclcpp::Parameter("sensor_filter_chain.filter1.name", "invalid")}),
+    controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+}
+
 TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController("test_admittance_controller_no_mass");
