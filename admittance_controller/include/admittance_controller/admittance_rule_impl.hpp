@@ -260,19 +260,10 @@ bool AdmittanceRule::calculate_admittance_rule(AdmittanceState & admittance_stat
   Eigen::Matrix<double, 6, 6> rot_base_control_6d = Eigen::Matrix<double, 6, 6>::Zero();
   rot_base_control_6d.topLeftCorner<3, 3>() = rot_base_control;
   rot_base_control_6d.bottomRightCorner<3, 3>() = rot_base_control;
+  // K stays diagonal in the control frame: the control law applies it to R^T * X
   Eigen::Matrix<double, 6, 6> K = Eigen::Matrix<double, 6, 6>::Zero();
-  Eigen::Matrix<double, 3, 3> K_pos = Eigen::Matrix<double, 3, 3>::Zero();
-  Eigen::Matrix<double, 3, 3> K_rot = Eigen::Matrix<double, 3, 3>::Zero();
-  K_pos.diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
-  K_rot.diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
-  // Rotate (and not transform) to the control frame, explanation can be found
-  // in the reference here:  https://users.wpi.edu/~jfu2/rbe502/files/force_control.pdf
-  // Force Control by Luigi Villani and Joris De Schutter
-  // Page 200
-  K_pos = rot_base_control * K_pos * rot_base_control.transpose();
-  K_rot = rot_base_control * K_rot * rot_base_control.transpose();
-  K.block<3, 3>(0, 0) = K_pos;
-  K.block<3, 3>(3, 3) = K_rot;
+  K.block<3, 3>(0, 0).diagonal() = admittance_state.stiffness.block<3, 1>(0, 0);
+  K.block<3, 3>(3, 3).diagonal() = admittance_state.stiffness.block<3, 1>(3, 0);
 
   // The same for damping
   Eigen::Matrix<double, 6, 6> D = Eigen::Matrix<double, 6, 6>::Zero();

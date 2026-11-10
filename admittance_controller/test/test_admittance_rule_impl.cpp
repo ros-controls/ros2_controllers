@@ -451,6 +451,31 @@ TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_resp
   EXPECT_GT(motion_high, 0.0) << "High mass should still produce some motion";
 }
 
+// Stiffness is given in the control frame and applied to the displacement in the control frame,
+// so it must not be rotated into the base frame
+TEST_F(MassMatrixTransformationTest, stiffness_applied_in_control_frame)
+{
+  setupMockKinematics();  // identity: current ft pose at base origin
+
+  // control frame rotated by 90 deg around z: control x = base y, control y = base -x
+  const Eigen::Matrix3d rot_base_control =
+    Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+  Vector6d stiffness;
+  stiffness << 1000.0, 1.0, 1.0, 1.0, 1.0, 1.0;
+  AdmittanceState state = createAdmittanceState(
+    rot_base_control, Vector6d::Ones(), stiffness, Vector6d::Zero(), Vector6d::Zero());
+  // displacement of 0.1 m along base x, i.e. along control -y
+  state.ref_trans_base_ft.translation() = Eigen::Vector3d(-0.1, 0.0, 0.0);
+  admittance_rule_->parameters_.admittance.joint_damping = 0.0;
+
+  ASSERT_TRUE(admittance_rule_->calculate_admittance_rule(state, DEFAULT_DT));
+
+  // restoring acceleration along base -x with the control y stiffness (1.0), unit mass
+  EXPECT_NEAR(state.joint_acc[0], -0.1, 1e-9);
+  EXPECT_NEAR(state.joint_acc[1], 0.0, 1e-9);
+  EXPECT_NEAR(state.joint_acc[2], 0.0, 1e-9);
+}
+
 // Joint state with all positions/velocities/accelerations set to `value`
 trajectory_msgs::msg::JointTrajectoryPoint make_joint_state(double value)
 {
