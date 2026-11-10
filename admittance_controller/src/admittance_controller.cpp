@@ -93,15 +93,7 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   }
 
   tinyxml2::XMLDocument doc;
-  if (!doc.Parse(robot_description.c_str()) && doc.Error())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Failed to parse robot description XML from parameter "
-      "'robot_description': %s",
-      doc.ErrorStr());
-    return controller_interface::CallbackReturn::ERROR;
-  }
+  doc.Parse(robot_description.c_str());
   if (doc.Error())
   {
     RCLCPP_ERROR(

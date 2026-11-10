@@ -97,10 +97,7 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.joint_state.position.assign(num_joints, 0);
   state_message_.joint_state.velocity.assign(num_joints, 0);
   state_message_.joint_state.effort.assign(num_joints, 0);
-  for (size_t i = 0; i < parameters_.joints.size(); ++i)
-  {
-    state_message_.joint_state.name = parameters_.joints;
-  }
+  state_message_.joint_state.name = parameters_.joints;
   state_message_.mass.data.resize(NUM_CARTESIAN_DOF, 0.0);
   state_message_.selected_axes.data.resize(NUM_CARTESIAN_DOF, 0);
   state_message_.damping.data.resize(NUM_CARTESIAN_DOF, 0);
@@ -113,7 +110,6 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   admittance_state_ = AdmittanceState(num_joints);
 
   // reset forces
-  wrench_base_.setZero();
   wrench_world_.setZero();
   end_effector_weight_.setZero();
 

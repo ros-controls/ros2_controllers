@@ -188,8 +188,6 @@ protected:
     kinematics_loader_;
   std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
 
-  // filtered wrench in base frame
-  Eigen::Matrix<double, 6, 1> wrench_base_;
   // input wrench in sensor frame
   geometry_msgs::msg::WrenchStamped measured_wrench_;
   // filtered wrench in sensor_frame
