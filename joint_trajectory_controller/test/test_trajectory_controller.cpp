@@ -1957,6 +1957,52 @@ TEST_P(
 }
 
 /**
+ * @brief A joint left out of a partial goal, never commanded by this controller, holds at the
+ * position its state interface reports in the update that picks the goal up. Here the state was
+ * NaN at activation and only becomes valid before that first update: a state read one cycle
+ * late would still be NaN and reject the goal.
+ */
+TEST_P(
+  TrajectoryControllerTestParameterized,
+  test_partial_joint_list_missing_joint_holds_at_state_of_this_cycle)
+{
+  rclcpp::Parameter partial_joints_parameters("allow_partial_joints_goal", true);
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS;
+  initial_pos_joints[2] = std::numeric_limits<double>::quiet_NaN();
+  SetUpAndActivateTrajectoryController(
+    executor, {partial_joints_parameters}, false, 0.0, 1.0, initial_pos_joints);
+  ASSERT_TRUE(std::isnan(pos_state_interfaces_[2]->get_optional().value()));
+
+  // the hardware reports joint 3's position only after activation
+  const double joint3_state = 1.5;
+  std::ignore = pos_state_interfaces_[2]->set_value(joint3_state);
+
+  const double dt = 0.25;
+  trajectory_msgs::msg::JointTrajectory traj_msg;
+  traj_msg.joint_names = {joint_names_[1], joint_names_[0]};
+  traj_msg.header.stamp = rclcpp::Time(0);
+  traj_msg.points.resize(1);
+  traj_msg.points[0].time_from_start = rclcpp::Duration::from_seconds(dt);
+  traj_msg.points[0].positions = {2.0, 1.0};
+  trajectory_publisher_->publish(traj_msg);
+
+  traj_controller_->wait_for_trajectory(executor);
+  updateControllerAsync(rclcpp::Duration::from_seconds(dt));
+
+  const auto reference = traj_controller_->get_state_reference();
+  ASSERT_EQ(joint_names_.size(), reference.positions.size());
+  EXPECT_NEAR(joint3_state, reference.positions[2], COMMON_THRESHOLD)
+    << "Joint 3 must be held at the position its state reports";
+  // the goal was executed, not rejected
+  EXPECT_NEAR(traj_msg.points[0].positions[1], reference.positions[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(traj_msg.points[0].positions[0], reference.positions[1], COMMON_THRESHOLD);
+
+  executor.cancel();
+}
+
+/**
  * @brief invalid_message Test mismatched joint and reference vector sizes
  */
 TEST_P(TrajectoryControllerTestParameterized, invalid_message)

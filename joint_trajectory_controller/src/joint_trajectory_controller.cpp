@@ -291,6 +291,12 @@ controller_interface::return_type JointTrajectoryController::update(
   rt_active_goal_local_.reset();
   rt_active_goal_.try_get([&](const auto & goal) { rt_active_goal_local_ = goal; });
 
+  // current state update, before the new message: filling its omitted joints and the hold on
+  // rejecting it both need this cycle's state
+  state_current_.time_from_start.sec = 0;
+  state_current_.time_from_start.nanosec = 0;
+  read_state_from_state_interfaces(state_current_);
+
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
@@ -342,15 +348,17 @@ controller_interface::return_type JointTrajectoryController::update(
         rt_active_goal_local_->setAborted(result);
         rt_active_goal_.try_set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
         rt_has_pending_goal_ = false;
+        // the goal is finished: the rest of this cycle must not send it feedback or complete it
+        rt_active_goal_local_.reset();
       }
-      rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
+      // Hold from this cycle on, so the previous trajectory commands nothing more. The hold also
+      // replaces the pending message, else the rejected one is picked up again next cycle.
+      const auto hold_msg = set_hold_position();
+      blend_prefix_size_ = 0;
+      current_trajectory_->update(hold_msg);
+      rt_new_trajectory_msg_.try_set([hold_msg](auto & m) { m = hold_msg; });
     }
   }
-
-  // current state update
-  state_current_.time_from_start.sec = 0;
-  state_current_.time_from_start.nanosec = 0;
-  read_state_from_state_interfaces(state_current_);
 
   // currently carrying out a trajectory
   if (has_active_trajectory())
