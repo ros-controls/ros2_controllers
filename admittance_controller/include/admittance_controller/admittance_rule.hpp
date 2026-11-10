@@ -203,6 +203,8 @@ protected:
 
   // admittance controllers internal state
   AdmittanceState admittance_state_{0};
+  // copy of admittance_state_ to restore it if an update fails
+  AdmittanceState admittance_state_backup_{0};
 
   // ROS
   control_msgs::msg::AdmittanceControllerState state_message_;

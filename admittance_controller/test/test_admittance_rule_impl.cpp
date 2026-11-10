@@ -546,6 +546,73 @@ TEST_F(MassMatrixTransformationTest, failed_update_holds_last_command)
   EXPECT_EQ(desired.accelerations, last_desired.accelerations);
 }
 
+// Failed updates must not integrate the internal admittance state, otherwise the accumulated
+// offset is applied in one step when the kinematics recovers
+TEST_F(MassMatrixTransformationTest, failed_update_does_not_integrate_state)
+{
+  bool transform_fails = false;
+  bool conversion_fails = false;
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&transform_fails](
+          const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d & transform) -> bool
+        {
+          transform = Eigen::Isometry3d::Identity();
+          return !transform_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&conversion_fails](
+          const Eigen::VectorXd &, const Vector6d & cartesian_deltas, const std::string &,
+          Eigen::VectorXd & joint_deltas) -> bool
+        {
+          joint_deltas = cartesian_deltas;
+          return !conversion_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(::testing::Return(true));
+
+  const auto state = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench measured;
+  measured.force.x = DEFAULT_FORCE;
+  auto desired = make_joint_state(0.0);
+  const auto period = rclcpp::Duration::from_seconds(DEFAULT_DT);
+  auto update = [&]()
+  {
+    return admittance_rule_->update(
+      state, measured, geometry_msgs::msg::Wrench(), state, period, desired);
+  };
+
+  for (int i = 0; i < 10; ++i)
+  {
+    ASSERT_EQ(update(), controller_interface::return_type::OK);
+  }
+  const auto & s = admittance_rule_->admittance_state_;
+  const Eigen::VectorXd joint_pos = s.joint_pos;
+  const Eigen::VectorXd joint_vel = s.joint_vel;
+  const Vector6d admittance_velocity = s.admittance_velocity;
+
+  for (bool * fails : {&transform_fails, &conversion_fails})
+  {
+    *fails = true;
+    for (int i = 0; i < 5; ++i)
+    {
+      ASSERT_EQ(update(), controller_interface::return_type::ERROR);
+    }
+    *fails = false;
+    EXPECT_EQ(s.joint_pos, joint_pos);
+    EXPECT_EQ(s.joint_vel, joint_vel);
+    EXPECT_EQ(s.admittance_velocity, admittance_velocity);
+  }
+}
+
 // The wrench reference is given in ft_sensor.frame.id and must be added after the filter chain,
 // i.e., it must not be treated as a raw measurement in ft_sensor.measurement_frame.id
 TEST_F(MassMatrixTransformationTest, wrench_reference_added_in_ft_frame)

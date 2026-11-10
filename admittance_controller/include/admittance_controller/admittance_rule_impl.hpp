@@ -104,8 +104,9 @@ controller_interface::return_type AdmittanceRule::reset(const size_t num_joints)
   state_message_.admittance_velocity.header.frame_id = parameters_.kinematics.base;
   state_message_.admittance_acceleration.header.frame_id = parameters_.kinematics.base;
 
-  // reset admittance state
+  // reset admittance state, size the backup here to avoid allocations in the RT loop
   admittance_state_ = AdmittanceState(num_joints);
+  admittance_state_backup_ = admittance_state_;
 
   // reset forces
   wrench_world_.setZero();
@@ -172,6 +173,10 @@ controller_interface::return_type AdmittanceRule::update(
   success &= kinematics_->calculate_link_transform(
     current_joint_state.positions, parameters_.ft_sensor.frame.id, tf);
   const Eigen::Matrix3d rot_tf_base_ft = tf.rotation();
+  if (!success)
+  {
+    return controller_interface::return_type::ERROR;
+  }
 
   if (!parameters_.gravity_compensation.frame.id.empty())
   {
@@ -182,6 +187,11 @@ controller_interface::return_type AdmittanceRule::update(
     success &= kinematics_->calculate_link_transform(
       current_joint_state.positions, parameters_.gravity_compensation.frame.id, tf);
     const Eigen::Matrix3d rot_tf_cog = tf.rotation();
+    if (!success)
+    {
+      // don't feed the exponential filter with invalid rotations
+      return controller_interface::return_type::ERROR;
+    }
 
     // without measurement_frame, the wrench reference is in the same frame as the measurement
     geometry_msgs::msg::Wrench offsetted_wrench = measured_wrench;
@@ -229,10 +239,13 @@ controller_interface::return_type AdmittanceRule::update(
 
   admittance_state_.ft_sensor_frame = parameters_.ft_sensor.frame.id;
 
-  // compute admittance dynamics
+  // compute admittance dynamics, but commit the integrated state only if all kinematics calls
+  // succeed. Otherwise the offset accumulated during failures would be applied at once on recovery
+  admittance_state_backup_ = admittance_state_;
   success &= calculate_admittance_rule(admittance_state_, dt);
   if (!success)
   {
+    admittance_state_ = admittance_state_backup_;
     // keep desired_joint_state (= last command), jumping to the reference would drop the offset
     return controller_interface::return_type::ERROR;
   }
