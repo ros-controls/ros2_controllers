@@ -423,6 +423,15 @@ TEST_F(AdmittanceControllerTest, ft_sensor_frame_is_read_only)
                  .successful);
 }
 
+// the filter chain must be configurable again after a cleanup
+TEST_F(AdmittanceControllerTest, reconfigure_after_cleanup)
+{
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  ASSERT_TRUE(configure_succeeds(controller_));
+}
+
 TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
 {
   SetUpController("test_admittance_controller_no_mass");

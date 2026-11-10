@@ -322,10 +322,12 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "While 'gravity_compensation.frame.id' is set, 'sensor_filter_chain' is ignored.");
   }
 
-  // configure filters, unused with the deprecated gravity compensation
-  else if (!filter_chain_->configure(
-             "sensor_filter_chain", get_node()->get_node_logging_interface(),
-             get_node()->get_node_parameters_interface()))
+  // configure filters, unused with the deprecated gravity compensation.
+  // clear() first, otherwise configuring again after a cleanup fails
+  else if (
+    !filter_chain_->clear() || !filter_chain_->configure(
+                                 "sensor_filter_chain", get_node()->get_node_logging_interface(),
+                                 get_node()->get_node_parameters_interface()))
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
