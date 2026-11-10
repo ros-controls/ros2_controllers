@@ -26,6 +26,9 @@ Wrench filtering
 The measured wrench is processed by a filter chain defined in the ``sensor_filter_chain`` parameter namespace, e.g., with ``control_filters/GravityCompensationWrench`` and ``control_filters/LowPassFilterWrench`` from `control_toolbox <https://github.com/ros-controls/control_toolbox>`_. Without filters, the measured wrench is used as is.
 The output of the chain must be in ``ft_sensor.frame.id``. If the sensor measures in another frame (``ft_sensor.measurement_frame.id``), a filter of the chain has to transform the wrench accordingly.
 
+.. note::
+  ``control_filters/GravityCompensationWrench`` looks up its frames via ``tf2`` in every update, i.e., inside the real-time loop. These lookups lock the tf buffer, which is shared with the tf listener thread, so they are not real-time safe and can cause jitter on a busy tf tree. The tf data also lags behind the joint states used by the kinematics plugin.
+
 If an update fails (e.g., a kinematics call fails or a filter cannot look up its frames), the controller holds its last command and logs an error.
 
 The parameters ``gravity_compensation.*``, ``fixed_world_frame.frame.id`` and ``ft_sensor.filter_coefficient`` are deprecated. If ``gravity_compensation.frame.id`` is set, the old built-in gravity compensation and exponential filter are used instead of the filter chain.
