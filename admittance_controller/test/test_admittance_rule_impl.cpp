@@ -461,6 +461,66 @@ trajectory_msgs::msg::JointTrajectoryPoint make_joint_state(double value)
   return point;
 }
 
+// A failed update (e.g. kinematics or filter failure) must not drop the admittance offset,
+// otherwise the robot jumps to the reference and back
+TEST_F(MassMatrixTransformationTest, failed_update_holds_last_command)
+{
+  bool kinematics_fails = false;
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&kinematics_fails](
+          const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d & transform) -> bool
+        {
+          transform = Eigen::Isometry3d::Identity();
+          return !kinematics_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [](
+          const Eigen::VectorXd &, const Vector6d & cartesian_deltas, const std::string &,
+          Eigen::VectorXd & joint_deltas) -> bool
+        {
+          joint_deltas = cartesian_deltas;
+          return true;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(::testing::Return(true));
+
+  const auto current = make_joint_state(0.0);
+  const auto reference = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench measured;
+  measured.force.x = DEFAULT_FORCE;
+  auto desired = make_joint_state(0.0);
+  const auto period = rclcpp::Duration::from_seconds(DEFAULT_DT);
+
+  // build up an admittance offset
+  for (int i = 0; i < 10; ++i)
+  {
+    ASSERT_EQ(
+      admittance_rule_->update(
+        current, measured, geometry_msgs::msg::Wrench(), reference, period, desired),
+      controller_interface::return_type::OK);
+  }
+  ASSERT_NE(desired.positions[0], reference.positions[0]);
+  const auto last_desired = desired;
+
+  kinematics_fails = true;
+  EXPECT_EQ(
+    admittance_rule_->update(
+      current, measured, geometry_msgs::msg::Wrench(), reference, period, desired),
+    controller_interface::return_type::ERROR);
+  EXPECT_EQ(desired.positions, last_desired.positions);
+  EXPECT_EQ(desired.velocities, last_desired.velocities);
+  EXPECT_EQ(desired.accelerations, last_desired.accelerations);
+}
+
 // The wrench reference is given in ft_sensor.frame.id and must be added after the filter chain,
 // i.e., it must not be treated as a raw measurement in ft_sensor.measurement_frame.id
 TEST_F(MassMatrixTransformationTest, wrench_reference_added_in_ft_frame)

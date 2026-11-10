@@ -491,9 +491,17 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   }
 
   // apply admittance control to reference to determine desired state
-  admittance_->update(
-    joint_state_, ft_values_, wrench_command_msg_.wrench, reference_, period,
-    reference_admittance_);
+  // on failure, reference_admittance_ keeps the last command. Return OK anyway: an ERROR would
+  // deactivate the controller, e.g., when the tf data of a filter is not yet available
+  if (
+    admittance_->update(
+      joint_state_, ft_values_, wrench_command_msg_.wrench, reference_, period,
+      reference_admittance_) != controller_interface::return_type::OK)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Admittance update failed (kinematics or sensor_filter_chain), holding the last command.");
+  }
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);

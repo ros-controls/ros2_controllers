@@ -211,7 +211,7 @@ controller_interface::return_type AdmittanceRule::update(
     // process the wrench measurements, expect the result in ft_sensor.frame (=FK-accessible frame)
     if (!process_wrench_measurements(measured_wrench))
     {
-      desired_joint_state = reference_joint_state;
+      // keep desired_joint_state (= last command), jumping to the reference would drop the offset
       return controller_interface::return_type::ERROR;
     }
     // fill the Wrench (there is no fromMsg for wrench) and add the reference, which is already
@@ -239,7 +239,7 @@ controller_interface::return_type AdmittanceRule::update(
   success &= calculate_admittance_rule(admittance_state_, dt);
   if (!success)
   {
-    desired_joint_state = reference_joint_state;
+    // keep desired_joint_state (= last command), jumping to the reference would drop the offset
     return controller_interface::return_type::ERROR;
   }
 
