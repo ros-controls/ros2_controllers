@@ -86,6 +86,8 @@ The output of the chain must be in ``ft_sensor.frame.id``. If the sensor measure
 
 If an update fails (e.g., a kinematics call fails or a filter cannot look up its frames), the controller holds its last commanded positions, commands zero velocities and accelerations, and logs an error.
 
+The filter chain is configured again on every activation, so stateful filters (e.g., a low-pass filter) start without the history from before a deactivation.
+
 An example parameter file for this controller can be found in `the test folder <https://github.com/ros-controls/ros2_controllers/blob/{REPOS_FILE_BRANCH}/admittance_controller/test/test_params.yaml>`_:
 
 .. literalinclude:: ../test/test_params.yaml

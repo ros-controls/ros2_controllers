@@ -325,17 +325,9 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "Using the built-in gravity compensation and exponential filter, 'sensor_filter_chain' is "
       "ignored.");
   }
-  // configure filters, unused with the built-in gravity compensation.
-  // clear() first, otherwise configuring again after a cleanup fails
-  else if (
-    !filter_chain_->clear() || !filter_chain_->configure(
-                                 "sensor_filter_chain", get_node()->get_node_logging_interface(),
-                                 get_node()->get_node_parameters_interface()))
+  // reconfigured in on_activate, configure here already to report an invalid chain early
+  if (!configure_filter_chain())
   {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Could not configure sensor filter chain, please check if the "
-      "parameters are provided correctly.");
     return CallbackReturn::FAILURE;
   }
 
@@ -400,6 +392,12 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
 
   // update parameters if any have changed
   admittance_->apply_parameters_update();
+
+  // reset the filters, their history from before a deactivation would be applied otherwise
+  if (!configure_filter_chain())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   // initialize interface of the FTS semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
@@ -512,6 +510,27 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   }
 
   return controller_interface::return_type::OK;
+}
+
+bool AdmittanceController::configure_filter_chain()
+{
+  if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
+  {
+    return true;  // unused with the built-in gravity compensation
+  }
+  // clear() first, configure() fails on an already configured chain
+  if (
+    !filter_chain_->clear() || !filter_chain_->configure(
+                                 "sensor_filter_chain", get_node()->get_node_logging_interface(),
+                                 get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Could not configure sensor filter chain, please check if the "
+      "parameters are provided correctly.");
+    return false;
+  }
+  return true;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_deactivate(

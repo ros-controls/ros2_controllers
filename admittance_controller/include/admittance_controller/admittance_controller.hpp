@@ -147,6 +147,14 @@ protected:
   geometry_msgs::msg::Wrench ft_values_;
 
   /**
+   * @brief (Re)configure sensor_filter_chain, which also resets the state of its filters.
+   * Allocates, so it must not be called from the real-time loop.
+   *
+   * \returns true if the chain is unused (built-in gravity compensation) or was configured
+   */
+  bool configure_filter_chain();
+
+  /**
    * @brief Read values from hardware interfaces and set corresponding fields of state_current and
    * ft_values
    */

@@ -443,6 +443,45 @@ TEST_F(AdmittanceControllerTest, measurement_frame_is_read_only)
                  .successful);
 }
 
+// the filter chain must restart after a reactivation, not continue with the history from before
+TEST_F(AdmittanceControllerTest, reactivation_resets_filter_chain)
+{
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  // low-pass filter converging within some updates
+  SetUpController(
+    "test_admittance_controller",
+    {rclcpp::Parameter("sensor_filter_chain.filter1.params.sampling_frequency", 1000.0),
+     rclcpp::Parameter("sensor_filter_chain.filter1.params.damping_frequency", 20.0)});
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  broadcast_tfs();
+  auto update_and_get_force_z = [this]()
+  {
+    EXPECT_EQ(
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    ControllerStateMsg msg;
+    subscribe_and_get_messages(msg);
+    return msg.wrench_base.wrench.force.z;
+  };
+  const double first_force_z = update_and_get_force_z();
+  // let the low-pass filter converge, so its history differs from a fresh filter
+  for (int i = 0; i < 50; ++i)
+  {
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+  ASSERT_GT(std::abs(update_and_get_force_z() - first_force_z), 1.0);
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+
+  assign_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  // the reconfigured gravity compensation filter has a new tf buffer
+  broadcast_tfs();
+  EXPECT_NEAR(update_and_get_force_z(), first_force_z, COMMON_THRESHOLD);
+}
+
 // the filter chain must be configurable again after a cleanup
 TEST_F(AdmittanceControllerTest, reconfigure_after_cleanup)
 {
