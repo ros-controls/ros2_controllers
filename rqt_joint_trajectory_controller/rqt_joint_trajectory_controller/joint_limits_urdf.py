@@ -18,17 +18,12 @@
 # https://github.com/ros/robot_model/blob/indigo-devel/
 # joint_state_publisher/joint_state_publisher/joint_state_publisher
 
-<<<<<<< HEAD
 # TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
 #  Exception: Required attribute not set in XML: upper
 # upper is an optional attribute, so I don't understand what's going on
 # See comments in https://github.com/ros/urdfdom/issues/36
 
-import threading
 import xml.dom.minidom
-=======
-import xml.etree.ElementTree as ET
->>>>>>> 62af79e (rqt-jtc: make the controller list requests non-blocking (#2731))
 from math import pi
 
 import rclpy
