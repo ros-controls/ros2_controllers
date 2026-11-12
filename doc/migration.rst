@@ -4,6 +4,11 @@ Migration Guides: Kilted Kaiju to Lyrical Luth
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases, where changes to user code might be necessary.
 
+admittance_controller
+*****************************
+* The parameters ``gravity_compensation.frame.id`` and ``ft_sensor.frame.id`` are now read-only (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`_).
+  To change them, reload the controller.
+
 joint_state_broadcaster
 *****************************
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_).

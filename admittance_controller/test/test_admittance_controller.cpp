@@ -29,17 +29,27 @@ INSTANTIATE_TEST_SUITE_P(
   MissingMandatoryParameterDuringInit, AdmittanceControllerTestParameterizedMissingParameters,
   ::testing::Values(
     "admittance.mass", "admittance.selected_axes", "admittance.stiffness", "command_interfaces",
-    "control.frame.id", "fixed_world_frame.frame.id", "ft_sensor.frame.id", "ft_sensor.name",
-    "gravity_compensation.CoG.pos", "gravity_compensation.frame.id", "joints", "kinematics.base",
+    "control.frame.id", "ft_sensor.frame.id", "ft_sensor.name", "joints", "kinematics.base",
     "kinematics.plugin_name", "kinematics.plugin_package", "kinematics.tip", "state_interfaces"));
 
+// Test on_configure returns FAILURE when a required parameter is missing
+TEST_P(
+  AdmittanceControllerTestParameterizedMissingConfigParameters, one_config_parameter_is_missing)
+{
+  SetUpController(GetParam());
+  ASSERT_THROW(controller_->on_configure(rclcpp_lifecycle::State()), std::runtime_error);
+}
+
 INSTANTIATE_TEST_SUITE_P(
-  InvalidParameterDuringConfiguration, AdmittanceControllerTestParameterizedInvalidParameters,
+  MissingMandatoryParameterDuringConfiguration,
+  AdmittanceControllerTestParameterizedMissingConfigParameters,
   ::testing::Values(
-    // wrong length COG
-    std::make_tuple(
-      std::string("gravity_compensation.CoG.pos"),
-      rclcpp::ParameterValue(std::vector<double>() = {1, 2, 3, 4})),
+    "sensor_filter_chain.filter2.params.tool.CoG",
+    "sensor_filter_chain.filter2.params.sensor_frame"));
+
+INSTANTIATE_TEST_SUITE_P(
+  InvalidParameterDuringInit, AdmittanceControllerTestParameterizedInvalidParameters,
+  ::testing::Values(
     // wrong length stiffness
     std::make_tuple(
       std::string("admittance.stiffness"),
@@ -111,6 +121,9 @@ TEST_F(AdmittanceControllerTest, all_parameters_set_configure_success)
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.name, ft_sensor_name_);
   ASSERT_EQ(controller_->admittance_->parameters_.kinematics.base, ik_base_frame_);
   ASSERT_EQ(controller_->admittance_->parameters_.ft_sensor.frame.id, sensor_frame_);
+  ASSERT_EQ(
+    controller_->admittance_->parameters_.ft_sensor.measurement_frame.id,
+    sensor_measurement_frame_);
 
   ASSERT_TRUE(!controller_->admittance_->parameters_.admittance.selected_axes.empty());
   ASSERT_TRUE(
@@ -300,14 +313,15 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   ControllerStateMsg msg;
   subscribe_and_get_messages(msg);
 
-  //   // Check that wrench command are all zero since not used
-  //   ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.x, 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.force.y, 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.force.z > 0.15);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.x != 0.0);
-  //   ASSERT_TRUE(msg.wrench_base.wrench.torque.y != 0.0);
-  //   ASSERT_EQ(msg.wrench_base.wrench.torque.z, 0.0);
+  //   // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 23.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.1 * 23, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, 0.03);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, 0.03);
 
   //   // Check joint command message
   //   for (auto i = 0ul; i < joint_names_.size(); i++)
@@ -319,9 +333,161 @@ TEST_F(AdmittanceControllerTest, publish_status_success)
   //   }
 }
 
-TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+TEST_F(AdmittanceControllerTest, compensation_success)
+{
+  // set the force on the force torque sensor to simulate gravity pulling
+  // (before SetUpController, because the state interfaces are initialized from it)
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  broadcast_tfs();
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after first update, Low-Pass filter output is null
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  // after second update, Low-Pass filter output not yet to 100 % output
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  // Check that wrench command match the compensation for -m*g =-23 and CoG 0.1 x
+  ASSERT_EQ(msg.wrench_base.header.frame_id, ik_base_frame_);
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, COMMON_THRESHOLD);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, COMMON_THRESHOLD);
+}
+
+// The built-in gravity compensation (gravity_compensation / fixed_world_frame /
+// filter_coefficient parameters) works without a sensor_filter_chain
+TEST_F(AdmittanceControllerTest, builtin_compensation_success)
+{
+  // set the force on the force torque sensor to simulate gravity pulling
+  // (before SetUpController, because the state interfaces are initialized from it)
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  ASSERT_EQ(
+    SetUpController("test_admittance_controller_builtin"), controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);
+
+  // larger tolerance because initial pose does not make link_6 perfectly oriented like world,
+  // without compensation force.z would be -23
+  constexpr double tol = 0.05;
+  EXPECT_NEAR(msg.wrench_base.wrench.force.x, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.y, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.force.z, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.x, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.y, 0.0, tol);
+  EXPECT_NEAR(msg.wrench_base.wrench.torque.z, 0.0, tol);
+}
+
+// sensor_filter_chain is ignored with the built-in gravity compensation, so an invalid chain
+// must not prevent the controller from configuring
+TEST_F(AdmittanceControllerTest, builtin_ignores_invalid_filter_chain)
+{
+  ASSERT_EQ(
+    SetUpController(
+      "test_admittance_controller_builtin",
+      {rclcpp::Parameter("sensor_filter_chain.filter1.type", "not_a_package/NotAFilter"),
+       rclcpp::Parameter("sensor_filter_chain.filter1.name", "invalid")}),
+    controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+}
+
+// the wrench reference callback validates against the configured ft_sensor.frame.id, so the
+// frame must not change at runtime
+TEST_F(AdmittanceControllerTest, ft_sensor_frame_is_read_only)
 {
   SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  EXPECT_FALSE(controller_->get_node()
+                 ->set_parameter(rclcpp::Parameter("ft_sensor.frame.id", "other_frame"))
+                 .successful);
+}
+
+// the built-in gravity compensation looks up the world frame via the kinematics plugin
+TEST_F(AdmittanceControllerTest, builtin_requires_world_frame)
+{
+  ASSERT_EQ(
+    SetUpController(
+      "test_admittance_controller_builtin", {rclcpp::Parameter("fixed_world_frame.frame.id", "")}),
+    controller_interface::return_type::OK);
+  ASSERT_FALSE(configure_succeeds(controller_));
+}
+
+// stateful filters throw if the frame of their input changes between updates
+TEST_F(AdmittanceControllerTest, measurement_frame_is_read_only)
+{
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  EXPECT_FALSE(controller_->get_node()
+                 ->set_parameter(rclcpp::Parameter("ft_sensor.measurement_frame.id", "other_frame"))
+                 .successful);
+}
+
+// the filter chain must restart after a reactivation, not continue with the history from before
+TEST_F(AdmittanceControllerTest, reactivation_resets_filter_chain)
+{
+  fts_state_values_ = {{0.0, 0.0, -23.0, -0.1 * 23, 0, 0.0}};
+  // low-pass filter converging within some updates
+  SetUpController(
+    "test_admittance_controller",
+    {rclcpp::Parameter("sensor_filter_chain.filter1.params.sampling_frequency", 1000.0),
+     rclcpp::Parameter("sensor_filter_chain.filter1.params.damping_frequency", 20.0)});
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+  broadcast_tfs();
+  // let the low-pass filter converge to the gravity-only reading
+  for (int i = 0; i < 50; ++i)
+  {
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+
+  // 10 N pushing on the sensor while the controller is inactive
+  fts_state_values_[2] = -13.0;
+  assign_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  // the reconfigured gravity compensation filter has a new tf buffer
+  broadcast_tfs();
+  ControllerStateMsg msg;
+  subscribe_and_get_messages(msg);  // runs the first update after the reactivation
+  // with the stale history, the filter output would still be close to the old reading (~1.5 N)
+  EXPECT_GT(msg.wrench_base.wrench.force.z, 9.0);
+}
+
+// the filter chain must be configurable again after a cleanup
+TEST_F(AdmittanceControllerTest, reconfigure_after_cleanup)
+{
+  SetUpController();
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(cleanup_succeeds(controller_));
+  ASSERT_TRUE(configure_succeeds(controller_));
+}
+
+TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
+{
+  SetUpController("test_admittance_controller_no_mass");
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
@@ -353,9 +519,12 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(
-    controller_->command_interfaces_[0].get_optional().value(), joint_state_values_[0],
-    COMMON_THRESHOLD);
+  for (auto i = 0ul; i < joint_state_values_.size(); i++)
+  {
+    EXPECT_NEAR(
+      controller_->command_interfaces_[i].get_optional().value(), joint_state_values_[i],
+      COMMON_THRESHOLD);
+  }
 
   subscribe_and_get_messages(msg);
 }

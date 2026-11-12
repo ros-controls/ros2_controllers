@@ -77,11 +77,14 @@ class TestableAdmittanceRule : public AdmittanceRule
 public:
   explicit TestableAdmittanceRule(
     const std::shared_ptr<admittance_controller::ParamListener> & parameter_handler)
-  : AdmittanceRule(parameter_handler)
+  : AdmittanceRule(
+      parameter_handler, std::make_shared<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+                           "geometry_msgs::msg::WrenchStamped"))
   {
   }
 
   // Expose protected members for testing
+  using AdmittanceRule::admittance_state_;
   using AdmittanceRule::calculate_admittance_rule;
   using AdmittanceRule::kinematics_;
   using AdmittanceRule::parameters_;
@@ -446,6 +449,209 @@ TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_resp
   // Sanity checks: both cases should produce non-zero motion
   EXPECT_GT(motion_low, 0.0) << "Low mass should produce measurable motion";
   EXPECT_GT(motion_high, 0.0) << "High mass should still produce some motion";
+}
+
+// Stiffness is given in the control frame and applied to the displacement in the control frame,
+// so it must not be rotated into the base frame
+TEST_F(MassMatrixTransformationTest, stiffness_applied_in_control_frame)
+{
+  setupMockKinematics();  // identity: current ft pose at base origin
+
+  // control frame rotated by 90 deg around z: control x = base y, control y = base -x
+  const Eigen::Matrix3d rot_base_control =
+    Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+  Vector6d stiffness;
+  stiffness << 1000.0, 1.0, 1.0, 1.0, 1.0, 1.0;
+  AdmittanceState state = createAdmittanceState(
+    rot_base_control, Vector6d::Ones(), stiffness, Vector6d::Zero(), Vector6d::Zero());
+  // displacement of 0.1 m along base x, i.e. along control -y
+  state.ref_trans_base_ft.translation() = Eigen::Vector3d(-0.1, 0.0, 0.0);
+  admittance_rule_->parameters_.admittance.joint_damping = 0.0;
+
+  ASSERT_TRUE(admittance_rule_->calculate_admittance_rule(state, DEFAULT_DT));
+
+  // restoring acceleration along base -x with the control y stiffness (1.0), unit mass
+  EXPECT_NEAR(state.joint_acc[0], -0.1, 1e-9);
+  EXPECT_NEAR(state.joint_acc[1], 0.0, 1e-9);
+  EXPECT_NEAR(state.joint_acc[2], 0.0, 1e-9);
+}
+
+// Joint state with all positions/velocities/accelerations set to `value`
+trajectory_msgs::msg::JointTrajectoryPoint make_joint_state(double value)
+{
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  point.positions.assign(6, value);
+  point.velocities.assign(6, value);
+  point.accelerations.assign(6, value);
+  return point;
+}
+
+// A failed update (e.g. kinematics or filter failure) must not drop the admittance offset,
+// otherwise the robot jumps to the reference and back. It must stop the robot, though.
+TEST_F(MassMatrixTransformationTest, failed_update_holds_last_command)
+{
+  bool kinematics_fails = false;
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&kinematics_fails](
+          const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d & transform) -> bool
+        {
+          transform = Eigen::Isometry3d::Identity();
+          return !kinematics_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [](
+          const Eigen::VectorXd &, const Vector6d & cartesian_deltas, const std::string &,
+          Eigen::VectorXd & joint_deltas) -> bool
+        {
+          joint_deltas = cartesian_deltas;
+          return true;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(::testing::Return(true));
+
+  const auto current = make_joint_state(0.0);
+  const auto reference = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench measured;
+  measured.force.x = DEFAULT_FORCE;
+  auto desired = make_joint_state(0.0);
+  const auto period = rclcpp::Duration::from_seconds(DEFAULT_DT);
+
+  // build up an admittance offset
+  for (int i = 0; i < 10; ++i)
+  {
+    ASSERT_EQ(
+      admittance_rule_->update(
+        current, measured, geometry_msgs::msg::Wrench(), reference, period, desired),
+      controller_interface::return_type::OK);
+  }
+  ASSERT_NE(desired.positions[0], reference.positions[0]);
+  const auto last_desired = desired;
+
+  kinematics_fails = true;
+  EXPECT_EQ(
+    admittance_rule_->update(
+      current, measured, geometry_msgs::msg::Wrench(), reference, period, desired),
+    controller_interface::return_type::ERROR);
+  // hold the position, but stop: replaying the last velocity would keep a velocity-controlled
+  // robot moving
+  ASSERT_NE(last_desired.velocities[0], 0.0);
+  EXPECT_EQ(desired.positions, last_desired.positions);
+  EXPECT_EQ(desired.velocities, std::vector<double>(6, 0.0));
+  EXPECT_EQ(desired.accelerations, std::vector<double>(6, 0.0));
+}
+
+// Failed updates must not integrate the internal admittance state, otherwise the accumulated
+// offset is applied in one step when the kinematics recovers
+TEST_F(MassMatrixTransformationTest, failed_update_does_not_integrate_state)
+{
+  bool transform_fails = false;
+  bool conversion_fails = false;
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&transform_fails](
+          const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d & transform) -> bool
+        {
+          transform = Eigen::Isometry3d::Identity();
+          return !transform_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_cartesian_deltas_to_joint_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(
+      ::testing::Invoke(
+        [&conversion_fails](
+          const Eigen::VectorXd &, const Vector6d & cartesian_deltas, const std::string &,
+          Eigen::VectorXd & joint_deltas) -> bool
+        {
+          joint_deltas = cartesian_deltas;
+          return !conversion_fails;
+        }));
+  EXPECT_CALL(
+    *mock_kinematics_ptr_, convert_joint_deltas_to_cartesian_deltas(
+                             ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillRepeatedly(::testing::Return(true));
+
+  const auto state = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench measured;
+  measured.force.x = DEFAULT_FORCE;
+  auto desired = make_joint_state(0.0);
+  const auto period = rclcpp::Duration::from_seconds(DEFAULT_DT);
+  auto update = [&]()
+  {
+    return admittance_rule_->update(
+      state, measured, geometry_msgs::msg::Wrench(), state, period, desired);
+  };
+
+  for (int i = 0; i < 10; ++i)
+  {
+    ASSERT_EQ(update(), controller_interface::return_type::OK);
+  }
+  const auto & s = admittance_rule_->admittance_state_;
+  const Eigen::VectorXd joint_pos = s.joint_pos;
+  const Eigen::VectorXd joint_vel = s.joint_vel;
+  const Vector6d admittance_velocity = s.admittance_velocity;
+
+  for (bool * fails : {&transform_fails, &conversion_fails})
+  {
+    *fails = true;
+    for (int i = 0; i < 5; ++i)
+    {
+      ASSERT_EQ(update(), controller_interface::return_type::ERROR);
+    }
+    *fails = false;
+    EXPECT_EQ(s.joint_pos, joint_pos);
+    EXPECT_EQ(s.joint_vel, joint_vel);
+    EXPECT_EQ(s.admittance_velocity, admittance_velocity);
+  }
+}
+
+// The wrench reference is given in ft_sensor.frame.id and must be added after the filter chain,
+// i.e., it must not be treated as a raw measurement in ft_sensor.measurement_frame.id
+TEST_F(MassMatrixTransformationTest, wrench_reference_added_in_ft_frame)
+{
+  // switch from the built-in gravity compensation to the (empty) filter chain. The parameter
+  // is read-only, so change the rule's copy directly
+  admittance_rule_->parameters_.gravity_compensation.frame.id = "";
+  ASSERT_TRUE(admittance_rule_->filter_chain_->configure(
+    "sensor_filter_chain", node_->get_node_logging_interface(),
+    node_->get_node_parameters_interface()));
+
+  // ft_sensor frame rotated by 90 deg around z w.r.t. base
+  Eigen::Isometry3d link_transform = Eigen::Isometry3d::Identity();
+  link_transform.linear() = Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ()).matrix();
+  setupMockKinematics(link_transform);
+
+  const auto state = make_joint_state(0.0);
+  geometry_msgs::msg::Wrench wrench_reference;
+  wrench_reference.force.x = 1.0;
+  wrench_reference.torque.x = 2.0;
+  auto desired = make_joint_state(0.0);
+
+  ASSERT_EQ(
+    admittance_rule_->update(
+      state, geometry_msgs::msg::Wrench(), wrench_reference, state,
+      rclcpp::Duration::from_seconds(DEFAULT_DT), desired),
+    controller_interface::return_type::OK);
+
+  // x in ft frame is y in base frame
+  const auto & wrench_base = admittance_rule_->admittance_state_.wrench_base;
+  EXPECT_NEAR(wrench_base[0], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[1], 1.0, 1e-9);
+  EXPECT_NEAR(wrench_base[2], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[3], 0.0, 1e-9);
+  EXPECT_NEAR(wrench_base[4], 2.0, 1e-9);
+  EXPECT_NEAR(wrench_base[5], 0.0, 1e-9);
 }
 
 }  // namespace test

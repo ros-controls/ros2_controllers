@@ -5,6 +5,10 @@ Release Notes: Kilted Kaiju to Lyrical Luth
 
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
 
+admittance_controller
+**********************
+* Add a configurable ``sensor_filter_chain`` for the measured wrench, e.g., with the gravity compensation and low-pass filters from ``control_toolbox``, as an alternative to the built-in gravity compensation. The built-in one is real-time safe but needs all frames in the kinematic chain, the filter chain also supports other frames but might not be real-time safe (`#560 <https://github.com/ros-controls/ros2_controllers/pull/560>`__).
+
 battery_state_broadcaster
 *************************
 * 🚀 The battery_state_broadcaster was added 🎉 (`#1888 <https://github.com/ros-controls/ros2_controllers/pull/1888>`_).

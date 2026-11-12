@@ -27,6 +27,9 @@
 #include "admittance_controller/admittance_rule.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/chainable_controller_interface.hpp"
+#include "filters/filter_chain.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
@@ -118,6 +121,9 @@ protected:
   // admittance parameters
   std::shared_ptr<admittance_controller::ParamListener> parameter_handler_;
 
+  // filter chain for Wrench data
+  std::shared_ptr<filters::FilterChain<geometry_msgs::msg::WrenchStamped>> filter_chain_;
+
   // real-time boxes
   realtime_tools::RealtimeThreadSafeBox<trajectory_msgs::msg::JointTrajectoryPoint>
     input_joint_command_;
@@ -139,6 +145,14 @@ protected:
   // applied ft_values_: values read from the force torque sensor
   trajectory_msgs::msg::JointTrajectoryPoint reference_, joint_state_, reference_admittance_;
   geometry_msgs::msg::Wrench ft_values_;
+
+  /**
+   * @brief (Re)configure sensor_filter_chain, which also resets the state of its filters.
+   * Allocates, so it must not be called from the real-time loop.
+   *
+   * \returns true if the chain is unused (built-in gravity compensation) or was configured
+   */
+  bool configure_filter_chain();
 
   /**
    * @brief Read values from hardware interfaces and set corresponding fields of state_current and

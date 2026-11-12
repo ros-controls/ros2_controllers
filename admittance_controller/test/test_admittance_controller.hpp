@@ -27,8 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-
 #include "admittance_controller/admittance_controller.hpp"
 #include "control_msgs/msg/admittance_controller_state.hpp"
 #include "controller_interface/test_utils.hpp"
@@ -46,9 +44,7 @@
 #include "semantic_components/force_torque_sensor.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
-// TODO(anyone): replace the state and command message types
 using ControllerCommandWrenchMsg = geometry_msgs::msg::WrenchStamped;
-using ControllerCommandPoseMsg = geometry_msgs::msg::PoseStamped;
 using ControllerCommandJointMsg = trajectory_msgs::msg::JointTrajectoryPoint;
 using ControllerStateMsg = control_msgs::msg::AdmittanceControllerState;
 
@@ -120,11 +116,9 @@ public:
     command_publisher_node_ = std::make_shared<rclcpp::Node>("command_publisher");
     force_command_publisher_ =
       command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
-        "/test_admittance_controller/force_references", rclcpp::SystemDefaultsQoS());
-    // pose_command_publisher_ =command_publisher_node_->create_publisher<ControllerCommandPoseMsg>(
-    //    "/test_admittance_controller/pose_commands", rclcpp::SystemDefaultsQoS());
+        "/test_admittance_controller_no_mass/force_references", rclcpp::SystemDefaultsQoS());
     joint_command_publisher_ = command_publisher_node_->create_publisher<ControllerCommandJointMsg>(
-      "/test_admittance_controller/joint_references", rclcpp::SystemDefaultsQoS());
+      "/test_admittance_controller_no_mass/joint_references", rclcpp::SystemDefaultsQoS());
 
     test_subscription_node_ = std::make_shared<rclcpp::Node>("test_subscription_node");
     test_broadcaster_node_ = std::make_shared<rclcpp::Node>("test_broadcaster_node");
@@ -246,18 +240,21 @@ protected:
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();
     transform_stamped.header.frame_id = fixed_world_frame_;
-    transform_stamped.transform.translation.x = 1.3;
-    transform_stamped.transform.translation.y = 0.5;
-    transform_stamped.transform.translation.z = 0.5;
+    // base should be at origin, so no offset
+    transform_stamped.child_frame_id = ik_base_frame_;
+    // world to kinematic base frame
+    br.sendTransform(transform_stamped);
+    // tip should have the same offset as tip at the chosen initial pose  0.613, -0.344, 0.924
+    transform_stamped.transform.translation.x = 0.613;
+    transform_stamped.transform.translation.y = -0.344;
+    transform_stamped.transform.translation.z = 0.924;
     transform_stamped.transform.rotation.x = 0;
     transform_stamped.transform.rotation.y = 0;
     transform_stamped.transform.rotation.z = 0;
     transform_stamped.transform.rotation.w = 1;
 
-    transform_stamped.child_frame_id = ik_base_frame_;
-    br.sendTransform(transform_stamped);
-
     transform_stamped.child_frame_id = ik_tip_frame_;
+    // world to kinematic tip frame
     br.sendTransform(transform_stamped);
 
     transform_stamped.header.frame_id = ik_tip_frame_;
@@ -270,14 +267,19 @@ protected:
     transform_stamped.transform.rotation.w = 1;
 
     transform_stamped.child_frame_id = control_frame_;
+    // kinematic tip to control frame
     br.sendTransform(transform_stamped);
 
-    transform_stamped.transform.translation.z = 0.05;
-    transform_stamped.child_frame_id = sensor_frame_;
+    // no sensor_frame transform, as it must be one kinematic link it is attached to
+    // the test robot has its last link joint rotation axis along x. so shift along x
+    transform_stamped.transform.translation.x = 0.0;
+    transform_stamped.child_frame_id = sensor_measurement_frame_;
+    // kinematic tip to sensor measurement frame
     br.sendTransform(transform_stamped);
-
-    transform_stamped.transform.translation.z = 0.2;
+    // the test robot has its last tip joint rotation axis along x. so shift along x
+    transform_stamped.transform.translation.x = 0.2;
     transform_stamped.child_frame_id = endeffector_frame_;
+    // kinematic tip to end-effector frame
     br.sendTransform(transform_stamped);
   }
 
@@ -287,7 +289,7 @@ protected:
     ControllerStateMsg::SharedPtr received_msg;
     auto subs_callback = [&](const ControllerStateMsg::SharedPtr cb_msg) { received_msg = cb_msg; };
     auto subscription = test_subscription_node_->create_subscription<ControllerStateMsg>(
-      "/test_admittance_controller/status", 10, subs_callback);
+      controller_->get_name() + "/status", 10, subs_callback);
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(test_subscription_node_->get_node_base_interface());
 
@@ -329,38 +331,6 @@ protected:
       }
     };
 
-    // TODO(destogl): comment in when using unified mode
-    //     if (controller_->admittance_->unified_mode_) {
-    //       wait_for_topic(force_command_publisher_->get_topic_name());
-    //     }
-
-    //    wait_for_topic(pose_command_publisher_->get_topic_name());
-
-    ControllerCommandWrenchMsg force_msg;
-    force_msg.header.frame_id = sensor_frame_;
-    force_msg.wrench.force.x = 0.1;
-    force_msg.wrench.force.y = 0.2;
-    force_msg.wrench.force.z = 0.3;
-    force_msg.wrench.torque.x = 3.1;
-    force_msg.wrench.torque.y = 3.2;
-    force_msg.wrench.torque.z = 3.3;
-
-    ControllerCommandPoseMsg pose_msg;
-    pose_msg.header.frame_id = endeffector_frame_;
-    pose_msg.pose.position.x = 0.1;
-    pose_msg.pose.position.y = 0.2;
-    pose_msg.pose.position.z = 0.3;
-    pose_msg.pose.orientation.x = 0;
-    pose_msg.pose.orientation.y = 0;
-    pose_msg.pose.orientation.z = 0;
-    pose_msg.pose.orientation.w = 1;
-
-    // TODO(destogl): comment in when using unified mode
-    //     if (controller_->admittance_->unified_mode_) {
-    //       force_command_publisher_->publish(force_msg);
-    //     }
-    //    pose_command_publisher_->publish(pose_msg);
-
     wait_for_topic(joint_command_publisher_->get_topic_name());
 
     ControllerCommandJointMsg joint_msg;
@@ -379,8 +349,6 @@ protected:
   }
 
 protected:
-  // TODO(anyone): adjust the members as needed
-
   // Controller-related parameters
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3",
                                                  "joint4", "joint5", "joint6"};
@@ -389,11 +357,12 @@ protected:
   const std::string ft_sensor_name_ = "ft_sensor_name";
 
   const std::string ik_base_frame_ = "base_link";
-  const std::string ik_tip_frame_ = "tool0";
+  const std::string ik_tip_frame_ = "link_6";
   const std::string control_frame_ = "tool0";
   const std::string endeffector_frame_ = "endeffector_frame";
   const std::string fixed_world_frame_ = "fixed_world_frame";
   const std::string sensor_frame_ = "link_6";
+  const std::string sensor_measurement_frame_ = "ft_mount";
 
   const std::array<bool, 6> admittance_selected_axes_ = {{true, true, true, true, true, true}};
   const std::array<double, 6> admittance_mass_ = {{5.5, 6.6, 7.7, 8.8, 9.9, 10.10}};
@@ -402,8 +371,9 @@ protected:
   const std::array<double, 6> admittance_stiffness_ = {{214.1, 214.2, 214.3, 214.4, 214.5, 214.6}};
 
   const std::array<double, 6> joint_command_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
-  const std::array<double, 6> joint_state_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
-  const std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
+  // pose that leads to link6 being almost oriented like base, at pos 0.613, -0.344, 0.924
+  const std::array<double, 6> joint_state_values_ = {{0.573, -1.1, 0.9, 1.87, -0.60, -1.93}};
+  std::array<double, 6> fts_state_values_ = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
 
@@ -411,7 +381,6 @@ protected:
   std::unique_ptr<TestableAdmittanceController> controller_;
   rclcpp::Node::SharedPtr command_publisher_node_;
   rclcpp::Publisher<ControllerCommandWrenchMsg>::SharedPtr force_command_publisher_;
-  //  rclcpp::Publisher<ControllerCommandPoseMsg>::SharedPtr pose_command_publisher_;
   rclcpp::Publisher<ControllerCommandJointMsg>::SharedPtr joint_command_publisher_;
   rclcpp::Node::SharedPtr test_subscription_node_;
   rclcpp::Node::SharedPtr test_broadcaster_node_;
@@ -450,6 +419,11 @@ protected:
   }
 
   std::map<std::string, rclcpp::ParameterValue> overrides_;
+};
+
+class AdmittanceControllerTestParameterizedMissingConfigParameters
+: public AdmittanceControllerTestParameterizedMissingParameters
+{
 };
 
 // From the tutorial: https://www.sandordargo.com/blog/2019/04/24/parameterized-testing-with-gtest

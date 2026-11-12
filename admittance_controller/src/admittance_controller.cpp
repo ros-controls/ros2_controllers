@@ -24,7 +24,9 @@
 #include <vector>
 
 #include "admittance_controller/admittance_rule_impl.hpp"
+#include "filters/filter_chain.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
+#include "geometry_msgs/msg/wrench_stamped.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace
@@ -51,29 +53,16 @@ void reset_wrench_msg(
 namespace admittance_controller
 {
 
-geometry_msgs::msg::Wrench add_wrenches(
-  const geometry_msgs::msg::Wrench & a, const geometry_msgs::msg::Wrench & b)
-{
-  geometry_msgs::msg::Wrench res;
-
-  res.force.x = a.force.x + b.force.x;
-  res.force.y = a.force.y + b.force.y;
-  res.force.z = a.force.z + b.force.z;
-
-  res.torque.x = a.torque.x + b.torque.x;
-  res.torque.y = a.torque.y + b.torque.y;
-  res.torque.z = a.torque.z + b.torque.z;
-
-  return res;
-}
-
 controller_interface::CallbackReturn AdmittanceController::on_init()
 {
   // initialize controller config
   try
   {
     parameter_handler_ = std::make_shared<admittance_controller::ParamListener>(get_node());
-    admittance_ = std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_);
+    filter_chain_ = std::make_unique<filters::FilterChain<geometry_msgs::msg::WrenchStamped>>(
+      "geometry_msgs::msg::WrenchStamped");
+    admittance_ =
+      std::make_unique<admittance_controller::AdmittanceRule>(parameter_handler_, filter_chain_);
   }
   catch (const std::exception & e)
   {
@@ -103,15 +92,7 @@ controller_interface::CallbackReturn AdmittanceController::on_init()
   }
 
   tinyxml2::XMLDocument doc;
-  if (!doc.Parse(robot_description.c_str()) && doc.Error())
-  {
-    RCLCPP_ERROR(
-      get_node()->get_logger(),
-      "Failed to parse robot description XML from parameter "
-      "'robot_description': %s",
-      doc.ErrorStr());
-    return controller_interface::CallbackReturn::ERROR;
-  }
+  doc.Parse(robot_description.c_str());
   if (doc.Error())
   {
     RCLCPP_ERROR(
@@ -212,6 +193,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   command_joint_names_ = admittance_->parameters_.command_joints;
+
   if (command_joint_names_.empty())
   {
     command_joint_names_ = admittance_->parameters_.joints;
@@ -328,6 +310,27 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     get_interface_list(admittance_->parameters_.command_interfaces).c_str(),
     get_interface_list(admittance_->parameters_.state_interfaces).c_str());
 
+  // gravity_compensation.frame.id is read-only, so the mode cannot change after configuration
+  if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
+  {
+    if (admittance_->parameters_.fixed_world_frame.frame.id.empty())
+    {
+      RCLCPP_ERROR(
+        get_node()->get_logger(),
+        "'fixed_world_frame.frame.id' is required by the built-in gravity compensation.");
+      return CallbackReturn::FAILURE;
+    }
+    RCLCPP_INFO(
+      get_node()->get_logger(),
+      "Using the built-in gravity compensation and exponential filter, 'sensor_filter_chain' is "
+      "ignored.");
+  }
+  // reconfigured in on_activate, configure here already to report an invalid chain early
+  if (!configure_filter_chain())
+  {
+    return CallbackReturn::FAILURE;
+  }
+
   // setup subscribers and publishers
   auto joint_command_callback =
     [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg)
@@ -339,17 +342,17 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   input_wrench_command_subscriber_ =
     get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
-      [&](const geometry_msgs::msg::WrenchStamped & msg)
+      // copy the read-only frame: parameters_ may be rewritten by the RT loop while this runs
+      [this, ft_frame = admittance_->parameters_.ft_sensor.frame.id](
+        const geometry_msgs::msg::WrenchStamped & msg)
       {
-        if (
-          msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
-          !msg.header.frame_id.empty())
+        if (msg.header.frame_id != ft_frame && !msg.header.frame_id.empty())
         {
           RCLCPP_ERROR(
             get_node()->get_logger(),
             "Ignoring wrench reference as it is on the wrong frame: %s. Expected reference frame: "
             "%s",
-            msg.header.frame_id.c_str(), admittance_->parameters_.ft_sensor.frame.id.c_str());
+            msg.header.frame_id.c_str(), ft_frame.c_str());
           return;
         }
         input_wrench_command_.set(msg);
@@ -389,6 +392,12 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
 
   // update parameters if any have changed
   admittance_->apply_parameters_update();
+
+  // reset the filters, their history from before a deactivation would be applied otherwise
+  if (!configure_filter_chain())
+  {
+    return controller_interface::CallbackReturn::ERROR;
+  }
 
   // initialize interface of the FTS semantic component
   force_torque_sensor_->assign_loaned_state_interfaces(state_interfaces_);
@@ -476,10 +485,19 @@ controller_interface::return_type AdmittanceController::update_and_write_command
     wrench_command_msg_ = wrench_command_op.value();
   }
 
-  auto offsetted_ft_values = add_wrenches(ft_values_, wrench_command_msg_.wrench);
-
   // apply admittance control to reference to determine desired state
-  admittance_->update(joint_state_, offsetted_ft_values, reference_, period, reference_admittance_);
+  // on failure, reference_admittance_ keeps the last positions with zero velocity/acceleration.
+  // Return OK anyway: an ERROR would deactivate the controller, e.g., when the tf data of a filter
+  // is not yet available
+  if (
+    admittance_->update(
+      joint_state_, ft_values_, wrench_command_msg_.wrench, reference_, period,
+      reference_admittance_) != controller_interface::return_type::OK)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Admittance update failed (kinematics or sensor_filter_chain), holding the last command.");
+  }
 
   // write calculated values to joint interfaces
   write_state_to_hardware(reference_admittance_);
@@ -492,6 +510,27 @@ controller_interface::return_type AdmittanceController::update_and_write_command
   }
 
   return controller_interface::return_type::OK;
+}
+
+bool AdmittanceController::configure_filter_chain()
+{
+  if (!admittance_->parameters_.gravity_compensation.frame.id.empty())
+  {
+    return true;  // unused with the built-in gravity compensation
+  }
+  // clear() first, configure() fails on an already configured chain
+  if (
+    !filter_chain_->clear() || !filter_chain_->configure(
+                                 "sensor_filter_chain", get_node()->get_node_logging_interface(),
+                                 get_node()->get_node_parameters_interface()))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Could not configure sensor filter chain, please check if the "
+      "parameters are provided correctly.");
+    return false;
+  }
+  return true;
 }
 
 controller_interface::CallbackReturn AdmittanceController::on_deactivate(
@@ -625,8 +664,6 @@ void AdmittanceController::write_state_to_hardware(
     (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
   size_t acc_ind = vel_ind + has_acceleration_command_interface_;
 
-  auto logger = get_node()->get_logger();
-
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     bool success = true;
@@ -647,7 +684,9 @@ void AdmittanceController::write_state_to_hardware(
     }
     if (!success)
     {
-      RCLCPP_WARN(logger, "Error while setting command for joint %zu.", joint_ind);
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Error while setting command for joint %zu.", joint_ind);
     }
   }
   last_commanded_ = state_commanded;
@@ -656,8 +695,6 @@ void AdmittanceController::write_state_to_hardware(
 void AdmittanceController::read_state_reference_interfaces(
   trajectory_msgs::msg::JointTrajectoryPoint & state_reference)
 {
-  // TODO(destogl): check why is this here?
-
   // if any interface has nan values, assume state_reference is the last set reference
   for (size_t i = 0; i < num_joints_; ++i)
   {
