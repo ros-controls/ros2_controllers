@@ -60,6 +60,9 @@ class TestableMotionPrimitivesForwardController
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, activate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, reactivate_success);
   FRIEND_TEST(MotionPrimitivesForwardControllerTest, receive_single_action_goal);
+  FRIEND_TEST(MotionPrimitivesForwardControllerTest, active_goal_aborted_on_deactivate);
+  FRIEND_TEST(
+    MotionPrimitivesForwardControllerTest, accepts_new_goal_after_reactivation_post_abort);
 
 public:
   controller_interface::CallbackReturn on_configure(
@@ -146,7 +149,9 @@ protected:
     controller_->assign_interfaces(std::move(loaned_command_ifs), std::move(loaned_state_ifs));
   }
 
-  void send_single_motion_sequence_goal(
+  using GoalHandle = rclcpp_action::ClientGoalHandle<ExecuteMotion>;
+
+  std::shared_ptr<GoalHandle> send_single_motion_sequence_goal(
     const std::vector<double> & joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6},
     double velocity = 0.7, double acceleration = 1.0, double move_time = 2.0,
     double blend_radius = 3.0)
@@ -188,6 +193,72 @@ protected:
     }
 
     std::cout << "Goal accepted by the action server." << std::endl;
+    return goal_handle;
+  }
+
+  std::shared_ptr<GoalHandle> send_double_motion_sequence_goal()
+  {
+    std::cout << "Send motion sequence goal with multiple motions..." << std::endl;
+
+    if (!action_client_->wait_for_action_server(std::chrono::seconds(5)))
+    {
+      throw std::runtime_error("Action server not available");
+    }
+
+    auto goal_msg = ExecuteMotion::Goal();
+    MotionPrimitive primitive;
+    primitive.type = static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_JOINT);
+    primitive.joint_positions = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+    primitive.blend_radius = 0.1;
+
+    primitive.additional_arguments.resize(3);
+    primitive.additional_arguments[0].name = "velocity";
+    primitive.additional_arguments[0].value = 1.0;
+    primitive.additional_arguments[1].name = "acceleration";
+    primitive.additional_arguments[1].value = 1.0;
+    primitive.additional_arguments[2].name = "move_time";
+    primitive.additional_arguments[2].value = 0.0;
+
+    goal_msg.trajectory.motions.push_back(primitive);
+
+    primitive.type =
+      static_cast<uint8_t>(motion_primitives_controllers::MotionType::LINEAR_CARTESIAN);
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 1.1;
+    pose.pose.position.y = 1.2;
+    pose.pose.position.z = 1.3;
+    pose.pose.orientation.x = 1.4;
+    pose.pose.orientation.y = 1.5;
+    pose.pose.orientation.z = 1.6;
+    pose.pose.orientation.w = 1.7;
+    primitive.poses.push_back(pose);
+    primitive.blend_radius = 0.1;
+
+    primitive.additional_arguments.resize(3);
+    primitive.additional_arguments[0].name = "velocity";
+    primitive.additional_arguments[0].value = 0.0;
+    primitive.additional_arguments[1].name = "acceleration";
+    primitive.additional_arguments[1].value = 0.0;
+    primitive.additional_arguments[2].name = "move_time";
+    primitive.additional_arguments[2].value = 5.0;
+
+    goal_msg.trajectory.motions.push_back(primitive);
+
+    auto goal_future = action_client_->async_send_goal(goal_msg);
+
+    if (goal_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+    {
+      throw std::runtime_error("Failed to send goal (future timeout)");
+    }
+
+    auto goal_handle = goal_future.get();
+    if (!goal_handle)
+    {
+      throw std::runtime_error("Goal was rejected by the action server");
+    }
+
+    std::cout << "Goal accepted by the action server." << std::endl;
+    return goal_handle;
   }
 
   const std::vector<std::string> command_interface_names_ = {
