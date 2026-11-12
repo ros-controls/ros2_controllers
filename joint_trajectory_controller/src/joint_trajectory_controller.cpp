@@ -1770,7 +1770,7 @@ void JointTrajectoryController::fill_partial_goal(
 
 void JointTrajectoryController::fill_omitted_joints_from_old(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
-  const rclcpp::Time & new_start)
+  const rclcpp::Time & new_start, const bool have_bridge)
 {
   if (dof_ == trajectory_msg->joint_names.size() || !has_active_trajectory())
   {
@@ -1786,13 +1786,19 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
     }
   }
 
+  const bool follow = params_.omitted_joints_follow_active_trajectory;
+  const auto & source = follow ? blend_sample_ : blend_bridge_;
   TrajectoryPointConstIter start_segment_itr, end_segment_itr;
   for (auto & point : trajectory_msg->points)
   {
-    // points are time-ordered, so let the search advance incrementally instead of rescanning
-    const bool sampled = current_trajectory_->sample(
-      new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
-      start_segment_itr, end_segment_itr, true);
+    bool sampled = have_bridge;
+    if (follow)
+    {
+      // points are time-ordered, so let the search advance incrementally instead of rescanning
+      sampled = current_trajectory_->sample(
+        new_start + rclcpp::Duration(point.time_from_start), interpolation_method_, blend_sample_,
+        start_segment_itr, end_segment_itr, true);
+    }
 
     for (size_t index = 0; index < dof_; ++index)
     {
@@ -1804,9 +1810,9 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
       {
         // every joint must contribute exactly one value, the suffix below indexes these by joint
         double position = state_current_.positions[index];
-        if (sampled && index < blend_sample_.positions.size())
+        if (sampled && index < source.positions.size())
         {
-          position = blend_sample_.positions[index];
+          position = source.positions[index];
         }
         // the old trajectory could not be sampled, so hold the joint
         else if (has_position_command_interface_)
@@ -1833,15 +1839,13 @@ void JointTrajectoryController::fill_omitted_joints_from_old(
       if (!point.velocities.empty())
       {
         point.velocities.push_back(
-          (sampled && index < blend_sample_.velocities.size()) ? blend_sample_.velocities[index]
-                                                               : 0.0);
+          (follow && sampled && index < source.velocities.size()) ? source.velocities[index] : 0.0);
       }
       if (!point.accelerations.empty())
       {
         point.accelerations.push_back(
-          (sampled && index < blend_sample_.accelerations.size())
-            ? blend_sample_.accelerations[index]
-            : 0.0);
+          (follow && sampled && index < source.accelerations.size()) ? source.accelerations[index]
+                                                                     : 0.0);
       }
       if (!point.effort.empty())
       {
@@ -1872,7 +1876,7 @@ bool JointTrajectoryController::blend_with_active_trajectory(
     has_omitted = has_omitted || !blend_commanded_[j];
   }
 
-  // the suffix must hold commanded joints at a position, which a velocity-only goal lacks
+  // held omitted joints and the suffix need positions, which a velocity-only goal lacks
   if (has_omitted && trajectory_msg->points.back().positions.empty())
   {
     return false;
@@ -1886,7 +1890,7 @@ bool JointTrajectoryController::blend_with_active_trajectory(
   const bool have_bridge = current_trajectory_->sample(
     new_start, interpolation_method_, blend_bridge_, start_segment_itr, end_segment_itr, false);
 
-  fill_omitted_joints_from_old(trajectory_msg, new_start);
+  fill_omitted_joints_from_old(trajectory_msg, new_start, have_bridge);
   sort_to_local_joint_order(trajectory_msg);
   const auto new_last = trajectory_msg->points.back();
   const rclcpp::Time new_end =
@@ -1922,7 +1926,7 @@ bool JointTrajectoryController::blend_with_active_trajectory(
 
   // suffix: old waypoints after new_end; commanded joints held at new_last
   std::vector<JointTrajectoryPoint> suffix;
-  if (has_omitted)
+  if (has_omitted && params_.omitted_joints_follow_active_trajectory)
   {
     for (const auto & op : old_msg->points)
     {

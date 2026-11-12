@@ -80,10 +80,21 @@ joint_trajectory_controller:
   allow_trajectory_replacement: {
     type: bool,
     default_value: true,
-    description: "When a new trajectory arrives while one is still executing, blend with the old one
-      instead of hard-replacing it: joints not commanded by the new trajectory keep following the old
-      trajectory (instead of holding at the current position), and the transition uses the existing
-      bridge so it stays smooth even under speed scaling. Set to false to keep the legacy behavior.",
+    description: "When a new trajectory arrives while one is still executing, splice it into the
+      active one instead of hard-replacing it: the active trajectory is followed until the new start
+      time, and the transition uses a bridge sampled at the handoff so it stays smooth even under
+      speed scaling. Set to false to keep the legacy behavior.",
+  }
+  omitted_joints_follow_active_trajectory: {
+    type: bool,
+    default_value: false,
+    description: "Only used if ``allow_trajectory_replacement`` and ``allow_partial_joints_goal`` are true.
+      \n\n
+      If false (default), joints omitted from a partial goal hold the position the active trajectory
+      reaches at the new trajectory's start time.
+      \n\n
+      If true, they keep following the active trajectory on its original timing until it ends,
+      including any part that outlasts the new trajectory.",
   }
   interpolate_from_desired_state: {
     type: bool,
