@@ -1,0 +1,170 @@
+swerve_drive_controller:
+
+  front_left_wheel_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the front left wheel joint.",
+    read_only: true
+  }
+  front_right_wheel_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the rear left wheel joint.",
+    read_only: true
+  }
+  rear_left_wheel_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the rear left wheel joint.",
+    read_only: true
+  }
+  rear_right_wheel_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the rear right wheel joint.",
+    read_only: true
+  }
+  front_left_axle_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the front left axle joint.",
+    read_only: true
+  }
+  front_right_axle_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the front right axle joint.",
+    read_only: true
+  }
+  rear_left_axle_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the rear left axle joint.",
+    read_only: true,
+  }
+  rear_right_axle_joint: {
+    type: string,
+    default_value: "",
+    description: "Name of the rear right axle joint.",
+    read_only: true
+  }
+  wheelbase: {
+    type: double,
+    default_value: 0.85,
+    description: "Wheelbase is the distance between front and rear wheels.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  trackwidth: {
+    type: double,
+    default_value: 0.75,
+    description: "Trackwidth is the distance between left and right wheels.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  offset: {
+    type: double_array,
+    default_value: [0.0, 0.0],
+    description: "Offset of center of gravity from geometric center",
+    read_only: true
+  }
+  wheel_radius: {
+    type: double,
+    default_value: 0.040,
+    description: "Radius of the wheels.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  cmd_vel_timeout: {
+    type: double,
+    default_value: 10.0,
+    description: "Timeout in seconds before velocity commands are considered stale.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  odom: {
+    type: string,
+    default_value: "odom",
+    description: "Name of the frame for odometry.",
+    read_only: true
+  }
+  base_footprint: {
+    type: string,
+    default_value: "base_footprint",
+    description: "Name of the frame for base footprint.",
+    read_only: true
+  }
+  tf_frame_prefix: {
+    type: string,
+    default_value: "",
+    description: "(optional) Prefix to be appended to the tf frames, will be added to odom and base_footprint before publishing. A tilde ('~') is replaced with the controller's namespace. If the parameter is empty, controller's namespace will be used.",
+    read_only: true
+  }
+  enable_odom_tf: {
+    type: bool,
+    default_value: true,
+    description: "Publish transformation between ``odom_frame_id`` and ``base_frame_id``.",
+    read_only: true
+  }
+  open_loop: {
+    type: bool,
+    default_value: false,
+    description: "If set to true the odometry of the robot will be calculated from the commanded values and not from feedback.",
+    read_only: true
+  }
+  front_left_velocity_threshold: {
+    type: double,
+    default_value: 2.0,
+    description: "Max linear speed (m/s) of the front left wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  front_right_velocity_threshold: {
+    type: double,
+    default_value: 2.0,
+    description: "Max linear speed (m/s) of the front right wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  rear_left_velocity_threshold: {
+    type: double,
+    default_value: 2.0,
+    description: "Max linear speed (m/s) of the rear left wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  rear_right_velocity_threshold: {
+    type: double,
+    default_value: 2.0,
+    description: "Max linear speed (m/s) of the rear right wheel. If any wheel is faster, all wheels are slowed down by the same factor.",
+    validation: {
+      gt<>: [0.0]
+    },
+    read_only: true
+  }
+  pose_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the pose. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true
+  }
+  twist_covariance_diagonal: {
+    type: double_array,
+    default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    description: "Odometry covariance for the encoder output of the robot for the speed. These values should be tuned to your robot's sample odometry data, but these values are a good place to start: ``[0.001, 0.001, 0.001, 0.001, 0.001, 0.01]``.",
+    read_only: true
+  }
