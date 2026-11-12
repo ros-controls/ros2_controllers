@@ -223,6 +223,8 @@ protected:
     trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const;
 
   // callbacks for action_server_
+  /// Validates a new action goal. Rejects it if the controller is inactive, the trajectory is
+  /// invalid, or its priority is lower than the priority of the currently active goal.
   rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   rclcpp_action::CancelResponse goal_cancelled_callback(
