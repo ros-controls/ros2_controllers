@@ -18,6 +18,7 @@
 # https://github.com/ros/robot_model/blob/indigo-devel/
 # joint_state_publisher/joint_state_publisher/joint_state_publisher
 
+<<<<<<< HEAD
 # TODO: Use urdf_parser_py.urdf instead. I gave it a try, but got
 #  Exception: Required attribute not set in XML: upper
 # upper is an optional attribute, so I don't understand what's going on
@@ -25,19 +26,20 @@
 
 import threading
 import xml.dom.minidom
+=======
+import xml.etree.ElementTree as ET
+>>>>>>> 62af79e (rqt-jtc: make the controller list requests non-blocking (#2731))
 from math import pi
 
 import rclpy
 from std_msgs.msg import String
 
 description = ""
-_description_received = threading.Event()
 
 
 def callback(msg):
     global description
     description = msg.data
-    _description_received.set()
 
 
 def subscribe_to_robot_description(node, key="robot_description"):
@@ -167,27 +169,26 @@ def parse_joint_limits(urdf_string, joints_names, use_smallest_joint_limits=True
     return free_joints
 
 
-def get_joint_limits(node, joints_names, use_smallest_joint_limits=True, timeout_sec=10.0):
+def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     """
     ROS-aware wrapper around parse_joint_limits.
 
-    Waits for the robot_description topic to publish, then delegates all
-    real parsing work to parse_joint_limits(). This separation means
-    parse_joint_limits() can be tested without any ROS infrastructure.
+    Parses the last robot_description received by the subscription from
+    subscribe_to_robot_description(); all real parsing work is delegated to
+    parse_joint_limits(), so it can be tested without any ROS infrastructure.
 
-    node's own spin/executor is never touched here: node may be context.node,
-    which rqt_gui_py already spins continuously on another thread, so the
-    robot_description subscription callback (set up by
-    subscribe_to_robot_description()) is relied on to deliver the message and
-    signal _description_received instead.
+    Does not wait for the robot_description, because it is called from the GUI
+    thread: node may be context.node, which rqt_gui_py spins on another thread
+    and delivers the message to the subscription callback.
+
+    @return: Joint limits as returned by parse_joint_limits(), or {} if no
+    robot_description was received yet. Callers retry later in that case.
     """
     if description == "":
-        print("Waiting for the robot_description!")
-        _description_received.clear()
-        if description == "":
-            _description_received.wait(timeout=timeout_sec)
-
-    if description == "":
+        node.get_logger().warning(
+            "Waiting for the robot_description topic, controllers are listed once it is received",
+            once=True,
+        )
         return {}
 
     return parse_joint_limits(description, joints_names, use_smallest_joint_limits)
