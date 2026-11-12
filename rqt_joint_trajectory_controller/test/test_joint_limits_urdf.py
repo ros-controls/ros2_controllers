@@ -86,29 +86,6 @@ def _fixed(name):
     )
 
 
-<<<<<<< HEAD
-=======
-class _TestLogger:
-    def __init__(self):
-        self.info_messages = []
-        self.warning_messages = []
-
-    def info(self, msg):
-        self.info_messages.append(msg)
-
-    def warning(self, msg, **kwargs):
-        self.warning_messages.append(msg)
-
-
-class _TestNode:
-    def __init__(self, logger):
-        self._logger = logger
-
-    def get_logger(self):
-        return self._logger
-
-
->>>>>>> 62af79e (rqt-jtc: make the controller list requests non-blocking (#2731))
 # ---------------------------------------------------------------------------
 # Group 1: Revolute joint — the most common joint type in a robot arm.
 # The function must return exactly the values written in the URDF.
@@ -389,7 +366,7 @@ class _TestLogger:
     def info(self, msg):
         self.info_messages.append(msg)
 
-    def warning(self, msg):
+    def warning(self, msg, **kwargs):
         self.warning_messages.append(msg)
 
 
