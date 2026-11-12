@@ -17,6 +17,7 @@
  */
 
 #include <cmath>
+#include <limits>
 
 #include "diff_drive_controller/odometry.hpp"
 
@@ -32,8 +33,8 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
   wheel_separation_(0.0),
   left_wheel_radius_(0.0),
   right_wheel_radius_(0.0),
-  left_wheel_old_pos_(0.0),
-  right_wheel_old_pos_(0.0),
+  left_wheel_old_pos_(std::numeric_limits<double>::quiet_NaN()),
+  right_wheel_old_pos_(std::numeric_limits<double>::quiet_NaN()),
   velocity_rolling_window_size_(velocity_rolling_window_size),
   linear_accumulator_(velocity_rolling_window_size),
   angular_accumulator_(velocity_rolling_window_size)
@@ -45,20 +46,29 @@ void Odometry::init(const rclcpp::Time & time)
   // Reset accumulators and timestamp:
   resetAccumulators();
   timestamp_ = time;
+  reset_position_feedback();
 }
 
 bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & time)
 {
+  // Get current wheel joint positions:
+  const double left_wheel_cur_pos = left_pos * left_wheel_radius_;
+  const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
+
+  if (std::isnan(left_wheel_old_pos_))
+  {
+    left_wheel_old_pos_ = left_wheel_cur_pos;
+    right_wheel_old_pos_ = right_wheel_cur_pos;
+    timestamp_ = time;
+    return false;
+  }
+
   // We cannot estimate the speed with very small time intervals:
   const double dt = time.seconds() - timestamp_.seconds();
   if (dt < 0.0001)
   {
     return false;  // Interval too small to integrate with
   }
-
-  // Get current wheel joint positions:
-  const double left_wheel_cur_pos = left_pos * left_wheel_radius_;
-  const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
 
   // Estimate velocity of wheels using old and current position:
   const double left_wheel_est_vel = left_wheel_cur_pos - left_wheel_old_pos_;
@@ -79,6 +89,15 @@ bool Odometry::update(double left_pos, double right_pos, const rclcpp::Time & ti
 
 bool Odometry::update_from_pos(double left_pos, double right_pos, double dt)
 {
+  if (std::isnan(left_wheel_old_pos_))
+  {
+    left_wheel_old_pos_ = left_pos;
+    right_wheel_old_pos_ = right_pos;
+    linear_ = 0.0;
+    angular_ = 0.0;
+    return false;
+  }
+
   // We cannot estimate angular velocity with very small time intervals
   if (std::fabs(dt) < 1e-6)
   {
@@ -94,6 +113,12 @@ bool Odometry::update_from_pos(double left_pos, double right_pos, double dt)
   right_wheel_old_pos_ = right_pos;
 
   return update_from_vel(left_vel, right_vel, dt);
+}
+
+void Odometry::reset_position_feedback()
+{
+  left_wheel_old_pos_ = std::numeric_limits<double>::quiet_NaN();
+  right_wheel_old_pos_ = std::numeric_limits<double>::quiet_NaN();
 }
 
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)
