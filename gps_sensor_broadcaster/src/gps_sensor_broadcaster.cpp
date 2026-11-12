@@ -148,11 +148,11 @@ callback_return_type GPSSensorBroadcaster::on_deactivate(const rclcpp_lifecycle:
 }
 
 controller_interface::return_type GPSSensorBroadcaster::update(
-  const rclcpp::Time &, const rclcpp::Duration &)
+  const rclcpp::Time & time, const rclcpp::Duration &)
 {
   if (realtime_publisher_)
   {
-    state_message_.header.stamp = get_node()->now();
+    state_message_.header.stamp = time;
     std::visit(
       Visitor{
         [this](auto & sensor)
