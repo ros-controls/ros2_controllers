@@ -39,7 +39,8 @@ void RangeSensorBroadcasterTest::SetUp()
 void RangeSensorBroadcasterTest::TearDown() { range_broadcaster_.reset(nullptr); }
 
 controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
-  std::string broadcaster_name)
+  std::string broadcaster_name,
+  std::vector<rclcpp::Parameter> parameter_overrides)
 {
   controller_interface::return_type result = controller_interface::return_type::ERROR;
   controller_interface::ControllerInterfaceParams params;
@@ -48,6 +49,7 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = range_broadcaster_->define_custom_node_options();
+  params.node_options.parameter_overrides(parameter_overrides);
 
   result = range_broadcaster_->init(params);
 
@@ -122,26 +124,24 @@ TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Success)
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
 {
-  // First Test without frame_id ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
-
-  std::vector<rclcpp::Parameter> parameters;
-  // explicitly give an empty sensor name to generate an error
-  parameters.emplace_back(rclcpp::Parameter("sensor_name", ""));
-  configure_broadcaster(parameters);
-  ASSERT_FALSE(configure_succeeds(range_broadcaster_));
+  const auto result = init_broadcaster(
+    "test_range_sensor_broadcaster",
+    {{"sensor_name", ""}, {"frame_id", frame_id_}});
+  if (result == controller_interface::return_type::OK)
+  {
+    ASSERT_FALSE(configure_succeeds(range_broadcaster_));
+  }
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
 {
-  // Second Test without sensor_name ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
-
-  std::vector<rclcpp::Parameter> parameters;
-  // explicitly give an empty frame_id to generate an error
-  parameters.emplace_back(rclcpp::Parameter("frame_id", ""));
-  configure_broadcaster(parameters);
-  ASSERT_FALSE(configure_succeeds(range_broadcaster_));
+  const auto result = init_broadcaster(
+    "test_range_sensor_broadcaster",
+    {{"sensor_name", sensor_name_}, {"frame_id", ""}});
+  if (result == controller_interface::return_type::OK)
+  {
+    ASSERT_FALSE(configure_succeeds(range_broadcaster_));
+  }
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Success)
@@ -215,7 +215,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_RangeBroadcaster_Success)
   EXPECT_THAT(range_msg.min_range, ::testing::FloatEq(static_cast<float>(min_range_)));
   EXPECT_THAT(range_msg.max_range, ::testing::FloatEq(static_cast<float>(max_range_)));
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
-  EXPECT_THAT(range_msg.variance, ::testing::FloatEq(variance_));
+  EXPECT_THAT(range_msg.variance, ::testing::FloatEq(static_cast<float>(variance_)));
 #endif
 }
 
@@ -295,6 +295,123 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
   EXPECT_THAT(range_msg.variance, ::testing::FloatEq(static_cast<float>(variance_)));
 #endif
+}
+
+#if SENSOR_MSGS_VERSION_MAJOR >= 5
+TEST_F(RangeSensorBroadcasterTest, ConfiguredVarianceIsPublished)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
+
+  sensor_msgs::msg::Range msg;
+  subscribe_and_get_message(msg);
+  EXPECT_FLOAT_EQ(msg.variance, static_cast<float>(variance_));
+}
+#endif
+
+TEST_F(RangeSensorBroadcasterTest, AcceptedParameterUpdatesAreAppliedOrRejected)
+{
+  init_broadcaster("test_range_sensor_broadcaster");
+  ASSERT_TRUE(configure_succeeds(range_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(range_broadcaster_));
+
+  const std::string new_sensor = "updated_range_sensor";
+  const std::string new_frame = "updated_range_frame";
+  const int new_radiation = 0;
+  const double new_fov = 0.25;
+  const double new_min = 0.2;
+  const double new_max = 6.0;
+  const double new_variance = 0.5;
+
+  const auto sensor_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("sensor_name", new_sensor));
+  const auto frame_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("frame_id", new_frame));
+  const auto radiation_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("radiation_type", new_radiation));
+  const auto fov_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("field_of_view", new_fov));
+  const auto min_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("min_range", new_min));
+  const auto max_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("max_range", new_max));
+  const auto variance_result = range_broadcaster_->get_node()->set_parameter(
+    rclcpp::Parameter("variance", new_variance));
+
+  EXPECT_FALSE(sensor_result.successful);
+  EXPECT_FALSE(frame_result.successful);
+  EXPECT_FALSE(radiation_result.successful);
+  EXPECT_FALSE(fov_result.successful);
+  EXPECT_FALSE(min_result.successful);
+  EXPECT_FALSE(max_result.successful);
+  EXPECT_FALSE(variance_result.successful);
+
+  const auto state_if_conf = range_broadcaster_->state_interface_configuration();
+  EXPECT_THAT(state_if_conf.names, testing::ElementsAre(sensor_name_ + std::string("/range")));
+
+  sensor_msgs::msg::Range msg;
+  subscribe_and_get_message(msg);
+  EXPECT_EQ(msg.header.frame_id, frame_id_);
+  EXPECT_EQ(msg.radiation_type, static_cast<uint8_t>(radiation_type_));
+  EXPECT_FLOAT_EQ(msg.field_of_view, static_cast<float>(field_of_view_));
+  EXPECT_FLOAT_EQ(msg.min_range, static_cast<float>(min_range_));
+  EXPECT_FLOAT_EQ(msg.max_range, static_cast<float>(max_range_));
+  EXPECT_FLOAT_EQ(msg.range, static_cast<float>(sensor_range_));
+}
+
+namespace
+{
+std::vector<rclcpp::Parameter> valid_initial_parameters()
+{
+  return {
+    {"sensor_name", "range_sensor"},
+    {"frame_id", "range_sensor_frame"},
+    {"radiation_type", 1},
+    {"field_of_view", 0.1},
+    {"min_range", 0.1},
+    {"max_range", 7.0},
+    {"variance", 1.0},
+  };
+}
+}  // namespace
+
+TEST_F(RangeSensorBroadcasterTest, RejectsInvalidRadiationType)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[2] = rclcpp::Parameter("radiation_type", 2);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsNonPositiveFieldOfView)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[3] = rclcpp::Parameter("field_of_view", 0.0);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsInvertedRange)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[4] = rclcpp::Parameter("min_range", 5.0);
+  parameters[5] = rclcpp::Parameter("max_range", 1.0);
+  ASSERT_EQ(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+  EXPECT_FALSE(configure_succeeds(range_broadcaster_));
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsNegativeVariance)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[6] = rclcpp::Parameter("variance", -0.1);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
 }
 
 int main(int argc, char ** argv)
