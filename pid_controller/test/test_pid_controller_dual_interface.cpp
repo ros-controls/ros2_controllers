@@ -15,6 +15,7 @@
 
 #include "test_pid_controller.hpp"
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -47,7 +48,135 @@ public:
   double get_joint2_reference_position() const { return 16.0; }
   double get_joint1_reference_velocity() const { return 6.0; }
   double get_joint2_reference_velocity() const { return 7.0; }
+
+  void activate_topic_mode()
+  {
+    SetUpController("test_pid_controller_with_feedforward_gain_dual_interface");
+    ASSERT_TRUE(configure_succeeds(controller_));
+    ASSERT_TRUE(activate_succeeds(controller_));
+    ASSERT_FALSE(controller_->is_in_chained_mode());
+  }
+
+  void publish_named_reference(
+    const std::vector<std::string> & names, const std::vector<double> & values,
+    const std::vector<double> & values_dot)
+  {
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(controller_->get_node()->get_node_base_interface());
+    for (size_t attempt = 0;
+      command_publisher_->get_subscription_count() == 0 && attempt < 100; ++attempt)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    ASSERT_GT(command_publisher_->get_subscription_count(), 0u);
+
+    ControllerCommandMsg msg;
+    msg.dof_names = names;
+    msg.values = values;
+    msg.values_dot = values_dot;
+    command_publisher_->publish(msg);
+    controller_->wait_for_command(executor, std::chrono::milliseconds(100));
+    ASSERT_EQ(
+      controller_->update_reference_from_subscribers(
+        rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  void activate_external_measured_state_mode()
+  {
+    SetUpController("test_pid_controller_external_measured_dual_interface");
+    ASSERT_TRUE(configure_succeeds(controller_));
+    ASSERT_TRUE(controller_->uses_external_measured_states());
+    ASSERT_TRUE(activate_succeeds(controller_));
+  }
+
+  void publish_named_measured_state(
+    const std::vector<std::string> & names, const std::vector<double> & values,
+    const std::vector<double> & values_dot)
+  {
+    auto publisher = command_publisher_node_->create_publisher<ControllerCommandMsg>(
+      "/test_pid_controller_external_measured_dual_interface/measured_state",
+      rclcpp::SystemDefaultsQoS());
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(controller_->get_node()->get_node_base_interface());
+    for (size_t attempt = 0; publisher->get_subscription_count() == 0 && attempt < 100; ++attempt)
+    {
+      executor.spin_some();
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    ASSERT_GT(publisher->get_subscription_count(), 0u);
+
+    ControllerCommandMsg msg;
+    msg.dof_names = names;
+    msg.values = values;
+    msg.values_dot = values_dot;
+    publisher->publish(msg);
+    controller_->wait_for_command(executor, std::chrono::milliseconds(100));
+    ASSERT_EQ(
+      controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
 };
+
+TEST_F(PidControllerDualInterfaceTest, topic_reference_configured_order_control)
+{
+  activate_topic_mode();
+  publish_named_reference({"joint1", "joint2"}, {15.0, 16.0}, {6.0, 7.0});
+  EXPECT_THAT(controller_->reference_values(), testing::ElementsAre(15.0, 16.0, 6.0, 7.0));
+}
+
+TEST_F(PidControllerDualInterfaceTest, topic_reference_permutation_preserves_name_value_mapping)
+{
+  activate_topic_mode();
+  publish_named_reference({"joint2", "joint1"}, {16.0, 15.0}, {7.0, 6.0});
+  EXPECT_THAT(controller_->reference_values(), testing::ElementsAre(15.0, 16.0, 6.0, 7.0));
+}
+
+TEST_F(PidControllerDualInterfaceTest, topic_reference_unknown_name_rejects_whole_message)
+{
+  activate_topic_mode();
+  const auto before = controller_->reference_values();
+  publish_named_reference({"joint1", "unknown"}, {15.0, 999.0}, {6.0, 999.0});
+  EXPECT_THAT(controller_->reference_values(), testing::ElementsAreArray(before));
+}
+
+TEST_F(PidControllerDualInterfaceTest, topic_reference_duplicate_name_rejects_whole_message)
+{
+  activate_topic_mode();
+  const auto before = controller_->reference_values();
+  publish_named_reference({"joint1", "joint1"}, {15.0, 999.0}, {6.0, 999.0});
+  EXPECT_THAT(controller_->reference_values(), testing::ElementsAreArray(before));
+}
+
+TEST_F(PidControllerDualInterfaceTest, ExternalMeasuredStatePreservesNameValueMapping)
+{
+  activate_external_measured_state_mode();
+  publish_named_measured_state({"joint2", "joint1"}, {11.0, 10.0}, {6.0, 5.0});
+  EXPECT_THAT(controller_->measured_state_values(), testing::ElementsAre(10.0, 11.0, 5.0, 6.0));
+}
+
+TEST_F(PidControllerDualInterfaceTest, ExternalMeasuredStateRejectsMissingName)
+{
+  activate_external_measured_state_mode();
+  publish_named_measured_state({"joint1", "unknown"}, {10.0, 999.0}, {5.0, 999.0});
+  for (const auto value : controller_->measured_state_values())
+  {
+    EXPECT_TRUE(std::isnan(value));
+  }
+}
+
+TEST_F(PidControllerDualInterfaceTest, ExternalMeasuredStateAllowsMissingDerivativeValues)
+{
+  activate_external_measured_state_mode();
+  publish_named_measured_state({"joint2", "joint1"}, {11.0, 10.0}, {});
+  const auto state = controller_->measured_state_values();
+  ASSERT_EQ(state.size(), 4u);
+  EXPECT_DOUBLE_EQ(state[0], 10.0);
+  EXPECT_DOUBLE_EQ(state[1], 11.0);
+  EXPECT_TRUE(std::isnan(state[2]));
+  EXPECT_TRUE(std::isnan(state[3]));
+}
 
 /**
  * @brief Test the feedforward gain with chained mode with two interfaces
