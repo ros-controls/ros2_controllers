@@ -41,11 +41,12 @@ def callback(msg):
 
 
 def subscribe_to_robot_description(node, key="robot_description"):
+    """Create and return the robot_description subscription; caller owns its lifetime."""
     qos_profile = rclpy.qos.QoSProfile(depth=1)
     qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
     qos_profile.reliability = rclpy.qos.ReliabilityPolicy.RELIABLE
 
-    node.create_subscription(String, key, callback, qos_profile)
+    return node.create_subscription(String, key, callback, qos_profile)
 
 
 def _strip_non_urdf_tags(urdf_string):
@@ -220,17 +221,22 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     """
     ROS-aware wrapper around parse_joint_limits.
 
-    Waits for the robot_description topic to publish, then delegates all
-    real parsing work to parse_joint_limits(). This separation means
-    parse_joint_limits() can be tested without any ROS infrastructure.
-    """
-    count = 0
-    while description == "" and count < 10:
-        print("Waiting for the robot_description!")
-        count += 1
-        rclpy.spin_once(node, timeout_sec=1.0)
+    Parses the last robot_description received by the subscription from
+    subscribe_to_robot_description(); all real parsing work is delegated to
+    parse_joint_limits(), so it can be tested without any ROS infrastructure.
 
+    Does not wait for the robot_description, because it is called from the GUI
+    thread: node may be context.node, which rqt_gui_py spins on another thread
+    and delivers the message to the subscription callback.
+
+    @return: Joint limits as returned by parse_joint_limits(), or {} if no
+    robot_description was received yet. Callers retry later in that case.
+    """
     if description == "":
+        node.get_logger().warning(
+            "Waiting for the robot_description topic, controllers are listed once it is received",
+            once=True,
+        )
         return {}
 
     return parse_joint_limits(

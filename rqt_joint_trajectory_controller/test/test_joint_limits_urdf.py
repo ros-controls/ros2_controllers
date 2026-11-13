@@ -12,20 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for parse_joint_limits() in joint_limits_urdf.py.
+"""Unit tests for joint_limits_urdf.py.
 
-All tests are ROS-free. They call parse_joint_limits() directly with
-URDF strings and assert on the returned dict. No node, no topic, no
+Most tests are ROS-free: they call parse_joint_limits() directly with URDF
+strings and assert on the returned dict. No node, no topic, no
 robot_description publisher is needed.
+
+The last group tests the callback and get_joint_limits() handling of the
+robot_description using a minimal fake node stub, still without any live ROS node,
+context, or executor.
 
 Run with:
     pytest rqt_joint_trajectory_controller/test/test_joint_limits_urdf.py -v
 """
 
 import math
+import time
+from unittest.mock import Mock
+
 import pytest
 
-from rqt_joint_trajectory_controller.joint_limits_urdf import parse_joint_limits
+from rqt_joint_trajectory_controller import joint_limits_urdf
+from rqt_joint_trajectory_controller.joint_limits_urdf import (
+    callback as robot_description_callback,
+    get_joint_limits,
+    parse_joint_limits,
+)
 
 # ---------------------------------------------------------------------------
 # Small URDF builder helpers
@@ -82,7 +94,7 @@ class _TestLogger:
     def info(self, msg):
         self.info_messages.append(msg)
 
-    def warning(self, msg):
+    def warning(self, msg, **kwargs):
         self.warning_messages.append(msg)
 
 
@@ -437,3 +449,116 @@ def test_missing_velocity_raises():
     )
     with pytest.raises(Exception, match="Required attribute not set in XML: velocity"):
         parse_joint_limits(urdf, ["j"])
+
+
+# ---------------------------------------------------------------------------
+# Group 8: robot_description handling.
+#
+# get_joint_limits() is called from the GUI thread with a node that may be
+# context.node, which rqt_gui_py already spins on its own thread. It must
+# neither spin that node nor wait for the robot_description; the
+# subscription callback stores the message for later calls.
+# A minimal fake node/message is used, so no real rclpy node, context, or
+# executor is involved.
+# ---------------------------------------------------------------------------
+
+
+class _FakeMsg:
+    def __init__(self, data):
+        self.data = data
+
+
+class _FakeSubscribingNode(_TestNode):
+    """Minimal node stub that records create_subscription() calls and returns a handle."""
+
+    def __init__(self, logger):
+        super().__init__(logger)
+        self.subscriptions = []
+
+    def create_subscription(self, msg_type, topic, cb, qos_profile):
+        handle = (msg_type, topic, cb, qos_profile)
+        self.subscriptions.append(handle)
+        return handle
+
+
+@pytest.fixture
+def _clean_description_state():
+    """Reset the module-level description cache and event around each test."""
+    joint_limits_urdf.description = ""
+    yield
+    joint_limits_urdf.description = ""
+
+
+@pytest.fixture
+def _node(_clean_description_state):
+    return _TestNode(_TestLogger())
+
+
+@pytest.fixture
+def _no_spin_once(monkeypatch):
+    """
+    Fail loudly if get_joint_limits() ever calls rclpy.spin_once().
+
+    It must not: node may be context.node, which rqt_gui_py already spins
+    on another thread, so spinning it again here would race.
+    """
+    spin_once = Mock(side_effect=AssertionError("spin_once must not be called"))
+    monkeypatch.setattr(joint_limits_urdf.rclpy, "spin_once", spin_once)
+    return spin_once
+
+
+def _minimal_urdf():
+    return _robot(_revolute("j1", -1.0, 1.0, 1.0))
+
+
+def test_callback_sets_description(_clean_description_state):
+    assert joint_limits_urdf.description == ""
+
+    robot_description_callback(_FakeMsg(_minimal_urdf()))
+
+    assert joint_limits_urdf.description == _minimal_urdf()
+
+
+def test_subscribe_to_robot_description_returns_owned_subscription(_clean_description_state):
+    """subscribe_to_robot_description() must return the handle so the caller can destroy it later.
+
+    The plugin needs this to destroy its own subscription in shutdown_plugin() without
+    relying on context.node's destruction, since it doesn't own that node.
+    """
+    node = _FakeSubscribingNode(_TestLogger())
+    sub = joint_limits_urdf.subscribe_to_robot_description(node)
+
+    assert node.subscriptions == [sub]
+    _msg_type, topic, cb, _qos = sub
+    assert topic == "robot_description"
+    assert cb is robot_description_callback
+
+
+def test_get_joint_limits_does_not_call_spin_once(_node, _no_spin_once):
+    joint_limits_urdf.description = _minimal_urdf()
+
+    result = get_joint_limits(_node, ["j1"])
+
+    assert "j1" in result
+    _no_spin_once.assert_not_called()
+
+
+def test_get_joint_limits_returns_empty_dict_immediately_without_description(_node):
+    """
+    get_joint_limits() runs on the GUI thread, so it must not wait for the
+    robot_description. The plugin retries on its next controller list update.
+    """
+    start = time.monotonic()
+    result = get_joint_limits(_node, ["j1"])
+
+    assert result == {}
+    assert time.monotonic() - start < 1.0
+    assert _node.get_logger().warning_messages
+
+
+def test_get_joint_limits_uses_description_received_later(_node):
+    assert get_joint_limits(_node, ["j1"]) == {}
+
+    robot_description_callback(_FakeMsg(_minimal_urdf()))
+
+    assert "j1" in get_joint_limits(_node, ["j1"])

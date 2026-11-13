@@ -66,7 +66,7 @@ Enable the feature by setting ``constraints.decelerate_on_cancel`` to ``true`` a
        constraints:
          decelerate_on_cancel: true
          stopped_velocity_tolerance: 0.01
-         goal_time: 0.0
+         goal_time: 10.0
          joint_1:
            max_deceleration_on_cancel: 10.0
          joint_2:

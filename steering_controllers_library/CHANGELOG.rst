@@ -2,6 +2,17 @@
 Changelog for package steering_controllers_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.1 (2026-11-04)
+-------------------
+* fix: Add missing includes (`#2706 <https://github.com/ros-controls/ros2_controllers/issues/2706>`_)
+* Contributors: Christoph Fröhlich
+
+6.10.0 (2026-10-05)
+-------------------
+* Add closed-form steering integration tests (`#2567 <https://github.com/ros-controls/ros2_controllers/issues/2567>`_)
+* test: cleanup controller fixture member variables (`#2562 <https://github.com/ros-controls/ros2_controllers/issues/2562>`_)
+* Contributors: Akshat Guduru, Dylan Gallagher
+
 6.9.0 (2026-08-12)
 ------------------
 * fix(steering_controllers): handle NaN/Inf values in odometry update (`#2083 <https://github.com/ros-controls/ros2_controllers/issues/2083>`_)
