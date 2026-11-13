@@ -308,7 +308,7 @@ controller_interface::return_type OmniWheelDriveController::update_reference_fro
 }
 
 controller_interface::return_type OmniWheelDriveController::update_and_write_commands(
-  const rclcpp::Time & time, const rclcpp::Duration &)
+  const rclcpp::Time &, const rclcpp::Duration & period)
 {
   rclcpp::Logger logger = get_node()->get_logger();
 
@@ -344,8 +344,8 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
     // Update odometry
     if (params_.open_loop)
     {
-      odometry_updated = odometry_.updateOpenLoop(
-        reference_interfaces_[0], reference_interfaces_[1], reference_interfaces_[2], time);
+      odometry_updated =
+        odometry_.try_update_open_loop(ref_linear_x, ref_linear_y, ref_angular_z, period.seconds());
     }
     else
     {
@@ -372,11 +372,11 @@ controller_interface::return_type OmniWheelDriveController::update_and_write_com
       }
       if (params_.position_feedback)
       {
-        odometry_updated = odometry_.updateFromPos(wheels_feedback, time);
+        odometry_updated = odometry_.update_from_pos(wheels_feedback, period.seconds());
       }
       else
       {
-        odometry_updated = odometry_.updateFromVel(wheels_feedback, time);
+        odometry_updated = odometry_.update_from_vel(wheels_feedback, period.seconds());
       }
     }
   }
@@ -559,7 +559,8 @@ void OmniWheelDriveController::halt()
   bool set_command_result = true;
   for (const WheelHandle & wheel_handle : registered_wheel_handles_)
   {
-    set_command_result &= wheel_handle.velocity.get().set_value(0.0);
+    set_command_result |=
+      wheel_handle.velocity.get().set_value(0.0, std::numeric_limits<unsigned int>::max());
   }
   rclcpp::Logger logger = get_node()->get_logger();
   RCLCPP_DEBUG_EXPRESSION(

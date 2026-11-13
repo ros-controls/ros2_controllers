@@ -166,16 +166,19 @@ private:
   }
 
 protected:
-  // Configure mock kinematics to use identity transformations
-  // This isolates mass matrix transformation logic from actual robot kinematics
-  void setupMockKinematics()
+  // Configure mock kinematics with a deterministic link transform.
+  void setupMockKinematics(const Eigen::Isometry3d & link_transform = Eigen::Isometry3d::Identity())
   {
-    // All transforms are identity - no rotation or translation
     EXPECT_CALL(
       *mock_kinematics_ptr_, calculate_link_transform(::testing::_, ::testing::_, ::testing::_))
       .WillRepeatedly(
-        ::testing::DoAll(
-          ::testing::SetArgReferee<2>(Eigen::Isometry3d::Identity()), ::testing::Return(true)));
+        ::testing::Invoke(
+          [link_transform](
+            const Eigen::VectorXd &, const std::string &, Eigen::Isometry3d & transform) -> bool
+          {
+            transform = link_transform;
+            return true;
+          }));
 
     // Use identity Jacobian: cartesian deltas = joint deltas
     // This allows mass matrix effects to propagate directly to joint space
@@ -278,7 +281,7 @@ protected:
   MockKinematicsInterface * mock_kinematics_ptr_;
 };
 
-// Test 1: Verify that calculate_admittance_rule succeeds with rotated control frame
+// Verify that calculate_admittance_rule succeeds with rotated control frame
 // and produces motion when force is applied
 // cppcheck-suppress syntaxError
 // To suppress the warning reported by cppcheck for complex macro expansion
@@ -309,7 +312,51 @@ TEST_F(MassMatrixTransformationTest, mass_matrix_transformation_consistency)
   EXPECT_GT(state.joint_pos.norm(), 0.0) << "Should produce motion when force is applied";
 }
 
-// Test 2: Verify that higher mass in control frame results in less motion
+TEST(AdmittanceStateTest, initializes_admittance_position_to_identity)
+{
+  const AdmittanceState state(6);
+
+  EXPECT_TRUE(state.admittance_position.matrix().isApprox(Eigen::Isometry3d::Identity().matrix()));
+}
+
+TEST_F(MassMatrixTransformationTest, updates_admittance_position_from_relative_transform)
+{
+  Eigen::Isometry3d reference_transform = Eigen::Isometry3d::Identity();
+  reference_transform.translation() = Eigen::Vector3d(-0.4, 0.5, 0.2);
+  reference_transform.linear() =
+    Eigen::AngleAxisd(-M_PI / 6.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+
+  Eigen::Isometry3d desired_transform = Eigen::Isometry3d::Identity();
+  desired_transform.translation() = Eigen::Vector3d(0.1, -0.2, 0.3);
+  desired_transform.linear() =
+    Eigen::AngleAxisd(M_PI / 4.0, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+
+  Eigen::Isometry3d expected_relative_transform = Eigen::Isometry3d::Identity();
+  expected_relative_transform.translation() =
+    desired_transform.translation() - reference_transform.translation();
+  expected_relative_transform.linear() =
+    desired_transform.rotation() * reference_transform.rotation().transpose();
+
+  const Vector6d mass = Vector6d::Ones();
+  const Vector6d stiffness = Vector6d::Zero();
+  const Vector6d damping = Vector6d::Zero();
+  const Vector6d wrench = Vector6d::Zero();
+
+  AdmittanceState state =
+    createAdmittanceState(Eigen::Matrix3d::Identity(), mass, stiffness, damping, wrench);
+  state.ref_trans_base_ft = reference_transform;
+
+  // Use a sentinel to verify that calculate_admittance_rule updates the field.
+  state.admittance_position = Eigen::Isometry3d::Identity();
+  state.admittance_position.translation() = Eigen::Vector3d(1.0, 2.0, 3.0);
+
+  setupMockKinematics(desired_transform);
+
+  ASSERT_TRUE(admittance_rule_->calculate_admittance_rule(state, DEFAULT_DT));
+  EXPECT_TRUE(state.admittance_position.matrix().isApprox(expected_relative_transform.matrix()));
+}
+
+// Verify that higher mass in control frame results in less motion
 // Physics expectation: F = ma, so higher mass -> lower acceleration -> less motion
 TEST_F(MassMatrixTransformationTest, mass_affects_motion_in_rotated_frame)
 {
@@ -352,7 +399,7 @@ TEST_F(MassMatrixTransformationTest, mass_affects_motion_in_rotated_frame)
   EXPECT_GT(motion_low, motion_high) << "Higher mass should result in smaller motion (F=ma)";
 }
 
-// Test 3: Verify mass matrix transformation from control frame to base frame
+// Verify mass matrix transformation from control frame to base frame
 // Test scenario: With control frame rotated (control z -> base x), varying the mass
 // in control z should affect the response to force applied in base x direction
 TEST_F(MassMatrixTransformationTest, mass_transformation_affects_base_frame_response)

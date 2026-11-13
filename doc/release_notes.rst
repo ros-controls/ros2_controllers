@@ -5,6 +5,10 @@ Release Notes: Kilted Kaiju to Lyrical Luth
 
 This list summarizes important changes between Kilted Kaiju (previous) and Lyrical Luth (current) releases.
 
+battery_state_broadcaster
+*************************
+* 🚀 The battery_state_broadcaster was added 🎉 (`#1888 <https://github.com/ros-controls/ros2_controllers/pull/1888>`_).
+
 state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
@@ -31,7 +35,7 @@ joint_state_broadcaster
 * Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_)
-* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
+* ``dynamic_joint_states`` is not published anymore, and the parameter ``publish_dynamic_joint_states`` was removed.(`#2187 <https://github.com/ros-controls/ros2_controllers/pull/2187>`_)
 
 omni_wheel_drive_controller
 *****************************
@@ -41,6 +45,7 @@ omni_wheel_drive_controller
 
 joint_trajectory_controller
 ***************************
+* The default of ``constraints.goal_time`` changed from ``0.0`` to ``10.0`` seconds, and its semantics changed: negative values wait indefinitely, ``0.0`` disables the grace period. The ``action_execution_timeout`` parameter was removed. See the migration guide. (`#2592 <https://github.com/ros-controls/ros2_controllers/pull/2592>`_)
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
@@ -48,15 +53,14 @@ joint_trajectory_controller
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 * Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
-* Added trajectory deferral support via the ``allow_trajectory_replacement`` parameter. When enabled,
-  a trajectory with a future ``header.stamp`` is deferred: the currently active trajectory
-  continues executing until the start time arrives, then the new trajectory is executed.
-  This is a partial port of the ROS 1 trajectory replacement behavior.
-  (`#2401 <https://github.com/ros-controls/ros2_controllers/pull/2401>`_)
+* Fixed the final segment of every trajectory being cut short: the next-cycle lookahead sample advanced the shared segment search cursor to the end, so the following cycle jumped the reference to the last waypoint and succeeded the goal early. Independent of ``allow_trajectory_replacement``. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``  parameter. A trajectory arriving while another is executing is spliced into the active one instead of discarding it: the old path is followed up to the new start time, a velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal continue and finish their original motion. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2491 <https://github.com/ros-controls/ros2_controllers/pull/2491>`_)
 
 pid_controller
 **************
-* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output.
+* Added parameter ``set_current_state_as_first_setpoint`` (default: true) to set the current state as the first setpoint when the controller is activated, helping to avoid large initial errors and sudden jumps in control output. (`#2205 <https://github.com/ros-controls/ros2_controllers/pull/2205>`_).
+* Added parameter ``reset_commands_at_deactivation`` (default: false) to reset the commands to 0.0 when the controller is deactivated. (`#2602 <https://github.com/ros-controls/ros2_controllers/pull/2602>`_).
 
 steering_controllers_library
 *****************************
@@ -65,4 +69,8 @@ steering_controllers_library
 
 magnetometer_broadcaster
 ************************
-New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``. (`#2214 <https://github.com/ros-controls/ros2_controllers/pull/2214>`_)
+
+position_controllers, velocity_controllers, effort_controllers
+**************************************************************
+* ``JointGroupPositionController``, ``JointGroupVelocityController``, and ``JointGroupEffortController`` are removed. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_, `#2016 <https://github.com/ros-controls/ros2_controllers/pull/2016>`_)

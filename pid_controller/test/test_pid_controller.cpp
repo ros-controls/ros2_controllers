@@ -176,6 +176,32 @@ TEST_F(PidControllerTest, deactivate_success)
   ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
+TEST_F(PidControllerTest, reset_commands_at_deactivation)
+{
+  SetUpController("test_pid_controller_reset_commands_at_deactivation");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(controller_->params_.reset_commands_at_deactivation);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
+}
+
+TEST_F(PidControllerTest, do_not_reset_commands_at_deactivation)
+{
+  SetUpController("test_pid_controller_do_not_reset_commands_at_deactivation");
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_FALSE(controller_->params_.reset_commands_at_deactivation);
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  EXPECT_EQ(controller_->command_interfaces_[0].get_optional().value(), dof_command_values_[0]);
+}
+
 TEST_F(PidControllerTest, reactivate_success)
 {
   SetUpController();
@@ -416,7 +442,7 @@ TEST_F(PidControllerTest, subscribe_and_get_messages_success)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
     EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
-    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
+    ASSERT_EQ(msg.dof_states[i].output, controller_->command_interfaces_[i].get_optional().value());
   }
 }
 
@@ -441,7 +467,7 @@ TEST_F(PidControllerTest, receive_message_and_publish_updated_status)
   {
     ASSERT_EQ(msg.dof_states[i].name, dof_names_[i]);
     EXPECT_TRUE(std::isfinite(msg.dof_states[i].reference));
-    ASSERT_EQ(msg.dof_states[i].output, dof_command_values_[i]);
+    ASSERT_EQ(msg.dof_states[i].output, controller_->command_interfaces_[i].get_optional().value());
   }
 
   for (size_t i = 0; i < controller_->ordered_exported_reference_interfaces_.size(); ++i)

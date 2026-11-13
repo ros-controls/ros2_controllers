@@ -15,12 +15,36 @@
 
 #include <cmath>
 #include <limits>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 using hardware_interface::LoanedStateInterface;
 
-void PoseBroadcasterTest::SetUp() { pose_broadcaster_ = std::make_unique<PoseBroadcaster>(); }
+void PoseBroadcasterTest::SetUp()
+{
+  pose_broadcaster_ = std::make_unique<PoseBroadcaster>();
+
+  pose_position_x_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.x");
+  pose_position_y_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.y");
+  pose_position_z_ = std::make_shared<hardware_interface::StateInterface>(pose_name_, "position.z");
+  pose_orientation_x_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.x");
+  pose_orientation_y_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.y");
+  pose_orientation_z_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.z");
+  pose_orientation_w_ =
+    std::make_shared<hardware_interface::StateInterface>(pose_name_, "orientation.w");
+
+  std::ignore = pose_position_x_->set_value(pose_values_[0]);
+  std::ignore = pose_position_y_->set_value(pose_values_[1]);
+  std::ignore = pose_position_z_->set_value(pose_values_[2]);
+  std::ignore = pose_orientation_x_->set_value(pose_values_[3]);
+  std::ignore = pose_orientation_y_->set_value(pose_values_[4]);
+  std::ignore = pose_orientation_z_->set_value(pose_values_[5]);
+  std::ignore = pose_orientation_w_->set_value(pose_values_[6]);
+}
 
 void PoseBroadcasterTest::TearDown() { pose_broadcaster_.reset(nullptr); }
 
@@ -224,6 +248,29 @@ TEST_F(PoseBroadcasterTest, invalid_pose_no_tf_published)
   EXPECT_THROW(subscribe_and_get_message("/tf", tf_msg), std::runtime_error);
   // Verify that no tf message was sent
   ASSERT_EQ(tf_msg.transforms.size(), 0lu);
+}
+
+TEST_F(PoseBroadcasterTest, disabling_tf_after_cleanup_stops_tf_publication)
+{
+  SetUpPoseBroadcaster();
+  pose_broadcaster_->get_node()->set_parameter({"pose_name", pose_name_});
+  pose_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+  pose_broadcaster_->get_node()->set_parameter({"tf.enable", true});
+  pose_broadcaster_->get_node()->set_parameter({"tf.child_frame_id", tf_child_frame_id_});
+
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
+  tf2_msgs::msg::TFMessage enabled_message;
+  ASSERT_NO_THROW(subscribe_and_get_message("/tf", enabled_message));
+
+  ASSERT_TRUE(deactivate_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(cleanup_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(pose_broadcaster_->get_node()->set_parameter({"tf.enable", false}).successful);
+  ASSERT_TRUE(configure_succeeds(pose_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(pose_broadcaster_));
+
+  tf2_msgs::msg::TFMessage disabled_message;
+  EXPECT_THROW(subscribe_and_get_message("/tf", disabled_message), std::runtime_error);
 }
 
 int main(int argc, char * argv[])

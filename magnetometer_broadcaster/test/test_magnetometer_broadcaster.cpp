@@ -17,6 +17,7 @@
  */
 
 #include <gmock/gmock.h>
+#include <tuple>
 #include <utility>
 
 #include <controller_interface/controller_interface.hpp>
@@ -61,6 +62,16 @@ public:
   void SetUp()
   {
     broadcaster = std::make_unique<magnetometer_broadcaster::MagnetometerBroadcaster>();
+
+    magnetic_field_x =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "magnetic_field.x");
+    std::ignore = magnetic_field_x->set_value(sensor_values_[0]);
+    magnetic_field_y =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "magnetic_field.y");
+    std::ignore = magnetic_field_y->set_value(sensor_values_[1]);
+    magnetic_field_z =
+      std::make_shared<hardware_interface::StateInterface>(sensor_name_, "magnetic_field.z");
+    std::ignore = magnetic_field_z->set_value(sensor_values_[2]);
   }
 
   void TearDown() { broadcaster.reset(); }
@@ -108,16 +119,10 @@ protected:
   const std::string frame_id_ = "magnetometer_frame";
   const rclcpp::Parameter frame_id_param_ = rclcpp::Parameter("frame_id", frame_id_);
 
-  std::array<double, 3> sensor_values_ = {{20e-6, 30e-6, 40e-6}};
-  hardware_interface::StateInterface::SharedPtr magnetic_field_x =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "magnetic_field.x", &sensor_values_[0]);
-  hardware_interface::StateInterface::SharedPtr magnetic_field_y =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "magnetic_field.y", &sensor_values_[1]);
-  hardware_interface::StateInterface::SharedPtr magnetic_field_z =
-    std::make_shared<hardware_interface::StateInterface>(
-      sensor_name_, "magnetic_field.z", &sensor_values_[2]);
+  const std::array<double, 3> sensor_values_ = {{20e-6, 30e-6, 40e-6}};
+  hardware_interface::StateInterface::SharedPtr magnetic_field_x;
+  hardware_interface::StateInterface::SharedPtr magnetic_field_y;
+  hardware_interface::StateInterface::SharedPtr magnetic_field_z;
 
   std::unique_ptr<magnetometer_broadcaster::MagnetometerBroadcaster> broadcaster;
 };

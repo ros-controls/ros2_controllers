@@ -51,11 +51,44 @@ bool Odometry::updateFromPos(const std::vector<double> & wheels_pos, const rclcp
     wheels_old_pos_[i] = wheels_pos[i];
   }
 
-  if (updateFromVel(wheels_vel, time))
+  // Disable deprecated warnings
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+  const bool updated = updateFromVel(wheels_vel, time);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+  if (updated)
   {
     return true;
   }
   return false;
+}
+
+bool Odometry::update_from_pos(const std::vector<double> & wheels_pos, double dt)
+{
+  // We cannot estimate angular velocity with very small time intervals
+  if (std::fabs(dt) < 1e-6)
+  {
+    return false;
+  }
+
+  // Estimate angular velocity of wheels using old and current position [rads/s]:
+  if (wheels_pos.size() != wheels_old_pos_.size())
+  {
+    return false;
+  }
+  std::vector<double> wheels_vel(wheels_pos.size());
+  for (size_t i = 0; i < wheels_pos.size(); ++i)
+  {
+    wheels_vel[i] = (wheels_pos[i] - wheels_old_pos_[i]) / dt;
+    wheels_old_pos_[i] = wheels_pos[i];
+  }
+
+  return update_from_vel(wheels_vel, dt);
 }
 
 bool Odometry::updateFromVel(const std::vector<double> & wheels_vel, const rclcpp::Time & time)
@@ -66,9 +99,33 @@ bool Odometry::updateFromVel(const std::vector<double> & wheels_vel, const rclcp
   const Eigen::Vector3d robot_velocity = compute_robot_velocity(wheels_vel);
 
   // Integrate odometry:
-  integrate(robot_velocity(0) * dt, robot_velocity(1) * dt, robot_velocity(2) * dt);
+  integrate(robot_velocity(0), robot_velocity(1), robot_velocity(2), dt);
 
   timestamp_ = time;
+
+  linear_x_vel_ = robot_velocity(0);
+  linear_y_vel_ = robot_velocity(1);
+  angular_vel_ = robot_velocity(2);
+
+  return true;
+}
+
+bool Odometry::update_from_vel(const std::vector<double> & wheels_vel, double dt)
+{
+  if (std::fabs(dt) < 1e-6)
+  {
+    return false;
+  }
+  if (wheels_vel.empty() || wheels_vel.size() != wheels_old_pos_.size())
+  {
+    return false;
+  }
+
+  // Compute linear and angular velocities of the robot:
+  const Eigen::Vector3d robot_velocity = compute_robot_velocity(wheels_vel);
+
+  // Integrate odometry:
+  integrate(robot_velocity(0), robot_velocity(1), robot_velocity(2), dt);
 
   linear_x_vel_ = robot_velocity(0);
   linear_y_vel_ = robot_velocity(1);
@@ -110,9 +167,28 @@ bool Odometry::updateOpenLoop(
   const double dt = time.seconds() - timestamp_.seconds();
 
   // Integrate odometry:
-  integrate(linear_x_vel * dt, linear_y_vel * dt, angular_vel * dt);
+  integrate(linear_x_vel, linear_y_vel, angular_vel, dt);
 
   timestamp_ = time;
+
+  // Save last linear and angular velocity:
+  linear_x_vel_ = linear_x_vel;
+  linear_y_vel_ = linear_y_vel;
+  angular_vel_ = angular_vel;
+
+  return true;
+}
+
+bool Odometry::try_update_open_loop(
+  const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel, double dt)
+{
+  if (std::fabs(dt) < 1e-6)
+  {
+    return false;
+  }
+
+  // Integrate odometry:
+  integrate(linear_x_vel, linear_y_vel, angular_vel, dt);
 
   // Save last linear and angular velocity:
   linear_x_vel_ = linear_x_vel;
@@ -139,8 +215,18 @@ void Odometry::setParams(
   wheels_old_pos_.resize(wheel_count, 0.0);
 }
 
-void Odometry::integrate(const double & dx, const double & dy, const double & dheading)
+void Odometry::integrate(
+  const double & linear_x_vel, const double & linear_y_vel, const double & angular_vel, double dt)
 {
+  if (std::fabs(dt) < 1e-6)
+  {
+    return;
+  }
+
+  const double dx = linear_x_vel * dt;
+  const double dy = linear_y_vel * dt;
+  const double dheading = angular_vel * dt;
+
   if (std::fabs(dheading) < 1e-6)
   {
     // For very small dheading, approximate to linear motion

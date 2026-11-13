@@ -16,6 +16,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -45,6 +46,13 @@ void ForwardCommandControllerTest::SetUp()
 {
   // initialize controller
   controller_ = std::make_unique<FriendForwardCommandController>();
+
+  joint_1_pos_cmd_ = std::make_shared<CommandInterface>(joint_names_[0], HW_IF_POSITION);
+  std::ignore = joint_1_pos_cmd_->set_value(joint_commands_[0]);
+  joint_2_pos_cmd_ = std::make_shared<CommandInterface>(joint_names_[1], HW_IF_POSITION);
+  std::ignore = joint_2_pos_cmd_->set_value(joint_commands_[1]);
+  joint_3_pos_cmd_ = std::make_shared<CommandInterface>(joint_names_[2], HW_IF_POSITION);
+  std::ignore = joint_3_pos_cmd_->set_value(joint_commands_[2]);
 }
 
 void ForwardCommandControllerTest::TearDown() { controller_.reset(nullptr); }

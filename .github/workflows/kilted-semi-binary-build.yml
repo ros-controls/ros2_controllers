@@ -6,8 +6,6 @@ on:
   pull_request: &event
     branches:
       - kilted
-      - '*feature*'
-      - '*feature/**'
     paths:
       - '**.hpp'
       - '**.h'

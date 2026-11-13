@@ -43,8 +43,6 @@ protected:
   // defining the parameter names same as in test/range_sensor_broadcaster_params.yaml
   const std::string sensor_name_ = "range_sensor";
   const std::string frame_id_ = "range_sensor_frame";
-  const std::string interface_name_ = "range";
-
   const double field_of_view_ = 0.1;
   const int radiation_type_ = 1;
   const double min_range_ = 0.1;
@@ -52,8 +50,7 @@ protected:
   const double variance_ = 1.0;
 
   double sensor_range_ = 3.1;
-  hardware_interface::StateInterface::SharedPtr range_ =
-    std::make_shared<hardware_interface::StateInterface>(sensor_name_, "range", &sensor_range_);
+  hardware_interface::StateInterface::SharedPtr range_;
 
   std::unique_ptr<range_sensor_broadcaster::RangeSensorBroadcaster> range_broadcaster_;
 

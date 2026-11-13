@@ -335,7 +335,9 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
   // After first update state, commanded position should be near the start state
   for (auto i = 0ul; i < joint_state_values_.size(); i++)
   {
-    ASSERT_NEAR(joint_state_values_[i], joint_command_values_[i], COMMON_THRESHOLD);
+    ASSERT_NEAR(
+      joint_state_values_[i], controller_->command_interfaces_[i].get_optional().value(),
+      COMMON_THRESHOLD);
   }
 
   ControllerStateMsg msg;
@@ -351,7 +353,9 @@ TEST_F(AdmittanceControllerTest, receive_message_and_publish_updated_status)
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_NEAR(joint_command_values_[0], joint_state_values_[0], COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    controller_->command_interfaces_[0].get_optional().value(), joint_state_values_[0],
+    COMMON_THRESHOLD);
 
   subscribe_and_get_messages(msg);
 }

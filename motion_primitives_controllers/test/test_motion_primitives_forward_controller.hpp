@@ -123,9 +123,10 @@ protected:
 
     for (size_t i = 0; i < command_values_.size(); ++i)
     {
-      command_itfs_.emplace_back(
-        std::make_shared<hardware_interface::CommandInterface>(
-          interface_namespace_, command_interface_names_[i], &command_values_[i]));
+      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
+        interface_namespace_, command_interface_names_[i]);
+      std::ignore = command_itf->set_value(command_values_[i]);
+      command_itfs_.emplace_back(command_itf);
       loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
     }
 
@@ -135,9 +136,10 @@ protected:
 
     for (size_t i = 0; i < state_values_.size(); ++i)
     {
-      state_itfs_.emplace_back(
-        std::make_shared<hardware_interface::StateInterface>(
-          interface_namespace_, state_interface_names_[i], &state_values_[i]));
+      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
+        interface_namespace_, state_interface_names_[i]);
+      std::ignore = state_itf->set_value(state_values_[i]);
+      state_itfs_.emplace_back(state_itf);
       loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
     }
 
@@ -188,20 +190,21 @@ protected:
     std::cout << "Goal accepted by the action server." << std::endl;
   }
 
-  std::vector<std::string> command_interface_names_ = {
+  const std::vector<std::string> command_interface_names_ = {
     "motion_type", "q1",           "q2",         "q3",           "q4",
     "q5",          "q6",           "pos_x",      "pos_y",        "pos_z",
     "pos_qx",      "pos_qy",       "pos_qz",     "pos_qw",       "pos_via_x",
     "pos_via_y",   "pos_via_z",    "pos_via_qx", "pos_via_qy",   "pos_via_qz",
     "pos_via_qw",  "blend_radius", "velocity",   "acceleration", "move_time"};
 
-  std::vector<std::string> state_interface_names_ = {"execution_status", "ready_for_new_primitive"};
+  const std::vector<std::string> state_interface_names_ = {
+    "execution_status", "ready_for_new_primitive"};
 
-  std::string interface_namespace_ = "motion_primitive";
-  std::array<double, 2> state_values_ = {
+  const std::string interface_namespace_ = "motion_primitive";
+  const std::array<double, 2> state_values_ = {
     {static_cast<uint8_t>(motion_primitives_controllers::ExecutionState::IDLE),
      static_cast<uint8_t>(motion_primitives_controllers::ReadyForNewPrimitive::READY)}};
-  std::array<double, 25> command_values_ = {
+  const std::array<double, 25> command_values_ = {
     {101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
      101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101,
      101.101, 101.101, 101.101, 101.101, 101.101, 101.101, 101.101}};

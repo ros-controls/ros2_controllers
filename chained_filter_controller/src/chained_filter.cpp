@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <tuple>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/version.h"
@@ -111,7 +112,7 @@ controller_interface::CallbackReturn ChainedFilter::on_activate(const rclcpp_lif
 {
   for (const auto & exported_state_interface : ordered_exported_state_interfaces_)
   {
-    (void)exported_state_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+    std::ignore = exported_state_interface->set_value(std::numeric_limits<double>::quiet_NaN());
   }
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -133,7 +134,7 @@ controller_interface::return_type ChainedFilter::update_and_write_commands(
     {
       double filtered_value;
       filters_[i]->update(sensor_op.value(), filtered_value);
-      (void)ordered_exported_state_interfaces_[i]->set_value(filtered_value);
+      std::ignore = ordered_exported_state_interfaces_[i]->set_value(filtered_value);
     }
   }
 

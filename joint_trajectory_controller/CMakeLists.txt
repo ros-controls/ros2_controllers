@@ -106,6 +106,16 @@ if(BUILD_TESTING)
   target_link_libraries(test_trajectory_actions
     joint_trajectory_controller
     ros2_control_test_assets::ros2_control_test_assets)
+
+  ament_add_gmock(test_trajectory_controller_upsampling
+    test/test_trajectory_controller_upsampling.cpp)
+  set_tests_properties(test_trajectory_controller_upsampling PROPERTIES TIMEOUT 240)
+  target_link_libraries(test_trajectory_controller_upsampling
+    joint_trajectory_controller
+    ros2_control_test_assets::ros2_control_test_assets
+  )
+  target_compile_definitions(test_trajectory_controller_upsampling PRIVATE _USE_MATH_DEFINES)
+
 endif()
 
 

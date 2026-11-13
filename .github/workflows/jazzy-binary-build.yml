@@ -7,8 +7,6 @@ on:
   pull_request: &event
     branches:
       - jazzy
-      - '*feature*'
-      - '*feature/**'
     paths:
       - '**.hpp'
       - '**.h'
