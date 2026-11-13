@@ -46,6 +46,7 @@ using testing::Each;
 using testing::ElementsAreArray;
 using testing::IsEmpty;
 using testing::SizeIs;
+using testing::UnorderedElementsAreArray;
 
 void JointStateBroadcasterTest::SetUpTestCase() { rclcpp::init(0, nullptr); }
 
@@ -373,9 +374,6 @@ TEST_F(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfaces
     ElementsAreArray(interface_names_));
   ASSERT_THAT(
     new_dynamic_joint_state_msg.interface_values[1].interface_names,
-    ElementsAreArray(interface_names_));
-  ASSERT_THAT(
-    new_dynamic_joint_state_msg.interface_values[2].interface_names,
     ElementsAreArray(interface_names_));
 }
 
@@ -982,7 +980,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMapping)
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
     dynamic_joint_state_msg.interface_values[0].interface_names,
-    ElementsAreArray({HW_IF_POSITION}));  // mapping to this value
+    ElementsAreArray({custom_interface_name_}));  // source name preserved in DynamicJointState
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
@@ -1073,11 +1071,72 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray(JOINT_NAMES));
   ASSERT_THAT(
     dynamic_joint_state_msg.interface_values[0].interface_names,
-    ElementsAreArray({HW_IF_POSITION}));
+    ElementsAreArray({custom_interface_name_}));  // source name preserved in DynamicJointState
 
   // publishers initialized
   ASSERT_TRUE(state_broadcaster_->joint_state_publisher_);
   ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
+}
+
+// Regression test for ros-controls/ros2_controllers#2660: a custom interface
+// mapped into a JointState field must keep its source name in
+// DynamicJointState, and must not collapse with a real standard interface
+// publishing for the same joint.
+TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDynamicJointState)
+{
+  // Use all available interfaces so the real "position" interface and the
+  // mapped custom "measured_position" interface coexist for joint1.
+  init_broadcaster_and_set_parameters(
+    "", {}, {},
+    {rclcpp::Parameter(
+      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
+
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  state_ifs.emplace_back(joint_X_custom_state);
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  // update() routes each value into its own slot.
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  // JointState: the real "position" interface wins over the mapped custom one.
+  const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_THAT(joint_state_msg.name, ElementsAreArray({joint_names_[0]}));
+  ASSERT_THAT(joint_state_msg.position, SizeIs(1));
+  EXPECT_DOUBLE_EQ(joint_state_msg.position[0], joint_values_[0]);
+
+  // DynamicJointState: both source interface names are preserved, no collapse.
+  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray({joint_names_[0]}));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));
+  ASSERT_THAT(
+    dynamic_joint_state_msg.interface_values[0].interface_names,
+    UnorderedElementsAreArray({std::string(HW_IF_POSITION), custom_interface_name_}));
+
+  // update() must route each value into its own slot.
+  const auto & names = dynamic_joint_state_msg.interface_values[0].interface_names;
+  const auto & values = dynamic_joint_state_msg.interface_values[0].values;
+  ASSERT_THAT(values, SizeIs(2));
+  for (auto i = 0u; i < names.size(); ++i)
+  {
+    if (names[i] == HW_IF_POSITION)
+    {
+      EXPECT_DOUBLE_EQ(values[i], joint_values_[0]);
+    }
+    else if (names[i] == custom_interface_name_)
+    {
+      EXPECT_DOUBLE_EQ(values[i], custom_joint_value_);
+    }
+    else
+    {
+      FAIL() << "Unexpected interface name in DynamicJointState: " << names[i];
+    }
+  }
 }
 
 TEST_F(JointStateBroadcasterTest, UpdateTest)
