@@ -57,6 +57,10 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(
     JointStateBroadcasterTest, TestCustomInterfaceMappingIgnoredWhenVelocityInterfaceIsRequested);
   FRIEND_TEST(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate);
+  FRIEND_TEST(
+    JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDynamicJointState);
+  FRIEND_TEST(
+    JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointStateNaN);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointStatePublishTest);
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest);
