@@ -43,8 +43,6 @@ Odometry::Odometry(size_t velocity_rolling_window_size)
 
 void Odometry::init(const rclcpp::Time & time)
 {
-  // Reset accumulators and timestamp:
-  resetAccumulators();
   timestamp_ = time;
   reset_position_feedback();
 }
@@ -119,6 +117,9 @@ void Odometry::reset_position_feedback()
 {
   left_wheel_old_pos_ = std::numeric_limits<double>::quiet_NaN();
   right_wheel_old_pos_ = std::numeric_limits<double>::quiet_NaN();
+  resetAccumulators();
+  linear_ = 0.0;
+  angular_ = 0.0;
 }
 
 bool Odometry::updateFromVelocity(double left_vel, double right_vel, const rclcpp::Time & time)

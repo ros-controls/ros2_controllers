@@ -146,11 +146,11 @@ double SteeringKinematics::get_linear_velocity_double_traction_axle(
 
   const double right_radius = turning_radius + wheel_track_traction_ * 0.5;
   const double left_radius = turning_radius - wheel_track_traction_ * 0.5;
-  if (std::abs(right_radius) < 1e-12)
+  if (is_close_to_zero(right_radius))
   {
     return vel_wheel_l * turning_radius / left_radius;
   }
-  if (std::abs(left_radius) < 1e-12)
+  if (is_close_to_zero(left_radius))
   {
     return vel_wheel_r * turning_radius / right_radius;
   }
