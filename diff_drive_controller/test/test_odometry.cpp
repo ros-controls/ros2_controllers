@@ -173,6 +173,11 @@ TEST_F(OdometryTest, TestPositionBaselineAfterReset)
   EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
   EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
 
+  // Reject zero elapsed time without consuming the new wheel positions.
+  EXPECT_FALSE(odometry_.update_from_pos(-4.0, -6.0, 0.0));
+  EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
+  EXPECT_DOUBLE_EQ(odometry_.getLinear(), 0.0);
+
   // A stationary sample after reactivation must not average in the old motion.
   EXPECT_TRUE(odometry_.update_from_pos(-5.0, -7.0, 1.0));
   EXPECT_DOUBLE_EQ(odometry_.getX(), 1.0);
