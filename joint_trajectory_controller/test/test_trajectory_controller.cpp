@@ -3718,3 +3718,158 @@ TEST_F(TrajectoryControllerTest, concurrent_sort_to_local_joint_order)
   thread_b.join();
   EXPECT_FALSE(failed.load());
 }
+
+// Chained mode: a preceding controller writes the desired state to the reference interfaces.
+class TrajectoryControllerChainedTest : public TrajectoryControllerTest
+{
+public:
+  /// Configure the controller, export its references, set the chained mode and activate it.
+  std::vector<hardware_interface::CommandInterface::SharedPtr> SetUpChainedController(
+    rclcpp::Executor & executor, bool chained_mode = true)
+  {
+    SetUpTrajectoryController(executor, {{"allow_nonzero_velocity_at_trajectory_end", true}});
+    SetPidParameters();
+    EXPECT_TRUE(configure_succeeds(traj_controller_));
+    auto references = traj_controller_->export_reference_interfaces();
+    EXPECT_TRUE(traj_controller_->set_chained_mode(chained_mode));
+    AssignInterfaces();
+    EXPECT_TRUE(activate_succeeds(traj_controller_));
+    return references;
+  }
+
+  /// Set the references of one type (0: position, 1: velocity, 2: acceleration).
+  void SetReferences(
+    const std::vector<hardware_interface::CommandInterface::SharedPtr> & references,
+    size_t type_index, const std::vector<double> & values)
+  {
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+      ASSERT_TRUE(references[type_index * joint_names_.size() + i]->set_value(values[i]));
+    }
+  }
+};
+
+TEST_F(TrajectoryControllerChainedTest, exports_position_velocity_acceleration_references)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+
+  const auto references = traj_controller_->export_reference_interfaces();
+  ASSERT_EQ(references.size(), 3 * joint_names_.size());
+  const std::vector<std::string> types = {"position", "velocity", "acceleration"};
+  for (size_t type = 0; type < types.size(); ++type)
+  {
+    for (size_t i = 0; i < joint_names_.size(); ++i)
+    {
+      const auto & reference = references[type * joint_names_.size() + i];
+      EXPECT_EQ(
+        reference->get_name(), controller_name_ + "/" + joint_names_[i] + "/" + types[type]);
+      EXPECT_TRUE(std::isnan(reference->get_optional().value()));
+    }
+  }
+  EXPECT_TRUE(traj_controller_->is_chainable());
+}
+
+TEST_F(TrajectoryControllerChainedTest, holds_position_until_first_reference)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpChainedController(executor);
+  ASSERT_TRUE(traj_controller_->is_in_chained_mode());
+
+  updateController(rclcpp::Duration::from_seconds(0.1));
+  for (size_t i = 0; i < joint_names_.size(); ++i)
+  {
+    EXPECT_NEAR(INITIAL_POS_JOINTS[i], pos_cmd_interfaces_[i]->get_optional().value(), EPS);
+  }
+}
+
+TEST_F(TrajectoryControllerChainedTest, writes_position_references_to_commands)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  const auto references = SetUpChainedController(executor);
+
+  const std::vector<double> positions = {1.1, 2.2, 3.3};
+  SetReferences(references, 0, positions);
+  SetReferences(references, 1, {0.1, 0.2, 0.3});
+  traj_controller_->update(rclcpp::Time(0, 0, RCL_STEADY_TIME), rclcpp::Duration(0, 10000000));
+  for (size_t i = 0; i < joint_names_.size(); ++i)
+  {
+    EXPECT_NEAR(positions[i], pos_cmd_interfaces_[i]->get_optional().value(), EPS);
+  }
+
+  // A missing (NaN) position reference keeps the last command.
+  SetReferences(references, 0, {std::numeric_limits<double>::quiet_NaN(), 5.0, 6.0});
+  traj_controller_->update(
+    rclcpp::Time(0, 10000000, RCL_STEADY_TIME), rclcpp::Duration(0, 10000000));
+  EXPECT_NEAR(1.1, pos_cmd_interfaces_[0]->get_optional().value(), EPS);
+  EXPECT_NEAR(5.0, pos_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(6.0, pos_cmd_interfaces_[2]->get_optional().value(), EPS);
+}
+
+TEST_F(TrajectoryControllerChainedTest, writes_velocity_and_acceleration_references_to_commands)
+{
+  command_interface_types_ = {"position", "velocity", "acceleration"};
+  state_interface_types_ = {"position", "velocity", "acceleration"};
+  rclcpp::executors::SingleThreadedExecutor executor;
+  const auto references = SetUpChainedController(executor);
+
+  SetReferences(references, 0, {1.1, 2.2, 3.3});
+  SetReferences(references, 1, {0.1, 0.2, 0.3});
+  SetReferences(references, 2, {0.01, 0.02, 0.03});
+  traj_controller_->update(rclcpp::Time(0, 0, RCL_STEADY_TIME), rclcpp::Duration(0, 10000000));
+  EXPECT_NEAR(2.2, pos_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(0.2, vel_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(0.02, acc_cmd_interfaces_[1]->get_optional().value(), EPS);
+
+  // Missing velocity and acceleration references are zero.
+  SetReferences(references, 1, std::vector<double>(3, std::numeric_limits<double>::quiet_NaN()));
+  SetReferences(references, 2, std::vector<double>(3, std::numeric_limits<double>::quiet_NaN()));
+  traj_controller_->update(
+    rclcpp::Time(0, 10000000, RCL_STEADY_TIME), rclcpp::Duration(0, 10000000));
+  EXPECT_NEAR(0.0, vel_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(0.0, acc_cmd_interfaces_[1]->get_optional().value(), EPS);
+}
+
+TEST_F(TrajectoryControllerChainedTest, ignores_trajectory_topic_in_chained_mode)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  const auto references = SetUpChainedController(executor);
+  SetReferences(references, 0, {1.1, 2.2, 3.3});
+
+  builtin_interfaces::msg::Duration time_from_start;
+  time_from_start.sec = 0;
+  time_from_start.nanosec = 100000000;
+  publish(time_from_start, {{3.0, 4.0, 5.0}}, rclcpp::Time(0, 0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration::from_seconds(0.3));
+
+  EXPECT_NEAR(1.1, pos_cmd_interfaces_[0]->get_optional().value(), EPS);
+  EXPECT_NEAR(2.2, pos_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(3.3, pos_cmd_interfaces_[2]->get_optional().value(), EPS);
+}
+
+TEST_F(TrajectoryControllerChainedTest, follows_trajectory_topic_after_chained_mode)
+{
+  rclcpp::executors::SingleThreadedExecutor executor;
+  const auto references = SetUpChainedController(executor);
+  SetReferences(references, 0, {1.1, 2.2, 3.3});
+  updateController(rclcpp::Duration::from_seconds(0.05));
+
+  // The controller manager changes the chained mode only of inactive controllers.
+  ASSERT_TRUE(deactivate_succeeds(traj_controller_));
+  ASSERT_TRUE(traj_controller_->set_chained_mode(false));
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
+  ASSERT_FALSE(traj_controller_->is_in_chained_mode());
+
+  builtin_interfaces::msg::Duration time_from_start;
+  time_from_start.sec = 0;
+  time_from_start.nanosec = 100000000;
+  publish(time_from_start, {{3.0, 4.0, 5.0}}, rclcpp::Time(0, 0, RCL_STEADY_TIME));
+  traj_controller_->wait_for_trajectory(executor);
+  updateController(rclcpp::Duration::from_seconds(0.3));
+
+  EXPECT_NEAR(3.0, pos_cmd_interfaces_[0]->get_optional().value(), EPS);
+  EXPECT_NEAR(4.0, pos_cmd_interfaces_[1]->get_optional().value(), EPS);
+  EXPECT_NEAR(5.0, pos_cmd_interfaces_[2]->get_optional().value(), EPS);
+}
