@@ -45,6 +45,7 @@ omni_wheel_drive_controller
 
 joint_trajectory_controller
 ***************************
+* The controller is chainable: it exports the reference interfaces ``<joint>/position``, ``<joint>/velocity`` and ``<joint>/acceleration``. A preceding controller (e.g. a JTC for several robots) can write the desired state of each cycle to them. (`#2756 <https://github.com/ros-controls/ros2_controllers/pull/2756>`_)
 * The default of ``constraints.goal_time`` changed from ``0.0`` to ``10.0`` seconds, and its semantics changed: negative values wait indefinitely, ``0.0`` disables the grace period. The ``action_execution_timeout`` parameter was removed. See the migration guide. (`#2592 <https://github.com/ros-controls/ros2_controllers/pull/2592>`_)
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
