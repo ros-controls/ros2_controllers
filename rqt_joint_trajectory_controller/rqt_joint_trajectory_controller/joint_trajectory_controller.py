@@ -16,7 +16,6 @@
 
 import os
 import rclpy
-import threading
 from ament_index_python.packages import get_package_share_directory
 
 from qt_gui.plugin import Plugin
@@ -95,6 +94,8 @@ class JointTrajectoryController(Plugin):
     _cmd_pub_freq = 10.0  # Hz
     _widget_update_freq = 30.0  # Hz
     _ctrlrs_update_freq = 1  # Hz
+    # Timeout (in seconds) for the controller manager's list_controllers response
+    _list_controllers_timeout = 2.0 / _ctrlrs_update_freq
     _min_traj_dur = 5.0 / _cmd_pub_freq  # Minimum trajectory duration
 
     jointStateChanged = Signal([dict])
@@ -102,9 +103,7 @@ class JointTrajectoryController(Plugin):
     def __init__(self, context):
         super().__init__(context)
         self.setObjectName("JointTrajectoryController")
-        self._node = rclpy.node.Node("rqt_joint_trajectory_controller")
-        self._executor = None
-        self._executor_thread = None
+        self._node = context.node
 
         # Create QWidget and extend it with all the attributes and children
         # from the UI file
@@ -157,6 +156,8 @@ class JointTrajectoryController(Plugin):
         self._joint_pos = {}  # name->pos map for joints of selected controller
         self._joint_names = []  # Ordered list of selected controller joints
         self._robot_joint_limits = {}  # Lazily evaluated on first use
+        self._running_jtc = []  # Running controllers of the last controller list update
+        self._pending_jtc_name = None  # Restored controller to select once the list is known
 
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
@@ -169,7 +170,7 @@ class JointTrajectoryController(Plugin):
         self._update_act_pos_timer.timeout.connect(self._update_joint_widgets)
 
         # Timer for controller manager updates
-        self._list_cm = ControllerManagerLister()
+        self._list_cm = ControllerManagerLister(self._node)
         self._update_cm_list_timer = QTimer(self)
         self._update_cm_list_timer.setInterval(int(1000.0 / self._ctrlrs_update_freq))
         self._update_cm_list_timer.timeout.connect(self._update_cm_list)
@@ -182,7 +183,7 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.start()
 
         # subscriptions
-        subscribe_to_robot_description(self._node)
+        self._robot_description_sub = subscribe_to_robot_description(self._node)
 
         # Signal connections
         w = self._widget
@@ -202,18 +203,12 @@ class JointTrajectoryController(Plugin):
         self._update_jtc_list_timer.stop()
         self._unregister_state_sub()
         self._unregister_cmd_pub()
-        self._unregister_executor()
-        self._destroy_node()
-
-    def _destroy_node(self):
-        if self._node is not None:
-            try:
-                self._node.destroy_node()
-            except Exception as e:
-                if not is_shutdown_context_error(e):
-                    raise
-            finally:
-                self._node = None
+        self._unregister_robot_description_sub()
+        self._unregister_list_controllers()
+        # self._node is context.node, owned and spun by rqt_gui_py. It must not
+        # be destroyed here; the framework destroys it after all plugins have
+        # shut down.
+        self._node = None
 
     def save_settings(self, plugin_settings, instance_settings):
         instance_settings.set_value("cm_ns", self._cm_ns)
@@ -228,16 +223,10 @@ class JointTrajectoryController(Plugin):
         try:
             idx = cm_list.index(cm_ns)
             cm_combo.setCurrentIndex(idx)
-            # Restore last session's controller, if running
+            # Restore last session's controller, if running. The controller list arrives
+            # asynchronously, so _update_jtc_list() selects it once the list is known.
+            self._pending_jtc_name = instance_settings.value("jtc_name")
             self._update_jtc_list()
-            jtc_name = instance_settings.value("jtc_name")
-            jtc_combo = self._widget.jtc_combo
-            jtc_list = [jtc_combo.itemText(i) for i in range(jtc_combo.count())]
-            try:
-                idx = jtc_list.index(jtc_name)
-                jtc_combo.setCurrentIndex(idx)
-            except ValueError:
-                pass
         except ValueError:
             pass
 
@@ -282,6 +271,9 @@ class JointTrajectoryController(Plugin):
                 self._update_jtc_list_timer.stop()
                 return
             raise
+        if running_jtc is None:
+            return  # keep the selection until the controller list is known again
+        self._running_jtc = running_jtc
 
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
@@ -304,6 +296,15 @@ class JointTrajectoryController(Plugin):
         # Update widget
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
+        if running_jtc and not self._robot_joint_limits:
+            return  # keep the pending selection until the robot_description is received
+        # Only the first known controller list is checked, as before the list became async
+        pending_jtc_name, self._pending_jtc_name = self._pending_jtc_name, None
+        if pending_jtc_name in valid_jtc_names:
+            self._widget.jtc_combo.setCurrentIndex(
+                self._widget.jtc_combo.findText(pending_jtc_name)
+            )
+
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()
 
@@ -314,14 +315,21 @@ class JointTrajectoryController(Plugin):
 
     def _on_cm_change(self, cm_ns):
         self._cm_ns = cm_ns
+        self._pending_jtc_name = None  # belongs to the previously selected controller manager
+        self._unregister_list_controllers()
         if cm_ns:
-            self._list_controllers = ControllerLister(cm_ns)
+            self._list_controllers = ControllerLister(
+                self._node, cm_ns, self._list_controllers_timeout
+            )
             # NOTE: Clear below is important, as different controller managers
             # might have controllers with the same name but different
             # configurations. Clearing forces controller re-discovery
             self._widget.jtc_combo.clear()
             self._update_jtc_list()
-        else:
+
+    def _unregister_list_controllers(self):
+        if self._list_controllers is not None:
+            self._list_controllers.close()
             self._list_controllers = None
 
     def _on_jtc_change(self, jtc_name):
@@ -381,10 +389,10 @@ class JointTrajectoryController(Plugin):
 
     def _load_jtc(self):
         # Initialize joint data corresponding to selected controller
-        running_jtc = self._running_jtc_info()
-        self._joint_names = next(
-            _jtc_joint_names(x) for x in running_jtc if x.name == self._jtc_name
-        )
+        jtc_info = next((x for x in self._running_jtc if x.name == self._jtc_name), None)
+        if jtc_info is None:
+            return  # stopped since the last controller list update
+        self._joint_names = _jtc_joint_names(jtc_info)
         for name in self._joint_names:
             self._joint_pos[name] = {}
 
@@ -423,21 +431,6 @@ class JointTrajectoryController(Plugin):
 
         self.jointStateChanged.connect(self._on_joint_state_change)
 
-        self._executor = rclpy.executors.SingleThreadedExecutor()
-        self._executor.add_node(self._node)
-        self._executor_thread = threading.Thread(target=self._spin_executor, daemon=True)
-        self._executor_thread.start()
-
-    def _spin_executor(self):
-        try:
-            self._executor.spin()
-        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-            pass
-        except Exception as e:
-            # During SIGINT shutdown, the ROS context can become invalid before spin exits.
-            if not is_shutdown_context_error(e):
-                print(f"Executor thread failed: {e}")
-
     def _unload_jtc(self):
         # Stop updating the joint positions
         try:
@@ -448,7 +441,6 @@ class JointTrajectoryController(Plugin):
         # Reset ROS interfaces
         self._unregister_state_sub()
         self._unregister_cmd_pub()
-        self._unregister_executor()
 
         # Clear joint widgets
         # NOTE: Implementation is a workaround for:
@@ -473,6 +465,8 @@ class JointTrajectoryController(Plugin):
         from .utils import filter_by_type, filter_by_state
 
         controller_list = self._list_controllers()
+        if controller_list is None:
+            return None
         jtc_list = filter_by_type(
             controller_list, "JointTrajectoryController", match_substring=True
         )
@@ -489,12 +483,10 @@ class JointTrajectoryController(Plugin):
             self._node.destroy_subscription(self._state_sub)
             self._state_sub = None
 
-    def _unregister_executor(self):
-        if self._executor is not None:
-            self._executor.shutdown()
-            self._executor_thread.join()
-            self._executor = None
-            self._executor_thread = None
+    def _unregister_robot_description_sub(self):
+        if self._robot_description_sub is not None:
+            self._node.destroy_subscription(self._robot_description_sub)
+            self._robot_description_sub = None
 
     def _state_cb(self, msg):
         current_pos = {}
