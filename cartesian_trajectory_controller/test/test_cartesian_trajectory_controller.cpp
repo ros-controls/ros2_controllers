@@ -781,20 +781,42 @@ TEST_F(CartesianTrajectoryControllerTest, publishes_controller_state)
   EXPECT_TRUE(received) << "controller_state was not published";
 }
 
-// build_joint_trajectory carries the incoming header.stamp through, so JTC's deferred-start works.
-TEST_F(CartesianTrajectoryControllerTest, preserves_header_stamp)
+// A past stamp starts the trajectory now, from the start state, instead of partway in.
+TEST_F(CartesianTrajectoryControllerTest, past_stamp_starts_now)
 {
   activate();
   const Eigen::Isometry3d x0 = fk(HOME);
   const auto tgt = offset_pose(x0, {0.03, 0.02, -0.02}, 0.10);
   auto msg = make_pose_msg(BASE, tgt.first, tgt.second, 1.0);
-  msg->header.stamp.sec = 123;
-  msg->header.stamp.nanosec = 456u;
+  msg->header.stamp = controller_->get_node()->now() - rclcpp::Duration::from_seconds(0.5);
 
   trajectory_msgs::msg::JointTrajectory joint_traj;
   ASSERT_TRUE(controller_->build_joint_trajectory(*msg, joint_traj));
-  EXPECT_EQ(joint_traj.header.stamp.sec, 123);
-  EXPECT_EQ(joint_traj.header.stamp.nanosec, 456u);
+  EXPECT_EQ(joint_traj.header.stamp.sec, 0);
+  EXPECT_EQ(joint_traj.header.stamp.nanosec, 0u);
+
+  controller_->reference_callback(msg);
+  run(1);
+  EXPECT_LT(joint_travel(), 1e-2) << "trajectory did not start from the start state";
+  run(150);
+  EXPECT_LT((fk(joint_values_).translation() - tgt.first).norm(), 1e-3);
+}
+
+// A future stamp is rejected, since deferred start is not supported yet.
+TEST_F(CartesianTrajectoryControllerTest, rejects_future_stamp)
+{
+  activate();
+  const Eigen::Isometry3d x0 = fk(HOME);
+  const auto tgt = offset_pose(x0, {0.03, 0.02, -0.02}, 0.10);
+  auto msg = make_pose_msg(BASE, tgt.first, tgt.second, 1.0);
+  msg->header.stamp = controller_->get_node()->now() + rclcpp::Duration::from_seconds(10.0);
+
+  trajectory_msgs::msg::JointTrajectory joint_traj;
+  EXPECT_FALSE(controller_->build_joint_trajectory(*msg, joint_traj));
+
+  controller_->reference_callback(msg);
+  run(50);
+  EXPECT_LT(joint_travel(), 1e-6) << "motion produced for a future stamp";
 }
 
 int main(int argc, char ** argv)

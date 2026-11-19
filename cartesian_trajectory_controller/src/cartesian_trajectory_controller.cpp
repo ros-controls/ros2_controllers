@@ -24,6 +24,7 @@
 #include "cartesian_trajectory_controller/cartesian_trajectory.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp/version.h"
 // cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(29, 0, 0)
@@ -205,6 +206,15 @@ bool CartesianTrajectoryController::build_joint_trajectory(
       msg.header.frame_id.c_str(), ctc_params_.kinematics.base.c_str());
     return false;
   }
+  const auto now = get_node()->now();
+  if (rclcpp::Time(msg.header.stamp, now.get_clock_type()) > now)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Ignoring trajectory: a future header.stamp is not supported yet, the trajectory starts from "
+      "the state at arrival.");
+    return false;
+  }
 
   // the trajectory starts from the commanded state, NaN until the first update() has commanded
   const auto commanded = rt_last_commanded_state_.get();
@@ -263,9 +273,9 @@ bool CartesianTrajectoryController::build_joint_trajectory(
 
   const CartesianTrajectory path(
     times, positions, orientations, initial_velocity, initial_angular_speed);
-  // Carry the incoming stamp so JTC's deferred-start works.
-  // TODO(vedh1234): anchor at the stamped start, not at arrival
-  joint_traj.header.stamp = msg.header.stamp;
+  // the trajectory starts at arrival, so a past stamp would skip its start
+  // TODO(vedh1234): honour header.stamp, see ros-controls/ros2_controllers#2760
+  joint_traj.header.stamp = builtin_interfaces::msg::Time();
   if (!solve_ik_along_path(path, q_seed, joint_traj))
   {
     RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: inverse kinematics failed.");

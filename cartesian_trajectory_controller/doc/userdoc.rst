@@ -86,8 +86,8 @@ Known limitations
   leave the path without an error.
 * There is no redundancy resolution, singularity detection or inverse kinematics convergence check,
   so an unreachable pose is not rejected.
-* A future ``header.stamp`` is only exact if the robot is at rest until then, since the trajectory
-  is built from the state at arrival.
+* A future ``header.stamp`` is rejected, since deferred start is not supported yet, see
+  `#2760 <https://github.com/ros-controls/ros2_controllers/issues/2760>`__.
 * If building the trajectory takes longer than the rest of the current control cycle, the handoff
   from the previous trajectory lags by the missed cycles, so the arm briefly stalls or steps back.
 * The cubic spline can overshoot between waypoints whose segment durations differ a lot, in
@@ -179,10 +179,10 @@ can be sent the same way.
 The ``header.frame_id`` has to be either empty or equal to ``kinematics.base``, otherwise the message
 is ignored.
 
-The ``header.stamp`` is carried over to the generated joint trajectory, so the start time behaves as
-it does for the joint trajectory controller.
-The trajectory is still built from the state at arrival, so a future stamp is only exact if the robot
-is at rest until then.
+The trajectory is built from the state at arrival and starts right away.
+A zero or past ``header.stamp`` is ignored.
+A future ``header.stamp`` is not supported yet and the message is rejected, see
+`#2760 <https://github.com/ros-controls/ros2_controllers/issues/2760>`__.
 
 Publishers
 ^^^^^^^^^^
