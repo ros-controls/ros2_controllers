@@ -818,6 +818,43 @@ TEST(TestTrajectory, fill_point_before_zero_fills_non_finite_velocity)
     << expected_state.positions[0];
 }
 
+TEST(TestTrajectory, fill_point_before_zero_fills_non_finite_acceleration)
+{
+  auto full_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>();
+  full_msg->header.stamp = rclcpp::Time(0);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p1;
+  p1.time_from_start = rclcpp::Duration::from_seconds(1.0);
+  p1.positions.push_back(1.0);
+  p1.velocities.push_back(0.0);
+  p1.accelerations.push_back(0.0);
+  full_msg->points.push_back(p1);
+
+  trajectory_msgs::msg::JointTrajectoryPoint p2;
+  p2.time_from_start = rclcpp::Duration::from_seconds(2.0);
+  p2.positions.push_back(2.0);
+  p2.velocities.push_back(0.0);
+  p2.accelerations.push_back(0.0);
+  full_msg->points.push_back(p2);
+
+  trajectory_msgs::msg::JointTrajectoryPoint point_before_msg;
+  point_before_msg.time_from_start = rclcpp::Duration::from_seconds(0.0);
+  point_before_msg.positions.push_back(0.5);
+  point_before_msg.velocities.push_back(0.0);
+  point_before_msg.accelerations.push_back(std::numeric_limits<double>::quiet_NaN());
+
+  const rclcpp::Time time_now = rclcpp::Clock().now();
+  auto traj = joint_trajectory_controller::Trajectory(time_now, point_before_msg, full_msg);
+
+  trajectory_msgs::msg::JointTrajectoryPoint expected_state;
+  joint_trajectory_controller::TrajectoryPointConstIter start, end;
+  traj.sample(time_now, DEFAULT_INTERPOLATION, expected_state, start, end);
+
+  // quintic segment start, so this is exactly the point before
+  EXPECT_DOUBLE_EQ(0.5, expected_state.positions[0]);
+  EXPECT_DOUBLE_EQ(0.0, expected_state.accelerations[0]);
+}
+
 TEST(TestTrajectory, skip_interpolation)
 {
   // Simple passthrough without extra interpolation

@@ -29,6 +29,20 @@
 
 namespace joint_trajectory_controller
 {
+namespace
+{
+void zero_non_finite(std::vector<double> & values)
+{
+  for (auto & value : values)
+  {
+    if (!std::isfinite(value))
+    {
+      value = 0.0;
+    }
+  }
+}
+}  // namespace
+
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
 
 Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -64,22 +78,14 @@ void Trajectory::set_point_before_trajectory_msg(
   {
     state_before_traj_msg_.velocities.resize(trajectory_msg_->points[0].velocities.size(), 0.0);
   }
-  else
-  {
-    // An unwritten velocity interface reads back NaN, not empty, so the branch above misses it.
-    for (auto & velocity : state_before_traj_msg_.velocities)
-    {
-      if (!std::isfinite(velocity))
-      {
-        velocity = 0.0;
-      }
-    }
-  }
   if (current_point.accelerations.empty() && !trajectory_msg_->points[0].accelerations.empty())
   {
     state_before_traj_msg_.accelerations.resize(
       trajectory_msg_->points[0].accelerations.size(), 0.0);
   }
+  // An unwritten state interface reads back NaN, not empty, so the resizes above miss it.
+  zero_non_finite(state_before_traj_msg_.velocities);
+  zero_non_finite(state_before_traj_msg_.accelerations);
 
   // Compute offsets due to wrapping joints
   wraparound_joint(
