@@ -24,6 +24,13 @@
 #include "cartesian_trajectory_controller/cartesian_trajectory.hpp"
 #include "joint_trajectory_controller/trajectory.hpp"
 #include "rclcpp/duration.hpp"
+#include "rclcpp/version.h"
+// cppcheck-suppress syntaxError
+#if RCLCPP_VERSION_GTE(29, 0, 0)
+#include "urdf/model.hpp"
+#else
+#include "urdf/model.h"
+#endif
 
 namespace cartesian_trajectory_controller
 {
@@ -36,6 +43,31 @@ Eigen::Matrix<double, 7, 1> to_pose_vector(
   Eigen::Matrix<double, 7, 1> pose;
   pose << position, orientation.x(), orientation.y(), orientation.z(), orientation.w();
   return pose;
+}
+
+/// Movable joints from base to tip, in the order the kinematics plugin expects joint vectors.
+/// Returns false if tip is not a descendant of base.
+bool get_chain_joint_names(
+  const urdf::Model & model, const std::string & base, const std::string & tip,
+  std::vector<std::string> & joint_names)
+{
+  joint_names.clear();
+  for (urdf::LinkConstSharedPtr link = model.getLink(tip); link; link = link->getParent())
+  {
+    if (link->name == base)
+    {
+      std::reverse(joint_names.begin(), joint_names.end());
+      return true;
+    }
+    const auto & joint = link->parent_joint;
+    if (
+      joint && (joint->type == urdf::Joint::REVOLUTE || joint->type == urdf::Joint::CONTINUOUS ||
+                joint->type == urdf::Joint::PRISMATIC))
+    {
+      joint_names.push_back(joint->name);
+    }
+  }
+  return false;
 }
 }  // namespace
 
@@ -93,6 +125,36 @@ controller_interface::CallbackReturn CartesianTrajectoryController::on_configure
         get_robot_description(), get_node()->get_node_parameters_interface(), "kinematics"))
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to initialize the kinematics plugin.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+
+  // The kinematics plugin takes joint vectors in chain order and does not know the joint names.
+  urdf::Model model;
+  std::vector<std::string> chain_joints;
+  if (!model.initString(get_robot_description()))
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse the robot description.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  if (!get_chain_joint_names(
+        model, ctc_params_.kinematics.base, ctc_params_.kinematics.tip, chain_joints))
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Link '%s' is not a descendant of '%s' in the robot description.",
+      ctc_params_.kinematics.tip.c_str(), ctc_params_.kinematics.base.c_str());
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  if (params_.joints != chain_joints)
+  {
+    std::string expected;
+    for (const auto & name : chain_joints)
+    {
+      expected += (expected.empty() ? "" : ", ") + name;
+    }
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Parameter 'joints' must list the joints from '%s' to '%s' in chain order: [%s].",
+      ctc_params_.kinematics.base.c_str(), ctc_params_.kinematics.tip.c_str(), expected.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
 

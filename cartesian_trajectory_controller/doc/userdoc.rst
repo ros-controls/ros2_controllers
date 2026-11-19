@@ -99,8 +99,9 @@ Using the Cartesian Trajectory Controller
 
 The controller expects at least position feedback from the hardware, and a robot description that
 contains the chain between ``kinematics.base`` and ``kinematics.tip``.
-``joints`` has to list exactly the joints of that chain, in order from base to tip, so joints outside
-it, such as a gripper, need their own controller.
+``joints`` has to list exactly the movable joints of that chain, in order from base to tip, so joints
+outside it, such as a gripper, need their own controller.
+Configuration fails if ``joints`` does not match the chain, and the error lists the expected joints.
 
 Because the controller inherits from the joint trajectory controller, it takes that controller's
 parameters as well as its own.

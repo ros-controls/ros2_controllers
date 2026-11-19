@@ -111,10 +111,10 @@ public:
   void TearDown() override { controller_.reset(); }
 
 protected:
-  void setup_controller(double alpha = 0.01)
+  void setup_controller(double alpha = 0.01, const std::vector<std::string> & joints = JOINTS)
   {
     const std::vector<rclcpp::Parameter> overrides = {
-      {"joints", JOINTS},
+      {"joints", joints},
       {"command_interfaces", std::vector<std::string>{"position"}},
       {"state_interfaces", std::vector<std::string>{"position"}},
       {"kinematics.plugin_name", std::string("kinematics_interface_kdl/KinematicsInterfaceKDL")},
@@ -713,6 +713,15 @@ TEST_F(CartesianTrajectoryControllerTest, deactivate_and_reactivate)
   run(200);
   EXPECT_GT(joint_travel(), 0.01);
   EXPECT_LT((fk(joint_values_).translation() - tgt.first).norm(), 1e-3);
+}
+
+// The kinematics plugin cannot map joint names, so the chain joints in another order are rejected.
+TEST_F(CartesianTrajectoryControllerTest, rejects_joints_not_in_chain_order)
+{
+  std::vector<std::string> permuted = JOINTS;
+  std::swap(permuted[0], permuted[1]);
+  setup_controller(0.01, permuted);
+  EXPECT_FALSE(configure_succeeds(controller_));
 }
 
 // The kinematics plugin survives a cleanup/configure cycle and the controller still moves.

@@ -17,6 +17,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp_lifecycle
   realtime_tools
   trajectory_msgs
+  urdf
 )
 
 find_package(ament_cmake REQUIRED)
@@ -49,6 +50,7 @@ target_link_libraries(cartesian_trajectory_controller PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   realtime_tools::realtime_tools
+  urdf::urdf
   ${geometry_msgs_TARGETS}
   ${trajectory_msgs_TARGETS}
 )
