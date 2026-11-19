@@ -196,7 +196,10 @@ protected:
       }
     }
     const auto goal_handle = sendActionGoal(points, 1.0, goal_options_).get();
-    update_time_ = rclcpp::Clock(RCL_STEADY_TIME).now();
+    if (update_time_.nanoseconds() == 0)
+    {
+      update_time_ = rclcpp::Clock(RCL_STEADY_TIME).now();
+    }
     for (size_t k = 0; k < 100 && !traj_controller_->has_nontrivial_traj(); ++k)
     {
       UpdateCycles(1);
@@ -1258,6 +1261,50 @@ TEST_F(TestTrajectoryActions, cancel_without_position_command_holds_measured_pos
     // the measured state never moved, so a hold there leaves no position error for the PID
     EXPECT_DOUBLE_EQ(0.0, vel_cmd_interfaces_[i]->get_optional().value()) << "joint " << i;
   }
+}
+
+TEST_F(TestTrajectoryActions, cancel_stop_starts_from_last_emitted_command)
+{
+  SetUpExecutor({}, true);
+  const auto goal_handle = SendGoalAndStartMoving();
+  ASSERT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  ASSERT_EQ(
+    std::future_status::ready,
+    action_client_->async_cancel_goal(goal_handle).wait_for(std::chrono::seconds(1)));
+  const double command_at_cancel = pos_cmd_interfaces_[0]->get_optional().value();
+  {
+    // a contended trajectory buffer delays the stop by a cycle while the goal keeps commanding
+    std::lock_guard lock(traj_controller_->get_new_trajectory_msg_mutex());
+    std::async(std::launch::async, [this] { UpdateCycles(1); }).get();
+  }
+  std::vector<double> last_before_stop(3);
+  for (size_t i = 0; i < 3; ++i)
+  {
+    last_before_stop[i] = pos_cmd_interfaces_[i]->get_optional().value();
+  }
+  ASSERT_GT(last_before_stop[0], command_at_cancel);
+
+  UpdateCycles(1);
+
+  for (size_t i = 0; i < 3; ++i)
+  {
+    EXPECT_DOUBLE_EQ(last_before_stop[i], pos_cmd_interfaces_[i]->get_optional().value())
+      << "joint " << i;
+  }
+}
+
+TEST_F(TestTrajectoryActions, goal_accepted_after_cancel_overrides_cancel_stop)
+{
+  SetUpExecutor();
+  const auto cancelled_goal = SendGoalAndStartMoving();
+  ASSERT_EQ(
+    std::future_status::ready,
+    action_client_->async_cancel_goal(cancelled_goal).wait_for(std::chrono::seconds(1)));
+
+  SendGoalAndStartMoving();
+
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
 }
 
 TEST_P(TestTrajectoryActionsTestParameterized, test_allow_nonzero_velocity_at_trajectory_end_true)

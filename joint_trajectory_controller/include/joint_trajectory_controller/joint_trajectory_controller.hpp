@@ -206,6 +206,7 @@ protected:
   realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
   RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
   std::atomic<bool> rt_has_pending_goal_{false};
+  std::atomic<bool> rt_cancel_requested_{false};
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration goal_handle_timer_period_ = rclcpp::Duration(50ms);
 
@@ -276,7 +277,8 @@ protected:
   void preempt_active_goal();
 
   /** @brief pick the point a hold or a deceleration ramp should be anchored to */
-  trajectory_msgs::msg::JointTrajectoryPoint select_hold_anchor(bool from_last_command) const;
+  const trajectory_msgs::msg::JointTrajectoryPoint & select_hold_anchor(
+    bool from_last_command) const;
 
   bool has_finite_positions(const trajectory_msgs::msg::JointTrajectoryPoint & point) const;
 

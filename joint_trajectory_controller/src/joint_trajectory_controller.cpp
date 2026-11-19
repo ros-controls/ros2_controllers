@@ -278,6 +278,25 @@ controller_interface::return_type JointTrajectoryController::update(
   rt_active_goal_local_.reset();
   rt_active_goal_.try_get([&](const auto & goal) { rt_active_goal_local_ = goal; });
 
+  if (rt_cancel_requested_)
+  {
+    // Under the box lock, so a trajectory queued after the cancel overwrites the stop.
+    rt_new_trajectory_msg_.try_set(
+      [this](auto & msg)
+      {
+        if (!rt_cancel_requested_.exchange(false))
+        {
+          return;
+        }
+        const auto stop = should_decelerate_on_cancel_ ? decelerate_to_hold_position(true)
+                                                       : set_hold_position(true);
+        if (stop)
+        {
+          msg = stop;
+        }
+      });
+  }
+
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
@@ -1298,6 +1317,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
+  rt_cancel_requested_ = false;
   RealtimeGoalHandlePtr active_goal;
   rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
@@ -1610,16 +1630,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
-    if (should_decelerate_on_cancel_)
-    {
-      // calculate stopping position based on max deceleration
-      add_new_trajectory_msg(decelerate_to_hold_position(true));
-    }
-    else
-    {
-      // hold last commanded position
-      add_new_trajectory_msg(set_hold_position(true));
-    }
+    // update() builds the stop from the command it emitted last.
+    rt_cancel_requested_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -2170,6 +2182,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
+  // A trajectory queued after a cancel supersedes its stop.
+  rt_cancel_requested_ = false;
   rt_new_trajectory_msg_.set([traj_msg](auto & msg) { msg = traj_msg; });
 }
 
@@ -2189,18 +2203,16 @@ void JointTrajectoryController::preempt_active_goal()
   }
 }
 
-trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hold_anchor(
+const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::select_hold_anchor(
   const bool from_last_command) const
 {
   // Feedback lags the command by the following error; anchoring to it steps the command back.
   // Without a position command interface the commanded positions are only a PID reference.
-  if (from_last_command && has_position_command_interface_)
+  if (
+    from_last_command && has_position_command_interface_ &&
+    has_finite_positions(last_commanded_state_))
   {
-    const auto commanded = rt_last_commanded_state_.get();
-    if (has_finite_positions(commanded))
-    {
-      return commanded;
-    }
+    return last_commanded_state_;
   }
   return state_current_;
 }
@@ -2214,7 +2226,7 @@ bool JointTrajectoryController::has_finite_positions(
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
   const bool from_last_command)
 {
-  const auto anchor = select_hold_anchor(from_last_command);
+  const auto & anchor = select_hold_anchor(from_last_command);
   if (has_finite_positions(anchor))
   {
     hold_position_msg_ptr_->points[0].positions = anchor.positions;
@@ -2246,7 +2258,7 @@ std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
 JointTrajectoryController::decelerate_to_hold_position(const bool from_last_command)
 {
   // p0 and v0 must come from the same point, or the join has a slope discontinuity.
-  const auto anchor = select_hold_anchor(from_last_command);
+  const auto & anchor = select_hold_anchor(from_last_command);
   const auto & p0 = anchor.positions;
   const auto & v0 = anchor.velocities;
 
