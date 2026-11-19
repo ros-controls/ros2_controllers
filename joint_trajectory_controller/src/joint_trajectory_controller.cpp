@@ -2193,10 +2193,10 @@ trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hol
   const bool from_last_command) const
 {
   // Feedback lags the command by the following error; anchoring to it steps the command back.
-  if (from_last_command)
+  // Without a position command interface the commanded positions are only a PID reference.
+  if (from_last_command && has_position_command_interface_)
   {
     const auto commanded = rt_last_commanded_state_.get();
-    // Empty (no position command interface) or non-finite: fall back to the measured state.
     if (has_finite_positions(commanded))
     {
       return commanded;

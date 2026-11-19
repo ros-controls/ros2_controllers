@@ -172,7 +172,42 @@ protected:
     return action_client_->async_send_goal(goal_msg, opt);
   }
 
+  void UpdateCycles(size_t cycles)
+  {
+    const auto period = rclcpp::Duration::from_seconds(0.01);
+    for (size_t k = 0; k < cycles; ++k)
+    {
+      update_time_ += period;
+      traj_controller_->update(update_time_, period);
+    }
+  }
+
+  // update() runs on the test thread here, so the cancel lands between two known cycles
+  GoalHandle::SharedPtr SendGoalAndStartMoving()
+  {
+    std::vector<JointTrajectoryPoint> points(2);
+    for (size_t k = 0; k < points.size(); ++k)
+    {
+      const double offset = 0.5 * static_cast<double>(k + 1);
+      points[k].time_from_start = rclcpp::Duration::from_seconds(offset);
+      for (const double initial : INITIAL_POS_JOINTS)
+      {
+        points[k].positions.push_back(initial + offset);
+      }
+    }
+    const auto goal_handle = sendActionGoal(points, 1.0, goal_options_).get();
+    update_time_ = rclcpp::Clock(RCL_STEADY_TIME).now();
+    for (size_t k = 0; k < 100 && !traj_controller_->has_nontrivial_traj(); ++k)
+    {
+      UpdateCycles(1);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    UpdateCycles(10);
+    return goal_handle;
+  }
+
   rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client_;
+  rclcpp::Time update_time_{0, 0, RCL_STEADY_TIME};
   rclcpp_action::ResultCode common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
   int common_action_result_code_ = control_msgs::action::FollowJointTrajectory_Result::SUCCESSFUL;
 
@@ -1203,6 +1238,25 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_cancel_holds_last_command_no
     // the measured state never moved, so a measured-anchored hold would land exactly here
     EXPECT_GT(commanded, INITIAL_POS_JOINTS[i] + 0.1)
       << "joint " << i << " snapped back toward the measured state on cancel";
+  }
+}
+
+TEST_F(TestTrajectoryActions, cancel_without_position_command_holds_measured_position)
+{
+  command_interface_types_ = {"velocity"};
+  SetUpExecutor({}, true, 1.0);
+  const auto goal_handle = SendGoalAndStartMoving();
+  ASSERT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  ASSERT_EQ(
+    std::future_status::ready,
+    action_client_->async_cancel_goal(goal_handle).wait_for(std::chrono::seconds(1)));
+  UpdateCycles(2);
+
+  for (size_t i = 0; i < 3; ++i)
+  {
+    // the measured state never moved, so a hold there leaves no position error for the PID
+    EXPECT_DOUBLE_EQ(0.0, vel_cmd_interfaces_[i]->get_optional().value()) << "joint " << i;
   }
 }
 
