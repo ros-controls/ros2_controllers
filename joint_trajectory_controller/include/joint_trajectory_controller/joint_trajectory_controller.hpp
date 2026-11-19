@@ -299,6 +299,9 @@ protected:
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position(
     bool from_last_command = false);
 
+  /** @brief queue a hold or a deceleration ramp from the measured state, if one can be built */
+  void queue_fault_stop();
+
   /** @brief set last trajectory point to be repeated at success
    *
    * no matter if it has nonzero velocity or acceleration
