@@ -1262,7 +1262,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
-  add_new_trajectory_msg(set_hold_position());
+  const auto hold_msg = set_hold_position();
+  if (!hold_msg)
+  {
+    return CallbackReturn::ERROR;
+  }
+  add_new_trajectory_msg(hold_msg);
   rt_is_holding_ = true;
 
   // parse timeout parameter
@@ -2192,7 +2197,7 @@ trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hol
   {
     const auto commanded = rt_last_commanded_state_.get();
     // Empty (no position command interface) or non-finite: fall back to the measured state.
-    if (commanded.positions.size() >= dof_ && all_finite(commanded.positions))
+    if (has_finite_positions(commanded))
     {
       return commanded;
     }
@@ -2200,20 +2205,35 @@ trajectory_msgs::msg::JointTrajectoryPoint JointTrajectoryController::select_hol
   return state_current_;
 }
 
+bool JointTrajectoryController::has_finite_positions(
+  const trajectory_msgs::msg::JointTrajectoryPoint & point) const
+{
+  return point.positions.size() >= dof_ && all_finite(point.positions);
+}
+
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
   const bool from_last_command)
 {
   const auto anchor = select_hold_anchor(from_last_command);
-  if (anchor.positions.size() < dof_ || !all_finite(anchor.positions))
+  if (has_finite_positions(anchor))
   {
-    RCLCPP_ERROR_THROTTLE(
+    hold_position_msg_ptr_->points[0].positions = anchor.positions;
+  }
+  else if (has_finite_positions(last_commanded_state_))
+  {
+    RCLCPP_WARN_THROTTLE(
       get_node()->get_logger(), *get_node()->get_clock(), 1000,
-      "Cannot hold position: anchor position is non-finite. Does the hardware write every "
-      "state interface? Keeping the previous hold target.");
+      "Hold anchor position is non-finite, holding the last command instead. Does the hardware "
+      "write every state interface?");
+    hold_position_msg_ptr_->points[0].positions = last_commanded_state_.positions;
   }
   else
   {
-    hold_position_msg_ptr_->points[0].positions = anchor.positions;
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Cannot hold position: neither the measured nor the commanded position is finite. Does the "
+      "hardware write every state interface?");
+    return nullptr;
   }
 
   // set flag, otherwise tolerances will be checked with holding position too

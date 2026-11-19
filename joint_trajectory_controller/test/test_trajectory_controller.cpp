@@ -3361,6 +3361,22 @@ TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_fallback_no_velocit
   executor.cancel();
 }
 
+TEST_F(TrajectoryControllerTest, activate_fails_without_finite_hold_position)
+{
+  rclcpp::executors::MultiThreadedExecutor executor;
+  SetUpTrajectoryController(executor);
+  ASSERT_TRUE(configure_succeeds(traj_controller_));
+
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  AssignInterfaces(false, {nan, nan, nan});
+
+  EXPECT_NE(
+    traj_controller_->get_node()->activate().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  executor.cancel();
+}
+
 // std::max(0.0, NaN) == 0.0, so an unwritten (NaN) velocity state must not reach the ramp.
 TEST_F(TrajectoryControllerTest, decelerate_to_hold_position_nan_velocity_state_commands_no_nan)
 {

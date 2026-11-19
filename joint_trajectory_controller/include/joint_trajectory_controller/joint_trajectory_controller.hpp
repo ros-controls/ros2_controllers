@@ -278,6 +278,8 @@ protected:
   /** @brief pick the point a hold or a deceleration ramp should be anchored to */
   trajectory_msgs::msg::JointTrajectoryPoint select_hold_anchor(bool from_last_command) const;
 
+  bool has_finite_positions(const trajectory_msgs::msg::JointTrajectoryPoint & point) const;
+
   /** @brief set the current position with zero velocity and acceleration as new command
    *
    * @param from_last_command hold at the last command instead of the measured state; false on
