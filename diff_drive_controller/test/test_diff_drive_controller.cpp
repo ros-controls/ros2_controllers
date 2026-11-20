@@ -14,8 +14,10 @@
 
 #include <gmock/gmock.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -352,6 +354,38 @@ TEST_F(TestDiffDriveController, configure_succeeds_tf_prefix_no_namespace)
   // frame_prefix is not blank so should be prepended to the frame id's
   ASSERT_EQ(controller_->odometry_message_.header.frame_id, frame_prefix + "/" + odom_id);
   ASSERT_EQ(controller_->odometry_message_.child_frame_id, frame_prefix + "/" + base_link_id);
+}
+
+TEST_F(TestDiffDriveController, odom_and_tf_publishers_use_reliable_volatile_qos)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  auto node = controller_->get_node();
+  const auto check_qos = [&](const std::string & topic)
+  {
+    std::vector<rclcpp::TopicEndpointInfo> infos;
+    for (int i = 0; i < 50 && infos.empty(); ++i)
+    {
+      for (const auto & info : node->get_publishers_info_by_topic(topic))
+      {
+        if (info.node_name() == controller_name)
+        {
+          infos.push_back(info);
+        }
+      }
+      if (infos.empty())
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      }
+    }
+    ASSERT_THAT(infos, SizeIs(1)) << "no publisher found on " << topic;
+    EXPECT_EQ(infos[0].qos_profile().reliability(), rclcpp::ReliabilityPolicy::Reliable) << topic;
+    EXPECT_EQ(infos[0].qos_profile().durability(), rclcpp::DurabilityPolicy::Volatile) << topic;
+  };
+
+  check_qos("/" + controller_name + "/odom");
+  check_qos("/tf");
 }
 
 TEST_F(TestDiffDriveController, configure_succeeds_tf_blank_prefix_no_namespace)
