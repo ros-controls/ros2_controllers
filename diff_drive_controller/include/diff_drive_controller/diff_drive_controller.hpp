@@ -152,6 +152,9 @@ protected:
   realtime_tools::RealtimeThreadSafeBox<control_msgs::srv::SetOdometry::Request>
     requested_odom_params_;
 
+  std::atomic<bool> is_active_{false};
+  std::atomic<int> updates_in_progress_{0};
+
   bool reset();
   void halt();
 
