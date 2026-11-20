@@ -366,7 +366,8 @@ controller_interface::return_type BatteryStateBroadcaster::update(
       if (interfaces.battery_percentage)
       {
         raw_battery_states_msg_.battery_states[i].percentage = static_cast<float>(
-          state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue));
+          state_interfaces_[interface_cnt].get_optional<double>().value_or(kUninitializedValue) /
+          100.0);
         sums_.percentage_sum += raw_battery_states_msg_.battery_states[i].percentage;
         interface_cnt++;
       }
@@ -379,7 +380,7 @@ controller_interface::return_type BatteryStateBroadcaster::update(
         if (std::isfinite(min_volt) && std::isfinite(max_volt) && (max_volt > min_volt))
         {
           raw_battery_states_msg_.battery_states[i].percentage =
-            static_cast<float>((voltage - min_volt) * 100.0 / (max_volt - min_volt));
+            static_cast<float>((voltage - min_volt) / (max_volt - min_volt));
           sums_.percentage_sum += raw_battery_states_msg_.battery_states[i].percentage;
         }
         else
