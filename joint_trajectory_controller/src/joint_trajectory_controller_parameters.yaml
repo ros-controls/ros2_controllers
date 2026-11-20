@@ -233,7 +233,9 @@ joint_trajectory_controller:
     stopped_velocity_tolerance: {
       type: double,
       default_value: 0.01,
-      description: "Velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.",
+      description: "Default velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.
+
+      Only used for joints whose joint specific stopped_velocity_tolerance is set to 0.0.",
     }
     goal_time: {
       type: double,
@@ -270,4 +272,11 @@ joint_trajectory_controller:
         validation: {
           gt_eq: [0.0]
         }
+      }
+      stopped_velocity_tolerance: {
+        type: double,
+        default_value: 0.0,
+        description: "Per-joint override for the velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.
+
+          If set to 0.0 (the default), the global stopped_velocity_tolerance is used instead.",
       }

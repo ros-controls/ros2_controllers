@@ -112,7 +112,12 @@ SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Para
     auto const joint = params.joints[i];
     tolerances.state_tolerance[i].position = constraints.joints_map.at(joint).trajectory;
     tolerances.goal_state_tolerance[i].position = constraints.joints_map.at(joint).goal;
-    tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
+    tolerances.goal_state_tolerance[i].velocity =
+      constraints.joints_map.at(joint).stopped_velocity_tolerance;
+    if (tolerances.goal_state_tolerance[i].velocity == 0)
+    {
+      tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
+    }
 
     RCLCPP_DEBUG(
       logger, "%s %f", (joint + ".trajectory.position").c_str(),
