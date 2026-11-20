@@ -18,6 +18,7 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -64,12 +65,13 @@ protected:
 
   void SetUpExecutor(
     const std::vector<rclcpp::Parameter> & parameters = {},
-    bool separate_cmd_and_state_values = false, double kp = 0.0, double ff = 1.0)
+    bool separate_cmd_and_state_values = false, double kp = 0.0, double ff = 1.0,
+    const std::vector<double> & initial_pos_joints = INITIAL_POS_JOINTS)
   {
     setup_executor_ = true;
 
     SetUpAndActivateTrajectoryController(
-      executor_, parameters, separate_cmd_and_state_values, kp, ff);
+      executor_, parameters, separate_cmd_and_state_values, kp, ff, initial_pos_joints);
 
     SetUpActionClient();
 
@@ -732,6 +734,48 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
   EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL, error_code_a);
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+// A partial goal whose omitted joint has no position to hold at is aborted as INVALID_GOAL in the
+// same update that picks it up. The rest of that update must not treat it as still active: the
+// controller is idle at its hold, which is past its last point, so it would also try to complete
+// the aborted goal as a success.
+TEST_F(TestTrajectoryActions, partial_goal_without_hold_position_is_aborted)
+{
+  std::vector<double> initial_pos_joints = INITIAL_POS_JOINTS;
+  initial_pos_joints[2] = std::numeric_limits<double>::quiet_NaN();
+  SetUpExecutor(
+    {rclcpp::Parameter("allow_partial_joints_goal", true)}, false, 0.0, 1.0, initial_pos_joints);
+  SetUpControllerHardware();
+
+  std::string error_string;
+  goal_options_.result_callback = [this, &error_string](const GoalHandle::WrappedResult & r)
+  {
+    common_result_response(r);
+    error_string = r.result->error_string;
+  };
+  control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+  goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+  goal_msg.trajectory.joint_names = {joint_names_[1], joint_names_[0]};
+  goal_msg.trajectory.points.resize(1);
+  goal_msg.trajectory.points[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
+  goal_msg.trajectory.points[0].positions = {2.0, 1.0};
+  auto gh_future = action_client_->async_send_goal(goal_msg, goal_options_);
+
+  controller_hw_thread_.join();
+
+  EXPECT_TRUE(gh_future.get());
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, common_resultcode_);
+  EXPECT_EQ(
+    control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL, common_action_result_code_);
+  EXPECT_EQ(
+    "Aborted: a joint omitted from the goal has no known position to hold at", error_string);
+
+  // nothing of the goal was executed: joints 1 and 2 are still held where they started
+  EXPECT_NEAR(
+    initial_pos_joints[0], pos_cmd_interfaces_[0]->get_optional().value(), COMMON_THRESHOLD);
+  EXPECT_NEAR(
+    initial_pos_joints[1], pos_cmd_interfaces_[1]->get_optional().value(), COMMON_THRESHOLD);
 }
 
 TEST_F(TestTrajectoryActions, blend_action_preempt_aborts_old_goal)
