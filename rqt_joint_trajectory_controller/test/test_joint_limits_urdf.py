@@ -18,8 +18,8 @@ Most tests are ROS-free: they call parse_joint_limits() directly with URDF
 strings and assert on the returned dict. No node, no topic, no
 robot_description publisher is needed.
 
-The last group tests the callback/threading.Event/get_joint_limits waiting
-behavior using a minimal fake node stub, still without any live ROS node,
+The last group tests the callback and get_joint_limits() handling of the
+robot_description using a minimal fake node stub, still without any live ROS node,
 context, or executor.
 
 Run with:
@@ -27,7 +27,6 @@ Run with:
 """
 
 import math
-import threading
 import time
 from unittest.mock import Mock
 
@@ -95,7 +94,7 @@ class _TestLogger:
     def info(self, msg):
         self.info_messages.append(msg)
 
-    def warning(self, msg):
+    def warning(self, msg, **kwargs):
         self.warning_messages.append(msg)
 
 
@@ -453,15 +452,12 @@ def test_missing_velocity_raises():
 
 
 # ---------------------------------------------------------------------------
-# Group 8: robot_description wait mechanism.
+# Group 8: robot_description handling.
 #
-# get_joint_limits() used to call rclpy.spin_once(node, ...) directly on the
-# node passed to it. That node can now be context.node, which rqt_gui_py
-# already spins continuously on its own thread — calling spin_once on it
-# here too would be a concurrent-access hazard on the same node. These
-# tests exercise the threading.Event-based replacement: the
-# robot_description subscription callback stores the message and signals
-# an Event, and get_joint_limits() waits on that Event instead of spinning.
+# get_joint_limits() is called from the GUI thread with a node that may be
+# context.node, which rqt_gui_py already spins on its own thread. It must
+# neither spin that node nor wait for the robot_description; the
+# subscription callback stores the message for later calls.
 # A minimal fake node/message is used, so no real rclpy node, context, or
 # executor is involved.
 # ---------------------------------------------------------------------------
@@ -489,10 +485,8 @@ class _FakeSubscribingNode(_TestNode):
 def _clean_description_state():
     """Reset the module-level description cache and event around each test."""
     joint_limits_urdf.description = ""
-    joint_limits_urdf._description_received.clear()
     yield
     joint_limits_urdf.description = ""
-    joint_limits_urdf._description_received.clear()
 
 
 @pytest.fixture
@@ -517,14 +511,12 @@ def _minimal_urdf():
     return _robot(_revolute("j1", -1.0, 1.0, 1.0))
 
 
-def test_callback_sets_description_and_signals_event(_clean_description_state):
+def test_callback_sets_description(_clean_description_state):
     assert joint_limits_urdf.description == ""
-    assert not joint_limits_urdf._description_received.is_set()
 
     robot_description_callback(_FakeMsg(_minimal_urdf()))
 
     assert joint_limits_urdf.description == _minimal_urdf()
-    assert joint_limits_urdf._description_received.is_set()
 
 
 def test_subscribe_to_robot_description_returns_owned_subscription(_clean_description_state):
@@ -544,7 +536,6 @@ def test_subscribe_to_robot_description_returns_owned_subscription(_clean_descri
 
 def test_get_joint_limits_does_not_call_spin_once(_node, _no_spin_once):
     joint_limits_urdf.description = _minimal_urdf()
-    joint_limits_urdf._description_received.set()
 
     result = get_joint_limits(_node, ["j1"])
 
@@ -552,52 +543,22 @@ def test_get_joint_limits_does_not_call_spin_once(_node, _no_spin_once):
     _no_spin_once.assert_not_called()
 
 
-def test_get_joint_limits_waits_for_event_set_by_callback(_node, _no_spin_once):
-    def deliver_after_delay():
-        time.sleep(0.05)
-        robot_description_callback(_FakeMsg(_minimal_urdf()))
-
-    thread = threading.Thread(target=deliver_after_delay, daemon=True)
-    thread.start()
-
-    result = get_joint_limits(_node, ["j1"], timeout_sec=2.0)
-    thread.join(timeout=1.0)
-
-    assert "j1" in result
-    _no_spin_once.assert_not_called()
-
-
-def test_get_joint_limits_timeout_returns_empty_dict_without_description(_node):
-    result = get_joint_limits(_node, ["j1"], timeout_sec=0.05)
+def test_get_joint_limits_returns_empty_dict_immediately_without_description(_node):
+    """
+    get_joint_limits() runs on the GUI thread, so it must not wait for the
+    robot_description. The plugin retries on its next controller list update.
+    """
+    start = time.monotonic()
+    result = get_joint_limits(_node, ["j1"])
 
     assert result == {}
+    assert time.monotonic() - start < 1.0
+    assert _node.get_logger().warning_messages
 
 
-def test_get_joint_limits_robust_to_stale_set_event_waits_for_new_description(
-    _node, _no_spin_once
-):
-    """
-    The event may be stale-set while description is empty (e.g. a caller
-    reset description="" directly without also clearing the event, or
-    leftover state from a previous run/test). get_joint_limits() must not
-    misread that stale set as "description available"; it must clear the
-    event and keep waiting for an actual new description to arrive.
-    """
-    joint_limits_urdf.description = _minimal_urdf()
-    joint_limits_urdf._description_received.set()
+def test_get_joint_limits_uses_description_received_later(_node):
+    assert get_joint_limits(_node, ["j1"]) == {}
 
-    # Simulate a reset that forgets to clear the event.
-    joint_limits_urdf.description = ""
+    robot_description_callback(_FakeMsg(_minimal_urdf()))
 
-    def deliver_after_delay():
-        time.sleep(0.05)
-        robot_description_callback(_FakeMsg(_minimal_urdf()))
-
-    thread = threading.Thread(target=deliver_after_delay, daemon=True)
-    thread.start()
-
-    result = get_joint_limits(_node, ["j1"], timeout_sec=2.0)
-    thread.join(timeout=1.0)
-
-    assert "j1" in result
-    _no_spin_once.assert_not_called()
+    assert "j1" in get_joint_limits(_node, ["j1"])
