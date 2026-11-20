@@ -14,6 +14,7 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -22,6 +23,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "angles/angles.h"
@@ -59,7 +61,7 @@ auto interface_has_values = [](const auto & joint_interface) -> bool
 };
 
 JointTrajectoryController::JointTrajectoryController()
-: controller_interface::ControllerInterface(), dof_(0), num_cmd_joints_(0)
+: controller_interface::ChainableControllerInterface(), dof_(0), num_cmd_joints_(0)
 {
 }
 
@@ -238,9 +240,21 @@ JointTrajectoryController::state_interface_configuration() const
   return conf;
 }
 
-controller_interface::return_type JointTrajectoryController::update(
+controller_interface::return_type JointTrajectoryController::update_reference_from_subscribers(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+{
+  return controller_interface::return_type::OK;
+}
+
+controller_interface::return_type JointTrajectoryController::update_and_write_commands(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
+  if (is_in_chained_mode())
+  {
+    update_commands_in_chained_mode(time, period);
+    return controller_interface::return_type::OK;
+  }
+
   auto logger = this->get_node()->get_logger();
   if (scaling_state_interface_.has_value())
   {
@@ -604,6 +618,134 @@ controller_interface::return_type JointTrajectoryController::update(
 
   publish_state(time, state_desired_, state_current_, state_error_);
   return controller_interface::return_type::OK;
+}
+
+std::vector<hardware_interface::CommandInterface::SharedPtr>
+JointTrajectoryController::on_export_reference_interfaces_list()
+{
+  std::vector<hardware_interface::CommandInterface::SharedPtr> reference_interfaces;
+  reference_interfaces.reserve(reference_interface_types_.size() * params_.joints.size());
+  for (const auto & interface_type : reference_interface_types_)
+  {
+    for (const auto & joint_name : params_.joints)
+    {
+      auto reference_interface = std::make_shared<hardware_interface::CommandInterface>(
+        std::string(get_node()->get_name()) + "/" + joint_name, interface_type);
+      std::ignore = reference_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+      reference_interfaces.push_back(reference_interface);
+    }
+  }
+  return reference_interfaces;
+}
+
+bool JointTrajectoryController::on_set_chained_mode(bool chained_mode)
+{
+  // The controller manager changes the chained mode only when this controller is inactive.
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
+  if (active_goal)
+  {
+    rt_has_pending_goal_ = false;
+    auto action_res = std::make_shared<FollowJTrajAction::Result>();
+    action_res->set__error_code(FollowJTrajAction::Result::INVALID_GOAL);
+    action_res->set__error_string("Current goal cancelled because the chained mode changed.");
+    active_goal->setAborted(action_res);
+    rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
+  }
+  rt_new_trajectory_msg_.set([](auto & msg) { msg.reset(); });
+  for (const auto & reference_interface : ordered_exported_reference_interfaces_)
+  {
+    std::ignore = reference_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  }
+  RCLCPP_INFO(
+    get_node()->get_logger(), "Chained mode %s.", chained_mode ? "activated" : "deactivated");
+  return true;
+}
+
+void JointTrajectoryController::update_commands_in_chained_mode(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
+  state_current_.time_from_start.sec = 0;
+  state_current_.time_from_start.nanosec = 0;
+  read_state_from_state_interfaces(state_current_);
+
+  // Desired state from the reference interfaces, ordered as [positions, velocities,
+  // accelerations] of all joints (see on_export_reference_interfaces_list()).
+  auto read_reference = [&](size_t type_index, size_t joint_index, double & value) -> bool
+  {
+    const auto reference_op =
+      ordered_exported_reference_interfaces_[type_index * dof_ + joint_index]
+        ->get_optional<double>();
+    if (!reference_op.has_value() || std::isnan(reference_op.value()))
+    {
+      return false;
+    }
+    value = reference_op.value();
+    return true;
+  };
+  for (size_t index = 0; index < dof_; ++index)
+  {
+    if (!read_reference(0, index, chained_desired_.positions[index]))
+    {
+      // No reference yet (or the value is locked by the writer): keep the last command.
+      chained_desired_.positions[index] = std::isnan(last_commanded_state_.positions[index])
+                                            ? state_current_.positions[index]
+                                            : last_commanded_state_.positions[index];
+    }
+    if (!read_reference(1, index, chained_desired_.velocities[index]))
+    {
+      chained_desired_.velocities[index] = 0.0;
+    }
+    if (!read_reference(2, index, chained_desired_.accelerations[index]))
+    {
+      chained_desired_.accelerations[index] = 0.0;
+    }
+    compute_error_for_joint(state_error_, index, state_current_, chained_desired_);
+  }
+  chained_desired_.time_from_start.sec = 0;
+  chained_desired_.time_from_start.nanosec = 0;
+
+  if (use_closed_loop_pid_adapter_)
+  {
+    for (size_t i = 0; i < num_cmd_joints_; ++i)
+    {
+      const size_t index_cmd_joint = map_cmd_to_joints_[i];
+      closed_loop_pid_command_[index_cmd_joint] =
+        (chained_desired_.velocities[index_cmd_joint] * ff_velocity_scale_[i]) +
+        pids_[i]->compute_command(
+          state_error_.positions[index_cmd_joint], state_error_.velocities[index_cmd_joint],
+          period);
+    }
+  }
+
+  if (has_position_command_interface_)
+  {
+    assign_interface_from_point(joint_command_interface_[0], chained_desired_.positions);
+  }
+  if (has_velocity_command_interface_)
+  {
+    assign_interface_from_point(
+      joint_command_interface_[1],
+      use_closed_loop_pid_adapter_ ? closed_loop_pid_command_ : chained_desired_.velocities);
+  }
+  if (has_acceleration_command_interface_)
+  {
+    assign_interface_from_point(joint_command_interface_[2], chained_desired_.accelerations);
+  }
+  if (has_effort_command_interface_)
+  {
+    assign_interface_from_point(joint_command_interface_[3], closed_loop_pid_command_);
+  }
+
+  // Copy only the fields that last_commanded_state_ has: no memory allocation.
+  auto copy_field = [](const std::vector<double> & from, std::vector<double> & to)
+  { std::copy_n(from.begin(), std::min(from.size(), to.size()), to.begin()); };
+  copy_field(chained_desired_.positions, last_commanded_state_.positions);
+  copy_field(chained_desired_.velocities, last_commanded_state_.velocities);
+  copy_field(chained_desired_.accelerations, last_commanded_state_.accelerations);
+  last_commanded_time_ = time;
+
+  publish_state(time, chained_desired_, state_current_, state_error_);
 }
 
 void JointTrajectoryController::read_state_from_state_interfaces(JointTrajectoryPoint & state)
@@ -1090,6 +1232,11 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point_command(
     command_current_, dof_, std::numeric_limits<double>::quiet_NaN());
   resize_joint_trajectory_point(state_desired_, dof_);
+  // All fields of the desired state in chained mode have the size of the joints.
+  chained_desired_.positions.assign(dof_, 0.0);
+  chained_desired_.velocities.assign(dof_, 0.0);
+  chained_desired_.accelerations.assign(dof_, 0.0);
+  chained_desired_.effort.assign(dof_, 0.0);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(
     last_commanded_state_, dof_, std::numeric_limits<double>::quiet_NaN());
@@ -1235,6 +1382,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   current_trajectory_ = std::make_unique<Trajectory>();
   rt_new_trajectory_msg_.set([](auto & msg) { msg.reset(); });
+
+  // The preceding controller sets the references after its own activation.
+  for (const auto & reference_interface : ordered_exported_reference_interfaces_)
+  {
+    std::ignore = reference_interface->set_value(std::numeric_limits<double>::quiet_NaN());
+  }
 
   subscriber_is_active_ = true;
 
@@ -1541,6 +1694,14 @@ void JointTrajectoryController::synthesize_timing(
 void JointTrajectoryController::topic_callback(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> msg)
 {
+  if (is_in_chained_mode())
+  {
+    RCLCPP_WARN_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Trajectory ignored: the controller is in chained mode and takes the references of the "
+      "preceding controller.");
+    return;
+  }
   preprocess_incoming_trajectory(*msg);
 
   if (!validate_trajectory_msg(*msg))
@@ -1566,6 +1727,15 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Can't accept new action goals. Controller is not running.");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
+  if (is_in_chained_mode())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(),
+      "Can't accept new action goals. The controller is in chained mode and takes the references "
+      "of the preceding controller.");
     return rclcpp_action::GoalResponse::REJECT;
   }
 
@@ -2462,4 +2632,5 @@ void JointTrajectoryController::assign_point_from_command_interface(
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  joint_trajectory_controller::JointTrajectoryController, controller_interface::ControllerInterface)
+  joint_trajectory_controller::JointTrajectoryController,
+  controller_interface::ChainableControllerInterface)

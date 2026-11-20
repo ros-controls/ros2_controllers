@@ -26,7 +26,7 @@
 #include "control_msgs/msg/speed_scaling_factor.hpp"
 #include "control_msgs/srv/query_trajectory_state.hpp"
 #include "control_toolbox/pid.hpp"
-#include "controller_interface/controller_interface.hpp"
+#include "controller_interface/chainable_controller_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "joint_trajectory_controller/interpolation_methods.hpp"
@@ -52,7 +52,7 @@ using namespace std::chrono_literals;  // NOLINT
 namespace joint_trajectory_controller
 {
 
-class JointTrajectoryController : public controller_interface::ControllerInterface
+class JointTrajectoryController : public controller_interface::ChainableControllerInterface
 {
 public:
   JointTrajectoryController();
@@ -61,7 +61,18 @@ public:
 
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
 
-  controller_interface::return_type update(
+  /**
+   * @brief Update the commands from the active trajectory, or from the reference interfaces in
+   * chained mode.
+   */
+  controller_interface::return_type update_and_write_commands(
+    const rclcpp::Time & time, const rclcpp::Duration & period) override;
+
+  /**
+   * @brief Do nothing: in not chained mode, update_and_write_commands() takes new trajectories
+   * from the topic and the action server.
+   */
+  controller_interface::return_type update_reference_from_subscribers(
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   controller_interface::CallbackReturn on_init() override;
@@ -79,6 +90,39 @@ public:
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
+  /**
+   * @brief Export the reference interfaces '<controller name>/<joint>/<type>' for the types
+   * 'position', 'velocity' and 'acceleration' of all joints.
+   *
+   * In chained mode, a preceding controller (for example a JTC for several robots) writes the
+   * desired state of each control cycle to these interfaces.
+   */
+  std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_reference_interfaces_list()
+    override;
+
+  /**
+   * @brief Abort the active goal and clear the trajectory when the chained mode changes.
+   */
+  bool on_set_chained_mode(bool chained_mode) override;
+
+  /**
+   * @brief Write the commands for the desired state from the reference interfaces.
+   *
+   * Missing (NaN) position references keep the last command. Missing velocity and acceleration
+   * references are zero.
+   */
+  void update_commands_in_chained_mode(const rclcpp::Time & time, const rclcpp::Duration & period);
+
+  /// Desired state in chained mode, from the reference interfaces.
+  trajectory_msgs::msg::JointTrajectoryPoint chained_desired_;
+
+  /// Types of the reference interfaces, in the order of export.
+  const std::vector<std::string> reference_interface_types_ = {
+    hardware_interface::HW_IF_POSITION,
+    hardware_interface::HW_IF_VELOCITY,
+    hardware_interface::HW_IF_ACCELERATION,
+  };
+
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types
   // as the following constants
   const std::vector<std::string> allowed_interface_types_ = {

@@ -61,6 +61,8 @@ Other features
 
 * Robust to system clock changes: Discontinuous system clock changes do not cause discontinuities in the execution of already queued trajectory segments.
 
+* Chainable: a preceding controller can write the desired state of each cycle to the reference interfaces, see `References`_.
+
 * Optional smooth deceleration on cancel: Instead of abruptly holding position, the controller can decelerate joints to a stop using configurable per-joint deceleration limits. See :ref:`joint_trajectory_controller_decelerate_on_cancel`.
 
 
@@ -175,7 +177,28 @@ Description of controller's interfaces
 References
 ,,,,,,,,,,,,,,,,,,
 
-(the controller is not yet implemented as chainable controller)
+The controller is chainable. It exports the reference interfaces
+``<controller_name>/<joint>/position``, ``<controller_name>/<joint>/velocity`` and
+``<controller_name>/<joint>/acceleration`` for all ``joints``.
+
+A preceding controller claims these interfaces and puts the controller into chained mode.
+For example, a joint trajectory controller for several robots sets its ``command_joints`` to
+``<controller_name>/<joint>`` of the controllers of each robot.
+It samples one trajectory for all robots and writes the desired state of each cycle to the
+references. The controllers of the robots can run at the rate of their hardware (asynchronous).
+
+In chained mode, the controller:
+
+* uses the references as the desired state of the cycle and writes the commands from them,
+  with the PID adapter if it is configured. It does not interpolate.
+* keeps the last command if a position reference is not set (NaN). Velocity and acceleration
+  references that are not set are zero.
+* rejects action goals and ignores the trajectory topic. The preceding controller checks the
+  tolerances and reports the result of the action.
+* publishes ``~/controller_state`` with the references as ``reference``.
+
+When the preceding controller is deactivated, the controller manager restarts the controller
+without chained mode. Then it accepts trajectories from the action and the topic again.
 
 States
 ,,,,,,,,,,,,,,,,,,
