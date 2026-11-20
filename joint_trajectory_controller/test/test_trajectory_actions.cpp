@@ -1294,6 +1294,46 @@ TEST_F(TestTrajectoryActions, cancel_stop_starts_from_last_emitted_command)
   }
 }
 
+TEST_F(TestTrajectoryActions, cancel_stop_under_speed_scaling_decelerates_at_configured_rate)
+{
+  const double max_decel = 1.0;
+  SetUpExecutor(
+    {rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", max_decel),
+     rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", max_decel),
+     rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", max_decel),
+     rclcpp::Parameter("constraints.decelerate_on_cancel", true),
+     rclcpp::Parameter("speed_scaling.initial_scaling_factor", 0.5)},
+    true);
+  const auto goal_handle = SendGoalAndStartMoving();
+  ASSERT_TRUE(traj_controller_->has_nontrivial_traj());
+
+  std::vector<double> commands;
+  const auto record = [&]()
+  {
+    UpdateCycles(1);
+    commands.push_back(pos_cmd_interfaces_[0]->get_optional().value());
+  };
+  record();
+  record();
+  ASSERT_EQ(
+    std::future_status::ready,
+    action_client_->async_cancel_goal(goal_handle).wait_for(std::chrono::seconds(1)));
+  for (size_t k = 0; k < 80; ++k)
+  {
+    record();
+  }
+
+  const double dt = 0.01;
+  double max_accel = 0.0;
+  for (size_t k = 1; k + 1 < commands.size(); ++k)
+  {
+    max_accel = std::max(
+      max_accel, std::abs(commands[k + 1] - 2.0 * commands[k] + commands[k - 1]) / (dt * dt));
+  }
+  EXPECT_LE(max_accel, max_decel + 1e-3);
+  EXPECT_DOUBLE_EQ(commands[commands.size() - 2], commands.back()) << "the stop did not complete";
+}
+
 TEST_F(TestTrajectoryActions, goal_accepted_after_cancel_overrides_cancel_stop)
 {
   SetUpExecutor();

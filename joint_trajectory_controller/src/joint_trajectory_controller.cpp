@@ -354,6 +354,11 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       traj_time_ = time;
     }
+    else if (current_trajectory_->get_trajectory_msg() == stop_trajectory_)
+    {
+      // The stop ramp runs on the wall clock, unscaled.
+      traj_time_ += period;
+    }
     else
     {
       traj_time_ += period * scaling_factor_.load();
@@ -2209,11 +2214,14 @@ JointTrajectoryController::decelerate_to_hold_position(const bool from_last_comm
   // p0 and v0 must come from the same point, or the join has a slope discontinuity.
   const auto & anchor = select_hold_anchor(from_last_command);
   const auto & p0 = anchor.positions;
-  const auto & v0 = anchor.velocities;
+  const auto & v0_anchor = anchor.velocities;
+  // A commanded velocity is in trajectory time; the ramp starts from the scaled, physical one.
+  const double v0_scale = (&anchor == &last_commanded_state_) ? scaling_factor_.load() : 1.0;
+  const auto v0 = [&](const size_t j) { return v0_scale * v0_anchor[j]; };
 
   // std::max(0.0, NaN) == 0.0, so NaN must be caught here or it silently fills the ramp.
   const bool positions_ok = p0.size() >= dof_ && all_finite(p0);
-  const bool velocities_ok = v0.size() >= dof_ && all_finite(v0);
+  const bool velocities_ok = v0_anchor.size() >= dof_ && all_finite(v0_anchor);
   if (!positions_ok || !velocities_ok)
   {
     RCLCPP_ERROR_THROTTLE(
@@ -2230,21 +2238,21 @@ JointTrajectoryController::decelerate_to_hold_position(const bool from_last_comm
   {
     // These arrays are state-joint indexed (dof_), not command-joint indexed.
     const size_t j = map_cmd_to_joints_[i];
-    stop_direction_[j] = (v0[j] >= 0.0) ? 1.0 : -1.0;
+    stop_direction_[j] = (v0(j) >= 0.0) ? 1.0 : -1.0;
 
     // Time to stop (constant decel)
-    stop_time_[j] = std::abs(v0[j]) / max_decel_[j];
+    stop_time_[j] = std::abs(v0(j)) / max_decel_[j];
     max_t_stop = std::max(max_t_stop, stop_time_[j]);
 
     // Analytical stop distance and hold position
-    const double stop_distance = (v0[j] * v0[j]) / (2.0 * max_decel_[j]);
+    const double stop_distance = (v0(j) * v0(j)) / (2.0 * max_decel_[j]);
     hold_position_[j] = p0[j] + stop_direction_[j] * stop_distance;
 
     RCLCPP_DEBUG(
       get_node()->get_logger(),
       "Joint [%s] decel [%.3f], stop dist [%.4f], initial vel [%.4f], initial pos [%.4f], hold pos "
       "[%.4f], time to stop [%.4f]",
-      params_.joints[j].c_str(), max_decel_[j], stop_distance, v0[j], p0[j], hold_position_[j],
+      params_.joints[j].c_str(), max_decel_[j], stop_distance, v0(j), p0[j], hold_position_[j],
       stop_time_[j]);
   }
 
@@ -2276,15 +2284,15 @@ JointTrajectoryController::decelerate_to_hold_position(const bool from_last_comm
     {
       const size_t j = map_cmd_to_joints_[i];
       // if the joint still needs more time to stop and had an initial non-zero velocity
-      if (t < stop_time_[j] && std::abs(v0[j]) > std::numeric_limits<float>::epsilon())
+      if (t < stop_time_[j] && std::abs(v0(j)) > std::numeric_limits<float>::epsilon())
       {
         // Constant deceleration
         // v(t) = v0 - stop_direction_ * a * t
-        double v = v0[j] - stop_direction_[j] * max_decel_[j] * t;
+        double v = v0(j) - stop_direction_[j] * max_decel_[j] * t;
         // Guard against numerical crossing
         if ((v * stop_direction_[j]) < 0.0) v = 0.0;
         // p(t) = p0 + v0 * t - 0.5 * stop_direction_ * a * t^2
-        const double p = p0[j] + v0[j] * t - 0.5 * stop_direction_[j] * max_decel_[j] * t * t;
+        const double p = p0[j] + v0(j) * t - 0.5 * stop_direction_[j] * max_decel_[j] * t * t;
         pt.positions[j] = p;
         pt.velocities[j] = v;
         pt.accelerations[j] = -stop_direction_[j] * max_decel_[j];

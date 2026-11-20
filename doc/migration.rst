@@ -29,6 +29,7 @@ joint_trajectory_controller
   The ``action_execution_timeout`` parameter is removed.
 * With a position command interface, cancelling a goal now holds, or decelerates to, the last commanded position instead of the last measured one.
   Anchoring to the measured position stepped the command backward by the following error in a single control period, which reads downstream as a large, unintended deceleration.
+* The deceleration ramp on cancel now ignores speed scaling: it starts from the joints' actual velocity and decelerates at ``max_deceleration_on_cancel`` in wall-clock time.
 
 position_controllers
 *****************************
