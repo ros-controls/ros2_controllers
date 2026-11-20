@@ -85,6 +85,10 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
       }
     }
   }
+  else if (params_.joints.empty() || params_.interfaces.empty())
+  {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  }
   else
   {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -105,12 +109,16 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (use_urdf_joint_interfaces())
+  if (params_.joints.empty() || params_.interfaces.empty())
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "'joints' or 'interfaces' parameter is empty. Will try to publish all available state "
-      "interfaces of the URDF joints.");
+      params_.use_urdf_to_filter
+        ? "'joints' or 'interfaces' parameter is empty. Will try to publish all available "
+          "state interfaces of the URDF joints."
+        : "'joints' or 'interfaces' parameter is empty. All available state interfaces will be "
+          "considered.");
+    // A partial selection means all interfaces; normalize both selectors.
     params_.joints.clear();
     params_.interfaces.clear();
   }
@@ -408,12 +416,12 @@ void JointStateBroadcaster::init_joint_state_msg()
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
-  return this->use_urdf_joint_interfaces();
+  return params_.joints.empty() || params_.interfaces.empty();
 }
 
 bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 {
-  return params_.joints.empty() || params_.interfaces.empty();
+  return params_.use_urdf_to_filter && (params_.joints.empty() || params_.interfaces.empty());
 }
 
 controller_interface::return_type JointStateBroadcaster::update(

@@ -39,6 +39,8 @@ using hardware_interface::HW_IF_VELOCITY;
 class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBroadcaster
 {
   FRIEND_TEST(JointStateBroadcasterTest, ConfigureErrorTest);
+  FRIEND_TEST(JointStateBroadcasterTest, FilteringDisabledWithPartialSelection);
+  FRIEND_TEST(JointStateBroadcasterTest, FilteringEnabledWithPartialSelection);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateEmptyTest);
   FRIEND_TEST(JointStateBroadcasterTest, ReactivateTheControllerWithDifferentInterfacesTest);
   FRIEND_TEST(JointStateBroadcasterTest, ActivateTestWithoutJointsParameter);
