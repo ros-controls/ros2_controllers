@@ -843,6 +843,56 @@ TEST_F(TestTrajectoryActions, blend_action_replaces_action_with_future_stamp)
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, result_b);
 }
 
+// With omitted joints held (the default), a partial goal ends with its own last waypoint instead of
+// waiting for the omitted joints to finish the preempted goal, which outlasts the update loop here.
+TEST_F(TestTrajectoryActions, blend_action_partial_goal_does_not_wait_for_omitted_joints)
+{
+  SetUpExecutor(
+    {rclcpp::Parameter("allow_trajectory_replacement", true),
+     rclcpp::Parameter("allow_partial_joints_goal", true)});
+  SetUpControllerHardware();
+
+  rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points(2);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(1.0);
+    points[0].positions = {2.0, 3.0, 4.0};
+    points[1].time_from_start = rclcpp::Duration::from_seconds(3.0);
+    points[1].positions = {4.0, 5.0, 6.0};
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a](const GoalHandle::WrappedResult & r)
+    { result_a = r.code; };
+    sendActionGoal(points, 1.0, opts_a);
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  rclcpp_action::ResultCode result_b = rclcpp_action::ResultCode::UNKNOWN;
+  {
+    std::vector<JointTrajectoryPoint> points(1);
+    points[0].time_from_start = rclcpp::Duration::from_seconds(0.8);
+    points[0].positions = {1.0, 2.0};
+    control_msgs::action::FollowJointTrajectory_Goal goal_b;
+    goal_b.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+    goal_b.trajectory.joint_names = {joint_names_[0], joint_names_[1]};
+    goal_b.trajectory.points = points;
+    GoalOptions opts_b;
+    opts_b.result_callback = [&result_b](const GoalHandle::WrappedResult & r)
+    { result_b = r.code; };
+    action_client_->async_send_goal(goal_b, opts_b);
+  }
+
+  // sample while B is still executing: the prefix count is reset by the hold installed afterwards
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_GT(traj_controller_->get_blend_prefix_size(), 0u)
+    << "B was installed via the legacy path, so this test does not cover the blend";
+
+  controller_hw_thread_.join();
+
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, result_b)
+    << "the partial goal waited for the omitted joint to finish the preempted trajectory";
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_state_tolerances_fail)
 {
   // set joint tolerance parameters
