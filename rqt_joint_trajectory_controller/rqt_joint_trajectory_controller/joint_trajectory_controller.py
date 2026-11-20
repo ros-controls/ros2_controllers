@@ -509,12 +509,10 @@ class JointTrajectoryController(Plugin):
         traj.joint_names = self._joint_names
         point = JointTrajectoryPoint()
         for name in traj.joint_names:
-            pos = self._joint_pos[name]["position"]
-            cmd = pos
-            try:
-                cmd = self._joint_pos[name]["command"]
-            except KeyError:
-                pass
+            pos = self._joint_pos[name].get("position")
+            if pos is None:
+                return  # no controller state received yet, the trajectory has no start
+            cmd = self._joint_pos[name].get("command", pos)
             max_vel = self._robot_joint_limits[name]["max_velocity"]
             dur.append(max(abs(cmd - pos) / max_vel, self._min_traj_dur))
             point.positions.append(cmd)
