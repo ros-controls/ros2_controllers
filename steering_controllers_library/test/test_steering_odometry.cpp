@@ -595,6 +595,8 @@ TEST(TestSteeringOdometry, tricycle_single_spin_respects_steering_speed_reductio
     EXPECT_DOUBLE_EQ(std::get<1>(reduced)[0], steering);
     ASSERT_TRUE(odom.update_from_velocity(0., steering, 0.1));
     EXPECT_DOUBLE_EQ(std::get<0>(odom.get_commands(0., angular_velocity, false, true))[0], 2.);
+
+    ASSERT_TRUE(odom.update_from_velocity(0., 0., 0.1));
     EXPECT_DOUBLE_EQ(std::get<0>(odom.get_commands(0., angular_velocity, true, true))[0], 2.);
   }
 }
