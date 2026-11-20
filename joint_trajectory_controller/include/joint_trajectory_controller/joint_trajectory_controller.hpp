@@ -222,7 +222,14 @@ protected:
   bool prepend_commanded_state(
     trajectory_msgs::msg::JointTrajectory & traj, std::vector<double> & start_velocity) const;
 
-  // callbacks for action_server_
+  /**
+   * @brief Action server callback to validate a new action goal.
+   *
+   * @param[in] uuid The UUID of the new goal.
+   * @param[in] goal The new goal.
+   * @return REJECT if the controller is inactive, the trajectory is invalid, or the goal's priority
+   * is lower than the priority of the currently active goal, ACCEPT_AND_EXECUTE otherwise.
+   */
   rclcpp_action::GoalResponse goal_received_callback(
     const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const FollowJTrajAction::Goal> goal);
   rclcpp_action::CancelResponse goal_cancelled_callback(

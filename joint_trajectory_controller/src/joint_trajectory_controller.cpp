@@ -1581,6 +1581,18 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_received_callback(
       "positions_upsampling upsamples the ~/joint_trajectory topic only, not action goals.");
   }
 
+  // A goal may only preempt the active one if its priority is at least as high
+  RealtimeGoalHandlePtr active_goal;
+  rt_active_goal_.get([&](const auto & g) { active_goal = g; });
+  if (active_goal && goal->priority < active_goal->gh_->get_goal()->priority)
+  {
+    RCLCPP_WARN(
+      get_node()->get_logger(),
+      "Rejected new action goal with priority %u: lower than the active goal's priority %u.",
+      goal->priority, active_goal->gh_->get_goal()->priority);
+    return rclcpp_action::GoalResponse::REJECT;
+  }
+
   RCLCPP_INFO(get_node()->get_logger(), "Accepted new action goal");
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }

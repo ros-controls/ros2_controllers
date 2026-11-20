@@ -159,9 +159,11 @@ protected:
     const std::vector<control_msgs::msg::JointTolerance> path_tolerance =
       std::vector<control_msgs::msg::JointTolerance>(),
     const std::vector<control_msgs::msg::JointTolerance> goal_tolerance =
-      std::vector<control_msgs::msg::JointTolerance>())
+      std::vector<control_msgs::msg::JointTolerance>(),
+    uint8_t priority = 0)
   {
     control_msgs::action::FollowJointTrajectory_Goal goal_msg;
+    goal_msg.priority = priority;
     goal_msg.goal_time_tolerance = rclcpp::Duration::from_seconds(goal_time_tolerance);
     goal_msg.goal_tolerance = goal_tolerance;
     goal_msg.path_tolerance = path_tolerance;
@@ -169,6 +171,32 @@ protected:
     goal_msg.trajectory.points = points;
 
     return action_client_->async_send_goal(goal_msg, opt);
+  }
+
+  /// Sends goal A (priority_a) and, while A is still executing, goal B (priority_b). Waits for the
+  /// controller hardware loop to finish. B's result is reported via goal_options_.
+  /// \returns A's result code and whether B was accepted by the server.
+  std::pair<rclcpp_action::ResultCode, bool> sendGoalsWithPriorities(
+    uint8_t priority_a, uint8_t priority_b)
+  {
+    rclcpp_action::ResultCode result_a = rclcpp_action::ResultCode::UNKNOWN;
+    GoalOptions opts_a;
+    opts_a.result_callback = [&result_a](const GoalHandle::WrappedResult & r)
+    { result_a = r.code; };
+    std::vector<JointTrajectoryPoint> points_a(1);
+    points_a[0].time_from_start = rclcpp::Duration::from_seconds(1.0);
+    points_a[0].positions = {4.0, 5.0, 6.0};
+    sendActionGoal(points_a, 1.0, opts_a, {}, {}, priority_a);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    std::vector<JointTrajectoryPoint> points_b(1);
+    points_b[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
+    points_b[0].positions = {1.0, 2.0, 3.0};
+    auto gh_future_b = sendActionGoal(points_b, 1.0, goal_options_, {}, {}, priority_b);
+
+    controller_hw_thread_.join();
+    // a rejected goal yields a null goal handle
+    return {result_a, gh_future_b.get() != nullptr};
   }
 
   rclcpp_action::Client<FollowJointTrajectoryMsg>::SharedPtr action_client_;
@@ -731,6 +759,65 @@ TEST_F(TestTrajectoryActions, preempted_goal_receives_aborted_result)
 
   EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
   EXPECT_EQ(control_msgs::action::FollowJointTrajectory_Result::INVALID_GOAL, error_code_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+TEST_F(TestTrajectoryActions, higher_priority_goal_preempts_active_goal)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  const auto [result_a, accepted_b] = sendGoalsWithPriorities(1, 2);
+
+  EXPECT_TRUE(accepted_b);
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+TEST_F(TestTrajectoryActions, same_priority_goal_preempts_active_goal)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  const auto [result_a, accepted_b] = sendGoalsWithPriorities(3, 3);
+
+  EXPECT_TRUE(accepted_b);
+  EXPECT_EQ(rclcpp_action::ResultCode::ABORTED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+}
+
+TEST_F(TestTrajectoryActions, lower_priority_goal_is_rejected_while_goal_active)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  const auto [result_a, accepted_b] = sendGoalsWithPriorities(2, 1);
+
+  EXPECT_FALSE(accepted_b);
+  EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, result_a);
+  EXPECT_EQ(rclcpp_action::ResultCode::UNKNOWN, common_resultcode_);
+}
+
+TEST_F(TestTrajectoryActions, lower_priority_goal_is_accepted_when_no_goal_active)
+{
+  SetUpExecutor();
+  SetUpControllerHardware();
+
+  // goal A finishes before the lower priority goal B is sent
+  std::vector<JointTrajectoryPoint> points(1);
+  points[0].time_from_start = rclcpp::Duration::from_seconds(0.1);
+  points[0].positions = {4.0, 5.0, 6.0};
+  auto gh_future_a = sendActionGoal(points, 1.0, goal_options_, {}, {}, 5);
+  ASSERT_NE(nullptr, gh_future_a.get());
+  std::this_thread::sleep_for(std::chrono::milliseconds(600));
+  ASSERT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
+
+  common_resultcode_ = rclcpp_action::ResultCode::UNKNOWN;
+  points[0].positions = {1.0, 2.0, 3.0};
+  auto gh_future_b = sendActionGoal(points, 1.0, goal_options_, {}, {}, 1);
+  EXPECT_NE(nullptr, gh_future_b.get());
+
+  controller_hw_thread_.join();
   EXPECT_EQ(rclcpp_action::ResultCode::SUCCEEDED, common_resultcode_);
 }
 
