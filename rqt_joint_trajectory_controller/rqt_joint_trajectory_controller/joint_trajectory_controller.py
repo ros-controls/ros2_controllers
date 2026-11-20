@@ -397,8 +397,8 @@ class JointTrajectoryController(Plugin):
             self._joint_pos[name] = {}
 
         # Update joint display
+        layout = self._widget.joint_group.layout()
         try:
-            layout = self._widget.joint_group.layout()
             for name in self._joint_names:
                 limits = self._robot_joint_limits[name]
                 joint_widget = DoubleEditor(limits["min_position"], limits["max_position"])
@@ -411,11 +411,10 @@ class JointTrajectoryController(Plugin):
 
                 par = partial(self._update_single_cmd_cb, name=name)
                 joint_widget.valueChanged.connect(par)
-        except Exception:
-            # TODO: Can we do better than swallow the exception?
-            from sys import exc_info
-
-            print("Unexpected error:", exc_info()[0])
+        except Exception as e:
+            # Joints after the failing one get no widget either, which keeps the widgets
+            # aligned with the first entries of self._joint_names
+            self._node.get_logger().error(f"Cannot create the widget for joint '{name}': {e}")
 
         # Enter monitor mode (sending commands disabled)
         self._on_jtc_enabled(False)
