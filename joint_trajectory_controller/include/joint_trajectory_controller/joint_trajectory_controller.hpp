@@ -251,7 +251,7 @@ protected:
   // otherwise held at the handoff sample in blend_bridge_.
   void fill_omitted_joints_from_old(
     const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
-    const rclcpp::Time & new_start, const bool have_bridge);
+    const rclcpp::Time & new_start, bool have_bridge);
   // Blends a new trajectory into the active one in place (Merge-at-Arrival: prefix+bridge+suffix).
   // Returns false, leaving the message untouched, if it cannot be blended.
   bool blend_with_active_trajectory(

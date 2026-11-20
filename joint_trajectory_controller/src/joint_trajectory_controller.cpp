@@ -1770,7 +1770,7 @@ void JointTrajectoryController::fill_partial_goal(
 
 void JointTrajectoryController::fill_omitted_joints_from_old(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & trajectory_msg,
-  const rclcpp::Time & new_start, const bool have_bridge)
+  const rclcpp::Time & new_start, bool have_bridge)
 {
   if (dof_ == trajectory_msg->joint_names.size() || !has_active_trajectory())
   {
