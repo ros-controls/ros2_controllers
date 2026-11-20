@@ -23,6 +23,9 @@ end-effector pose targets produced by a planner or a policy.
 The controller requires an external kinematics plugin.
 The `kinematics_interface <https://github.com/ros-controls/kinematics_interface>`_ repository
 provides the interface and a KDL based implementation, which is used by default.
+The plugin does not know the joint names, so it has to take and return joint vectors in chain
+order, from ``kinematics.base`` to ``kinematics.tip``.
+The controller converts between that order and the order of ``joints``.
 
 How the controller builds a trajectory
 --------------------------------------
@@ -99,8 +102,8 @@ Using the Cartesian Trajectory Controller
 
 The controller expects at least position feedback from the hardware, and a robot description that
 contains the chain between ``kinematics.base`` and ``kinematics.tip``.
-``joints`` has to list exactly the movable joints of that chain, in order from base to tip, so joints
-outside it, such as a gripper, need their own controller.
+``joints`` has to list exactly the movable joints of that chain, in any order, so joints outside it,
+such as a gripper, need their own controller.
 Configuration fails if ``joints`` does not match the chain, and the error lists the expected joints.
 
 Because the controller inherits from the joint trajectory controller, it takes that controller's

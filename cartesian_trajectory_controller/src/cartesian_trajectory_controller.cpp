@@ -131,30 +131,35 @@ controller_interface::CallbackReturn CartesianTrajectoryController::on_configure
 
   // The kinematics plugin takes joint vectors in chain order and does not know the joint names.
   urdf::Model model;
-  std::vector<std::string> chain_joints;
   if (!model.initString(get_robot_description()))
   {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to parse the robot description.");
     return controller_interface::CallbackReturn::ERROR;
   }
   if (!get_chain_joint_names(
-        model, ctc_params_.kinematics.base, ctc_params_.kinematics.tip, chain_joints))
+        model, ctc_params_.kinematics.base, ctc_params_.kinematics.tip, chain_joints_))
   {
     RCLCPP_ERROR(
       get_node()->get_logger(), "Link '%s' is not a descendant of '%s' in the robot description.",
       ctc_params_.kinematics.tip.c_str(), ctc_params_.kinematics.base.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
-  if (params_.joints != chain_joints)
+  // joints may come in any order, so map each chain joint to its index in joints
+  // (empty if a chain joint is missing)
+  chain_to_joints_ = joint_trajectory_controller::mapping(chain_joints_, params_.joints);
+  // joints are unique, so equal sizes with every chain joint found means the same set
+  if (
+    chain_to_joints_.size() != chain_joints_.size() ||
+    params_.joints.size() != chain_joints_.size())
   {
     std::string expected;
-    for (const auto & name : chain_joints)
+    for (const auto & name : chain_joints_)
     {
       expected += (expected.empty() ? "" : ", ") + name;
     }
     RCLCPP_ERROR(
       get_node()->get_logger(),
-      "Parameter 'joints' must list the joints from '%s' to '%s' in chain order: [%s].",
+      "Parameter 'joints' must list exactly the movable joints from '%s' to '%s': [%s].",
       ctc_params_.kinematics.base.c_str(), ctc_params_.kinematics.tip.c_str(), expected.c_str());
     return controller_interface::CallbackReturn::ERROR;
   }
@@ -218,22 +223,31 @@ bool CartesianTrajectoryController::build_joint_trajectory(
 
   // the trajectory starts from the commanded state, NaN until the first update() has commanded
   const auto commanded = rt_last_commanded_state_.get();
-  const Eigen::VectorXd q_seed = Eigen::Map<const Eigen::VectorXd>(
-    commanded.positions.data(), static_cast<Eigen::Index>(commanded.positions.size()));
-  if (q_seed.size() != static_cast<Eigen::Index>(dof_) || !q_seed.allFinite())
+  const auto all_finite = [](const std::vector<double> & v)
+  { return std::all_of(v.begin(), v.end(), [](double x) { return std::isfinite(x); }); };
+  if (commanded.positions.size() != dof_ || !all_finite(commanded.positions))
   {
     RCLCPP_WARN(get_node()->get_logger(), "Ignoring trajectory: no commanded state yet.");
     return false;
   }
+  // the kinematics plugin and the joint trajectory below use chain order
+  const auto to_chain_order = [this](const std::vector<double> & v)
+  {
+    std::vector<double> out(dof_);
+    for (size_t i = 0; i < dof_; ++i)
+    {
+      out[i] = v[chain_to_joints_[i]];
+    }
+    return out;
+  };
+  const std::vector<double> q_chain = to_chain_order(commanded.positions);
+  const Eigen::VectorXd q_seed =
+    Eigen::Map<const Eigen::VectorXd>(q_chain.data(), static_cast<Eigen::Index>(dof_));
   // rest if the commanded velocity is unavailable
   std::vector<double> start_velocity;
-  if (
-    commanded.velocities.size() == dof_ &&
-    std::all_of(
-      commanded.velocities.begin(), commanded.velocities.end(),
-      [](double v) { return std::isfinite(v); }))
+  if (commanded.velocities.size() == dof_ && all_finite(commanded.velocities))
   {
-    start_velocity = commanded.velocities;
+    start_velocity = to_chain_order(commanded.velocities);
   }
 
   Eigen::Isometry3d current_pose;
@@ -365,7 +379,8 @@ bool CartesianTrajectoryController::solve_ik_along_path(
   // rounding keeps the last segment between 0.5 and 1.5 dt; the last sample is pinned to the end
   const auto steps = static_cast<size_t>(std::max(1L, std::lround(path.duration() / dt)));
 
-  joint_traj.joint_names = params_.joints;
+  // JTC sorts the points back into the order of the joints parameter
+  joint_traj.joint_names = chain_joints_;
   joint_traj.points.reserve(steps + 1);
   // the commanded state at t=0, as JTC's prepend_commanded_state does
   trajectory_msgs::msg::JointTrajectoryPoint anchor;
