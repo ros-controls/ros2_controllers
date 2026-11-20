@@ -13,6 +13,10 @@ state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
 
+cartesian_trajectory_controller
+*******************************
+* 🚀 The cartesian_trajectory_controller was added 🎉. It extends the joint_trajectory_controller to follow end-effector pose trajectories, using Cartesian interpolation and differential inverse kinematics (`#2664 <https://github.com/ros-controls/ros2_controllers/pull/2664>`_).
+
 force_torque_sensor_broadcaster
 *******************************
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
