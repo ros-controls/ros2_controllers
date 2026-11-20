@@ -69,6 +69,26 @@ controller_interface::CallbackReturn MotionPrimitivesForwardController::on_activ
 controller_interface::CallbackReturn MotionPrimitivesForwardController::on_deactivate(
   const rclcpp_lifecycle::State & previous_state)
 {
+  RCLCPP_INFO(get_node()->get_logger(), "Deactivating motion primitive controller.");
+  if (has_active_goal_)
+  {
+    rt_goal_handle_.try_get(
+      [&](const std::shared_ptr<RealtimeGoalHandle> & goal_handle)
+      {
+        was_executing_ = false;
+        auto result = std::make_shared<ExecuteMotionAction::Result>();
+        result->error_code = ExecuteMotionAction::Result::ABORTED_BY_DEACTIVATION;
+        result->error_string = "Controller is being deactivated, aborting action.";
+        goal_handle->setAborted(result);
+        has_active_goal_ = false;
+        RCLCPP_INFO(
+          get_node()->get_logger(),
+          "Motion primitive controller is being deactivated, aborting action.");
+      });
+    // Drain primitives queue.
+    static_cast<void>(moprim_queue_.get_latest(current_moprim_));
+  }
+  // Base controller resets command interfaces
   return MotionPrimitivesBaseController::on_deactivate(previous_state);
 }
 
