@@ -217,9 +217,9 @@ def parse_joint_limits(
     return free_joints
 
 
-def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
+def get_joint_limits(node, use_smallest_joint_limits=True):
     """
-    ROS-aware wrapper around parse_joint_limits.
+    ROS-aware wrapper around parse_joint_limits, for all joints of the robot.
 
     Parses the last robot_description received by the subscription from
     subscribe_to_robot_description(); all real parsing work is delegated to
@@ -228,6 +228,10 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
     Does not wait for the robot_description, because it is called from the GUI
     thread: node may be context.node, which rqt_gui_py spins on another thread
     and delivers the message to the subscription callback.
+
+    Joints with incomplete limits are included for all joints, not only for those of
+    the controllers running when this is called, so the result can be cached for
+    controllers activated later.
 
     @return: Joint limits as returned by parse_joint_limits(), or {} if no
     robot_description was received yet. Callers retry later in that case.
@@ -239,9 +243,10 @@ def get_joint_limits(node, joints_names, use_smallest_joint_limits=True):
         )
         return {}
 
+    all_joint_names = [joint.get("name") for joint in ET.fromstring(description).findall("joint")]
     return parse_joint_limits(
         description,
-        joints_names,
+        all_joint_names,
         use_smallest_joint_limits,
         allow_incomplete_joints=True,
         logger=node.get_logger(),
