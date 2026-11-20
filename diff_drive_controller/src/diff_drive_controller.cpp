@@ -569,6 +569,10 @@ controller_interface::CallbackReturn DiffDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  if (params_.position_feedback)
+  {
+    odometry_.reset_position_feedback();
+  }
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
