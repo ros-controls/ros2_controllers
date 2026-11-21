@@ -54,6 +54,9 @@ constexpr char BASE[] = "base_link";
 constexpr char TIP[] = "tool0";
 const std::vector<std::string> JOINTS = {"joint_a1", "joint_a2", "joint_a3",
                                          "joint_a4", "joint_a5", "joint_a6"};
+// JOINTS in another order that is not its own inverse, unlike a swap or a reversal.
+const std::vector<std::string> PERMUTED_JOINTS = {"joint_a2", "joint_a3", "joint_a1",
+                                                  "joint_a5", "joint_a6", "joint_a4"};
 // Folded, well-conditioned pose (KUKA KR6 "home" from the SRDF).
 const std::vector<double> HOME = {0.0, -1.5708, 1.5708, 0.0, 1.5708, 0.0};
 
@@ -163,9 +166,9 @@ protected:
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
 
-  void activate(double alpha = 0.01)
+  void activate(double alpha = 0.01, const std::vector<std::string> & joints = JOINTS)
   {
-    setup_controller(alpha);
+    setup_controller(alpha, joints);
     ASSERT_TRUE(configure_succeeds(controller_));
     assign_interfaces();
     ASSERT_TRUE(activate_succeeds(controller_));
@@ -328,6 +331,39 @@ protected:
     }
   }
 
+  // Sends a long straight move with rotation from HOME and checks that it stays on the line.
+  void expect_tracks_straight_line_with_rotation()
+  {
+    ASSERT_LT(joint_travel(), 1e-6);  // still holding home before any target
+
+    const Eigen::Isometry3d x0 = fk(HOME);
+    const Eigen::Quaterniond q0(x0.rotation());
+    const auto tgt = offset_pose(x0, {0.20, 0.0, -0.10}, 0.4);
+    const Eigen::Vector3d line = tgt.first - x0.translation();
+    controller_->reference_callback(make_pose_msg(BASE, tgt.first, tgt.second, 2.0));
+
+    double max_line_deviation = 0.0;
+    double max_orientation_error = 0.0;
+    for (int i = 0; i < 250; ++i)
+    {
+      run(1);
+      const Eigen::Isometry3d x = fk(joint_values_);
+      const Eigen::Vector3d r = x.translation() - x0.translation();
+      const double progress = r.dot(line) / line.squaredNorm();
+      max_line_deviation = std::max(max_line_deviation, (r - progress * line).norm());
+      const Eigen::Quaterniond expected =
+        q0 * Eigen::Quaterniond(Eigen::AngleAxisd(0.4 * progress, Eigen::Vector3d::UnitY()));
+      max_orientation_error =
+        std::max(max_orientation_error, Eigen::Quaterniond(x.rotation()).angularDistance(expected));
+    }
+    EXPECT_LT(max_line_deviation, 1e-3) << "TCP left the straight line";
+    EXPECT_LT(max_orientation_error, 1e-2) << "rotation did not progress with the translation";
+
+    const Eigen::Isometry3d xf = fk(joint_values_);
+    EXPECT_LT((xf.translation() - tgt.first).norm(), 1e-3);
+    EXPECT_LT(Eigen::Quaterniond(xf.rotation()).angularDistance(tgt.second), 1e-3);
+  }
+
   std::unique_ptr<TestableController> controller_;
   std::vector<double> joint_values_;
   std::vector<std::shared_ptr<hardware_interface::CommandInterface>> command_storage_;
@@ -343,34 +379,30 @@ protected:
 TEST_F(CartesianTrajectoryControllerTest, tracks_straight_line_with_rotation)
 {
   activate();
-  ASSERT_LT(joint_travel(), 1e-6);  // still holding home before any target
+  expect_tracks_straight_line_with_rotation();
+}
 
+// The joints may be listed in any order; JTC maps the joint trajectory back by name.
+TEST_F(CartesianTrajectoryControllerTest, tracks_straight_line_with_joints_in_any_order)
+{
+  ASSERT_NO_FATAL_FAILURE(activate(0.01, PERMUTED_JOINTS));
+  expect_tracks_straight_line_with_rotation();
+}
+
+// The start velocity is taken in chain order too, so a chunk sent mid-motion does not jerk.
+TEST_F(CartesianTrajectoryControllerTest, keeps_velocity_across_chunks_with_joints_in_any_order)
+{
+  ASSERT_NO_FATAL_FAILURE(activate(1e-4, PERMUTED_JOINTS));
   const Eigen::Isometry3d x0 = fk(HOME);
-  const Eigen::Quaterniond q0(x0.rotation());
-  const auto tgt = offset_pose(x0, {0.20, 0.0, -0.10}, 0.4);
-  const Eigen::Vector3d line = tgt.first - x0.translation();
-  controller_->reference_callback(make_pose_msg(BASE, tgt.first, tgt.second, 2.0));
+  const auto a = offset_pose(x0, {0.20, 0.06, -0.10}, 0.4);
+  controller_->reference_callback(make_pose_msg(BASE, a.first, a.second, 2.0));
+  std::vector<std::vector<double>> q = {joint_values_};
+  record(60, q);
+  const size_t seam = q.size();
 
-  double max_line_deviation = 0.0;
-  double max_orientation_error = 0.0;
-  for (int i = 0; i < 250; ++i)
-  {
-    run(1);
-    const Eigen::Isometry3d x = fk(joint_values_);
-    const Eigen::Vector3d r = x.translation() - x0.translation();
-    const double progress = r.dot(line) / line.squaredNorm();
-    max_line_deviation = std::max(max_line_deviation, (r - progress * line).norm());
-    const Eigen::Quaterniond expected =
-      q0 * Eigen::Quaterniond(Eigen::AngleAxisd(0.4 * progress, Eigen::Vector3d::UnitY()));
-    max_orientation_error =
-      std::max(max_orientation_error, Eigen::Quaterniond(x.rotation()).angularDistance(expected));
-  }
-  EXPECT_LT(max_line_deviation, 1e-3) << "TCP left the straight line";
-  EXPECT_LT(max_orientation_error, 1e-2) << "rotation did not progress with the translation";
-
-  const Eigen::Isometry3d xf = fk(joint_values_);
-  EXPECT_LT((xf.translation() - tgt.first).norm(), 1e-3);
-  EXPECT_LT(Eigen::Quaterniond(xf.rotation()).angularDistance(tgt.second), 1e-3);
+  controller_->reference_callback(make_pose_msg(BASE, a.first, a.second, 1.4));
+  record(20, q);
+  expect_velocity_continuous_at(q, seam);
 }
 
 // A target expressed in an unsupported frame is rejected and produces no motion.
@@ -715,12 +747,37 @@ TEST_F(CartesianTrajectoryControllerTest, deactivate_and_reactivate)
   EXPECT_LT((fk(joint_values_).translation() - tgt.first).norm(), 1e-3);
 }
 
-// The kinematics plugin cannot map joint names, so the chain joints in another order are rejected.
-TEST_F(CartesianTrajectoryControllerTest, rejects_joints_not_in_chain_order)
+// The joints in another order configure, the same as in chain order.
+TEST_F(CartesianTrajectoryControllerTest, accepts_joints_not_in_chain_order)
 {
   std::vector<std::string> permuted = JOINTS;
   std::swap(permuted[0], permuted[1]);
   setup_controller(0.01, permuted);
+  EXPECT_TRUE(configure_succeeds(controller_));
+}
+
+// A chain joint missing from joints is rejected.
+TEST_F(CartesianTrajectoryControllerTest, rejects_missing_chain_joint)
+{
+  setup_controller(0.01, {JOINTS.begin(), JOINTS.end() - 1});
+  EXPECT_FALSE(configure_succeeds(controller_));
+}
+
+// A joint outside the chain is rejected, even with all chain joints present.
+TEST_F(CartesianTrajectoryControllerTest, rejects_joint_outside_chain)
+{
+  std::vector<std::string> joints = JOINTS;
+  joints.push_back("gripper_joint");
+  setup_controller(0.01, joints);
+  EXPECT_FALSE(configure_succeeds(controller_));
+}
+
+// A chain joint replaced by a joint outside the chain is rejected, even with the right count.
+TEST_F(CartesianTrajectoryControllerTest, rejects_joint_outside_chain_with_chain_size)
+{
+  std::vector<std::string> joints = JOINTS;
+  joints.back() = "gripper_joint";
+  setup_controller(0.01, joints);
   EXPECT_FALSE(configure_succeeds(controller_));
 }
 
