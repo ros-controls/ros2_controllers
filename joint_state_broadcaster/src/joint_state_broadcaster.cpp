@@ -414,15 +414,6 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-<<<<<<< HEAD
-  for (auto i = 0u; i < state_interfaces_.size(); ++i)
-  {
-    // no retries, just try to get the latest value once
-    const auto & opt = state_interfaces_[i].get_optional(0);
-    if (opt.has_value())
-    {
-      *mapped_values_[i] = opt.value();
-=======
   // Optimized path: use pre-computed pointers to avoid map lookups
   for (size_t i = 0; i < joint_state_interface_indices_.size(); ++i)
   {
@@ -431,7 +422,6 @@ controller_interface::return_type JointStateBroadcaster::update(
     if (opt.has_value())
     {
       *joint_state_mapped_values_[i] = opt.value();
->>>>>>> 22f9df5 (Optimize joint state broadcaster execution time (#2159))
     }
   }
 
