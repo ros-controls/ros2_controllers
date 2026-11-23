@@ -490,7 +490,9 @@ controller_interface::return_type JointTrajectoryController::update(
         last_commanded_state_ = command_next_;
         rt_last_commanded_state_.try_set([this](trajectory_msgs::msg::JointTrajectoryPoint & state)
                                          { state = last_commanded_state_; });
-        last_commanded_time_ = time;
+        // command_next_ is the setpoint for time + update_period_ (sampled one period ahead). It
+        // seeds the next trajectory (interpolate_from_desired_state), so date it accordingly.
+        last_commanded_time_ = time + update_period_;
       }
 
       if (rt_active_goal_local_)

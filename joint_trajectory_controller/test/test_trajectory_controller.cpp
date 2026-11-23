@@ -3832,3 +3832,86 @@ TEST_F(TrajectoryControllerTest, concurrent_sort_to_local_joint_order)
   thread_b.join();
   EXPECT_FALSE(failed.load());
 }
+
+// With interpolate_from_desired_state, a new trajectory is seeded from the last command. That
+// command is the setpoint for t + update_period (it is sampled one period ahead), so it has to be
+// dated t + update_period. Dated t, every replacement added one period of travel at the hand-off,
+// i.e. a one-cycle 2x velocity step. The running trajectory is replaced by its own exact
+// continuation, or stopped by a single-point goal: no command increment may grow.
+class TrajectoryControllerReplacementSeedTest : public TrajectoryControllerTest,
+                                                public ::testing::WithParamInterface<bool>
+{
+};
+
+TEST_P(TrajectoryControllerReplacementSeedTest, replacement_does_not_step_the_command)
+{
+  const bool stop_goal = GetParam();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  SetUpAndActivateTrajectoryController(
+    executor, {rclcpp::Parameter("interpolate_from_desired_state", true),
+               rclcpp::Parameter("allow_trajectory_replacement", false)});
+
+  const double v = 0.5;                                  // rad/s
+  const auto dt = rclcpp::Duration::from_seconds(0.01);  // = the controller's update period
+  const auto line = [&](double s) { return INITIAL_POS_JOINT1 + v * s; };  // s since 1st update
+  const auto cmd = [&]() { return pos_cmd_interfaces_[0]->get_optional().value(); };
+  const auto points_on_line = [&](double from_s, int n)
+  {
+    std::vector<std::vector<double>> pos, vel;
+    for (int k = 1; k <= n; ++k)
+    {
+      const double p = line(from_s + 0.1 * k);
+      pos.push_back({p, p, p});
+      vel.push_back({v, v, v});
+    }
+    return std::make_pair(pos, vel);
+  };
+  std::vector<double> c;
+  rclcpp::Time t = traj_controller_->get_node()->now();
+  const auto run = [&](int cycles)
+  {
+    for (int i = 0; i < cycles; ++i)
+    {
+      traj_controller_->update(t, dt);
+      mirrorCommandToStateIfNotSeparate();
+      c.push_back(cmd());
+      t += dt;
+    }
+  };
+
+  // running trajectory: constant velocity
+  const auto [old_pos, old_vel] = points_on_line(0.0, 40);
+  publish(rclcpp::Duration::from_seconds(0.1), old_pos, rclcpp::Time(), {}, old_vel);
+  traj_controller_->wait_for_trajectory(executor);
+  run(100);
+  const double steady = c.back() - c[c.size() - 2];
+  ASSERT_NEAR(steady, v * dt.seconds(), 1e-6) << "not at constant velocity yet";
+
+  // replacement, installed at the next update (1.0 s after the first one)
+  if (stop_goal)
+  {
+    const double p_stop = line(1.0 + 0.25);  // to rest in 0.5 s: p + v * T / 2
+    publish(
+      rclcpp::Duration::from_seconds(0.5), {{p_stop, p_stop, p_stop}}, rclcpp::Time(), {},
+      {{0.0, 0.0, 0.0}});
+  }
+  else
+  {
+    const auto [new_pos, new_vel] = points_on_line(1.0, 20);
+    publish(rclcpp::Duration::from_seconds(0.1), new_pos, rclcpp::Time(), {}, new_vel);
+  }
+  traj_controller_->wait_for_trajectory(executor);
+  run(5);
+
+  for (size_t i = 100; i < c.size(); ++i)
+  {
+    EXPECT_LE(c[i] - c[i - 1], steady * 1.1)
+      << "the command stepped " << (c[i] - c[i - 1]) / steady << "x the steady increment "
+      << (i - 99) << " cycle(s) after the replacement";
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  ReplacementSeed, TrajectoryControllerReplacementSeedTest, ::testing::Bool(),
+  [](const ::testing::TestParamInfo<bool> & param_info)
+  { return param_info.param ? "stop_goal" : "continuation"; });
