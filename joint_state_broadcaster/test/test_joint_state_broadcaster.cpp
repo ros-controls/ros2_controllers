@@ -1077,6 +1077,29 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   ASSERT_TRUE(state_broadcaster_->dynamic_joint_state_publisher_);
 }
 
+TEST_F(JointStateBroadcasterTest, DynamicJointStatesUpdateNonJointStateInterfaces)
+{
+  // dynamic_joint_states must keep publishing fresh values for interfaces that are not
+  // position/velocity/effort, e.g., custom sensor interfaces
+  const std::vector<std::string> JOINT_NAMES = {joint_names_[0]};
+  const std::vector<std::string> IF_NAMES = {custom_interface_name_};
+  SetUpStateBroadcaster(JOINT_NAMES, IF_NAMES);
+
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+
+  const double new_value = custom_joint_value_ + 1.0;
+  ASSERT_TRUE(joint_X_custom_state->set_value(new_value));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
+  const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));
+  ASSERT_THAT(dynamic_joint_state_msg.interface_values[0].values, SizeIs(1));
+  EXPECT_DOUBLE_EQ(dynamic_joint_state_msg.interface_values[0].values[0], new_value);
+}
+
 TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
   SetUpStateBroadcaster();
