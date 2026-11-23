@@ -412,8 +412,7 @@ class JointTrajectoryController(Plugin):
                 par = partial(self._update_single_cmd_cb, name=name)
                 joint_widget.valueChanged.connect(par)
         except Exception as e:
-            # Joints after the failing one get no widget either, which keeps the widgets
-            # aligned with the first entries of self._joint_names
+            # Stop at the first failure so widgets stay index-aligned with self._joint_names
             self._node.get_logger().error(f"Cannot create the widget for joint '{name}': {e}")
 
         # Enter monitor mode (sending commands disabled)
