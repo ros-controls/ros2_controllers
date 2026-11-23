@@ -142,3 +142,19 @@ def test_restore_settings_selects_saved_jtc_once_robot_description_arrives(monke
     plugin._update_jtc_list()  # next timer tick, robot_description has arrived
 
     assert plugin._widget.jtc_combo.currentText() == "arm_controller"
+
+
+def test_update_cmd_cb_sends_nothing_before_first_controller_state(monkeypatch):
+    monkeypatch.setattr(jtc_module.rclpy, "ok", lambda: True)
+    plugin = SimpleNamespace(
+        _cmd_pub=Mock(),
+        _joint_names=["joint1"],
+        _joint_pos={"joint1": {"command": 0.3}},  # slider moved, no state received yet
+        _robot_joint_limits={"joint1": {"max_velocity": 1.0}},
+        _min_traj_dur=0.5,
+        _speed_scale=0.5,
+    )
+
+    JointTrajectoryController._update_cmd_cb(plugin)
+
+    plugin._cmd_pub.publish.assert_not_called()
