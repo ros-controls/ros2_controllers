@@ -331,10 +331,12 @@ void JointStateBroadcaster::init_auxiliary_data()
     double * value_ptr =
       &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name];
 
-    // Track indices and pre-computed pointers for joint state interfaces only
+    // Track indices and pre-computed pointers for joint state interfaces only, unless
+    // dynamic_joint_states is published: it reports every interface, so all must be refreshed
     if (
+      realtime_dynamic_joint_state_publisher_ ||
       std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
-      joint_state_interfaces.end())
+        joint_state_interfaces.end())
     {
       joint_state_interface_indices_.push_back(i);
       joint_state_mapped_values_.push_back(value_ptr);
