@@ -353,14 +353,32 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
 
   for (auto & interface : command_interfaces_)
   {
-    if (interface.get_interface_name() == "set_gripper_max_effort")
+    if (
+      !params_.max_effort_interface.empty() && interface.get_name() == params_.max_effort_interface)
     {
       joint_effort_command_interface_ = interface;
     }
-    else if (interface.get_interface_name() == "set_gripper_max_velocity")
+    else if (
+      !params_.max_velocity_interface.empty() &&
+      interface.get_name() == params_.max_velocity_interface)
     {
       joint_speed_command_interface_ = interface;
     }
+  }
+
+  if (!params_.max_effort_interface.empty() && !joint_effort_command_interface_.has_value())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected max effort command interface `%s` not found",
+      params_.max_effort_interface.c_str());
+    return controller_interface::CallbackReturn::FAILURE;
+  }
+  if (!params_.max_velocity_interface.empty() && !joint_speed_command_interface_.has_value())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Expected max velocity command interface `%s` not found",
+      params_.max_velocity_interface.c_str());
+    return controller_interface::CallbackReturn::FAILURE;
   }
 
   // Command - non RT version
@@ -388,12 +406,17 @@ controller_interface::CallbackReturn GripperActionController::on_activate(
   last_movement_time_.try_set(rclcpp::Time(0, 0, RCL_CLOCK_UNINITIALIZED));
 
   // Action interface
+  // Keep only the newest goal request. A new goal preempts the active goal, so older
+  // queued goal requests are not useful.
+  rcl_action_server_options_t action_server_options = rcl_action_server_get_default_options();
+  action_server_options.goal_service_qos.depth = 1;
   action_server_ = rclcpp_action::create_server<control_msgs::action::ParallelGripperCommand>(
     get_node(), "~/gripper_cmd",
     std::bind(
       &GripperActionController::goal_callback, this, std::placeholders::_1, std::placeholders::_2),
     std::bind(&GripperActionController::cancel_callback, this, std::placeholders::_1),
-    std::bind(&GripperActionController::accepted_callback, this, std::placeholders::_1));
+    std::bind(&GripperActionController::accepted_callback, this, std::placeholders::_1),
+    action_server_options);
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -404,6 +427,8 @@ controller_interface::CallbackReturn GripperActionController::on_deactivate(
   joint_position_command_interface_ = std::nullopt;
   joint_position_state_interface_ = std::nullopt;
   joint_velocity_state_interface_ = std::nullopt;
+  joint_effort_command_interface_ = std::nullopt;
+  joint_speed_command_interface_ = std::nullopt;
   return controller_interface::CallbackReturn::SUCCESS;
 }
 

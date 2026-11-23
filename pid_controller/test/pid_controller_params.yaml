@@ -19,6 +19,34 @@ test_pid_controller:
     gains:
       joint1: {p: 1.0, i: 2.0, d: 3.0, u_clamp_max: 5.0, u_clamp_min: -5.0}
 
+test_pid_controller_reset_commands_at_deactivation:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    reset_commands_at_deactivation: true
+
+    gains:
+      joint1: {p: 1.0, i: 2.0, d: 3.0, u_clamp_max: 5.0, u_clamp_min: -5.0}
+
+test_pid_controller_do_not_reset_commands_at_deactivation:
+  ros__parameters:
+    dof_names:
+      - joint1
+
+    command_interface: position
+
+    reference_and_state_interfaces: ["position"]
+
+    reset_commands_at_deactivation: false
+
+    gains:
+      joint1: {p: 1.0, i: 2.0, d: 3.0, u_clamp_max: 5.0, u_clamp_min: -5.0}
+
 test_pid_controller_unlimited:
   ros__parameters:
     dof_names:

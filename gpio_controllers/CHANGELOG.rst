@@ -2,6 +2,19 @@
 Changelog for package gpio_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.10.1 (2026-11-04)
+-------------------
+* Fix userdocs for admittance_controller topic name and gpio_controllers message type (`#2701 <https://github.com/ros-controls/ros2_controllers/issues/2701>`_)
+* Contributors: Vladimir Fokow
+
+6.10.0 (2026-10-05)
+-------------------
+
+6.9.0 (2026-08-12)
+------------------
+* Use new Command/State Interfaces API for tests (`#2476 <https://github.com/ros-controls/ros2_controllers/issues/2476>`_)
+* Contributors: Sai Kishor Kothakota
+
 6.8.0 (2026-07-01)
 ------------------
 * Final test cleanup - call appropriate lifecycle transitions (`#2429 <https://github.com/ros-controls/ros2_controllers/issues/2429>`_)

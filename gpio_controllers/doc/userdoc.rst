@@ -13,8 +13,8 @@ gpio_command_controller let the user expose command interfaces of given GPIO int
 
 Description of controller's interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- ``/<controller_name>/gpio_states`` [``control_msgs/msg/DynamicJointState``]: Publishes all state interfaces of the given GPIO interfaces.
-- ``/<controller_name>/commands`` [``control_msgs/msg/DynamicJointState``]:  A subscriber for configured command interfaces.
+- ``/<controller_name>/gpio_states`` [``control_msgs/msg/DynamicInterfaceGroupValues``]: Publishes all state interfaces of the given GPIO interfaces.
+- ``/<controller_name>/commands`` [``control_msgs/msg/DynamicInterfaceGroupValues``]:  A subscriber for configured command interfaces.
 
 
 Parameters
