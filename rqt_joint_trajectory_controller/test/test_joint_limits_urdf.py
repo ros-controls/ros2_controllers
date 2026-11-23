@@ -565,10 +565,7 @@ def test_get_joint_limits_uses_description_received_later(_node):
 
 
 def test_get_joint_limits_includes_incomplete_limits_of_all_joints(_node):
-    """
-    The limits are read once for all controllers, including those activated later,
-    so joints with incomplete limits must not depend on which joints are requested.
-    """
+    """Incomplete joints are included whether or not a running controller uses them."""
     robot_description_callback(
         _FakeMsg(
             _robot(
