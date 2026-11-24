@@ -303,7 +303,12 @@ bool JointStateBroadcaster::init_joint_data()
 void JointStateBroadcaster::init_auxiliary_data()
 {
   // save the mapping of state interfaces to joint states
-  mapped_values_.clear();
+  joint_state_interface_indices_.clear();
+  joint_state_mapped_values_.clear();
+
+  const std::vector<std::string> joint_state_interfaces = {
+    HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
+
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     std::string interface_name = state_interfaces_[i].get_interface_name();
@@ -311,8 +316,19 @@ void JointStateBroadcaster::init_auxiliary_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    mapped_values_.push_back(
-      &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name]);
+    double * value_ptr =
+      &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name];
+
+    // Track indices and pre-computed pointers for joint state interfaces only, unless
+    // dynamic_joint_states is published: it reports every interface, so all must be refreshed
+    if (
+      realtime_dynamic_joint_state_publisher_ ||
+      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
+        joint_state_interfaces.end())
+    {
+      joint_state_interface_indices_.push_back(i);
+      joint_state_mapped_values_.push_back(value_ptr);
+    }
   }
 }
 
@@ -400,13 +416,14 @@ bool JointStateBroadcaster::use_all_available_interfaces() const
 controller_interface::return_type JointStateBroadcaster::update(
   const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
-  for (auto i = 0u; i < state_interfaces_.size(); ++i)
+  // Optimized path: use pre-computed pointers to avoid map lookups
+  for (size_t i = 0; i < joint_state_interface_indices_.size(); ++i)
   {
     // no retries, just try to get the latest value once
-    const auto & opt = state_interfaces_[i].get_optional(0);
+    const auto & opt = state_interfaces_[joint_state_interface_indices_[i]].get_optional(0);
     if (opt.has_value())
     {
-      *mapped_values_[i] = opt.value();
+      *joint_state_mapped_values_[i] = opt.value();
     }
   }
 
