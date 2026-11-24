@@ -120,7 +120,13 @@ protected:
   urdf::Model model_;
   bool is_model_loaded_ = false;
 
-  std::vector<double *> mapped_values_;
+  // Indices into state_interfaces_ updated in update(): joint state (position/velocity/effort)
+  // interfaces only, or all interfaces if dynamic_joint_states is published
+  std::vector<size_t> joint_state_interface_indices_;
+
+  // Caches pointers to name_if_value_mapping_ values for joint state interfaces
+  // Avoids map lookups in the hot path
+  std::vector<double *> joint_state_mapped_values_;
 
   struct JointStateData
   {
