@@ -219,6 +219,7 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_deactivate(
 {
   joint_names_.clear();
   name_if_value_mapping_.clear();
+  name_if_raw_value_mapping_.clear();
 
   return CallbackReturn::SUCCESS;
 }
@@ -246,13 +247,19 @@ bool JointStateBroadcaster::init_joint_data()
       continue;
     }
     const std::string prefix_name = si->get_prefix_name();
-    // initialize map if name is new
+    // initialize maps if name is new
     if (name_if_value_mapping_.count(prefix_name) == 0)
     {
       name_if_value_mapping_[prefix_name] = {};
     }
-    // add interface name
+    if (name_if_raw_value_mapping_.count(prefix_name) == 0)
+    {
+      name_if_raw_value_mapping_[prefix_name] = {};
+    }
+    // add interface name, keeping the source name in the raw cache so
+    // DynamicJointState preserves the original interface identity
     std::string interface_name = si->get_interface_name();
+    name_if_raw_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
     if (map_interface_to_joint_state_.count(interface_name) > 0)
     {
       interface_name = map_interface_to_joint_state_[interface_name];
@@ -294,12 +301,14 @@ bool JointStateBroadcaster::init_joint_data()
   }
 
   // Add extra joints from parameters, each joint will be added to joint_names_ and
-  // name_if_value_mapping_ if it is not already there
+  // name_if_value_mapping_ / name_if_raw_value_mapping_ if it is not already there
   for (const auto & extra_joint_name : params_.extra_joints)
   {
     if (name_if_value_mapping_.count(extra_joint_name) == 0)
     {
       name_if_value_mapping_[extra_joint_name] = {
+        {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
+      name_if_raw_value_mapping_[extra_joint_name] = {
         {HW_IF_POSITION, 0.0}, {HW_IF_VELOCITY, 0.0}, {HW_IF_EFFORT, 0.0}};
       joint_names_.push_back(extra_joint_name);
     }
@@ -313,23 +322,56 @@ void JointStateBroadcaster::init_auxiliary_data()
   // save the mapping of state interfaces to joint states
   joint_state_interface_indices_.clear();
   joint_state_mapped_values_.clear();
+  dynamic_mapped_values_.clear();
 
   const std::vector<std::string> joint_state_interfaces = {
     HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
-
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       continue;
     }
-    std::string interface_name = state_interfaces_[i].get_interface_name();
+    const std::string prefix_name = state_interfaces_[i].get_prefix_name();
+    const std::string source_interface_name = state_interfaces_[i].get_interface_name();
+
+    std::string interface_name = source_interface_name;
     if (map_interface_to_joint_state_.count(interface_name) > 0)
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    double * value_ptr =
-      &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name];
+    // A custom interface mapped onto a standard field shares the mapped
+    // JointState slot with a real standard interface for the same joint.
+    // The real interface owns that slot; route the mapped custom value to its
+    // raw entry instead so it cannot overwrite the real value.
+    double * value_ptr = &name_if_value_mapping_[prefix_name][interface_name];
+    if (interface_name != source_interface_name)
+    {
+      bool real_interface_exists = false;
+      for (const auto & state_interface : state_interfaces_)
+      {
+        if (
+          state_interface.get_data_type() == hardware_interface::HandleDataType::DOUBLE &&
+          state_interface.get_prefix_name() == prefix_name &&
+          state_interface.get_interface_name() == interface_name)
+        {
+          // The target-named interface may itself be remapped to another
+          // slot, in which case it does not write this slot; only give it
+          // precedence when its effective mapping also points here.
+          std::string target_interface_name = interface_name;
+          if (map_interface_to_joint_state_.count(target_interface_name) > 0)
+          {
+            target_interface_name = map_interface_to_joint_state_[target_interface_name];
+          }
+          real_interface_exists = (target_interface_name == interface_name);
+          break;
+        }
+      }
+      if (real_interface_exists)
+      {
+        value_ptr = &name_if_raw_value_mapping_[prefix_name][source_interface_name];
+      }
+    }
 
     // Track indices and pre-computed pointers for joint state interfaces only, unless
     // dynamic_joint_states is published: it reports every interface, so all must be refreshed
@@ -340,6 +382,9 @@ void JointStateBroadcaster::init_auxiliary_data()
     {
       joint_state_interface_indices_.push_back(i);
       joint_state_mapped_values_.push_back(value_ptr);
+      // DynamicJointState keeps the source interface name.
+      dynamic_mapped_values_.push_back(
+        &name_if_raw_value_mapping_[prefix_name][source_interface_name]);
     }
   }
 }
@@ -388,7 +433,7 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
   dynamic_joint_state_msg_.header.frame_id = frame_id_;
   dynamic_joint_state_msg_.joint_names.clear();
   dynamic_joint_state_msg_.interface_values.clear();
-  for (const auto & name_ifv : name_if_value_mapping_)
+  for (const auto & name_ifv : name_if_raw_value_mapping_)
   {
     const auto & name = name_ifv.first;
     const auto & interfaces_and_values = name_ifv.second;
@@ -415,7 +460,7 @@ void JointStateBroadcaster::init_dynamic_joint_state_msg()
     {
       const auto & interface_name =
         dynamic_joint_state_msg_.interface_values[ji].interface_names[ii];
-      dynamic_joint_states_data_[ji].push_back(&name_if_value_mapping_[name][interface_name]);
+      dynamic_joint_states_data_[ji].push_back(&name_if_raw_value_mapping_[name][interface_name]);
     }
   }
 }
@@ -436,6 +481,7 @@ controller_interface::return_type JointStateBroadcaster::update(
     if (opt.has_value())
     {
       *joint_state_mapped_values_[i] = opt.value();
+      *dynamic_mapped_values_[i] = opt.value();
     }
   }
 
