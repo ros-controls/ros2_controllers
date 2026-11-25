@@ -3837,24 +3837,47 @@ TEST_F(TrajectoryControllerTest, concurrent_sort_to_local_joint_order)
 // command is the setpoint for t + update_period (it is sampled one period ahead), so it has to be
 // dated t + update_period. Dated t, every replacement added one period of travel at the hand-off,
 // i.e. a one-cycle 2x velocity step. The running trajectory is replaced by its own exact
-// continuation, or stopped by a single-point goal: no command increment may grow.
-class TrajectoryControllerReplacementSeedTest : public TrajectoryControllerTest,
-                                                public ::testing::WithParamInterface<bool>
+// continuation, or stopped by a single-point goal: the replacement must start at the last command,
+// and no command increment may grow. In the early cases the installing cycle runs 0.1 ms or 1 ms
+// early (jitter; at 100 Hz a period of 9.9 ms or 9 ms), i.e. before the seed's time stamp. At
+// 300 Hz the update period truncates to 3333333 ns, so the seed stamp is off the cycle grid.
+enum class ReplacementSeedCase
+{
+  continuation,
+  stop_goal,
+  early_0_1ms,
+  early_1ms
+};
+
+class TrajectoryControllerReplacementSeedTest
+: public TrajectoryControllerTest,
+  public ::testing::WithParamInterface<std::tuple<bool, unsigned int, ReplacementSeedCase>>
 {
 };
 
 TEST_P(TrajectoryControllerReplacementSeedTest, replacement_does_not_step_the_command)
 {
-  const bool stop_goal = GetParam();
+  const bool allow_trajectory_replacement = std::get<0>(GetParam());
+  const unsigned int rate = std::get<1>(GetParam());
+  const ReplacementSeedCase replacement = std::get<2>(GetParam());
+  const bool stop_goal = replacement == ReplacementSeedCase::stop_goal;
+  const auto early = rclcpp::Duration::from_nanoseconds(
+    replacement == ReplacementSeedCase::early_0_1ms ? 100000
+    : replacement == ReplacementSeedCase::early_1ms ? 1000000
+                                                    : 0);
+
+  update_rate_ = rate;
+  command_interface_types_ = {"position", "velocity"};
   rclcpp::executors::SingleThreadedExecutor executor;
   SetUpAndActivateTrajectoryController(
     executor, {rclcpp::Parameter("interpolate_from_desired_state", true),
-               rclcpp::Parameter("allow_trajectory_replacement", false)});
+               rclcpp::Parameter("allow_trajectory_replacement", allow_trajectory_replacement)});
 
-  const double v = 0.5;                                  // rad/s
-  const auto dt = rclcpp::Duration::from_seconds(0.01);  // = the controller's update period
-  const auto line = [&](double s) { return INITIAL_POS_JOINT1 + v * s; };  // s since 1st update
-  const auto cmd = [&]() { return pos_cmd_interfaces_[0]->get_optional().value(); };
+  // the controller's update period, truncated to whole ns as in the controller
+  const rclcpp::Duration dt(0, static_cast<uint32_t>(1.0e9 / static_cast<double>(rate)));
+  const double v = 0.5;  // rad/s
+  const rclcpp::Time t0 = traj_controller_->get_node()->now();
+  const auto line = [&](double s) { return INITIAL_POS_JOINT1 + v * s; };  // s since t0
   const auto points_on_line = [&](double from_s, int n)
   {
     std::vector<std::vector<double>> pos, vel;
@@ -3866,16 +3889,22 @@ TEST_P(TrajectoryControllerReplacementSeedTest, replacement_does_not_step_the_co
     }
     return std::make_pair(pos, vel);
   };
+  // cycle k starts at t0 + k / rate, to the ns (the period alternates at 300 Hz), minus the
+  // early shift once the replacement is due. update() gets the period that actually elapsed.
   std::vector<double> c;
-  rclcpp::Time t = traj_controller_->get_node()->now();
+  int k = 0;
+  rclcpp::Time t_prev = t0 - dt;
+  rclcpp::Duration shift(0, 0);
   const auto run = [&](int cycles)
   {
-    for (int i = 0; i < cycles; ++i)
+    for (int i = 0; i < cycles; ++i, ++k)
     {
-      traj_controller_->update(t, dt);
+      const rclcpp::Time t =
+        t0 + rclcpp::Duration::from_nanoseconds(std::llround(k * 1.0e9 / rate)) - shift;
+      traj_controller_->update(t, t - t_prev);
       mirrorCommandToStateIfNotSeparate();
-      c.push_back(cmd());
-      t += dt;
+      c.push_back(pos_cmd_interfaces_[0]->get_optional().value());
+      t_prev = t;
     }
   };
 
@@ -3884,34 +3913,90 @@ TEST_P(TrajectoryControllerReplacementSeedTest, replacement_does_not_step_the_co
   publish(rclcpp::Duration::from_seconds(0.1), old_pos, rclcpp::Time(), {}, old_vel);
   traj_controller_->wait_for_trajectory(executor);
   run(100);
-  const double steady = c.back() - c[c.size() - 2];
-  ASSERT_NEAR(steady, v * dt.seconds(), 1e-6) << "not at constant velocity yet";
+  const double steady = v * dt.seconds();
+  ASSERT_NEAR(c.back() - c[c.size() - 2], steady, 1e-6) << "not at constant velocity yet";
+  // the last command, and the time since t0 it is the setpoint for
+  const double seed = c.back();
+  const double seed_v = vel_cmd_interfaces_[0]->get_optional().value();
+  const double seed_s = (t_prev - t0).seconds() + dt.seconds();
+  std::vector<double> last_pos, last_vel;
+  for (size_t j = 0; j < joint_names_.size(); ++j)
+  {
+    last_pos.push_back(pos_cmd_interfaces_[j]->get_optional().value());
+    last_vel.push_back(vel_cmd_interfaces_[j]->get_optional().value());
+  }
 
-  // replacement, installed at the next update (1.0 s after the first one)
+  // replacement, installed at the next update
   if (stop_goal)
   {
-    const double p_stop = line(1.0 + 0.25);  // to rest in 0.5 s: p + v * T / 2
+    const double p_stop = line(seed_s + 0.25);  // to rest in 0.5 s: p + v * T / 2
     publish(
       rclcpp::Duration::from_seconds(0.5), {{p_stop, p_stop, p_stop}}, rclcpp::Time(), {},
       {{0.0, 0.0, 0.0}});
   }
   else
   {
-    const auto [new_pos, new_vel] = points_on_line(1.0, 20);
+    const auto [new_pos, new_vel] = points_on_line(seed_s, 20);
     publish(rclcpp::Duration::from_seconds(0.1), new_pos, rclcpp::Time(), {}, new_vel);
   }
   traj_controller_->wait_for_trajectory(executor);
-  run(5);
+  shift = early;
+  run(1);
+  const auto reference = traj_controller_->get_state_reference();
+  const auto feedback = traj_controller_->get_state_feedback();
+  run(4);
+
+  // first cycle of the replacement: valid states, and the reference is the last command
+  ASSERT_EQ(reference.positions.size(), joint_names_.size());
+  ASSERT_EQ(reference.velocities.size(), joint_names_.size());
+  ASSERT_EQ(feedback.positions.size(), joint_names_.size());
+  ASSERT_EQ(feedback.velocities.size(), joint_names_.size());
+  for (size_t j = 0; j < joint_names_.size(); ++j)
+  {
+    EXPECT_TRUE(std::isfinite(reference.positions[j]) && std::isfinite(reference.velocities[j]));
+    EXPECT_DOUBLE_EQ(feedback.positions[j], last_pos[j]) << "joint " << j;
+    EXPECT_DOUBLE_EQ(feedback.velocities[j], last_vel[j]) << "joint " << j;
+  }
+  EXPECT_NEAR(reference.positions[0], seed, 1e-3 * steady)
+    << "the replacement does not start at the last command";
+  EXPECT_NEAR(reference.velocities[0], seed_v, 1e-3 * v)
+    << "the replacement does not start at the last command";
 
   for (size_t i = 100; i < c.size(); ++i)
   {
-    EXPECT_LE(c[i] - c[i - 1], steady * 1.1)
-      << "the command stepped " << (c[i] - c[i - 1]) / steady << "x the steady increment "
-      << (i - 99) << " cycle(s) after the replacement";
+    const double step = c[i] - c[i - 1];
+    const auto msg = [&]()
+    {
+      return "the command stepped " + std::to_string(step / steady) + "x the steady increment " +
+             std::to_string(i - 99) + " cycle(s) after the replacement";
+    };
+    if (stop_goal)
+    {
+      EXPECT_LE(step, 1.1 * steady) << msg();
+      EXPECT_GE(step, -1e-9) << msg();
+    }
+    else
+    {
+      EXPECT_NEAR(step, steady, 1e-3 * steady) << msg();
+    }
   }
 }
 
+std::string replacement_seed_test_name(
+  const ::testing::TestParamInfo<std::tuple<bool, unsigned int, ReplacementSeedCase>> & param_info)
+{
+  const char * const names[] = {"continuation", "stop_goal", "early_0_1ms", "early_1ms"};
+  return std::string(std::get<0>(param_info.param) ? "blend_" : "") +
+         std::to_string(std::get<1>(param_info.param)) + "hz_" +
+         names[static_cast<int>(std::get<2>(param_info.param))];
+}
+
 INSTANTIATE_TEST_SUITE_P(
-  ReplacementSeed, TrajectoryControllerReplacementSeedTest, ::testing::Bool(),
-  [](const ::testing::TestParamInfo<bool> & param_info)
-  { return param_info.param ? "stop_goal" : "continuation"; });
+  ReplacementSeed, TrajectoryControllerReplacementSeedTest,
+  ::testing::Combine(
+    ::testing::Values(false),  // allow_trajectory_replacement
+    ::testing::Values(100u, 300u),
+    ::testing::Values(
+      ReplacementSeedCase::continuation, ReplacementSeedCase::stop_goal,
+      ReplacementSeedCase::early_0_1ms, ReplacementSeedCase::early_1ms)),
+  replacement_seed_test_name);

@@ -344,8 +344,10 @@ controller_interface::return_type JointTrajectoryController::update(
         {
           last_commanded_time_ = time;
         }
+        // The last command is dated one period ahead, so a cycle that runs early (jitter) starts
+        // before it, and sampling before the seed fails. Date the seed no later than now.
         current_trajectory_->set_point_before_trajectory_msg(
-          last_commanded_time_, last_commanded_state_, joints_angle_wraparound_);
+          std::min(last_commanded_time_, time), last_commanded_state_, joints_angle_wraparound_);
       }
       else
       {
