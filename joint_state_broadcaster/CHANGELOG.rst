@@ -2,8 +2,8 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.19.0 (2026-11-25)
+-------------------
 * Optimize joint state broadcaster execution time (backport `#2159 <https://github.com/ros-controls/ros2_controllers/issues/2159>`_) (`#2764 <https://github.com/ros-controls/ros2_controllers/issues/2764>`_)
 * Contributors: mergify[bot]
 

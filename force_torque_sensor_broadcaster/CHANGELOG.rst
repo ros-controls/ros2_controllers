@@ -2,8 +2,8 @@
 Changelog for package force_torque_sensor_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.19.0 (2026-11-25)
+-------------------
 * Validate force-torque filters and make frame_id read-only (backport `#2683 <https://github.com/ros-controls/ros2_controllers/issues/2683>`_) (`#2751 <https://github.com/ros-controls/ros2_controllers/issues/2751>`_)
 * Contributors: mergify[bot]
 

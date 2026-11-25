@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+5.19.0 (2026-11-25)
+-------------------
 * rqt-jtc: make the controller list requests non-blocking (backport `#2731 <https://github.com/ros-controls/ros2_controllers/issues/2731>`_) (`#2754 <https://github.com/ros-controls/ros2_controllers/issues/2754>`_)
 * Contributors: mergify[bot]
 
