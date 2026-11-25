@@ -1080,8 +1080,7 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
 
 TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDynamicJointState)
 {
-  // Use all available interfaces so the real "position" interface and the
-  // mapped custom "measured_position" interface coexist for joint1.
+  // Real "position" and mapped custom "measured_position" coexist for joint1.
   init_broadcaster_and_set_parameters(
     "", {}, {},
     {rclcpp::Parameter(
@@ -1095,18 +1094,15 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDyn
   ASSERT_TRUE(configure_succeeds(state_broadcaster_));
   ASSERT_TRUE(activate_succeeds(state_broadcaster_));
 
-  // update() routes each value into its own slot.
   ASSERT_EQ(
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // JointState: the real "position" interface wins over the mapped custom one.
   const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
   ASSERT_THAT(joint_state_msg.name, ElementsAreArray({joint_names_[0]}));
   ASSERT_THAT(joint_state_msg.position, SizeIs(1));
   EXPECT_DOUBLE_EQ(joint_state_msg.position[0], joint_values_[0]);
 
-  // DynamicJointState: both source interface names are preserved, no collapse.
   const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray({joint_names_[0]}));
   ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));
@@ -1114,7 +1110,6 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDyn
     dynamic_joint_state_msg.interface_values[0].interface_names,
     UnorderedElementsAreArray({std::string(HW_IF_POSITION), custom_interface_name_}));
 
-  // update() must route each value into its own slot.
   const auto & names = dynamic_joint_state_msg.interface_values[0].interface_names;
   const auto & values = dynamic_joint_state_msg.interface_values[0].values;
   ASSERT_THAT(values, SizeIs(2));
@@ -1137,9 +1132,8 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingKeepsSourceNameInDyn
 
 TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointStateNaN)
 {
-  // The target-named interface ("position") is itself remapped to velocity,
-  // so it does not own the position slot: the mapped custom interface must
-  // still fill JointState.position instead of leaving it NaN.
+  // The target-named "position" interface is itself remapped to velocity,
+  // so it does not own the position slot; the custom interface must fill it.
   init_broadcaster_and_set_parameters(
     "", {}, {},
     {rclcpp::Parameter(
@@ -1147,8 +1141,8 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
      rclcpp::Parameter(
        std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, HW_IF_POSITION)});
 
-  // Give velocity a distinct value and assign it before position so the test
-  // detects a regression in real-interface precedence (both were 1.1).
+  // Distinct velocity value, assigned before position, so the test catches
+  // a precedence regression.
   std::ignore = joint_1_vel_state_->set_value(2.2);
   std::vector<LoanedStateInterface> state_ifs;
   state_ifs.emplace_back(joint_1_vel_state_);
@@ -1163,8 +1157,6 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
     state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  // JointState: measured_position fills position (the real position interface
-  // is remapped to velocity), the real velocity interface fills velocity.
   const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
   ASSERT_THAT(joint_state_msg.name, ElementsAreArray({joint_names_[0]}));
   ASSERT_THAT(joint_state_msg.position, SizeIs(1));
@@ -1172,7 +1164,6 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(1));
   EXPECT_DOUBLE_EQ(joint_state_msg.velocity[0], 2.2);
 
-  // DynamicJointState: all three source interface names are preserved.
   const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
   ASSERT_THAT(dynamic_joint_state_msg.joint_names, ElementsAreArray({joint_names_[0]}));
   ASSERT_THAT(dynamic_joint_state_msg.interface_values, SizeIs(1));

@@ -48,10 +48,8 @@ namespace joint_state_broadcaster
  * It is possible to define a mapping of measurements
  * from different sources stored in custom interfaces to standard dynamic names in JointState
  * message.
- * The mapping applies to sensor_msgs::msg::JointState only:
- * control_msgs::msg::DynamicJointState always publishes interfaces under
- * their source names, so a mapped custom interface never collapses with a
- * real standard interface publishing for the same joint.
+ * The mapping applies to sensor_msgs::msg::JointState only;
+ * DynamicJointState keeps the source interface names.
  * If "joints" or "interfaces" parameter is empty, all available states are published.
  *
  * \param use_local_topics Flag to publish topics in local namespace.
@@ -113,13 +111,9 @@ protected:
   sensor_msgs::msg::JointState joint_state_msg_;
 
   //  For the JointState format, we use a map to buffer values in for easier lookup.
-  //  Interface names in this map are remapped through map_interface_to_joint_state_,
-  //  so a custom interface mapped to a standard field shares its slot with a real
-  //  standard interface (which wins, see init_auxiliary_data()).
+  //  Interface names here are remapped (see init_auxiliary_data()).
   std::unordered_map<std::string, std::unordered_map<std::string, double>> name_if_value_mapping_;
-  //  For the DynamicJointState format, we use a second map keyed by the source
-  //  interface names. This preserves the original identity of mapped custom
-  //  interfaces instead of collapsing them with the standard interface they map to.
+  //  For the DynamicJointState format, a second map keyed by source interface names.
   std::unordered_map<std::string, std::unordered_map<std::string, double>>
     name_if_raw_value_mapping_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::DynamicJointState>>
@@ -139,9 +133,8 @@ protected:
   // Avoids map lookups in the hot path
   std::vector<double *> joint_state_mapped_values_;
 
-  // Per-state-interface values for DynamicJointState, parallel to
-  // joint_state_mapped_values_ but pointing into name_if_raw_value_mapping_
-  // (source interface names).
+  // Per-state-interface values for DynamicJointState, pointing into
+  // name_if_raw_value_mapping_.
   std::vector<double *> dynamic_mapped_values_;
 
   struct JointStateData

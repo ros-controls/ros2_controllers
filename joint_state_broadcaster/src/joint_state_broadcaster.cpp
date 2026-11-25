@@ -256,8 +256,6 @@ bool JointStateBroadcaster::init_joint_data()
     {
       name_if_raw_value_mapping_[prefix_name] = {};
     }
-    // add interface name, keeping the source name in the raw cache so
-    // DynamicJointState preserves the original interface identity
     std::string interface_name = si->get_interface_name();
     name_if_raw_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
     if (map_interface_to_joint_state_.count(interface_name) > 0)
@@ -340,10 +338,8 @@ void JointStateBroadcaster::init_auxiliary_data()
     {
       interface_name = map_interface_to_joint_state_[interface_name];
     }
-    // A custom interface mapped onto a standard field shares the mapped
-    // JointState slot with a real standard interface for the same joint.
-    // The real interface owns that slot; route the mapped custom value to its
-    // raw entry instead so it cannot overwrite the real value.
+    // A mapped custom interface shares the JointState slot with a real standard
+    // interface; the real one owns the slot, so the custom value goes to its raw entry.
     double * value_ptr = &name_if_value_mapping_[prefix_name][interface_name];
     if (interface_name != source_interface_name)
     {
@@ -355,9 +351,8 @@ void JointStateBroadcaster::init_auxiliary_data()
           state_interface.get_prefix_name() == prefix_name &&
           state_interface.get_interface_name() == interface_name)
         {
-          // The target-named interface may itself be remapped to another
-          // slot, in which case it does not write this slot; only give it
-          // precedence when its effective mapping also points here.
+          // Only give the target-named interface precedence when its effective
+          // mapping also points to this slot (it may itself be remapped).
           std::string target_interface_name = interface_name;
           if (map_interface_to_joint_state_.count(target_interface_name) > 0)
           {
