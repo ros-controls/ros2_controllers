@@ -1147,9 +1147,12 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
      rclcpp::Parameter(
        std::string("map_interface_to_joint_state.") + HW_IF_VELOCITY, HW_IF_POSITION)});
 
+  // Give velocity a distinct value and assign it before position so the test
+  // detects a regression in real-interface precedence (both were 1.1).
+  std::ignore = joint_1_vel_state_->set_value(2.2);
   std::vector<LoanedStateInterface> state_ifs;
-  state_ifs.emplace_back(joint_1_pos_state_);
   state_ifs.emplace_back(joint_1_vel_state_);
+  state_ifs.emplace_back(joint_1_pos_state_);
   state_ifs.emplace_back(joint_X_custom_state);
   state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
 
@@ -1167,7 +1170,7 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
   ASSERT_THAT(joint_state_msg.position, SizeIs(1));
   EXPECT_DOUBLE_EQ(joint_state_msg.position[0], custom_joint_value_);
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(1));
-  EXPECT_DOUBLE_EQ(joint_state_msg.velocity[0], joint_values_[0]);
+  EXPECT_DOUBLE_EQ(joint_state_msg.velocity[0], 2.2);
 
   // DynamicJointState: all three source interface names are preserved.
   const auto & dynamic_joint_state_msg = state_broadcaster_->dynamic_joint_state_msg_;
@@ -1178,7 +1181,6 @@ TEST_F(JointStateBroadcasterTest, TestRemappedTargetInterfaceDoesNotLeaveJointSt
     UnorderedElementsAreArray(
       {std::string(HW_IF_POSITION), std::string(HW_IF_VELOCITY), custom_interface_name_}));
 }
-
 
 TEST_F(JointStateBroadcasterTest, DynamicJointStatesUpdateNonJointStateInterfaces)
 {
@@ -1202,7 +1204,6 @@ TEST_F(JointStateBroadcasterTest, DynamicJointStatesUpdateNonJointStateInterface
   ASSERT_THAT(dynamic_joint_state_msg.interface_values[0].values, SizeIs(1));
   EXPECT_DOUBLE_EQ(dynamic_joint_state_msg.interface_values[0].values[0], new_value);
 }
-
 
 TEST_F(JointStateBroadcasterTest, UpdateTest)
 {
