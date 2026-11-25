@@ -29,6 +29,8 @@
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
+  <depend>eigen</depend>
+  <depend>filters</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
@@ -38,9 +40,6 @@
   <depend>rclcpp</depend>
   <depend>realtime_tools</depend>
   <depend>tf2_eigen</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>tf2_kdl</depend>
-  <depend>tf2_ros</depend>
   <depend>tf2</depend>
   <depend>tinyxml2</depend>
   <depend>trajectory_msgs</depend>
@@ -50,6 +49,7 @@
   <test_depend>hardware_interface_testing</test_depend>
   <test_depend>kinematics_interface_kdl</test_depend>
   <test_depend>ros2_control_test_assets</test_depend>
+  <test_depend>tf2_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

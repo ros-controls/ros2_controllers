@@ -10,6 +10,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   control_msgs
   control_toolbox
   controller_interface
+  Eigen3
+  filters
   generate_parameter_library
   geometry_msgs
   hardware_interface
@@ -20,9 +22,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   realtime_tools
   tf2
   tf2_eigen
-  tf2_geometry_msgs
-  tf2_kdl
-  tf2_ros
   TinyXML2
   trajectory_msgs
 )
@@ -55,17 +54,14 @@ target_link_libraries(admittance_controller PUBLIC
                       pluginlib::pluginlib
                       rclcpp::rclcpp
                       angles::angles
+                      filters::filter_chain
                       rclcpp_lifecycle::rclcpp_lifecycle
                       realtime_tools::realtime_tools
                       tf2::tf2
                       tf2_eigen::tf2_eigen
-                      tf2_geometry_msgs::tf2_geometry_msgs
-                      tf2_kdl::tf2_kdl
-                      tf2_ros::tf2_ros
                       ${geometry_msgs_TARGETS}
                       ${trajectory_msgs_TARGETS}
                       ${control_msgs_TARGETS}
-                      ${tf2_geometry_msgs_TARGETS}
                       ${TinyXML2_LIBRARIES})
 
 pluginlib_export_plugin_description_file(controller_interface admittance_controller.xml)
@@ -74,6 +70,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
   find_package(controller_manager REQUIRED)
   find_package(ros2_control_test_assets REQUIRED)
+  find_package(tf2_ros REQUIRED)
 
   # Dynamically loaded during test
   find_package(kinematics_interface_kdl REQUIRED)
@@ -94,7 +91,8 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_admittance_controller
     admittance_controller
-    ros2_control_test_assets::ros2_control_test_assets)
+    ros2_control_test_assets::ros2_control_test_assets
+    tf2_ros::tf2_ros)
 
   # test admittance rule implementation
   ament_add_gmock(test_admittance_rule_impl
