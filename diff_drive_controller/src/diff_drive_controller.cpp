@@ -678,7 +678,7 @@ void DiffDriveController::halt()
   {
     for (const auto & wheel_handle : wheel_handles)
     {
-      if (!wheel_handle.velocity.get().set_value(0.0))
+      if (!wheel_handle.velocity.get().set_value(0.0, std::numeric_limits<unsigned int>::max()))
       {
         RCLCPP_WARN(logger, "Failed to set wheel velocity to value 0.0");
       }
