@@ -25,7 +25,7 @@ How it works
 
 When a trajectory is canceled or preempted and ``decelerate_on_cancel`` is enabled, the controller:
 
-1. Reads the current velocity of each joint from the velocity state interface.
+1. Takes each joint's starting position and velocity from the last command when the controller has a position command interface, and otherwise, as for fault stops, from the measured state.
 2. Computes the stopping distance and time for each joint using its configured ``max_deceleration_on_cancel`` value:
 
    .. math::
@@ -42,6 +42,8 @@ When a trajectory is canceled or preempted and ``decelerate_on_cancel`` is enabl
 4. Appends a final hold-position point at the computed stop position.
 
 Each joint decelerates independently based on its own ``max_deceleration_on_cancel`` value, but the trajectory is synchronized so all joints finish at the same time (the slowest joint's stop time).
+
+The ramp ignores speed scaling: it starts from the joints' actual velocity and decelerates at ``max_deceleration_on_cancel`` in wall-clock time.
 
 Requirements
 ------------
@@ -66,7 +68,7 @@ Enable the feature by setting ``constraints.decelerate_on_cancel`` to ``true`` a
        constraints:
          decelerate_on_cancel: true
          stopped_velocity_tolerance: 0.01
-         goal_time: 0.0
+         goal_time: 10.0
          joint_1:
            max_deceleration_on_cancel: 10.0
          joint_2:

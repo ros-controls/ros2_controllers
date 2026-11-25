@@ -44,6 +44,12 @@ pid_controller:
     read_only: true,
     description: "When true, the controller will set the current state as the first setpoint when the controller is activated. This can help to avoid large initial errors and sudden jumps in the control output when the controller starts."
   }
+  reset_commands_at_deactivation: {
+    type: bool,
+    default_value: false,
+    read_only: true,
+    description: "When true, the controller will reset the commands to 0.0 when the controller is deactivated."
+  }
   use_external_measured_states: {
     type: bool,
     default_value: false,

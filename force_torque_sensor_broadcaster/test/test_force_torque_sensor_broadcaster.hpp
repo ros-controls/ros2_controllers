@@ -66,7 +66,7 @@ public:
 protected:
   const std::string sensor_name_ = "fts_sensor";
   const std::string frame_id_ = "fts_sensor_frame";
-  std::array<double, 6> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
+  const std::array<double, 6> sensor_values_ = {{1.1, 2.2, 3.3, 4.4, 5.5, 6.6}};
 
   hardware_interface::StateInterface::SharedPtr fts_force_x_;
   hardware_interface::StateInterface::SharedPtr fts_force_y_;

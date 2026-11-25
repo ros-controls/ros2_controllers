@@ -77,6 +77,11 @@ class TestableMecanumDriveController : public mecanum_drive_controller::MecanumD
     MecanumDriveControllerTest,
     when_controller_in_chainable_mode_expect_receiving_commands_from_reference_interfaces_directly);
   FRIEND_TEST(
+    MecanumDriveControllerTest, when_reference_is_nan_in_chained_mode_expect_all_wheels_zeroed);
+  FRIEND_TEST(
+    MecanumDriveControllerTest,
+    when_reference_goes_nan_then_zero_expect_no_wheel_burst_on_reenable);
+  FRIEND_TEST(
     MecanumDriveControllerTest,
     when_reference_timeout_is_zero_expect_reference_msg_being_used_only_once);
   FRIEND_TEST(
@@ -302,7 +307,7 @@ protected:
   static constexpr char TEST_FRONT_RIGHT_CMD_JOINT_NAME[] = "front_right_wheel_joint";
   static constexpr char TEST_REAR_RIGHT_CMD_JOINT_NAME[] = "back_right_wheel_joint";
   static constexpr char TEST_REAR_LEFT_CMD_JOINT_NAME[] = "back_left_wheel_joint";
-  std::vector<std::string> command_joint_names_ = {
+  const std::vector<std::string> command_joint_names_ = {
     TEST_FRONT_LEFT_CMD_JOINT_NAME, TEST_FRONT_RIGHT_CMD_JOINT_NAME, TEST_REAR_RIGHT_CMD_JOINT_NAME,
     TEST_REAR_LEFT_CMD_JOINT_NAME};
 
@@ -310,10 +315,10 @@ protected:
   static constexpr char TEST_FRONT_RIGHT_STATE_JOINT_NAME[] = "state_front_right_wheel_joint";
   static constexpr char TEST_REAR_RIGHT_STATE_JOINT_NAME[] = "state_back_right_wheel_joint";
   static constexpr char TEST_REAR_LEFT_STATE_JOINT_NAME[] = "state_back_left_wheel_joint";
-  std::vector<std::string> state_joint_names_ = {
+  const std::vector<std::string> state_joint_names_ = {
     TEST_FRONT_LEFT_STATE_JOINT_NAME, TEST_FRONT_RIGHT_STATE_JOINT_NAME,
     TEST_REAR_RIGHT_STATE_JOINT_NAME, TEST_REAR_LEFT_STATE_JOINT_NAME};
-  std::string interface_name_ = hardware_interface::HW_IF_VELOCITY;
+  const std::string interface_name_ = hardware_interface::HW_IF_VELOCITY;
 
   // Controller-related parameters
 
@@ -323,12 +328,10 @@ protected:
   static constexpr double TEST_LINEAR_VELOCITY_X = 1.5;
   static constexpr double TEST_LINEAR_VELOCITY_y = 0.0;
   static constexpr double TEST_ANGULAR_VELOCITY_Z = 0.0;
-  double command_lin_x = 111;
+  const double command_lin_x = 111;
 
   std::vector<hardware_interface::StateInterface::SharedPtr> state_itfs_;
   std::vector<hardware_interface::CommandInterface::SharedPtr> command_itfs_;
-
-  double ref_timeout_ = 0.1;
 
   // Test related parameters
   std::unique_ptr<CtrlType> controller_;

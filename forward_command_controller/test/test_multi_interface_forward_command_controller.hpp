@@ -76,9 +76,9 @@ protected:
   // dummy joint state value used for tests
   const std::string joint_name_ = "joint1";
 
-  double pos_cmd_ = 1.1;
-  double vel_cmd_ = 2.1;
-  double eff_cmd_ = 3.1;
+  const double pos_cmd_ = 1.1;
+  const double vel_cmd_ = 2.1;
+  const double eff_cmd_ = 3.1;
 
   CommandInterface::SharedPtr joint_1_pos_cmd_;
   CommandInterface::SharedPtr joint_1_vel_cmd_;

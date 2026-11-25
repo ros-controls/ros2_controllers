@@ -18,6 +18,7 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -28,6 +29,20 @@
 
 namespace joint_trajectory_controller
 {
+namespace
+{
+void zero_non_finite(std::vector<double> & values)
+{
+  for (auto & value : values)
+  {
+    if (!std::isfinite(value))
+    {
+      value = 0.0;
+    }
+  }
+}
+}  // namespace
+
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
 
 Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -68,6 +83,9 @@ void Trajectory::set_point_before_trajectory_msg(
     state_before_traj_msg_.accelerations.resize(
       trajectory_msg_->points[0].accelerations.size(), 0.0);
   }
+  // An unwritten state interface reads back NaN, not empty, so the resizes above miss it.
+  zero_non_finite(state_before_traj_msg_.velocities);
+  zero_non_finite(state_before_traj_msg_.accelerations);
 
   // Compute offsets due to wrapping joints
   wraparound_joint(
@@ -96,6 +114,104 @@ void wraparound_joint(
       current_position[i] = next_position[i] - dist;
     }
   }
+}
+
+bool fill_cubic_spline_velocities(
+  trajectory_msgs::msg::JointTrajectory & traj, const std::vector<double> & start_velocity)
+{
+  const size_t n = traj.points.size();
+  if (n < 2)
+  {
+    return false;
+  }
+  const size_t n_joints = traj.points[0].positions.size();
+  if (n_joints == 0)
+  {
+    return false;
+  }
+  if (!start_velocity.empty() && start_velocity.size() != n_joints)
+  {
+    return false;
+  }
+  for (const auto & point : traj.points)
+  {
+    if (point.positions.size() != n_joints)
+    {
+      return false;
+    }
+  }
+
+  // Waypoint times; bail on non-increasing timing (zero/negative duration -> divide by zero).
+  std::vector<double> times(n);
+  for (size_t i = 0; i < n; ++i)
+  {
+    times[i] = rclcpp::Duration(traj.points[i].time_from_start).seconds();
+    if (i > 0 && times[i] <= times[i - 1])
+    {
+      return false;
+    }
+  }
+
+  // Per-joint tridiagonal solve (Thomas algorithm); non-RT, so per-call scratch is fine.
+  std::vector<double> lower_diagonal(n), diagonal(n), upper_diagonal(n), rhs(n);
+  std::vector<double> forward_sweep(n), velocities(n);
+
+  for (auto & point : traj.points)
+  {
+    point.velocities.assign(n_joints, 0.0);
+  }
+
+  // Coefficients of the cubic-spline continuity equation which come from the 2nd derivative
+  constexpr double diagonal_coefficient = 2.0;
+  constexpr double rhs_coefficient = 3.0;
+
+  for (size_t joint = 0; joint < n_joints; ++joint)
+  {
+    // Clamped start when a start velocity is given, otherwise at rest.
+    diagonal[0] = 1.0;
+    upper_diagonal[0] = 0.0;
+    rhs[0] = start_velocity.empty() ? 0.0 : start_velocity[joint];
+    lower_diagonal[n - 1] = 0.0;
+    diagonal[n - 1] = 1.0;
+    rhs[n - 1] = 0.0;
+
+    // Interior knots: each row enforces continuous acceleration (global cubic-spline condition).
+    for (size_t i = 1; i < n - 1; ++i)
+    {
+      const double duration_prev = times[i] - times[i - 1];
+      const double duration_next = times[i + 1] - times[i];
+      const double pos_prev = traj.points[i - 1].positions[joint];
+      const double pos_curr = traj.points[i].positions[joint];
+      const double pos_next = traj.points[i + 1].positions[joint];
+
+      lower_diagonal[i] = 1.0 / duration_prev;
+      diagonal[i] = diagonal_coefficient * (1.0 / duration_prev + 1.0 / duration_next);
+      upper_diagonal[i] = 1.0 / duration_next;
+      rhs[i] = rhs_coefficient * ((pos_next - pos_curr) / (duration_next * duration_next) +
+                                  (pos_curr - pos_prev) / (duration_prev * duration_prev));
+    }
+
+    // Thomas algorithm: forward sweep ...
+    forward_sweep[0] = upper_diagonal[0] / diagonal[0];
+    velocities[0] = rhs[0] / diagonal[0];
+    for (size_t i = 1; i < n; ++i)
+    {
+      const double pivot = diagonal[i] - lower_diagonal[i] * forward_sweep[i - 1];
+      forward_sweep[i] = (i + 1 < n) ? upper_diagonal[i] / pivot : 0.0;
+      velocities[i] = (rhs[i] - lower_diagonal[i] * velocities[i - 1]) / pivot;
+    }
+    // ... then back substitution.
+    for (size_t i = n - 1; i-- > 0;)
+    {
+      velocities[i] -= forward_sweep[i] * velocities[i + 1];
+    }
+
+    for (size_t i = 0; i < n; ++i)
+    {
+      traj.points[i].velocities[joint] = velocities[i];
+    }
+  }
+  return true;
 }
 
 void Trajectory::update(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -208,7 +324,10 @@ bool Trajectory::sample(
   // whole animation has played out
   start_segment_itr = --end();
   end_segment_itr = end();
-  last_sample_idx_ = last_idx;
+  if (search_monotonically_increasing)
+  {
+    last_sample_idx_ = last_idx;
+  }
 
   // If the last segment was never entered (e.g. sample_time jumped past a very
   // short last segment because the controller rate is slower than the segment
@@ -470,6 +589,12 @@ bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nu
 bool Trajectory::has_nontrivial_msg() const
 {
   return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
+}
+
+bool all_finite(const std::vector<double> & values)
+{
+  return std::all_of(
+    values.cbegin(), values.cend(), [](double value) { return std::isfinite(value); });
 }
 
 }  // namespace joint_trajectory_controller
