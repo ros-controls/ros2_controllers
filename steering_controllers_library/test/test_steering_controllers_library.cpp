@@ -401,7 +401,7 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 
-TEST_F(SteeringControllersLibraryTest, deactivate_retries_until_command_interface_is_free)
+TEST_F(SteeringControllersLibraryTest, deactivate_halts_traction_and_keeps_steering_commands)
 {
   SetUpController();
 
@@ -409,14 +409,23 @@ TEST_F(SteeringControllersLibraryTest, deactivate_retries_until_command_interfac
   ASSERT_TRUE(activate_succeeds(controller_));
 
   // Hold the lock longer than the default number of set_value() tries takes,
-  // deactivation must not give up and leave the old command active.
-  std::unique_lock<std::shared_mutex> lock(command_itfs_[0]->get_mutex());
+  // halting must not give up and leave the wheel moving.
+  std::unique_lock<std::shared_mutex> lock(command_itfs_[CMD_TRACTION_RIGHT_WHEEL]->get_mutex());
   std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   lock.unlock();
   deactivate_thread.join();
 
-  EXPECT_TRUE(std::isnan(command_itfs_[0]->get_optional().value()));
+  // traction joints are halted
+  EXPECT_EQ(command_itfs_[CMD_TRACTION_RIGHT_WHEEL]->get_optional().value(), 0.0);
+  EXPECT_EQ(command_itfs_[CMD_TRACTION_LEFT_WHEEL]->get_optional().value(), 0.0);
+  // steering joints keep their last command, 0.0 would turn the wheels and NaN is unsafe
+  EXPECT_EQ(
+    command_itfs_[CMD_STEER_RIGHT_WHEEL]->get_optional().value(),
+    joint_command_values_[CMD_STEER_RIGHT_WHEEL]);
+  EXPECT_EQ(
+    command_itfs_[CMD_STEER_LEFT_WHEEL]->get_optional().value(),
+    joint_command_values_[CMD_STEER_LEFT_WHEEL]);
 }
 
 TEST_F(

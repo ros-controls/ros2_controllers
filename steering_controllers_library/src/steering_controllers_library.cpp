@@ -480,14 +480,15 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_activate(
 controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  for (size_t i = 0; i < nr_cmd_itfs_; ++i)
+  // Halt the traction joints. NaN is not used, as some hardware runs motors at full speed on it.
+  // Steering joints keep their last position command: 0.0 would turn the wheels.
+  for (size_t i = 0; i < params_.traction_joints_names.size(); ++i)
   {
-    if (!command_interfaces_[i].set_value(
-          std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<unsigned int>::max()))
+    if (!command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max()))
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
-        "Failed to set NaN value for command interface '%s' (index %zu) during deactivation.",
+        "Failed to halt traction command interface '%s' (index %zu) during deactivation.",
         command_interfaces_[i].get_name().c_str(), i);
     }
   }
