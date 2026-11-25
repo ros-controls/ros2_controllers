@@ -175,9 +175,13 @@ public:
 
   bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
 
+<<<<<<< HEAD
   // START DEPRECATE
   bool is_open_loop() const { return params_.open_loop_control; }
   // END DEPRECATE
+=======
+  auto & get_new_trajectory_msg_mutex() { return rt_new_trajectory_msg_.get_mutex(); }
+>>>>>>> dd12289 ([JTC] Anchor the cancel stop to the last command, and guard the hold against non-finite state (#2587))
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
