@@ -1,0 +1,7 @@
+<library path="twist_controller">
+  <class name="cartesian_controllers/TwistController" type="cartesian_controllers::TwistController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    6dof pure forwarding twist controller.
+  </description>
+  </class>
+</library>
