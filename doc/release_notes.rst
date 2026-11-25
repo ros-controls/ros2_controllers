@@ -71,6 +71,7 @@ steering_controllers_library
 *****************************
 * Parameter ``tf_frame_prefix`` added with the similar functionality to other controllers. (`#2080 <https://github.com/ros-controls/ros2_controllers/pull/2080>`_).
 * Set odometry service added to be used at runtime. (`#2244 <https://github.com/ros-controls/ros2_controllers/pull/2244>`_).
+* On deactivation, traction commands are set to ``0.0`` instead of ``NaN``, and steering commands keep their last value instead of being set to ``NaN``. (`#2468 <https://github.com/ros-controls/ros2_controllers/pull/2468>`_).
 
 magnetometer_broadcaster
 ************************
