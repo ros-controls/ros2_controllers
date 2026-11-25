@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -396,6 +399,24 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
+}
+
+TEST_F(SteeringControllersLibraryTest, deactivate_retries_until_command_interface_is_free)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  // Hold the lock longer than the default number of set_value() tries takes,
+  // deactivation must not give up and leave the old command active.
+  std::unique_lock<std::shared_mutex> lock(command_itfs_[0]->get_mutex());
+  std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  lock.unlock();
+  deactivate_thread.join();
+
+  EXPECT_TRUE(std::isnan(command_itfs_[0]->get_optional().value()));
 }
 
 TEST_F(

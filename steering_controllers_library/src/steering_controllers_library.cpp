@@ -483,7 +483,8 @@ controller_interface::CallbackReturn SteeringControllersLibrary::on_deactivate(
   bool set_command_error = false;
   for (size_t i = 0; i < nr_cmd_itfs_; ++i)
   {
-    if (!command_interfaces_[i].set_value(std::numeric_limits<double>::quiet_NaN()))
+    if (!command_interfaces_[i].set_value(
+          std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<unsigned int>::max()))
     {
       RCLCPP_WARN(
         get_node()->get_logger(),
