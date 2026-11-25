@@ -2,6 +2,11 @@
 Changelog for package joint_state_broadcaster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Optimize joint state broadcaster execution time (backport `#2159 <https://github.com/ros-controls/ros2_controllers/issues/2159>`_) (`#2764 <https://github.com/ros-controls/ros2_controllers/issues/2764>`_)
+* Contributors: mergify[bot]
+
 5.18.1 (2026-11-04)
 -------------------
 * Add <numeric> for std::accumulate (backport `#2695 <https://github.com/ros-controls/ros2_controllers/issues/2695>`_) (`#2699 <https://github.com/ros-controls/ros2_controllers/issues/2699>`_)

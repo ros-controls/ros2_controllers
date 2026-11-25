@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rqt-jtc: make the controller list requests non-blocking (backport `#2731 <https://github.com/ros-controls/ros2_controllers/issues/2731>`_) (`#2754 <https://github.com/ros-controls/ros2_controllers/issues/2754>`_)
+* Contributors: mergify[bot]
+
 5.18.1 (2026-11-04)
 -------------------
 * rqt-jtc: reuse shared rqt node (backport `#2558 <https://github.com/ros-controls/ros2_controllers/issues/2558>`_) (`#2730 <https://github.com/ros-controls/ros2_controllers/issues/2730>`_)
