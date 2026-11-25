@@ -16,12 +16,15 @@
 
 #include "test_mecanum_drive_controller.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <shared_mutex>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -302,6 +305,25 @@ TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(deactivate_succeeds(controller_));
+}
+
+TEST_F(MecanumDriveControllerTest, when_deactivated_expect_halt_retries_until_interface_is_free)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  // Hold the lock longer than the default number of set_value() tries takes,
+  // halting must not give up and leave the wheel moving.
+  auto & cmd_itf = command_itfs_[controller_->get_front_right_wheel_index()];
+  std::unique_lock<std::shared_mutex> lock(cmd_itf->get_mutex());
+  std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  lock.unlock();
+  deactivate_thread.join();
+
+  EXPECT_EQ(cmd_itf->get_optional().value(), 0.0);
 }
 
 TEST_F(

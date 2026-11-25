@@ -415,12 +415,13 @@ controller_interface::CallbackReturn MecanumDriveController::on_activate(
 controller_interface::CallbackReturn MecanumDriveController::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  bool value_set_no_error = true;
+  bool set_command_error = false;
   for (size_t i = 0; i < NR_CMD_ITFS; ++i)
   {
-    value_set_no_error &= command_interfaces_[i].set_value(0.0);
+    set_command_error |=
+      !command_interfaces_[i].set_value(0.0, std::numeric_limits<unsigned int>::max());
   }
-  if (!value_set_no_error)
+  if (set_command_error)
   {
     RCLCPP_ERROR(
       get_node()->get_logger(),
