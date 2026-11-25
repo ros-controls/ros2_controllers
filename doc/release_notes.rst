@@ -43,6 +43,7 @@ joint_trajectory_controller
   up to the first waypoint will use the same interpolation as the rest of the trajectory. (`#2043
   <https://github.com/ros-controls/ros2_controllers/pull/2043>`_)
 * Added decelerate-to-stop functionality when a trajectory is canceled or preempted. Instead of immediately holding position, the controller can now smoothly decelerate each joint to a stop using the per-joint ``max_deceleration_on_cancel`` parameter. (`#2163 <https://github.com/ros-controls/ros2_controllers/pull/2163>`_)
+<<<<<<< HEAD
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 * Added ``action_execution_timeout`` parameter that aborts the goal when total execution time from trajectory start exceeds the configured limit. (`#2360 <https://github.com/ros-controls/ros2_controllers/pull/2360>`_)
@@ -50,6 +51,12 @@ joint_trajectory_controller
 omni_wheel_drive_controller
 *********************************
 * 🚀 The omni_wheel_drive_controller was added 🎉 (`#1535 <https://github.com/ros-controls/ros2_controllers/pull/1535>`_).
+=======
+* Fixed the final segment of every trajectory being cut short: the next-cycle lookahead sample advanced the shared segment search cursor to the end, so the following cycle jumped the reference to the last waypoint and succeeded the goal early. Independent of ``allow_trajectory_replacement``. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``  parameter. A trajectory arriving while another is executing is spliced into the active one instead of discarding it: the old path is followed up to the new start time, a velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal continue and finish their original motion. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
+* Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2491 <https://github.com/ros-controls/ros2_controllers/pull/2491>`_)
+* On cancel, controllers with a position command interface now start the hold and the deceleration ramp from the last commanded state instead of the measured one, so the command no longer steps back by the following error, and the deceleration ramp now uses the right joint's state when ``command_joints`` is a subset of ``joints``. A non-finite measured position or velocity no longer produces a NaN first segment or hold command. The deceleration ramp ignores speed scaling. (`#2587 <https://github.com/ros-controls/ros2_controllers/pull/2587>`_)
+>>>>>>> dd12289 ([JTC] Anchor the cancel stop to the last command, and guard the hold against non-finite state (#2587))
 
 pid_controller
 *******************************

@@ -201,7 +201,14 @@ protected:
 
   RealtimeGoalHandleBuffer rt_active_goal_;  ///< Currently active action goal, if any.
   rclcpp_action::Server<FollowJTrajAction>::SharedPtr action_server_;
+<<<<<<< HEAD
   std::atomic<bool> rt_has_pending_goal_{false};  ///< Is there a pending action goal?
+=======
+  realtime_tools::RealtimeThreadSafeBox<RealtimeGoalHandlePtr> rt_active_goal_;
+  RealtimeGoalHandlePtr rt_active_goal_local_{nullptr};
+  std::atomic<bool> rt_has_pending_goal_{false};
+  std::atomic<bool> rt_cancel_requested_{false};
+>>>>>>> dd12289 ([JTC] Anchor the cancel stop to the last command, and guard the hold against non-finite state (#2587))
   rclcpp::TimerBase::SharedPtr goal_handle_timer_;
   rclcpp::Duration action_monitor_period_ = rclcpp::Duration(50ms);
 
@@ -250,14 +257,31 @@ protected:
 
   void preempt_active_goal();
 
+  /** @brief pick the point a hold or a deceleration ramp should be anchored to */
+  const trajectory_msgs::msg::JointTrajectoryPoint & select_hold_anchor(
+    bool from_last_command) const;
+
+  bool has_finite_positions(const trajectory_msgs::msg::JointTrajectoryPoint & point) const;
+
   /** @brief set the current position with zero velocity and acceleration as new command
+   *
+   * @param from_last_command hold at the last command instead of the measured state; false on
+   * fault paths
    */
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position();
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> set_hold_position(
+    bool from_last_command = false);
 
   /** @brief decelerate at constant rate to a holding position with
    * zero velocity and acceleration as new command
+   *
+   * @param from_last_command hold at the last command instead of the measured state; false on
+   * fault paths
    */
-  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position();
+  std::shared_ptr<trajectory_msgs::msg::JointTrajectory> decelerate_to_hold_position(
+    bool from_last_command = false);
+
+  /** @brief queue a hold or a deceleration ramp from the measured state, if one can be built */
+  void queue_fault_stop();
 
   /** @brief set last trajectory point to be repeated at success
    *

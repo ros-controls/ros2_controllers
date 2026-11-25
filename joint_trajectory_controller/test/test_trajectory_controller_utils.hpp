@@ -175,6 +175,8 @@ public:
 
   bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
 
+  auto & get_new_trajectory_msg_mutex() { return rt_new_trajectory_msg_.get_mutex(); }
+
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {
     return *(active_tolerances_.readFromRT());
