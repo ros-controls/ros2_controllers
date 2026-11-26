@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+#include <cmath>
 #include <limits>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -393,6 +398,64 @@ TEST_F(SteeringControllersLibraryTest, test_velocity_feedback_ref_timeout)
 
   // Steer angles should not reset
   EXPECT_NEAR(controller_->command_interfaces_[2].get_optional().value(), 0.575875, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
+}
+
+TEST_F(SteeringControllersLibraryTest, deactivate_halts_traction_and_keeps_steering_commands)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  // Hold the lock longer than the default number of set_value() tries takes,
+  // halting must not give up and leave the wheel moving.
+  std::unique_lock<std::shared_mutex> lock(command_itfs_[CMD_TRACTION_RIGHT_WHEEL]->get_mutex());
+  std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  lock.unlock();
+  deactivate_thread.join();
+
+  // traction joints are halted
+  EXPECT_EQ(command_itfs_[CMD_TRACTION_RIGHT_WHEEL]->get_optional().value(), 0.0);
+  EXPECT_EQ(command_itfs_[CMD_TRACTION_LEFT_WHEEL]->get_optional().value(), 0.0);
+  // steering joints keep their last command, 0.0 would turn the wheels and NaN is unsafe
+  EXPECT_EQ(
+    command_itfs_[CMD_STEER_RIGHT_WHEEL]->get_optional().value(),
+    joint_command_values_[CMD_STEER_RIGHT_WHEEL]);
+  EXPECT_EQ(
+    command_itfs_[CMD_STEER_LEFT_WHEEL]->get_optional().value(),
+    joint_command_values_[CMD_STEER_LEFT_WHEEL]);
+}
+
+TEST_F(
+  SteeringControllersLibraryTest, normal_update_set_value_failure_still_updates_other_interfaces)
+{
+  SetUpController();
+  controller_->params_.position_feedback = false;
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  controller_->set_chained_mode(true);
+  controller_->export_reference_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[0]->set_value(1.5));
+  ASSERT_TRUE(controller_->ordered_exported_reference_interfaces_[1]->set_value(0.3));
+
+  {
+    std::unique_lock<std::shared_mutex> failing_interface_lock(command_itfs_[2]->get_mutex());
+    ASSERT_EQ(
+      controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  // Traction commands are still updated.
+  EXPECT_NEAR(controller_->command_interfaces_[0].get_optional().value(), 3.333333, 1e-6);
+  EXPECT_NEAR(controller_->command_interfaces_[1].get_optional().value(), 3.333333, 1e-6);
+
+  // One steering interface remains unchanged due to injected write failure,
+  // while the other steering interface is still updated in the same cycle.
+  EXPECT_DOUBLE_EQ(controller_->command_interfaces_[2].get_optional().value(), 2.2);
   EXPECT_NEAR(controller_->command_interfaces_[3].get_optional().value(), 0.575875, 1e-6);
 }
 

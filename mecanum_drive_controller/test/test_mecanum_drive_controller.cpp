@@ -16,11 +16,15 @@
 
 #include "test_mecanum_drive_controller.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <queue>
+#include <shared_mutex>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -303,6 +307,25 @@ TEST_F(MecanumDriveControllerTest, when_active_controller_is_deactivated_expect_
   ASSERT_TRUE(deactivate_succeeds(controller_));
 }
 
+TEST_F(MecanumDriveControllerTest, when_deactivated_expect_halt_retries_until_interface_is_free)
+{
+  SetUpController();
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  // Hold the lock longer than the default number of set_value() tries takes,
+  // halting must not give up and leave the wheel moving.
+  auto & cmd_itf = command_itfs_[controller_->get_front_right_wheel_index()];
+  std::unique_lock<std::shared_mutex> lock(cmd_itf->get_mutex());
+  std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  lock.unlock();
+  deactivate_thread.join();
+
+  EXPECT_EQ(cmd_itf->get_optional().value(), 0.0);
+}
+
 TEST_F(
   MecanumDriveControllerTest,
   when_controller_is_reactivated_expect_cmd_itfs_not_set_and_update_success)
@@ -389,6 +412,40 @@ TEST_F(
   ASSERT_EQ(msg.reference_velocity.linear.x, 1.5);
   ASSERT_EQ(msg.back_left_wheel_velocity, 0.1);
   ASSERT_EQ(msg.back_right_wheel_velocity, 0.1);
+}
+
+TEST_F(
+  MecanumDriveControllerTest,
+  when_one_command_interface_write_fails_expect_other_interfaces_still_updated)
+{
+  SetUpController();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  publish_commands(controller_->get_node()->now());
+  controller_->wait_for_commands(executor);
+
+  // Lock one interface so set_value() on that interface returns false.
+  {
+    std::unique_lock<std::shared_mutex> failing_interface_lock(
+      command_itfs_[controller_->get_front_right_wheel_index()]->get_mutex());
+
+    ASSERT_EQ(
+      controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+  }
+
+  EXPECT_EQ(command_itfs_[controller_->get_front_left_wheel_index()]->get_optional().value(), 3.0);
+  EXPECT_EQ(command_itfs_[controller_->get_rear_right_wheel_index()]->get_optional().value(), 3.0);
+  EXPECT_EQ(command_itfs_[controller_->get_rear_left_wheel_index()]->get_optional().value(), 3.0);
+
+  // This interface stayed unchanged because its write attempt failed.
+  EXPECT_EQ(
+    command_itfs_[controller_->get_front_right_wheel_index()]->get_optional().value(), 101.101);
 }
 
 // when too old msg is sent expect reference msg reset

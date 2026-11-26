@@ -34,6 +34,8 @@ Other relevant features are:
 
 The command for the wheels are calculated using ``odometry`` library where based on concrete kinematics traction and steering commands are calculated.
 
+On deactivation, the traction commands are set to ``0.0`` and the steering commands keep their last value.
+
 Currently implemented kinematics
 --------------------------------------------------------------
 

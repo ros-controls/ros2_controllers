@@ -134,9 +134,9 @@ TEST_F(TricycleSteeringControllerTest, reactivate_success)
   ASSERT_TRUE(configure_succeeds(controller_));
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_TRUE(deactivate_succeeds(controller_));
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
   ASSERT_TRUE(activate_succeeds(controller_));
-  ASSERT_TRUE(std::isnan(controller_->command_interfaces_[0].get_optional().value()));
+  ASSERT_EQ(controller_->command_interfaces_[0].get_optional().value(), 0.0);
 
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),

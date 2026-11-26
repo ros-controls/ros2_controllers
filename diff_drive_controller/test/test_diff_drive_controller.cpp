@@ -14,8 +14,12 @@
 
 #include <gmock/gmock.h>
 
+#include <chrono>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -867,6 +871,30 @@ TEST_F(TestDiffDriveController, activate_silently_ignores_with_unnecessary_resou
   ASSERT_TRUE(configure_succeeds(controller_));
   assignResourcesVelFeedback();
   ASSERT_TRUE(activate_succeeds(controller_));
+}
+
+TEST_F(TestDiffDriveController, deactivate_halt_retries_until_command_interface_is_free)
+{
+  ASSERT_EQ(
+    InitController(
+      left_wheel_names, right_wheel_names,
+      {rclcpp::Parameter("wheel_separation", 0.4), rclcpp::Parameter("wheel_radius", 0.1)}),
+    controller_interface::return_type::OK);
+
+  ASSERT_TRUE(configure_succeeds(controller_));
+  assignResourcesPosFeedback();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_TRUE(left_wheel_vel_cmd_->set_value(1.0));
+
+  // Hold the lock longer than the default number of set_value() tries takes,
+  // halting must not give up and leave the wheel moving.
+  std::unique_lock<std::shared_mutex> lock(left_wheel_vel_cmd_->get_mutex());
+  std::thread deactivate_thread([this]() { EXPECT_TRUE(deactivate_succeeds(controller_)); });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  lock.unlock();
+  deactivate_thread.join();
+
+  EXPECT_EQ(0.0, left_wheel_vel_cmd_->get_optional().value());
 }
 
 TEST_F(TestDiffDriveController, cleanup)
