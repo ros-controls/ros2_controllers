@@ -14,6 +14,7 @@
 
 #include "joint_trajectory_controller/joint_trajectory_controller.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -277,6 +278,25 @@ controller_interface::return_type JointTrajectoryController::update(
   rt_active_goal_local_.reset();
   rt_active_goal_.try_get([&](const auto & goal) { rt_active_goal_local_ = goal; });
 
+  if (rt_cancel_requested_)
+  {
+    // Under the box lock, so a trajectory queued after the cancel overwrites the stop.
+    rt_new_trajectory_msg_.try_set(
+      [this](auto & msg)
+      {
+        if (!rt_cancel_requested_.exchange(false))
+        {
+          return;
+        }
+        const auto stop = should_decelerate_on_cancel_ ? decelerate_to_hold_position(true)
+                                                       : set_hold_position(true);
+        if (stop)
+        {
+          msg = stop;
+        }
+      });
+  }
+
   // Check if a new trajectory message has been received from Non-RT threads
   const auto current_trajectory_msg = current_trajectory_->get_trajectory_msg();
   std::shared_ptr<trajectory_msgs::msg::JointTrajectory> new_external_msg = current_trajectory_msg;
@@ -334,6 +354,11 @@ controller_interface::return_type JointTrajectoryController::update(
       }
       traj_time_ = time;
     }
+    else if (current_trajectory_->get_trajectory_msg() == stop_trajectory_)
+    {
+      // The stop ramp runs on the wall clock, unscaled.
+      traj_time_ += period;
+    }
     else
     {
       traj_time_ += period * scaling_factor_.load();
@@ -378,18 +403,7 @@ controller_interface::return_type JointTrajectoryController::update(
       {
         RCLCPP_WARN(logger, "Aborted due to command timeout");
 
-        if (should_decelerate_on_cancel_)
-        {
-          // calculate stopping position based on max deceleration
-          rt_is_holding_ = true;
-          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
-                                         { m = msg; });
-        }
-        else
-        {
-          // hold current position
-          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
-        }
+        queue_fault_stop();
       }
 
       // Check state/goal tolerance
@@ -506,16 +520,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
           RCLCPP_WARN(logger, "Aborted due to state tolerance violation");
 
-          if (should_decelerate_on_cancel_)
-          {
-            rt_is_holding_ = true;
-            rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
-                                           { m = msg; });
-          }
-          else
-          {
-            rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
-          }
+          queue_fault_stop();
         }
         // check goal tolerance
         else if (!before_last_point)
@@ -548,16 +553,7 @@ controller_interface::return_type JointTrajectoryController::update(
 
             RCLCPP_WARN(logger, "%s", error_string.c_str());
 
-            if (should_decelerate_on_cancel_)
-            {
-              rt_is_holding_ = true;
-              rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
-                                             { m = msg; });
-            }
-            else
-            {
-              rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
-            }
+            queue_fault_stop();
           }
         }
       }
@@ -566,35 +562,13 @@ controller_interface::return_type JointTrajectoryController::update(
         // we need to ensure that there is no pending goal -> we get a race condition otherwise
         RCLCPP_ERROR(logger, "Holding position due to state tolerance violation");
 
-        if (should_decelerate_on_cancel_)
-        {
-          // calculate stopping position based on max deceleration
-          rt_is_holding_ = true;
-          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
-                                         { m = msg; });
-        }
-        else
-        {
-          // hold current position
-          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
-        }
+        queue_fault_stop();
       }
       else if (!before_last_point && !within_goal_time && !rt_has_pending_goal_)
       {
         RCLCPP_ERROR(logger, "Exceeded goal_time_tolerance: holding position...");
 
-        if (should_decelerate_on_cancel_)
-        {
-          // calculate stopping position based on max deceleration
-          rt_is_holding_ = true;
-          rt_new_trajectory_msg_.try_set([msg = decelerate_to_hold_position()](auto & m)
-                                         { m = msg; });
-        }
-        else
-        {
-          // hold current position
-          rt_new_trajectory_msg_.try_set([msg = set_hold_position()](auto & m) { m = msg; });
-        }
+        queue_fault_stop();
       }
       // else, run another cycle while waiting for outside_goal_tolerance
       // to be satisfied (will stay in this state until new message arrives)
@@ -1261,7 +1235,12 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
   last_commanded_time_ = rclcpp::Time();
 
   // The controller should start by holding position at the beginning of active state
-  add_new_trajectory_msg(set_hold_position());
+  const auto hold_msg = set_hold_position();
+  if (!hold_msg)
+  {
+    return CallbackReturn::ERROR;
+  }
+  add_new_trajectory_msg(hold_msg);
   rt_is_holding_ = true;
 
   // parse timeout parameter
@@ -1292,6 +1271,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
+  rt_cancel_requested_ = false;
   RealtimeGoalHandlePtr active_goal;
   rt_active_goal_.get([&](const auto goal) { active_goal = goal; });
   if (active_goal)
@@ -1604,16 +1584,8 @@ rclcpp_action::CancelResponse JointTrajectoryController::goal_cancelled_callback
     active_goal->setCanceled(action_res);
     rt_active_goal_.set([](auto & goal) { goal = RealtimeGoalHandlePtr(); });
 
-    if (should_decelerate_on_cancel_)
-    {
-      // calculate stopping position based on max deceleration
-      add_new_trajectory_msg(decelerate_to_hold_position());
-    }
-    else
-    {
-      // hold current position
-      add_new_trajectory_msg(set_hold_position());
-    }
+    // update() builds the stop from the command it emitted last.
+    rt_cancel_requested_ = true;
   }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -2164,6 +2136,8 @@ bool JointTrajectoryController::validate_trajectory_msg(
 void JointTrajectoryController::add_new_trajectory_msg(
   const std::shared_ptr<trajectory_msgs::msg::JointTrajectory> & traj_msg)
 {
+  // A trajectory queued after a cancel supersedes its stop.
+  rt_cancel_requested_ = false;
   rt_new_trajectory_msg_.set([traj_msg](auto & msg) { msg = traj_msg; });
 }
 
@@ -2183,11 +2157,50 @@ void JointTrajectoryController::preempt_active_goal()
   }
 }
 
-std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-JointTrajectoryController::set_hold_position()
+const trajectory_msgs::msg::JointTrajectoryPoint & JointTrajectoryController::select_hold_anchor(
+  const bool from_last_command) const
 {
-  // Command to stay at current position
-  hold_position_msg_ptr_->points[0].positions = state_current_.positions;
+  // Feedback lags the command by the following error; anchoring to it steps the command back.
+  // Without a position command interface the commanded positions are only a PID reference.
+  if (
+    from_last_command && has_position_command_interface_ &&
+    has_finite_positions(last_commanded_state_))
+  {
+    return last_commanded_state_;
+  }
+  return state_current_;
+}
+
+bool JointTrajectoryController::has_finite_positions(
+  const trajectory_msgs::msg::JointTrajectoryPoint & point) const
+{
+  return point.positions.size() >= dof_ && all_finite(point.positions);
+}
+
+std::shared_ptr<trajectory_msgs::msg::JointTrajectory> JointTrajectoryController::set_hold_position(
+  const bool from_last_command)
+{
+  const auto & anchor = select_hold_anchor(from_last_command);
+  if (has_finite_positions(anchor))
+  {
+    hold_position_msg_ptr_->points[0].positions = anchor.positions;
+  }
+  else if (has_finite_positions(last_commanded_state_))
+  {
+    RCLCPP_WARN_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Hold anchor position is non-finite, holding the last command instead. Does the hardware "
+      "write every state interface?");
+    hold_position_msg_ptr_->points[0].positions = last_commanded_state_.positions;
+  }
+  else
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Cannot hold position: neither the measured nor the commanded position is finite. Does the "
+      "hardware write every state interface?");
+    return nullptr;
+  }
 
   // set flag, otherwise tolerances will be checked with holding position too
   rt_is_holding_ = true;
@@ -2196,29 +2209,51 @@ JointTrajectoryController::set_hold_position()
 }
 
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>
-JointTrajectoryController::decelerate_to_hold_position()
+JointTrajectoryController::decelerate_to_hold_position(const bool from_last_command)
 {
+  // p0 and v0 must come from the same point, or the join has a slope discontinuity.
+  const auto & anchor = select_hold_anchor(from_last_command);
+  const auto & p0 = anchor.positions;
+  const auto & v0_anchor = anchor.velocities;
+  // A commanded velocity is in trajectory time; the ramp starts from the scaled, physical one.
+  const double v0_scale = (&anchor == &last_commanded_state_) ? scaling_factor_.load() : 1.0;
+  const auto v0 = [&](const size_t j) { return v0_scale * v0_anchor[j]; };
+
+  // std::max(0.0, NaN) == 0.0, so NaN must be caught here or it silently fills the ramp.
+  const bool positions_ok = p0.size() >= dof_ && all_finite(p0);
+  const bool velocities_ok = v0_anchor.size() >= dof_ && all_finite(v0_anchor);
+  if (!positions_ok || !velocities_ok)
+  {
+    RCLCPP_ERROR_THROTTLE(
+      get_node()->get_logger(), *get_node()->get_clock(), 1000,
+      "Cannot compute a deceleration ramp: %s non-finite. Holding position instead.",
+      (!positions_ok && !velocities_ok) ? "position and velocity are"
+      : !positions_ok                   ? "position is"
+                                        : "velocity is");
+    return set_hold_position(from_last_command);
+  }
+
   double max_t_stop = 0.0;
-  const auto & p0 = state_current_.positions;
-  const auto & v0 = state_current_.velocities;
   for (size_t i = 0; i < num_cmd_joints_; ++i)
   {
-    stop_direction_[i] = (v0[i] >= 0.0) ? 1.0 : -1.0;
+    // These arrays are state-joint indexed (dof_), not command-joint indexed.
+    const size_t j = map_cmd_to_joints_[i];
+    stop_direction_[j] = (v0(j) >= 0.0) ? 1.0 : -1.0;
 
     // Time to stop (constant decel)
-    stop_time_[i] = std::abs(v0[i]) / max_decel_[i];
-    max_t_stop = std::max(max_t_stop, stop_time_[i]);
+    stop_time_[j] = std::abs(v0(j)) / max_decel_[j];
+    max_t_stop = std::max(max_t_stop, stop_time_[j]);
 
     // Analytical stop distance and hold position
-    const double stop_distance = (v0[i] * v0[i]) / (2.0 * max_decel_[i]);
-    hold_position_[i] = p0[i] + stop_direction_[i] * stop_distance;
+    const double stop_distance = (v0(j) * v0(j)) / (2.0 * max_decel_[j]);
+    hold_position_[j] = p0[j] + stop_direction_[j] * stop_distance;
 
     RCLCPP_DEBUG(
       get_node()->get_logger(),
       "Joint [%s] decel [%.3f], stop dist [%.4f], initial vel [%.4f], initial pos [%.4f], hold pos "
       "[%.4f], time to stop [%.4f]",
-      params_.joints[i].c_str(), max_decel_[i], stop_distance, v0[i], p0[i], hold_position_[i],
-      stop_time_[i]);
+      params_.joints[j].c_str(), max_decel_[j], stop_distance, v0(j), p0[j], hold_position_[j],
+      stop_time_[j]);
   }
 
   // Verify the stop_trajectory_ has enough space to stop the robot from it's current state
@@ -2247,26 +2282,27 @@ JointTrajectoryController::decelerate_to_hold_position()
     auto & pt = stop_trajectory_->points[k];
     for (size_t i = 0; i < num_cmd_joints_; ++i)
     {
+      const size_t j = map_cmd_to_joints_[i];
       // if the joint still needs more time to stop and had an initial non-zero velocity
-      if (t < stop_time_[i] && std::abs(v0[i]) > std::numeric_limits<float>::epsilon())
+      if (t < stop_time_[j] && std::abs(v0(j)) > std::numeric_limits<float>::epsilon())
       {
         // Constant deceleration
         // v(t) = v0 - stop_direction_ * a * t
-        double v = v0[i] - stop_direction_[i] * max_decel_[i] * t;
+        double v = v0(j) - stop_direction_[j] * max_decel_[j] * t;
         // Guard against numerical crossing
-        if ((v * stop_direction_[i]) < 0.0) v = 0.0;
+        if ((v * stop_direction_[j]) < 0.0) v = 0.0;
         // p(t) = p0 + v0 * t - 0.5 * stop_direction_ * a * t^2
-        const double p = p0[i] + v0[i] * t - 0.5 * stop_direction_[i] * max_decel_[i] * t * t;
-        pt.positions[i] = p;
-        pt.velocities[i] = v;
-        pt.accelerations[i] = -stop_direction_[i] * max_decel_[i];
+        const double p = p0[j] + v0(j) * t - 0.5 * stop_direction_[j] * max_decel_[j] * t * t;
+        pt.positions[j] = p;
+        pt.velocities[j] = v;
+        pt.accelerations[j] = -stop_direction_[j] * max_decel_[j];
       }
       else
       {
         // Joint is stopped, hold position and zero velocity/accel
-        pt.positions[i] = hold_position_[i];
-        pt.velocities[i] = 0.0;
-        pt.accelerations[i] = 0.0;
+        pt.positions[j] = hold_position_[j];
+        pt.velocities[j] = 0.0;
+        pt.accelerations[j] = 0.0;
       }
     }
 
@@ -2281,6 +2317,16 @@ JointTrajectoryController::decelerate_to_hold_position()
   rt_is_holding_ = true;
 
   return stop_trajectory_;
+}
+
+void JointTrajectoryController::queue_fault_stop()
+{
+  const auto stop =
+    should_decelerate_on_cancel_ ? decelerate_to_hold_position() : set_hold_position();
+  if (stop)
+  {
+    rt_new_trajectory_msg_.try_set([stop](auto & m) { m = stop; });
+  }
 }
 
 std::shared_ptr<trajectory_msgs::msg::JointTrajectory>

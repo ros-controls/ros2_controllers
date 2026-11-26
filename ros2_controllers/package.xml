@@ -21,6 +21,7 @@
   <exec_depend>admittance_controller</exec_depend>
   <exec_depend>battery_state_broadcaster</exec_depend>
   <exec_depend>bicycle_steering_controller</exec_depend>
+  <exec_depend>cartesian_trajectory_controller</exec_depend>
   <exec_depend>chained_filter_controller</exec_depend>
   <exec_depend>diff_drive_controller</exec_depend>
   <exec_depend>force_torque_sensor_broadcaster</exec_depend>

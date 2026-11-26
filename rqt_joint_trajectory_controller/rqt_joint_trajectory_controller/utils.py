@@ -19,7 +19,7 @@
 # No backwards compatibility guarantees are provided at this moment.
 
 
-import threading
+import time
 
 import rclpy
 from controller_manager_msgs.srv import ListControllers
@@ -236,7 +236,7 @@ class ControllerLister:
         >>> running_bar_ctrl = filter_by_type(running_ctrl, 'bar_base/bar')
     """
 
-    def __init__(self, node, namespace="/controller_manager"):
+    def __init__(self, node, namespace="/controller_manager", timeout_sec=2.0):
         """
         Store the injected node and namespace, and create the list_controllers client.
 
@@ -249,27 +249,48 @@ class ControllerLister:
 
         @param namespace Namespace of controller manager to monitor.
         @type namespace str
+
+        @param timeout_sec Time (in seconds) after which a request without response is
+        dropped and the controller list becomes unknown.
+        @type timeout_sec float
         """
         self._node = node
+        self._timeout_sec = timeout_sec
         self._srv_name = namespace + "/" + _LIST_CONTROLLERS_STR
         self._srv_client = self._create_client()
-
-    """
-    @return: Controller list.
-    @rtype: [controller_manager_msgs/ControllerState]
-    """
+        self._future = None  # pending list_controllers request
+        self._sent_time = 0.0  # time the pending request was sent
+        self._controllers = None  # last received controller list, None if unknown
 
     def __call__(self):
+        """
+        Return the last received controller list and request an update, without blocking.
+
+        Called periodically from the GUI thread. The request is answered via the executor
+        spinning node (e.g., rqt's), so its response is returned by a later call.
+
+        @return: Controller list, [] if the controller manager is not available, or None if
+        unknown, i.e., no response was received yet or the last request timed out.
+        @rtype: [controller_manager_msgs/ControllerState] or None
+        """
         try:
-            future = self._srv_client.call_async(ListControllers.Request())
-            # Wait without spinning the shared rqt node.
-            done_event = threading.Event()
-            future.add_done_callback(lambda _future: done_event.set())
-            while self._node.context.ok() and not done_event.is_set():
-                done_event.wait(timeout=0.1)
-            future.cancel()
-            result = future.result()
-            return result.controller if result else []
+            if self._future is not None:
+                if self._future.done():
+                    result = self._future.result()
+                    self._controllers = result.controller if result else None
+                    self._future = None
+                elif time.monotonic() - self._sent_time > self._timeout_sec:
+                    self._future.cancel()
+                    self._future = None
+                    self._controllers = None
+            if self._future is None:
+                if self._srv_client.service_is_ready():
+                    self._future = self._srv_client.call_async(ListControllers.Request())
+                    self._sent_time = time.monotonic()
+                else:
+                    # A request to a missing controller manager would never be answered
+                    self._controllers = []
+            return self._controllers
         except rclpy.executors.ExternalShutdownException:
             return []
         except Exception as e:
