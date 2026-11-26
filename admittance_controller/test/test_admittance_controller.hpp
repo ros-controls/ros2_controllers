@@ -234,12 +234,12 @@ protected:
   {
 // cppcheck-suppress syntaxError
 #if RCLCPP_VERSION_GTE(18, 0, 0)
-    static tf2_ros::TransformBroadcaster br(
+    tf2_ros::TransformBroadcaster br(
       rclcpp::node_interfaces::NodeInterfaces(
         test_broadcaster_node_->get_node_parameters_interface(),
         test_broadcaster_node_->get_node_topics_interface()));
 #else
-    static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
+    tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
 #endif
 
     geometry_msgs::msg::TransformStamped transform_stamped;
