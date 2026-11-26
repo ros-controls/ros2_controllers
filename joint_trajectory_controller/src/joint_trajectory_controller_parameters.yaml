@@ -278,5 +278,7 @@ joint_trajectory_controller:
         default_value: 0.0,
         description: "Per-joint override for the velocity tolerance for at the end of the trajectory that indicates that controlled system is stopped.
 
-          If set to 0.0 (the default), the global stopped_velocity_tolerance is used instead.",
+          If set to 0.0 (the default), the global stopped_velocity_tolerance is used instead.
+
+          Setting this to -1 will disable the tolerance check entirely for this joint.",
       }

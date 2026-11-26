@@ -86,6 +86,7 @@ struct SegmentTolerances
  *    goal:       0.03               # Defaults to zero (ie. the tolerance is not enforced)
  *  bar_joint:
  *    goal: 0.01
+ *    stopped_velocity_tolerance: 0.05 # Override the default tolerance.
  * \endcode
  *
  * \param jtc_logger The logger to use for output

@@ -468,7 +468,7 @@ TEST(TestTolerances, test_per_joint_stopped_velocity_threshold)
 
   rclcpp::Logger logger = rclcpp::get_logger("test_tolerances");
   auto params = joint_trajectory_controller::Params();
-  params.joints = {"a", "b"};
+  params.joints = {"a", "b", "c"};
   params.constraints.stopped_velocity_tolerance = 1.0;
   params.constraints.joints_map = {
     {"a",
@@ -485,10 +485,18 @@ TEST(TestTolerances, test_per_joint_stopped_velocity_threshold)
        .max_deceleration_on_cancel = 3.0,
        .stopped_velocity_tolerance = 2.0,
      }},
+    {"c",
+     Params::Constraints::MapJoints{
+       .trajectory = 1.0,
+       .goal = 0.1,
+       .max_deceleration_on_cancel = 3.0,
+       .stopped_velocity_tolerance = -1,
+     }},
   };
 
   auto constraints = joint_trajectory_controller::get_segment_tolerances(logger, params);
-  ASSERT_EQ(constraints.goal_state_tolerance.size(), 2);
+  ASSERT_EQ(constraints.goal_state_tolerance.size(), 3);
   EXPECT_EQ(constraints.goal_state_tolerance[0].velocity, 1.0);
   EXPECT_EQ(constraints.goal_state_tolerance[1].velocity, 2.0);
+  EXPECT_EQ(constraints.goal_state_tolerance[2].velocity, -1.0); // Negative overrides are allowed: -1 disables the tolerance check
 }
