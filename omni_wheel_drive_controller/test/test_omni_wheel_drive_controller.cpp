@@ -14,6 +14,10 @@
 
 #include "test_omni_wheel_drive_controller.hpp"
 #include <gtest/gtest.h>
+#include <chrono>
+#include <string>
+#include <thread>
+#include <vector>
 #include "controller_interface/controller_interface_base.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 
@@ -85,6 +89,38 @@ TEST_F(OmniWheelDriveControllerTest, when_controller_configured_expect_properly_
       ref_itf_prefix_name + "/" + hardware_interface::HW_IF_VELOCITY);
     EXPECT_EQ(reference_interfaces[i]->get_interface_name(), hardware_interface::HW_IF_VELOCITY);
   }
+}
+
+TEST_F(OmniWheelDriveControllerTest, odom_and_tf_publishers_use_reliable_volatile_qos)
+{
+  ASSERT_EQ(InitController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  auto node = controller_->get_node();
+  const auto check_qos = [&](const std::string & topic)
+  {
+    std::vector<rclcpp::TopicEndpointInfo> infos;
+    for (int i = 0; i < 50 && infos.empty(); ++i)
+    {
+      for (const auto & info : node->get_publishers_info_by_topic(topic))
+      {
+        if (info.node_name() == controller_name_)
+        {
+          infos.push_back(info);
+        }
+      }
+      if (infos.empty())
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      }
+    }
+    ASSERT_THAT(infos, ::testing::SizeIs(1)) << "no publisher found on " << topic;
+    EXPECT_EQ(infos[0].qos_profile().reliability(), rclcpp::ReliabilityPolicy::Reliable) << topic;
+    EXPECT_EQ(infos[0].qos_profile().durability(), rclcpp::DurabilityPolicy::Volatile) << topic;
+  };
+
+  check_qos("/" + controller_name_ + "/odom");
+  check_qos("/tf");
 }
 
 TEST_F(OmniWheelDriveControllerTest, configure_succeeds_tf_prefix_no_namespace)

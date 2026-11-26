@@ -46,6 +46,7 @@ omni_wheel_drive_controller
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
 * Set odometry service added to be used at runtime. (`#2148 <https://github.com/ros-controls/ros2_controllers/pull/2148>`_).
+* ``~/odom`` and ``/tf`` are now published with an explicit reliable + volatile QoS (history depth 10 for ``~/odom`` and 100 for ``/tf``) instead of ``SystemDefaultsQoS()``. With Fast DDS, both topics were effectively ``TRANSIENT_LOCAL`` with depth 1 before. Subscribers that request ``TRANSIENT_LOCAL`` on these topics are now QoS-incompatible and stop receiving data, and late joiners no longer get the last sample. (`#2771 <https://github.com/ros-controls/ros2_controllers/pull/2771>`_).
 
 joint_trajectory_controller
 ***************************
