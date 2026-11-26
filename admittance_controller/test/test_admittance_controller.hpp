@@ -227,20 +227,7 @@ protected:
 
   void broadcast_tfs()
   {
-<<<<<<< HEAD
-    static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
-=======
-// cppcheck-suppress syntaxError
-#if RCLCPP_VERSION_GTE(18, 0, 0)
-    tf2_ros::TransformBroadcaster br(
-      rclcpp::node_interfaces::NodeInterfaces(
-        test_broadcaster_node_->get_node_parameters_interface(),
-        test_broadcaster_node_->get_node_topics_interface()));
-#else
     tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
-#endif
-
->>>>>>> 2c87dbb ([admittance_controller] With rmw_zenoh tests abort at exit (#2772))
     geometry_msgs::msg::TransformStamped transform_stamped;
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();
