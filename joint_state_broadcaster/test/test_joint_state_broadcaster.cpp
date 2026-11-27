@@ -1274,3 +1274,41 @@ TEST_F(JointStateBroadcasterTest, ExtraJointWithCustomOnlyInterface)
     ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
   }
 }
+
+TEST_F(JointStateBroadcasterTest, ExtraJointsExcludedByUrdfPublishMeasuredValues)
+{
+  const std::vector<std::string> extra_joints = {"base_joint", "non_urdf_joint"};
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, {}, {},
+    {rclcpp::Parameter("use_urdf_to_filter", true),
+     rclcpp::Parameter("extra_joints", extra_joints)});
+  std::vector<std::shared_ptr<hardware_interface::StateInterface>> extra_state_interfaces;
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  for (size_t i = 0; i < extra_joints.size(); ++i)
+  {
+    for (size_t k = 0; k < interface_names_.size(); ++k)
+    {
+      auto interface =
+        std::make_shared<hardware_interface::StateInterface>(extra_joints[i], interface_names_[k]);
+      ASSERT_TRUE(interface->set_value(static_cast<double>(10 * (i + 1) + k)));
+      state_ifs.emplace_back(interface);
+      extra_state_interfaces.push_back(std::move(interface));
+    }
+  }
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  const auto & msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_THAT(msg.name, ElementsAreArray({joint_names_[0], extra_joints[0], extra_joints[1]}));
+  EXPECT_DOUBLE_EQ(msg.position.at(1), 10.0);
+  EXPECT_DOUBLE_EQ(msg.velocity.at(1), 11.0);
+  EXPECT_DOUBLE_EQ(msg.effort.at(1), 12.0);
+  EXPECT_DOUBLE_EQ(msg.position.at(2), 20.0);
+  EXPECT_DOUBLE_EQ(msg.velocity.at(2), 21.0);
+  EXPECT_DOUBLE_EQ(msg.effort.at(2), 22.0);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+}

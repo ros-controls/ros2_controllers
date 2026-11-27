@@ -61,6 +61,7 @@ class FriendJointStateBroadcaster : public joint_state_broadcaster::JointStateBr
   FRIEND_TEST(JointStateBroadcasterTest, NoThrowWithBooleanAndDoubleInterfaceTest);
   FRIEND_TEST(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest);
   FRIEND_TEST(JointStateBroadcasterTest, ExtraJointWithCustomOnlyInterface);
+  FRIEND_TEST(JointStateBroadcasterTest, ExtraJointsExcludedByUrdfPublishMeasuredValues);
 };
 
 // Minimal 3-joint URDF covering the joint_names_ used in tests
