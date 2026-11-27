@@ -25,6 +25,7 @@
 
 #include "admittance_controller/admittance_rule_impl.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace
@@ -331,7 +332,13 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   // setup subscribers and publishers
   auto joint_command_callback =
     [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg)
-  { input_joint_command_.set(*msg); };
+  {
+    if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+      return;
+    }
+    input_joint_command_.set(*msg);
+  };
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
@@ -341,6 +348,10 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
       [&](const geometry_msgs::msg::WrenchStamped & msg)
       {
+        if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+        {
+          return;
+        }
         if (
           msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
           !msg.header.frame_id.empty())
@@ -405,6 +416,9 @@ controller_interface::CallbackReturn AdmittanceController::on_activate(
   }
   reset_controller_reference_msg(joint_command_msg_);
   reset_wrench_msg(wrench_command_msg_, get_node());
+
+  input_joint_command_.set(joint_command_msg_);
+  input_wrench_command_.set(wrench_command_msg_);
 
   // Use current joint_state as a default reference
   last_reference_ = joint_state_;
