@@ -123,7 +123,8 @@ TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Success)
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
 {
   // First Test without frame_id ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
+  ASSERT_EQ(
+    init_broadcaster("test_range_sensor_broadcaster"), controller_interface::return_type::OK);
 
   std::vector<rclcpp::Parameter> parameters;
   // explicitly give an empty sensor name to generate an error
@@ -135,7 +136,8 @@ TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
 {
   // Second Test without sensor_name ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
+  ASSERT_EQ(
+    init_broadcaster("test_range_sensor_broadcaster"), controller_interface::return_type::OK);
 
   std::vector<rclcpp::Parameter> parameters;
   // explicitly give an empty frame_id to generate an error
@@ -215,7 +217,7 @@ TEST_F(RangeSensorBroadcasterTest, Publish_RangeBroadcaster_Success)
   EXPECT_THAT(range_msg.min_range, ::testing::FloatEq(static_cast<float>(min_range_)));
   EXPECT_THAT(range_msg.max_range, ::testing::FloatEq(static_cast<float>(max_range_)));
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
-  EXPECT_THAT(range_msg.variance, ::testing::FloatEq(variance_));
+  EXPECT_FLOAT_EQ(range_msg.variance, static_cast<float>(variance_));
 #endif
 }
 
