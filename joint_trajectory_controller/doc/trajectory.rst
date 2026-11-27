@@ -141,11 +141,8 @@ Joint trajectory messages allow to specify the time at which a new trajectory sh
   executed, while the header timestamp still selects *when* the handoff occurs: it is honoured as a
   wall-clock instant whatever the scaling factor. The handoff anchor is sampled from the active
   trajectory at that instant, so the transition is velocity-continuous and free of position jumps.
-
-.. warning::
-  One difference from ROS 1 remains: because ROS 2 uses a single monolithic trajectory, joints
-  omitted from a partial goal are re-sampled onto the new trajectory's time grid. With sparse new
-  waypoints, this re-interpolation may deviate slightly from the omitted joint's original path.
+  Unlike ROS 1, joints omitted from a partial goal hold their position by default, see
+  :ref:`joint_trajectory_controller_omitted_joints`.
 
 The arrival of a new trajectory command does not necessarily mean that the controller will completely discard the currently running trajectory and substitute it with the new one.
 Rather, the controller will take the useful parts of both and combine them appropriately, yielding a smarter trajectory replacement strategy.
@@ -204,11 +201,38 @@ Internally, the controller assembles the merged trajectory from four regions, sh
 The *bridge* point is sampled from the old trajectory at the handoff instant, providing velocity continuity into the new trajectory.
 *New points* are the waypoints from the incoming message.
 
-If the new trajectory is a partial goal (not all joints are commanded), the controller must reconcile the shared timeline.
-The *suffix* carries old waypoints that fall after the new trajectory ends and only exists for partial-joint goals:
-commanded joints are held at their final new value with zero velocity, while omitted joints keep their original waypoints so they can finish uninterrupted.
+*Suffix* waypoints are old waypoints that fall after the new trajectory ends. They only exist for partial goals
+with ``omitted_joints_follow_active_trajectory`` enabled (see below): commanded joints hold their final new value
+with zero velocity, while the omitted joints finish the active trajectory.
 
 .. image:: trajectory_blending.png
   :alt: Structure of the merged trajectory message showing prefix, bridge, new points, and suffix regions.
+
+.. _joint_trajectory_controller_omitted_joints:
+
+Joints omitted from a partial goal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With ``allow_partial_joints_goal`` enabled, a new trajectory may command only some of the joints.
+The figure below shows such a partial goal arriving at *now* and starting at *traj start*. The top panel is a joint
+it commands, the two lower panels are a joint it omits, with ``omitted_joints_follow_active_trajectory`` set to
+``false`` and to ``true``. Up to *traj start*, every joint follows the active trajectory. The parameter only
+changes what the omitted joints do afterwards:
+
+* ``false`` (default): The omitted joints hold the position the active trajectory reaches at *traj start*, the
+  same way omitted joints hold without trajectory replacement. There is no suffix.
+* ``true``: The omitted joints keep following the active trajectory on its original timing, through the new points
+  and, if the new trajectory ends first, through the *suffix*. This matches ROS 1.
+
+Choose the value that matches how the new trajectory was planned: ``true`` if it accounts for the omitted joints
+continuing their motion, ``false`` if it assumes they stay where they are at *traj start*.
+
+.. image:: trajectory_blending_omitted_joints.png
+  :alt: A commanded joint and an omitted joint during a future-stamped partial goal. The omitted joint either holds at the handoff or follows the active trajectory through the new points and the suffix.
+
+.. note::
+  Because ROS 2 uses a single trajectory for all joints, omitted joints that follow the active trajectory are
+  re-sampled onto the new trajectory's time grid. With sparse new waypoints, this re-interpolation may deviate
+  slightly from their original path.
 
 .. [#f1] Adolfo Rodriguez: `Understanding trajectory replacement <http://wiki.ros.org/joint_trajectory_controller/UnderstandingTrajectoryReplacement>`_
