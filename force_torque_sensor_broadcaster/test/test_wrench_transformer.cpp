@@ -57,10 +57,7 @@ protected:
   }
 
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
-  // WrenchTransformer nodes own a tf2_ros::TransformListener (which spins a dedicated thread);
-  // keep them alive until after rclcpp::shutdown(). On humble/jazzy, the listener's destructor
-  // cancels its executor and joins the thread; if that cancel() lands before the thread entered
-  // spin(), it is lost and spin() runs as long as the context is valid, hanging the test
+  // keep them alive until after rclcpp::shutdown(). On humble/jazzy
   // (ros2/rclcpp#3172, fixed in rolling only by ros2/rclcpp#3174).
   std::vector<rclcpp::Node::SharedPtr> keep_alive_until_shutdown_;
 
