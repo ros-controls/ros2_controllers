@@ -140,8 +140,10 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
   }
 
   // Initialize odometry publisher and message
+  // Use explicit reliable + volatile QoS. SystemDefaultsQoS leaves durability to the RMW,
+  // and Fast DDS turns it into transient local.
   odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
-    DEFAULT_ODOMETRY_TOPIC, rclcpp::SystemDefaultsQoS());
+    DEFAULT_ODOMETRY_TOPIC, rclcpp::QoS(10).reliable().durability_volatile());
   realtime_odometry_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
       odometry_publisher_);
@@ -195,7 +197,9 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_configure(
 
   // Initialize transform publisher and message
   odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
-    DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
+    DEFAULT_TRANSFORM_TOPIC,
+    // same profile as tf2_ros::DynamicBroadcasterQoS
+    rclcpp::QoS(100).reliable().durability_volatile());
   realtime_odometry_transform_publisher_ =
     std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
       odometry_transform_publisher_);
