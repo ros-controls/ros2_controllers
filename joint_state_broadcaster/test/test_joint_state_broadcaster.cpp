@@ -794,7 +794,8 @@ TEST_F(JointStateBroadcasterTest, TestCustomInterfaceMappingUpdate)
   SetUpStateBroadcaster(
     JOINT_NAMES, IF_NAMES,
     {rclcpp::Parameter(
-      std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_)});
+       std::string("map_interface_to_joint_state.") + HW_IF_POSITION, custom_interface_name_),
+     rclcpp::Parameter("extra_joints", JOINT_NAMES)});
 
   sensor_msgs::msg::JointState joint_state_msg;
   activate_and_get_joint_state_message("joint_states", joint_state_msg);
@@ -1082,7 +1083,9 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
 
   // Add extra joints as parameters
   const std::vector<std::string> extra_joint_names = {"extra1", "extra2", "extra3"};
-  SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("extra_joints", extra_joint_names)});
+  auto requested_extra_joints = extra_joint_names;
+  requested_extra_joints.insert(requested_extra_joints.begin(), joint_names_[0]);
+  SetUpStateBroadcaster({}, {}, {rclcpp::Parameter("extra_joints", requested_extra_joints)});
 
   // configure ok
   ASSERT_TRUE(configure_succeeds(state_broadcaster_));
@@ -1093,6 +1096,10 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   all_joint_names.insert(all_joint_names.end(), extra_joint_names.begin(), extra_joint_names.end());
   const size_t NUM_JOINTS = all_joint_names.size();
 
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+
   // joint state initialized
   const auto & joint_state_msg = state_broadcaster_->joint_state_msg_;
   ASSERT_EQ(joint_state_msg.header.frame_id, frame_id_);
@@ -1100,6 +1107,11 @@ TEST_F(JointStateBroadcasterTest, ExtraJointStatePublishTest)
   ASSERT_THAT(joint_state_msg.position, SizeIs(NUM_JOINTS));
   ASSERT_THAT(joint_state_msg.velocity, SizeIs(NUM_JOINTS));
   ASSERT_THAT(joint_state_msg.effort, SizeIs(NUM_JOINTS));
+  auto expected_values = joint_values_;
+  expected_values.resize(NUM_JOINTS, 0.0);
+  EXPECT_THAT(joint_state_msg.position, ElementsAreArray(expected_values));
+  EXPECT_THAT(joint_state_msg.velocity, ElementsAreArray(expected_values));
+  EXPECT_THAT(joint_state_msg.effort, ElementsAreArray(expected_values));
 }
 
 TEST_F(JointStateBroadcasterTest, NoThrowWithBooleanInterfaceTest)
@@ -1237,4 +1249,63 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
   EXPECT_EQ(names[2], JOINT_NAMES[2]);
   EXPECT_DOUBLE_EQ(pos[2], INIT_POS[2])
     << "joint3's position slot has wrong value — map_index was shifted by the nullopt";
+}
+
+TEST_F(JointStateBroadcasterTest, ExtraJointWithCustomOnlyInterface)
+{
+  SetUpStateBroadcaster(
+    {joint_names_[0]}, {custom_interface_name_},
+    {rclcpp::Parameter("extra_joints", std::vector<std::string>{joint_names_[0], "extra1"})});
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  for (int activation = 0; activation < 2; ++activation)
+  {
+    ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+    ASSERT_EQ(
+      state_broadcaster_->update(rclcpp::Time(23), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    const auto & msg = state_broadcaster_->joint_state_msg_;
+    EXPECT_THAT(msg.name, ElementsAreArray({joint_names_[0], std::string("extra1")}));
+    EXPECT_THAT(msg.position, ElementsAreArray({0.0, 0.0}));
+    EXPECT_THAT(msg.velocity, ElementsAreArray({0.0, 0.0}));
+    EXPECT_THAT(msg.effort, ElementsAreArray({0.0, 0.0}));
+    ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, ExtraJointsExcludedByUrdfPublishMeasuredValues)
+{
+  const std::vector<std::string> extra_joints = {"base_joint", "non_urdf_joint"};
+  init_broadcaster_and_set_parameters(
+    kThreeJointURDF, {}, {},
+    {rclcpp::Parameter("use_urdf_to_filter", true),
+     rclcpp::Parameter("extra_joints", extra_joints)});
+  std::vector<std::shared_ptr<hardware_interface::StateInterface>> extra_state_interfaces;
+  std::vector<LoanedStateInterface> state_ifs;
+  state_ifs.emplace_back(joint_1_pos_state_);
+  for (size_t i = 0; i < extra_joints.size(); ++i)
+  {
+    for (size_t k = 0; k < interface_names_.size(); ++k)
+    {
+      auto interface =
+        std::make_shared<hardware_interface::StateInterface>(extra_joints[i], interface_names_[k]);
+      ASSERT_TRUE(interface->set_value(static_cast<double>(10 * (i + 1) + k)));
+      state_ifs.emplace_back(interface);
+      extra_state_interfaces.push_back(std::move(interface));
+    }
+  }
+  state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+  ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+  ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+  ASSERT_EQ(
+    state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  const auto & msg = state_broadcaster_->joint_state_msg_;
+  ASSERT_THAT(msg.name, ElementsAreArray({joint_names_[0], extra_joints[0], extra_joints[1]}));
+  EXPECT_DOUBLE_EQ(msg.position.at(1), 10.0);
+  EXPECT_DOUBLE_EQ(msg.velocity.at(1), 11.0);
+  EXPECT_DOUBLE_EQ(msg.effort.at(1), 12.0);
+  EXPECT_DOUBLE_EQ(msg.position.at(2), 20.0);
+  EXPECT_DOUBLE_EQ(msg.velocity.at(2), 21.0);
+  EXPECT_DOUBLE_EQ(msg.effort.at(2), 22.0);
+  ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
 }
