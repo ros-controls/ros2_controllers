@@ -153,3 +153,36 @@ TEST_F(OdometryTest, TestReset)
   EXPECT_DOUBLE_EQ(odometry_.getY(), 0.0);
   EXPECT_DOUBLE_EQ(odometry_.getHeading(), 0.0);
 }
+
+TEST_F(OdometryTest, TestVelocityRollingWindowSmoothsVelocity)
+{
+  const double dt = 1.0;
+  const double steady_step = 1.0;
+  const double spike_step = 5.0;
+
+  diff_drive_controller::Odometry unsmoothed;
+  unsmoothed.setWheelParams(1.0, 1.0, 1.0);
+  unsmoothed.setVelocityRollingWindowSize(1);
+
+  diff_drive_controller::Odometry smoothed;
+  smoothed.setWheelParams(1.0, 1.0, 1.0);
+  smoothed.setVelocityRollingWindowSize(4);
+
+  double pos = 0.0;
+  for (int i = 0; i < 4; ++i)
+  {
+    pos += steady_step;
+    unsmoothed.update_from_pos(pos, pos, dt);
+    smoothed.update_from_pos(pos, pos, dt);
+  }
+
+  EXPECT_NEAR(unsmoothed.getLinear(), smoothed.getLinear(), 1e-9);
+
+  pos += spike_step;
+  unsmoothed.update_from_pos(pos, pos, dt);
+  smoothed.update_from_pos(pos, pos, dt);
+
+  EXPECT_NEAR(unsmoothed.getLinear(), spike_step, 1e-9);
+  EXPECT_LT(smoothed.getLinear(), unsmoothed.getLinear());
+  EXPECT_GT(smoothed.getLinear(), steady_step);
+}
