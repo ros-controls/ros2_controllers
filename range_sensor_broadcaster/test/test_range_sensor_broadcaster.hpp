@@ -54,9 +54,7 @@ protected:
 
   std::unique_ptr<range_sensor_broadcaster::RangeSensorBroadcaster> range_broadcaster_;
 
-  controller_interface::return_type init_broadcaster(
-    std::string broadcaster_name,
-    std::vector<rclcpp::Parameter> parameter_overrides = {});
+  controller_interface::return_type init_broadcaster(std::string broadcaster_name);
   void configure_broadcaster(std::vector<rclcpp::Parameter> & parameters);
   void subscribe_and_get_message(sensor_msgs::msg::Range & range_msg);
 };
