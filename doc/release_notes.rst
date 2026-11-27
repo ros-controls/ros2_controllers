@@ -13,6 +13,10 @@ state_interfaces_broadcaster
 *********************************
 * 🚀 The state_interfaces_broadcaster was added 🎉 (`#2006 <https://github.com/ros-controls/ros2_controllers/pull/2006>`_).
 
+cartesian_trajectory_controller
+*******************************
+* 🚀 The cartesian_trajectory_controller was added 🎉. It extends the joint_trajectory_controller to follow end-effector pose trajectories, using Cartesian interpolation and differential inverse kinematics (`#2664 <https://github.com/ros-controls/ros2_controllers/pull/2664>`_).
+
 force_torque_sensor_broadcaster
 *******************************
 * Added support for transforming Wrench messages to a given list of target frames. This is useful when applications need force/torque data in their preferred coordinate frames. (`#2021 <https://github.com/ros-controls/ros2_controllers/pull/2021/files>`__).
@@ -35,8 +39,8 @@ joint_state_broadcaster
 * Make all parameters read-only (the never got re-evaluated after initialization anyways). (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Added parameter ``publish_dynamic_joint_states`` to enable/disable publishing of dynamic joint states. (`#2064 <https://github.com/ros-controls/ros2_controllers/pull/2064>`_)
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_)
-* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
-* Joints explicitly listed in ``extra_joints`` are published even if they only have custom interfaces or are excluded by the URDF filter. Standard interfaces supplied by the hardware retain their measured values, and missing standard values are filled with zero.
+* ``dynamic_joint_states`` is not published anymore, and the parameter ``publish_dynamic_joint_states`` was removed.(`#2187 <https://github.com/ros-controls/ros2_controllers/pull/2187>`_)
+* Joints explicitly listed in ``extra_joints`` are published even if they only have custom interfaces or are excluded by the URDF filter. Standard state interfaces available to the broadcaster retain their measured values, and missing standard values are filled with zero.
 
 omni_wheel_drive_controller
 *****************************
@@ -46,6 +50,7 @@ omni_wheel_drive_controller
 
 joint_trajectory_controller
 ***************************
+* The default of ``constraints.goal_time`` changed from ``0.0`` to ``10.0`` seconds, and its semantics changed: negative values wait indefinitely, ``0.0`` disables the grace period. The ``action_execution_timeout`` parameter was removed. See the migration guide. (`#2592 <https://github.com/ros-controls/ros2_controllers/pull/2592>`_)
 * When using ``set_last_command_interface_value_as_state_on_activation``, it is no longer required to have state and command for the same interface type (e.g. velocity). With this param set, the JTC state and command will be initialized using a command interface value, if available, and will otherwise fallback to the value read from the state interface. This allows you to have position command and position+velocity state, for example, which previously would have been disallowed (with this param set).  (`#2294
   <https://github.com/ros-controls/ros2_controllers/pull/2294>`_)
 * Fill in 0 velocities and accelerations into point before trajectories if the state interfaces
@@ -56,6 +61,7 @@ joint_trajectory_controller
 * Fixed the final segment of every trajectory being cut short: the next-cycle lookahead sample advanced the shared segment search cursor to the end, so the following cycle jumped the reference to the last waypoint and succeeded the goal early. Independent of ``allow_trajectory_replacement``. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
 * Ported the ROS 1 trajectory-replacement behavior via the ``allow_trajectory_replacement``  parameter. A trajectory arriving while another is executing is spliced into the active one instead of discarding it: the old path is followed up to the new start time, a velocity-continuous bridge is sampled at the handoff, and joints omitted from a partial goal continue and finish their original motion. (`#2419 <https://github.com/ros-controls/ros2_controllers/pull/2419>`_)
 * Added optional upsampling of positions-only action chunks, behind the new ``positions_upsampling.enable`` parameter (off by default). When enabled, positions-only messages on ``~/joint_trajectory`` are upsampled into a smooth global C2 cubic spline by solving the knot velocities, with timing synthesized from ``positions_upsampling.policy_frequency`` when absent. (`#2491 <https://github.com/ros-controls/ros2_controllers/pull/2491>`_)
+* On cancel, controllers with a position command interface now start the hold and the deceleration ramp from the last commanded state instead of the measured one, so the command no longer steps back by the following error, and the deceleration ramp now uses the right joint's state when ``command_joints`` is a subset of ``joints``. A non-finite measured position or velocity no longer produces a NaN first segment or hold command. The deceleration ramp ignores speed scaling. (`#2587 <https://github.com/ros-controls/ros2_controllers/pull/2587>`_)
 
 pid_controller
 **************
@@ -69,4 +75,8 @@ steering_controllers_library
 
 magnetometer_broadcaster
 ************************
-New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``.
+New package to broadcast ``sensor_msgs/msg/MagneticField`` from state interfaces defined by the ``semantic_components::MagneticFieldSensor``. (`#2214 <https://github.com/ros-controls/ros2_controllers/pull/2214>`_)
+
+position_controllers, velocity_controllers, effort_controllers
+**************************************************************
+* ``JointGroupPositionController``, ``JointGroupVelocityController``, and ``JointGroupEffortController`` are removed. (`#1913 <https://github.com/ros-controls/ros2_controllers/pull/1913>`_, `#2016 <https://github.com/ros-controls/ros2_controllers/pull/2016>`_)

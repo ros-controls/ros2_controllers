@@ -1268,9 +1268,6 @@ TEST_F(JointStateBroadcasterTest, ExtraJointWithCustomOnlyInterface)
     EXPECT_THAT(msg.position, ElementsAreArray({0.0, 0.0}));
     EXPECT_THAT(msg.velocity, ElementsAreArray({0.0, 0.0}));
     EXPECT_THAT(msg.effort, ElementsAreArray({0.0, 0.0}));
-    EXPECT_DOUBLE_EQ(
-      state_broadcaster_->name_if_value_mapping_.at(joint_names_[0]).at(custom_interface_name_),
-      custom_joint_value_);
     ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
   }
 }

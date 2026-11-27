@@ -1,0 +1,67 @@
+cartesian_trajectory_controller:
+  kinematics:
+    plugin_name: {
+      type: string,
+      default_value: "kinematics_interface_kdl/KinematicsInterfaceKDL",
+      description: "Kinematics interface plugin used for forward kinematics and differential IK.",
+      validation: {
+        not_empty<>: [],
+      }
+    }
+    plugin_package: {
+      type: string,
+      default_value: "kinematics_interface",
+      description: "Package that exports the kinematics interface base class.",
+      validation: {
+        not_empty<>: [],
+      }
+    }
+    base: {
+      type: string,
+      description: "Root link of the kinematic chain and the frame incoming poses are expressed in.",
+      validation: {
+        not_empty<>: [],
+      }
+    }
+    tip: {
+      type: string,
+      description: "End-effector link the incoming Cartesian pose refers to.",
+      validation: {
+        not_empty<>: [],
+      }
+    }
+    alpha: {
+      type: double,
+      default_value: 0.01,
+      description: "Damping used by the kinematics plugin for the damped least-squares inverse.",
+      validation: {
+        gt_eq<>: [0.0],
+      }
+    }
+  max_cartesian_speed: {
+    type: double,
+    default_value: 0.1,
+    description: "Translational speed in m/s used to synthesize segment timing when the incoming
+      chunk carries no time_from_start.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
+  max_angular_speed: {
+    type: double,
+    default_value: 0.5,
+    description: "Angular speed in rad/s used to synthesize segment timing when the incoming chunk
+      carries no time_from_start.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
+  resample_dt: {
+    type: double,
+    default_value: 0.01,
+    description: "Time step in seconds at which the Cartesian path is resampled before differential
+      IK. Smaller values track the Cartesian path more closely at the cost of more IK steps.",
+    validation: {
+      gt<>: [0.0],
+    }
+  }
