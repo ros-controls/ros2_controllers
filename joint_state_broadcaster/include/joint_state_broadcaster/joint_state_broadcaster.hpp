@@ -88,7 +88,8 @@ protected:
   void init_joint_state_msg();
 
   [[deprecated(
-    "use_all_available_interfaces is deprecated. Use use_urdf_joint_interfaces method instead")]]
+    "use_all_available_interfaces is deprecated. Check for empty joints or interfaces to "
+    "detect the default selection, or use use_urdf_joint_interfaces for URDF filtering.")]]
   bool use_all_available_interfaces() const;
 
   bool use_urdf_joint_interfaces() const;
