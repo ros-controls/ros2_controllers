@@ -16,6 +16,7 @@
 #define CARTESIAN_TRAJECTORY_CONTROLLER__CARTESIAN_TRAJECTORY_CONTROLLER_HPP_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "Eigen/Geometry"
@@ -86,6 +87,11 @@ private:
   std::shared_ptr<pluginlib::ClassLoader<kinematics_interface::KinematicsInterface>>
     kinematics_loader_;
   std::unique_ptr<kinematics_interface::KinematicsInterface> kinematics_;
+
+  /// Movable joints from kinematics.base to kinematics.tip, the order the kinematics plugin uses.
+  std::vector<std::string> chain_joints_;
+  /// Index in params_.joints of each joint in chain_joints_.
+  std::vector<size_t> chain_to_joints_;
 
   rclcpp::Subscription<trajectory_msgs::msg::MultiDOFJointTrajectory>::SharedPtr ref_subscriber_;
 };
