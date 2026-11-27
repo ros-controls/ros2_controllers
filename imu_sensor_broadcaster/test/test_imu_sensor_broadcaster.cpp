@@ -360,6 +360,54 @@ TEST_F(IMUSensorBroadcasterTest, SensorStatePublishTest_with_rotation_offset)
     imu_msg.linear_acceleration.z, exported_state_interfaces[9]->get_optional().value(), 1e-5);
 }
 
+TEST_F(IMUSensorBroadcasterTest, ExportedStateInterfacesTrackUpdates)
+{
+  SetUpIMUBroadcaster();
+  imu_broadcaster_->get_node()->set_parameter({"sensor_name", sensor_name_});
+  imu_broadcaster_->get_node()->set_parameter({"frame_id", frame_id_});
+
+  ASSERT_TRUE(configure_succeeds(imu_broadcaster_));
+  const auto exported_state_interfaces = imu_broadcaster_->export_state_interfaces();
+  ASSERT_THAT(exported_state_interfaces, SizeIs(10u));
+  ASSERT_TRUE(activate_succeeds(imu_broadcaster_));
+
+  const std::array<hardware_interface::StateInterface::SharedPtr, 10> input_interfaces = {{
+    imu_orientation_x_, imu_orientation_y_, imu_orientation_z_, imu_orientation_w_,
+    imu_angular_velocity_x_, imu_angular_velocity_y_, imu_angular_velocity_z_,
+    imu_linear_acceleration_x_, imu_linear_acceleration_y_, imu_linear_acceleration_z_}};
+
+  const auto expect_values = [&](const sensor_msgs::msg::Imu & msg,
+                                 const std::array<double, 10> & expected)
+  {
+    const std::array<double, 10> published = {{
+      msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w,
+      msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z,
+      msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z}};
+    for (size_t i = 0; i < expected.size(); ++i)
+    {
+      EXPECT_DOUBLE_EQ(published[i], expected[i]);
+      const auto exported = exported_state_interfaces[i]->get_optional();
+      ASSERT_TRUE(exported.has_value());
+      EXPECT_DOUBLE_EQ(exported.value(), expected[i]);
+    }
+  };
+
+  sensor_msgs::msg::Imu first_msg;
+  subscribe_and_get_message(first_msg);
+  expect_values(first_msg, sensor_values_);
+
+  const std::array<double, 10> second_values = {
+    {-0.11, -0.22, -0.33, 0.88, 11.1, 12.2, 13.3, 14.4, 15.5, 16.6}};
+  for (size_t i = 0; i < second_values.size(); ++i)
+  {
+    std::ignore = input_interfaces[i]->set_value(second_values[i]);
+  }
+
+  sensor_msgs::msg::Imu second_msg;
+  subscribe_and_get_message(second_msg);
+  expect_values(second_msg, second_values);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleMock(&argc, argv);

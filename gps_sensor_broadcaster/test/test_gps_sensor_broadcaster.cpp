@@ -120,13 +120,14 @@ public:
     gps_broadcaster_->assign_interfaces({}, std::move(state_ifs));
   }
 
-  sensor_msgs::msg::NavSatFix subscribe_and_get_message()
+  sensor_msgs::msg::NavSatFix subscribe_and_get_message(
+    const rclcpp::Time & update_time = rclcpp::Time{})
   {
     rclcpp::Node test_subscription_node("test_subscription_node");
     auto subscription = test_subscription_node.create_subscription<sensor_msgs::msg::NavSatFix>(
       "/test_gps_sensor_broadcaster/gps/fix", 10,
       [](const sensor_msgs::msg::NavSatFix::SharedPtr) {});
-    gps_broadcaster_->update(rclcpp::Time{}, rclcpp::Duration::from_seconds(0));
+    gps_broadcaster_->update(update_time, rclcpp::Duration::from_seconds(0));
     wait_for(subscription);
 
     rclcpp::MessageInfo msg_info;
@@ -282,4 +283,29 @@ TEST_F(
     {sensor_values_[5], 0.0, 0.0, 0.0, sensor_values_[6], 0.0, 0.0, 0.0, sensor_values_[7]}};
   ASSERT_THAT(gps_msg.position_covariance, ::testing::ElementsAreArray(expected_covariance));
   ASSERT_THAT(gps_msg.position_covariance_type, COVARIANCE_TYPE_DIAGONAL_KNOWN);
+}
+
+
+TEST_F(GPSSensorBroadcasterTest, update_time_should_stamp_published_message)
+{
+  const auto node_options =
+    create_node_options_with_overriden_parameters({sensor_name_param_, frame_id_});
+  ASSERT_EQ(
+    gps_broadcaster_->init(
+      create_ctrl_params(node_options, ros2_control_test_assets::minimal_robot_urdf)),
+    controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(gps_broadcaster_));
+  setup_gps_broadcaster();
+  ASSERT_TRUE(activate_succeeds(gps_broadcaster_));
+
+  const rclcpp::Time update_time(123, 456, RCL_ROS_TIME);
+  const auto message = subscribe_and_get_message(update_time);
+  ASSERT_EQ(message.header.frame_id, frame_id_.get_value<std::string>());
+  ASSERT_EQ(message.status.status, sensor_values_[0]);
+  ASSERT_EQ(message.status.service, sensor_values_[1]);
+  ASSERT_DOUBLE_EQ(message.latitude, sensor_values_[2]);
+  ASSERT_DOUBLE_EQ(message.longitude, sensor_values_[3]);
+  ASSERT_DOUBLE_EQ(message.altitude, sensor_values_[4]);
+  EXPECT_EQ(message.header.stamp.sec, 123);
+  EXPECT_EQ(message.header.stamp.nanosec, 456u);
 }
