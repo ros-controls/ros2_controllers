@@ -8,7 +8,7 @@ joint_state_broadcaster
 *****************************
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_).
   Use a custom controller for publishing non-double interfaces.
-* Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``). (`#2107 <https://github.com/ros-controls/ros2_controllers/pull/2107>`_)
+* Parameter ``publish_dynamic_joint_states`` is removed. (`#2107 <https://github.com/ros-controls/ros2_controllers/pull/2107>`_, `#2187 <https://github.com/ros-controls/ros2_controllers/pull/2187>`_)
   For publishing non-standard interfaces, consider using alternatives:
 
   * :ref:`state_interfaces_broadcaster <state_interfaces_broadcaster_userdoc>` for broadcasting arbitrary state interfaces
@@ -27,6 +27,9 @@ joint_trajectory_controller
   Configurations that relied on the old default or on ``goal_time: 0.0`` for an infinite timeout must set ``constraints.goal_time`` to a negative value (e.g. ``-1.0``) explicitly.
   Note that ``cmd_timeout`` only activates when ``cmd_timeout > constraints.goal_time``; with the new default timeout feature setups relying on ``cmd_timeout`` (e.g. to hold position at the end of the trajectory) must set ``constraints.goal_time`` accordingly.
   The ``action_execution_timeout`` parameter is removed.
+* With a position command interface, cancelling a goal now holds, or decelerates to, the last commanded position instead of the last measured one.
+  Anchoring to the measured position stepped the command backward by the following error in a single control period, which reads downstream as a large, unintended deceleration.
+* The deceleration ramp on cancel now ignores speed scaling: it starts from the joints' actual velocity and decelerates at ``max_deceleration_on_cancel`` in wall-clock time.
 
 position_controllers
 *****************************

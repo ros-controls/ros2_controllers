@@ -97,6 +97,7 @@ class TestableJointTrajectoryController
 {
 public:
   using joint_trajectory_controller::JointTrajectoryController::JointTrajectoryController;
+  using joint_trajectory_controller::JointTrajectoryController::sort_to_local_joint_order;
   using joint_trajectory_controller::JointTrajectoryController::validate_trajectory_msg;
 
   controller_interface::CallbackReturn on_configure(
@@ -173,6 +174,8 @@ public:
   bool has_effort_command_interface() const { return has_effort_command_interface_; }
 
   bool use_closed_loop_pid_adapter() const { return use_closed_loop_pid_adapter_; }
+
+  auto & get_new_trajectory_msg_mutex() { return rt_new_trajectory_msg_.get_mutex(); }
 
   joint_trajectory_controller::SegmentTolerances get_active_tolerances()
   {

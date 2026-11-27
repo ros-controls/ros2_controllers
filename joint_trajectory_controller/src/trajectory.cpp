@@ -18,6 +18,7 @@
 
 #include "joint_trajectory_controller/trajectory.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -28,6 +29,20 @@
 
 namespace joint_trajectory_controller
 {
+namespace
+{
+void zero_non_finite(std::vector<double> & values)
+{
+  for (auto & value : values)
+  {
+    if (!std::isfinite(value))
+    {
+      value = 0.0;
+    }
+  }
+}
+}  // namespace
+
 Trajectory::Trajectory() : trajectory_start_time_(0), time_before_traj_msg_(0) {}
 
 Trajectory::Trajectory(std::shared_ptr<trajectory_msgs::msg::JointTrajectory> joint_trajectory)
@@ -68,6 +83,9 @@ void Trajectory::set_point_before_trajectory_msg(
     state_before_traj_msg_.accelerations.resize(
       trajectory_msg_->points[0].accelerations.size(), 0.0);
   }
+  // An unwritten state interface reads back NaN, not empty, so the resizes above miss it.
+  zero_non_finite(state_before_traj_msg_.velocities);
+  zero_non_finite(state_before_traj_msg_.accelerations);
 
   // Compute offsets due to wrapping joints
   wraparound_joint(
@@ -571,6 +589,12 @@ bool Trajectory::has_trajectory_msg() const { return trajectory_msg_.get() != nu
 bool Trajectory::has_nontrivial_msg() const
 {
   return has_trajectory_msg() && trajectory_msg_->points.size() > 1;
+}
+
+bool all_finite(const std::vector<double> & values)
+{
+  return std::all_of(
+    values.cbegin(), values.cend(), [](double value) { return std::isfinite(value); });
 }
 
 }  // namespace joint_trajectory_controller
