@@ -261,6 +261,88 @@ TEST_F(AdmittanceControllerTest, update_success)
     controller_interface::return_type::OK);
 }
 
+TEST_F(AdmittanceControllerTest, inactive_reference_is_not_replayed_after_activation)
+{
+  ASSERT_EQ(SetUpController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  for (size_t i = 0; i < 100 && command_publisher_node_->count_subscribers(
+                                  joint_command_publisher_->get_topic_name()) == 0;
+       ++i)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  ASSERT_GT(
+    command_publisher_node_->count_subscribers(joint_command_publisher_->get_topic_name()), 0u);
+
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  for (size_t i = 0; i < joint_state_values_.size(); ++i)
+  {
+    point.positions.push_back(joint_state_values_[i] + 0.05 * static_cast<double>(i + 1));
+  }
+  point.velocities.assign(joint_state_values_.size(), 0.0);
+  joint_command_publisher_->publish(point);
+  controller_->wait_for_commands(executor, std::chrono::milliseconds(100));
+
+  ASSERT_TRUE(activate_succeeds(controller_));
+  broadcast_tfs();
+  ASSERT_EQ(
+    controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+    controller_interface::return_type::OK);
+  for (size_t i = 0; i < command_itfs_.size(); ++i)
+  {
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), joint_state_values_[i], COMMON_THRESHOLD);
+  }
+}
+
+TEST_F(AdmittanceControllerTest, reactivation_clears_last_joint_and_wrench_references)
+{
+  ASSERT_EQ(SetUpController(), controller_interface::return_type::OK);
+  ASSERT_TRUE(configure_succeeds(controller_));
+  ASSERT_TRUE(activate_succeeds(controller_));
+
+  auto wrench_publisher = command_publisher_node_->create_publisher<ControllerCommandWrenchMsg>(
+    "/test_admittance_controller/wrench_reference", rclcpp::SystemDefaultsQoS());
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(controller_->get_node()->get_node_base_interface());
+  for (size_t i = 0; i < 100 && (joint_command_publisher_->get_subscription_count() == 0 ||
+                                 wrench_publisher->get_subscription_count() == 0);
+       ++i)
+  {
+    executor.spin_some();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  ASSERT_GT(joint_command_publisher_->get_subscription_count(), 0u);
+  ASSERT_GT(wrench_publisher->get_subscription_count(), 0u);
+
+  ControllerCommandJointMsg joint;
+  joint.positions.assign(joint_state_values_.size(), 1.0);
+  joint.velocities.assign(joint_state_values_.size(), 0.0);
+  ControllerCommandWrenchMsg wrench;
+  wrench.wrench.force.x = 7.0;
+  joint_command_publisher_->publish(joint);
+  wrench_publisher->publish(wrench);
+  controller_->wait_for_commands(executor, std::chrono::milliseconds(100));
+  broadcast_tfs();
+  const auto period = rclcpp::Duration::from_seconds(0.01);
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), period), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->joint_command_msg_.positions, joint.positions);
+  ASSERT_DOUBLE_EQ(controller_->wrench_command_msg_.wrench.force.x, 7.0);
+
+  ASSERT_TRUE(deactivate_succeeds(controller_));
+  command_itfs_.clear();
+  state_itfs_.clear();
+  assign_interfaces();
+  ASSERT_TRUE(activate_succeeds(controller_));
+  ASSERT_EQ(controller_->update(rclcpp::Time(0), period), controller_interface::return_type::OK);
+  EXPECT_TRUE(controller_->joint_command_msg_.positions.empty());
+  EXPECT_TRUE(controller_->joint_command_msg_.velocities.empty());
+  EXPECT_DOUBLE_EQ(controller_->wrench_command_msg_.wrench.force.x, 0.0);
+}
+
 TEST_F(AdmittanceControllerTest, deactivate_success)
 {
   SetUpController();

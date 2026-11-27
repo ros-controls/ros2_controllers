@@ -70,6 +70,7 @@ class TestableAdmittanceController : public admittance_controller::AdmittanceCon
   FRIEND_TEST(AdmittanceControllerTest, all_parameters_set_configure_success);
   FRIEND_TEST(AdmittanceControllerTest, check_interfaces);
   FRIEND_TEST(AdmittanceControllerTest, activate_success);
+  FRIEND_TEST(AdmittanceControllerTest, reactivation_clears_last_joint_and_wrench_references);
   FRIEND_TEST(AdmittanceControllerTest, receive_message_and_publish_updated_status);
   FRIEND_TEST(AdmittanceControllerTest, check_frame_ids_in_controller_state);
 
