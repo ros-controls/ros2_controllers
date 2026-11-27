@@ -86,6 +86,7 @@ struct SegmentTolerances
  *    goal:       0.03               # Defaults to zero (ie. the tolerance is not enforced)
  *  bar_joint:
  *    goal: 0.01
+ *    stopped_velocity_tolerance: 0.05 # Override the default tolerance.
  * \endcode
  *
  * \param jtc_logger The logger to use for output
@@ -112,7 +113,12 @@ SegmentTolerances get_segment_tolerances(rclcpp::Logger & jtc_logger, const Para
     auto const joint = params.joints[i];
     tolerances.state_tolerance[i].position = constraints.joints_map.at(joint).trajectory;
     tolerances.goal_state_tolerance[i].position = constraints.joints_map.at(joint).goal;
-    tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
+    tolerances.goal_state_tolerance[i].velocity =
+      constraints.joints_map.at(joint).stopped_velocity_tolerance;
+    if (tolerances.goal_state_tolerance[i].velocity == 0)
+    {
+      tolerances.goal_state_tolerance[i].velocity = constraints.stopped_velocity_tolerance;
+    }
 
     RCLCPP_DEBUG(
       logger, "%s %f", (joint + ".trajectory.position").c_str(),
