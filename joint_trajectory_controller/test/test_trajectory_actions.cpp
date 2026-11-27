@@ -839,6 +839,199 @@ TEST_P(TestTrajectoryActionsTestParameterized, test_action_execution_timeout)
   expectCommandPoint(INITIAL_POS_JOINTS);
 }
 
+// Advance the controller clock explicitly; only action transport uses the executor's wall time.
+class TestTrajectoryActionsExecutionTimeout : public TestTrajectoryActions,
+                                              public ::testing::WithParamInterface<double>
+{
+protected:
+  void SetUpTimeoutTest(
+    double timeout, double scaling_factor = 1.0, bool decelerate = false, double cmd_timeout = 0.0)
+  {
+    if (decelerate)
+    {
+      command_interface_types_ = {"position", "velocity"};
+    }
+    SetUpAndActivateTrajectoryController(
+      executor_, {rclcpp::Parameter("action_execution_timeout", timeout),
+                  rclcpp::Parameter("cmd_timeout", cmd_timeout),
+                  rclcpp::Parameter("speed_scaling.initial_scaling_factor", scaling_factor),
+                  rclcpp::Parameter("constraints.stopped_velocity_tolerance", 0.0),
+                  rclcpp::Parameter("constraints.decelerate_on_cancel", decelerate),
+                  rclcpp::Parameter("constraints.joint1.max_deceleration_on_cancel", 10.0),
+                  rclcpp::Parameter("constraints.joint2.max_deceleration_on_cancel", 10.0),
+                  rclcpp::Parameter("constraints.joint3.max_deceleration_on_cancel", 10.0)});
+    SetUpActionClient();
+    executor_.add_node(node_->get_node_base_interface());
+    // Use the controller's ROS clock type, including for a scheduled trajectory header.
+    start_time_ = traj_controller_->get_node()->now() + rclcpp::Duration::from_seconds(1.0);
+    previous_time_ = start_time_;
+    goal_options_.result_callback = [this](const GoalHandle::WrappedResult & result)
+    {
+      ++result_count_;
+      common_result_response(result);
+    };
+  }
+
+  void SendTimedGoal(double duration, double start_delay = 0.0)
+  {
+    FollowJointTrajectoryMsg::Goal goal;
+    goal.trajectory.joint_names = joint_names_;
+    JointTrajectoryPoint point;
+    point.positions = {4.0, 5.0, 6.0};
+    point.time_from_start = rclcpp::Duration::from_seconds(duration);
+    goal.trajectory.points.push_back(point);
+    if (start_delay != 0.0)
+    {
+      goal.trajectory.header.stamp = start_time_ + rclcpp::Duration::from_seconds(start_delay);
+    }
+    auto goal_future = action_client_->async_send_goal(goal, goal_options_);
+    ASSERT_EQ(
+      executor_.spin_until_future_complete(goal_future, std::chrono::seconds(1)),
+      rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_TRUE(goal_future.get());
+    result_future_ = action_client_->async_get_result(goal_future.get());
+  }
+
+  void UpdateAt(double elapsed)
+  {
+    const auto time = start_time_ + rclcpp::Duration::from_seconds(elapsed);
+    ASSERT_EQ(
+      traj_controller_->update(time, time - previous_time_), controller_interface::return_type::OK);
+    mirrorCommandToStateIfNotSeparate();
+    previous_time_ = time;
+    executor_.spin_some();
+  }
+
+  void ExpectResult(rclcpp_action::ResultCode code)
+  {
+    // The action monitor publishes results on a wall timer. This bound is for transport only:
+    // execution deadlines above are tested with deterministic controller-time advancement.
+    ASSERT_EQ(
+      executor_.spin_until_future_complete(result_future_, std::chrono::seconds(1)),
+      rclcpp::FutureReturnCode::SUCCESS);
+    EXPECT_EQ(result_future_.get().code, code);
+    EXPECT_EQ(result_count_, 1u);
+  }
+
+  rclcpp::Time start_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time previous_time_{0, 0, RCL_ROS_TIME};
+  std::shared_future<GoalHandle::WrappedResult> result_future_;
+  size_t result_count_ = 0;
+};
+
+TEST_P(TestTrajectoryActionsExecutionTimeout, expires_before_last_waypoint)
+{
+  SetUpTimeoutTest(0.5, GetParam());
+  SendTimedGoal(1.5);
+  UpdateAt(0.0);
+  UpdateAt(0.49);
+  UpdateAt(0.5);  // Preserve the existing strict greater-than boundary.
+  const auto stopped_positions = traj_controller_->get_command_next().positions;
+  UpdateAt(0.51);
+  ExpectResult(rclcpp_action::ResultCode::ABORTED);
+  ASSERT_EQ(result_future_.wait_for(std::chrono::seconds(0)), std::future_status::ready);
+  EXPECT_EQ(
+    result_future_.get().result->error_code,
+    FollowJointTrajectoryMsg::Result::GOAL_TOLERANCE_VIOLATED);
+  EXPECT_THAT(
+    result_future_.get().result->error_string, ::testing::HasSubstr("action_execution_timeout"));
+  EXPECT_THAT(result_future_.get().result->error_string, ::testing::HasSubstr("elapsed: 0.510000"));
+  // The expired update must not send the next trajectory command to the hardware.
+  for (size_t i = 0; i < stopped_positions.size(); ++i)
+  {
+    EXPECT_DOUBLE_EQ(pos_cmd_interfaces_[i]->get_optional().value(), stopped_positions[i]);
+  }
+  UpdateAt(0.52);
+  expectCommandPoint(stopped_positions);
+  UpdateAt(2.0);
+  expectCommandPoint(stopped_positions);
+  EXPECT_EQ(result_count_, 1u);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  SpeedScaling, TestTrajectoryActionsExecutionTimeout, ::testing::Values(0.0, 0.5, 1.0));
+
+TEST_F(TestTrajectoryActionsExecutionTimeout, succeeds_before_deadline)
+{
+  SetUpTimeoutTest(0.5);
+  SendTimedGoal(0.2);
+  UpdateAt(0.0);
+  UpdateAt(0.19);
+  UpdateAt(0.2);
+  ExpectResult(rclcpp_action::ResultCode::SUCCEEDED);
+  UpdateAt(1.0);
+  expectCommandPoint({4.0, 5.0, 6.0});
+  EXPECT_EQ(result_count_, 1u);
+}
+
+TEST_F(TestTrajectoryActionsExecutionTimeout, zero_disables_timeout)
+{
+  SetUpTimeoutTest(0.0);
+  SendTimedGoal(1.5);
+  UpdateAt(0.0);
+  UpdateAt(0.51);
+  UpdateAt(1.49);
+  UpdateAt(1.5);
+  ExpectResult(rclcpp_action::ResultCode::SUCCEEDED);
+  UpdateAt(2.0);
+  expectCommandPoint({4.0, 5.0, 6.0});
+  EXPECT_EQ(result_count_, 1u);
+}
+
+TEST_F(TestTrajectoryActionsExecutionTimeout, expires_before_success_on_last_waypoint)
+{
+  SetUpTimeoutTest(0.5, 1.0, false, 0.1);
+  SendTimedGoal(1.5);
+  UpdateAt(0.0);
+  // Both timeouts have expired, and all goal tolerances are disabled. The action must abort
+  // even though the command timeout also requests holding, and the final waypoint is reached.
+  UpdateAt(1.61);
+  ExpectResult(rclcpp_action::ResultCode::ABORTED);
+  UpdateAt(2.0);
+  EXPECT_EQ(result_count_, 1u);
+}
+
+TEST_F(TestTrajectoryActionsExecutionTimeout, scheduled_start_sets_execution_deadline)
+{
+  SetUpTimeoutTest(0.5);
+  SendTimedGoal(1.5, 1.0);
+  UpdateAt(0.0);
+  UpdateAt(0.75);  // Waiting for the scheduled ROS-time start does not consume the timeout.
+  UpdateAt(1.0);
+  UpdateAt(1.5);
+  UpdateAt(1.51);
+  ExpectResult(rclcpp_action::ResultCode::ABORTED);
+  ASSERT_EQ(result_future_.wait_for(std::chrono::seconds(0)), std::future_status::ready);
+  EXPECT_THAT(result_future_.get().result->error_string, ::testing::HasSubstr("elapsed: 0.510000"));
+  UpdateAt(3.0);
+  EXPECT_EQ(result_count_, 1u);
+}
+
+TEST_F(TestTrajectoryActionsExecutionTimeout, timeout_decelerates_to_hold)
+{
+  SetUpTimeoutTest(0.5, 1.0, true);
+  SendTimedGoal(1.5);
+  UpdateAt(0.0);
+  UpdateAt(0.5);
+  std::vector<double> stopping_positions;
+  for (size_t i = 0; i < joint_names_.size(); ++i)
+  {
+    const double velocity = vel_state_interfaces_[i]->get_optional().value();
+    ASSERT_GT(velocity, 0.0);
+    stopping_positions.push_back(
+      pos_state_interfaces_[i]->get_optional().value() + velocity * velocity / 20.0);
+  }
+  UpdateAt(0.51);
+  ExpectResult(rclcpp_action::ResultCode::ABORTED);
+  UpdateAt(0.52);
+  EXPECT_TRUE(traj_controller_->has_nontrivial_traj());
+  UpdateAt(1.0);
+  expectCommandPoint(stopping_positions, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, false);
+  UpdateAt(2.0);
+  expectCommandPoint(stopping_positions, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, false);
+  EXPECT_EQ(result_count_, 1u);
+}
+
 TEST_P(TestTrajectoryActionsTestParameterized, test_no_time_from_start_state_tolerance_fail)
 {
   // set joint tolerance parameters
