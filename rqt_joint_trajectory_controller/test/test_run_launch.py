@@ -75,3 +75,14 @@ class TestShutdown(unittest.TestCase):
         launch_testing.asserts.assertExitCodes(
             proc_info, allowable_exit_codes=allowable_exit_codes
         )
+
+    def test_no_duplicate_node_name_registration(self, proc_output):
+        """
+        Internal ROS nodes must not inherit the executable-wide '__node' remap.
+
+        If they did, they would register under the same name as the framework's
+        shared node, and rcl's rosout logging would report a duplicate publisher
+        registration for that name.
+        """
+        combined_output = "".join(output.text.decode() for output in proc_output)
+        self.assertNotIn("Publisher already registered for node name", combined_output)
