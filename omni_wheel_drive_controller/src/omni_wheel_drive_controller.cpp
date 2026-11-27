@@ -248,6 +248,7 @@ controller_interface::CallbackReturn OmniWheelDriveController::on_activate(
     return controller_interface::CallbackReturn::ERROR;
   }
 
+  halt();
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
