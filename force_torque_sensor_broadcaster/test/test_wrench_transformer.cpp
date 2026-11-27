@@ -50,9 +50,16 @@ protected:
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   }
 
-  void TearDown() override { rclcpp::shutdown(); }
+  void TearDown() override
+  {
+    rclcpp::shutdown();
+    keep_alive_until_shutdown_.clear();
+  }
 
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor_;
+  // keep them alive until after rclcpp::shutdown(). On humble/jazzy
+  // (ros2/rclcpp#3172, fixed in rolling only by ros2/rclcpp#3174).
+  std::vector<rclcpp::Node::SharedPtr> keep_alive_until_shutdown_;
 
   void setup_static_transform(
     const std::string & parent_frame, const std::string & child_frame, double x = 0.0,
@@ -118,6 +125,7 @@ protected:
     }
 
     auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
+    keep_alive_until_shutdown_.push_back(node);
     executor_->add_node(node);
     node->init();
     return node;
@@ -237,6 +245,7 @@ TEST_F(TestWrenchTransformer, NodeInitialization)
   options.parameter_overrides(parameters);
 
   auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
+  keep_alive_until_shutdown_.push_back(node);
   executor_->add_node(node);
   node->init();
 
@@ -528,6 +537,7 @@ TEST_F(TestWrenchTransformer, InitExceptionHandling)
   options.parameter_overrides(parameters);
 
   auto node = std::make_shared<force_torque_sensor_broadcaster::WrenchTransformer>(options);
+  keep_alive_until_shutdown_.push_back(node);
   executor_->add_node(node);
 
   // init() should catch the exception and return early without crashing
