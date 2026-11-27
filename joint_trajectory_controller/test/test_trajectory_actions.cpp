@@ -1775,3 +1775,23 @@ TEST_P(TestTrajectoryActionsTestScalingFactor, test_scaling_sampling_is_correct)
 
 INSTANTIATE_TEST_SUITE_P(
   ScaledJTCTests, TestTrajectoryActionsTestScalingFactor, ::testing::Values(0.25, 0.87, 1.0, 2.0));
+
+TEST_F(TestTrajectoryActions, chained_mode_rejects_goals)
+{
+  SetUpExecutor();
+  // The controller manager changes the chained mode only of inactive controllers.
+  ASSERT_TRUE(deactivate_succeeds(traj_controller_));
+  std::ignore = traj_controller_->export_reference_interfaces();
+  ASSERT_TRUE(traj_controller_->set_chained_mode(true));
+  ASSERT_TRUE(activate_succeeds(traj_controller_));
+
+  std::vector<JointTrajectoryPoint> points;
+  JointTrajectoryPoint point;
+  point.time_from_start = rclcpp::Duration::from_seconds(0.5);
+  point.positions = {1.0, 2.0, 3.0};
+  points.push_back(point);
+
+  auto gh_future = sendActionGoal(points, 1.0, goal_options_);
+  ASSERT_EQ(std::future_status::ready, gh_future.wait_for(std::chrono::seconds(2)));
+  EXPECT_FALSE(gh_future.get());
+}
