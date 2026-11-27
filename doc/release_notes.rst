@@ -27,6 +27,7 @@ diff_drive_controller
 * Now any tilde ("~") character in ``tf_frame_prefix`` is substituted with node namespace. (`#1997 <https://github.com/ros-controls/ros2_controllers/pull/1997>`_).
 * Set odometry service added to be used at runtime. (`#2096 <https://github.com/ros-controls/ros2_controllers/pull/2096>`_).
 * Removed deprecated parameter ``publish_rate`` and associated rate-limiting logic. (`#2259 <https://github.com/ros-controls/ros2_controllers/pull/2259>`_).
+* ``~/odom`` and ``/tf`` are now published with an explicit reliable + volatile QoS (history depth 10 for ``~/odom`` and 100 for ``/tf``) instead of ``SystemDefaultsQoS()``. With Fast DDS, both topics were effectively ``TRANSIENT_LOCAL`` with depth 1 before. Subscribers that request ``TRANSIENT_LOCAL`` on these topics are now QoS-incompatible and stop receiving data, and late joiners no longer get the last sample. (`#2748 <https://github.com/ros-controls/ros2_controllers/pull/2748>`_).
 
 mecanum_drive_controller
 *****************************
