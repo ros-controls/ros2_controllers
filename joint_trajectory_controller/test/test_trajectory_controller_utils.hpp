@@ -303,7 +303,7 @@ public:
     controller_interface::ControllerInterfaceParams params;
     params.controller_name = controller_name_;
     params.robot_description = urdf;
-    params.update_rate = 100;
+    params.update_rate = update_rate_;
     params.node_namespace = "";
     params.node_options = traj_controller_->define_custom_node_options();
     return traj_controller_->init(params);
@@ -865,6 +865,7 @@ public:
   }
 
   std::string controller_name_;
+  unsigned int update_rate_ = 100;  // Hz, set before SetUpTrajectoryController()
 
   std::vector<std::string> joint_names_;
   std::vector<std::string> command_joint_names_;
