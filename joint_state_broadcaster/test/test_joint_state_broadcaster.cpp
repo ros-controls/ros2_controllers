@@ -1238,3 +1238,68 @@ TEST_F(JointStateBroadcasterTest, CorrectMappingWhenInterfaceReadFailsTest)
   EXPECT_DOUBLE_EQ(pos[2], INIT_POS[2])
     << "joint3's position slot has wrong value — map_index was shifted by the nullopt";
 }
+
+TEST_F(JointStateBroadcasterTest, FilteringDisabledWithPartialSelection)
+{
+  const std::vector<std::pair<std::vector<std::string>, std::vector<std::string>>> selections = {
+    {{}, {}}, {{joint_names_[0]}, {}}, {{}, {HW_IF_POSITION}}};
+  auto non_urdf_joint =
+    std::make_shared<hardware_interface::StateInterface>("non_urdf_joint", HW_IF_POSITION);
+  ASSERT_TRUE(non_urdf_joint->set_value(4.2));
+  for (const auto & robot_description : {std::string(""), std::string(kThreeJointURDF)})
+  {
+    for (const auto & selection : selections)
+    {
+      SCOPED_TRACE(robot_description.empty() ? "without URDF" : "with URDF");
+      SCOPED_TRACE(selection.first.empty() ? "no joints" : "explicit joints");
+      SCOPED_TRACE(selection.second.empty() ? "no interfaces" : "explicit interfaces");
+      state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
+      init_broadcaster_and_set_parameters(
+        robot_description, selection.first, selection.second,
+        {rclcpp::Parameter("use_urdf_to_filter", false)});
+      std::vector<LoanedStateInterface> state_ifs;
+      state_ifs.emplace_back(joint_1_pos_state_);
+      state_ifs.emplace_back(non_urdf_joint);
+      state_broadcaster_->assign_interfaces({}, std::move(state_ifs));
+      ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+      const auto config = state_broadcaster_->state_interface_configuration();
+      EXPECT_EQ(config.type, controller_interface::interface_configuration_type::ALL);
+      EXPECT_THAT(config.names, IsEmpty());
+      ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+      ASSERT_EQ(
+        state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+        controller_interface::return_type::OK);
+      EXPECT_THAT(
+        state_broadcaster_->joint_state_msg_.name,
+        ElementsAreArray({joint_names_[0], std::string("non_urdf_joint")}));
+      EXPECT_THAT(
+        state_broadcaster_->joint_state_msg_.position, ElementsAreArray({joint_values_[0], 4.2}));
+      ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+    }
+  }
+}
+
+TEST_F(JointStateBroadcasterTest, FilteringEnabledWithPartialSelection)
+{
+  const std::vector<std::pair<std::vector<std::string>, std::vector<std::string>>> selections = {
+    {{}, {}}, {{joint_names_[0]}, {}}, {{}, {HW_IF_POSITION}}};
+  for (const auto & selection : selections)
+  {
+    SCOPED_TRACE(selection.first.empty() ? "no joints" : "explicit joints");
+    SCOPED_TRACE(selection.second.empty() ? "no interfaces" : "explicit interfaces");
+    state_broadcaster_ = std::make_unique<FriendJointStateBroadcaster>();
+    SetUpStateBroadcaster(selection.first, selection.second);
+    ASSERT_TRUE(configure_succeeds(state_broadcaster_));
+    const auto config = state_broadcaster_->state_interface_configuration();
+    EXPECT_EQ(
+      config.type, controller_interface::interface_configuration_type::INDIVIDUAL_BEST_EFFORT);
+    EXPECT_THAT(config.names, SizeIs(9));
+    ASSERT_TRUE(activate_succeeds(state_broadcaster_));
+    ASSERT_EQ(
+      state_broadcaster_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
+      controller_interface::return_type::OK);
+    EXPECT_THAT(state_broadcaster_->joint_state_msg_.name, ElementsAreArray(joint_names_));
+    EXPECT_THAT(state_broadcaster_->joint_state_msg_.position, ElementsAreArray(joint_values_));
+    ASSERT_TRUE(deactivate_succeeds(state_broadcaster_));
+  }
+}

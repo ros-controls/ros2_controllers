@@ -38,6 +38,14 @@ using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
+namespace
+{
+bool uses_default_selection(const Params & params)
+{
+  return params.joints.empty() || params.interfaces.empty();
+}
+}  // namespace
+
 JointStateBroadcaster::JointStateBroadcaster() {}
 
 controller_interface::CallbackReturn JointStateBroadcaster::on_init()
@@ -85,6 +93,10 @@ controller_interface::InterfaceConfiguration JointStateBroadcaster::state_interf
       }
     }
   }
+  else if (uses_default_selection(params_))
+  {
+    state_interfaces_config.type = controller_interface::interface_configuration_type::ALL;
+  }
   else
   {
     state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -105,12 +117,16 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
 {
   params_ = param_listener_->get_params();
 
-  if (use_urdf_joint_interfaces())
+  if (uses_default_selection(params_))
   {
     RCLCPP_INFO(
       get_node()->get_logger(),
-      "'joints' or 'interfaces' parameter is empty. Will try to publish all available state "
-      "interfaces of the URDF joints.");
+      params_.use_urdf_to_filter
+        ? "'joints' or 'interfaces' parameter is empty. Will try to publish all available "
+          "state interfaces of the URDF joints."
+        : "'joints' or 'interfaces' parameter is empty. All available state interfaces will be "
+          "considered.");
+    // A partial selection means all interfaces; normalize both selectors.
     params_.joints.clear();
     params_.interfaces.clear();
   }
@@ -179,23 +195,13 @@ controller_interface::CallbackReturn JointStateBroadcaster::on_configure(
         "'interfaces' parameters.");
       return CallbackReturn::ERROR;
     }
-    else
+    if (params_.use_urdf_to_filter)
     {
-      if (params_.use_urdf_to_filter)
-      {
-        RCLCPP_WARN(
-          get_node()->get_logger(),
-          "'use_urdf_to_filter' parameter is set to true, but robot description could not be "
-          "parsed. Will publish the joints defined in 'joints' parameter without filtering with "
-          "URDF. Fix the robot description to filter joints with URDF.");
-      }
-      else
-      {
-        RCLCPP_WARN(
-          get_node()->get_logger(),
-          "Failed to parse robot description. Will publish the joints defined in 'joints' "
-          "parameter along with the defined interfaces in 'interface' parameter.");
-      }
+      RCLCPP_WARN(
+        get_node()->get_logger(),
+        "'use_urdf_to_filter' parameter is set to true, but robot description could not be "
+        "parsed. Will publish the joints defined in 'joints' parameter without filtering with "
+        "URDF. Fix the robot description to filter joints with URDF.");
     }
   }
 
@@ -422,12 +428,12 @@ void JointStateBroadcaster::init_joint_state_msg()
 
 bool JointStateBroadcaster::use_all_available_interfaces() const
 {
-  return this->use_urdf_joint_interfaces();
+  return uses_default_selection(params_);
 }
 
 bool JointStateBroadcaster::use_urdf_joint_interfaces() const
 {
-  return params_.joints.empty() || params_.interfaces.empty();
+  return params_.use_urdf_to_filter && (uses_default_selection(params_));
 }
 
 controller_interface::return_type JointStateBroadcaster::update(
