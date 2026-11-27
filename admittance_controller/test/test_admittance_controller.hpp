@@ -227,7 +227,7 @@ protected:
 
   void broadcast_tfs()
   {
-    static tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
+    tf2_ros::TransformBroadcaster br(test_broadcaster_node_);
     geometry_msgs::msg::TransformStamped transform_stamped;
 
     transform_stamped.header.stamp = test_broadcaster_node_->now();
