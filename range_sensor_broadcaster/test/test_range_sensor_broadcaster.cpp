@@ -39,7 +39,7 @@ void RangeSensorBroadcasterTest::SetUp()
 void RangeSensorBroadcasterTest::TearDown() { range_broadcaster_.reset(nullptr); }
 
 controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
-  std::string broadcaster_name)
+  std::string broadcaster_name, std::vector<rclcpp::Parameter> parameter_overrides)
 {
   controller_interface::return_type result = controller_interface::return_type::ERROR;
   controller_interface::ControllerInterfaceParams params;
@@ -48,6 +48,7 @@ controller_interface::return_type RangeSensorBroadcasterTest::init_broadcaster(
   params.update_rate = 0;
   params.node_namespace = "";
   params.node_options = range_broadcaster_->define_custom_node_options();
+  params.node_options.parameter_overrides(parameter_overrides);
 
   result = range_broadcaster_->init(params);
 
@@ -122,25 +123,17 @@ TEST_F(RangeSensorBroadcasterTest, Initialize_RangeBroadcaster_Success)
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_1)
 {
-  // First Test without frame_id ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
-
-  std::vector<rclcpp::Parameter> parameters;
-  // explicitly give an empty sensor name to generate an error
-  parameters.emplace_back(rclcpp::Parameter("sensor_name", ""));
-  configure_broadcaster(parameters);
+  const auto result = init_broadcaster(
+    "test_range_sensor_broadcaster", {{"sensor_name", ""}, {"frame_id", frame_id_}});
+  ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_FALSE(configure_succeeds(range_broadcaster_));
 }
 
 TEST_F(RangeSensorBroadcasterTest, Configure_RangeBroadcaster_Error_2)
 {
-  // Second Test without sensor_name ERROR Expected
-  init_broadcaster("test_range_sensor_broadcaster");
-
-  std::vector<rclcpp::Parameter> parameters;
-  // explicitly give an empty frame_id to generate an error
-  parameters.emplace_back(rclcpp::Parameter("frame_id", ""));
-  configure_broadcaster(parameters);
+  const auto result = init_broadcaster(
+    "test_range_sensor_broadcaster", {{"sensor_name", sensor_name_}, {"frame_id", ""}});
+  ASSERT_EQ(result, controller_interface::return_type::OK);
   ASSERT_FALSE(configure_succeeds(range_broadcaster_));
 }
 
@@ -295,6 +288,60 @@ TEST_F(RangeSensorBroadcasterTest, Publish_OutOfBandaries_RangeBroadcaster_Succe
 #if SENSOR_MSGS_VERSION_MAJOR >= 5
   EXPECT_THAT(range_msg.variance, ::testing::FloatEq(static_cast<float>(variance_)));
 #endif
+}
+
+namespace
+{
+std::vector<rclcpp::Parameter> valid_initial_parameters()
+{
+  return {
+    {"sensor_name", "range_sensor"},
+    {"frame_id", "range_sensor_frame"},
+    {"radiation_type", 1},
+    {"field_of_view", 0.1},
+    {"min_range", 0.1},
+    {"max_range", 7.0},
+    {"variance", 1.0},
+  };
+}
+}  // namespace
+
+TEST_F(RangeSensorBroadcasterTest, RejectsInvalidRadiationType)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[2] = rclcpp::Parameter("radiation_type", 2);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsNonPositiveFieldOfView)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[3] = rclcpp::Parameter("field_of_view", 0.0);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsInvertedRange)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[4] = rclcpp::Parameter("min_range", 5.0);
+  parameters[5] = rclcpp::Parameter("max_range", 1.0);
+  ASSERT_EQ(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
+  EXPECT_FALSE(configure_succeeds(range_broadcaster_));
+}
+
+TEST_F(RangeSensorBroadcasterTest, RejectsNegativeVariance)
+{
+  auto parameters = valid_initial_parameters();
+  parameters[6] = rclcpp::Parameter("variance", -0.1);
+  EXPECT_NE(
+    init_broadcaster("test_range_sensor_broadcaster", parameters),
+    controller_interface::return_type::OK);
 }
 
 int main(int argc, char ** argv)
