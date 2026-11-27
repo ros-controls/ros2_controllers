@@ -128,8 +128,15 @@ controller_interface::InterfaceConfiguration AdmittanceController::command_inter
   const
 {
   std::vector<std::string> command_interfaces_config_names;
-  for (const auto & interface : admittance_->parameters_.command_interfaces)
+  // Request interfaces in type order, independent of the parameter order.
+  const auto & interfaces = admittance_->parameters_.command_interfaces;
+  for (const auto & interface : allowed_interface_types_)
   {
+    if (std::find(interfaces.begin(), interfaces.end(), interface) == interfaces.end())
+    {
+      continue;
+    }
+
     for (const auto & joint : command_joint_names_)
     {
       auto full_name = joint + "/" + interface;
@@ -146,9 +153,14 @@ controller_interface::InterfaceConfiguration AdmittanceController::state_interfa
   const
 {
   std::vector<std::string> state_interfaces_config_names;
-  for (size_t i = 0; i < admittance_->parameters_.state_interfaces.size(); ++i)
+  const auto & interfaces = admittance_->parameters_.state_interfaces;
+  for (const auto & interface : allowed_interface_types_)
   {
-    const auto & interface = admittance_->parameters_.state_interfaces[i];
+    if (std::find(interfaces.begin(), interfaces.end(), interface) == interfaces.end())
+    {
+      continue;
+    }
+
     for (const auto & joint : admittance_->parameters_.joints)
     {
       auto full_name = joint + "/" + interface;
@@ -551,9 +563,9 @@ void AdmittanceController::read_state_from_hardware(
   bool nan_velocity = false;
   bool nan_acceleration = false;
 
-  size_t pos_ind = 0;
-  size_t vel_ind = pos_ind + has_velocity_state_interface_;
-  size_t acc_ind = vel_ind + has_acceleration_state_interface_;
+  constexpr size_t pos_ind = 0;
+  const size_t vel_ind = has_position_state_interface_;
+  const size_t acc_ind = vel_ind + has_velocity_state_interface_;
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     if (has_position_state_interface_)
@@ -620,10 +632,9 @@ void AdmittanceController::write_state_to_hardware(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded)
 {
   // if any interface has nan values, assume state_commanded is the last command state
-  size_t pos_ind = 0;
-  size_t vel_ind =
-    (has_position_command_interface_) ? pos_ind + has_velocity_command_interface_ : pos_ind;
-  size_t acc_ind = vel_ind + has_acceleration_command_interface_;
+  constexpr size_t pos_ind = 0;
+  const size_t vel_ind = has_position_command_interface_;
+  const size_t acc_ind = vel_ind + has_velocity_command_interface_;
 
   auto logger = get_node()->get_logger();
 

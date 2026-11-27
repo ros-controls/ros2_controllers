@@ -186,33 +186,41 @@ protected:
   void assign_interfaces()
   {
     std::vector<hardware_interface::LoanedCommandInterface> loaned_command_ifs;
-    command_itfs_.reserve(joint_command_values_.size());
-    loaned_command_ifs.reserve(joint_command_values_.size());
+    const size_t num_command_ifs = joint_names_.size() * command_interface_types_.size();
+    command_itfs_.reserve(num_command_ifs);
+    loaned_command_ifs.reserve(num_command_ifs);
 
-    for (auto i = 0u; i < joint_command_values_.size(); ++i)
+    for (const auto & type : command_interface_types_)
     {
-      auto command_itf = std::make_shared<hardware_interface::CommandInterface>(
-        joint_names_[i], command_interface_types_[0]);
-      std::ignore = command_itf->set_value(joint_command_values_[i]);
-      command_itfs_.emplace_back(command_itf);
-      loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
+      for (size_t i = 0; i < joint_names_.size(); ++i)
+      {
+        auto command_itf =
+          std::make_shared<hardware_interface::CommandInterface>(joint_names_[i], type);
+        std::ignore = command_itf->set_value(joint_command_values_[i]);
+        command_itfs_.emplace_back(command_itf);
+        loaned_command_ifs.emplace_back(command_itfs_.back(), nullptr);
+      }
     }
 
     auto sc_fts = semantic_components::ForceTorqueSensor(ft_sensor_name_);
     const auto fts_state_names = sc_fts.get_state_interface_names();
     std::vector<hardware_interface::LoanedStateInterface> loaned_state_ifs;
 
-    const size_t num_state_ifs = joint_state_values_.size() + fts_state_names.size();
+    const size_t num_state_ifs =
+      joint_names_.size() * state_interface_types_.size() + fts_state_names.size();
     state_itfs_.reserve(num_state_ifs);
     loaned_state_ifs.reserve(num_state_ifs);
 
-    for (auto i = 0u; i < joint_state_values_.size(); ++i)
+    for (const auto & type : state_interface_types_)
     {
-      auto state_itf = std::make_shared<hardware_interface::StateInterface>(
-        joint_names_[i], state_interface_types_[0]);
-      std::ignore = state_itf->set_value(joint_state_values_[i]);
-      state_itfs_.emplace_back(state_itf);
-      loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
+      for (size_t i = 0; i < joint_names_.size(); ++i)
+      {
+        auto state_itf =
+          std::make_shared<hardware_interface::StateInterface>(joint_names_[i], type);
+        std::ignore = state_itf->set_value(type == "position" ? joint_state_values_[i] : 0.0);
+        state_itfs_.emplace_back(state_itf);
+        loaned_state_ifs.emplace_back(state_itfs_.back(), nullptr);
+      }
     }
 
     const std::vector<std::string> fts_itf_names = {"force.x",  "force.y",  "force.z",
@@ -385,7 +393,7 @@ protected:
   const std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3",
                                                  "joint4", "joint5", "joint6"};
   std::vector<std::string> command_interface_types_ = {"position"};
-  const std::vector<std::string> state_interface_types_ = {"position"};
+  std::vector<std::string> state_interface_types_ = {"position"};
   const std::string ft_sensor_name_ = "ft_sensor_name";
 
   const std::string ik_base_frame_ = "base_link";
