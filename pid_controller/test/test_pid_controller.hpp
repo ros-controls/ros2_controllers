@@ -119,6 +119,22 @@ public:
     msg.values_dot.resize(msg.dof_names.size(), std::numeric_limits<double>::quiet_NaN());
     input_ref_.set(msg);
   }
+
+  std::vector<double> measured_state_values() const { return measured_state_values_; }
+
+  bool uses_external_measured_states() const { return params_.use_external_measured_states; }
+
+  std::vector<double> reference_values()
+  {
+    std::vector<double> values;
+    values.reserve(ordered_exported_reference_interfaces_.size());
+    for (const auto & interface : ordered_exported_reference_interfaces_)
+    {
+      values.push_back(interface->get_optional<double>().value_or(
+        std::numeric_limits<double>::quiet_NaN()));
+    }
+    return values;
+  }
 };
 
 // We are using template class here for easier reuse of Fixture in specializations of controllers
