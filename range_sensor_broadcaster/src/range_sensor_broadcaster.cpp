@@ -56,6 +56,12 @@ controller_interface::CallbackReturn RangeSensorBroadcaster::on_configure(
     return CallbackReturn::ERROR;
   }
 
+  if (params_.min_range > params_.max_range)
+  {
+    RCLCPP_ERROR(get_node()->get_logger(), "'min_range' must not exceed 'max_range'.");
+    return CallbackReturn::ERROR;
+  }
+
   range_sensor_ = std::make_unique<semantic_components::RangeSensor>(params_.sensor_name);
   try
   {

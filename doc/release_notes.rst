@@ -37,6 +37,10 @@ joint_state_broadcaster
 * Removed interfaces with other data types than double for publishing to ``dynamic_joint_states``. (`#2115 <https://github.com/ros-controls/ros2_controllers/pull/2115>`_)
 * Parameter ``publish_dynamic_joint_states`` is now deprecated (default changed to ``false``).
 
+range_sensor_broadcaster
+*************************
+* Configuration rejects an unknown radiation type, a nonpositive field of view, negative variance, or a minimum range greater than the maximum range.
+
 omni_wheel_drive_controller
 *****************************
 * Parameter ``tf_frame_prefix_enable`` got deprecated and will be removed in a future release (`#2073 <https://github.com/ros-controls/ros2_controllers/pull/2073>`_).
