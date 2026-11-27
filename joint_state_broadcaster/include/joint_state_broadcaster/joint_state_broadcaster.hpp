@@ -48,6 +48,8 @@ namespace joint_state_broadcaster
  * It is possible to define a mapping of measurements
  * from different sources stored in custom interfaces to standard dynamic names in JointState
  * message.
+ * The mapping applies to sensor_msgs::msg::JointState only;
+ * DynamicJointState keeps the source interface names.
  * If "joints" or "interfaces" parameter is empty, all available states are published.
  *
  * \param use_local_topics Flag to publish topics in local namespace.
@@ -108,8 +110,12 @@ protected:
     realtime_joint_state_publisher_;
   sensor_msgs::msg::JointState joint_state_msg_;
 
-  //  For the DynamicJointState format, we use a map to buffer values in for easier lookup
-  //  This allows to preserve whatever order or names/interfaces were initialized.
+  //  For the JointState format, we use a map to buffer values in for easier lookup.
+  //  Interface names here are the source interface names, so a mapped custom
+  //  interface never collapses with a real standard interface in DynamicJointState.
+  //  JointState slots are resolved at init time (see init_joint_state_msg()): a real
+  //  standard interface owns its slot when it exists and is not itself remapped,
+  //  otherwise the interface mapped onto the field owns it.
   std::unordered_map<std::string, std::unordered_map<std::string, double>> name_if_value_mapping_;
   std::shared_ptr<rclcpp::Publisher<control_msgs::msg::DynamicJointState>>
     dynamic_joint_state_publisher_;

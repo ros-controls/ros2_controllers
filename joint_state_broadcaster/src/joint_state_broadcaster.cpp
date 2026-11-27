@@ -38,6 +38,46 @@ using hardware_interface::HW_IF_EFFORT;
 using hardware_interface::HW_IF_POSITION;
 using hardware_interface::HW_IF_VELOCITY;
 
+// Resolve which source interface feeds a JointState field (position, velocity or
+// effort) for a joint. A real standard interface owns the slot when it exists and
+// is not itself remapped; otherwise the interface mapped onto the field owns it.
+// Returns the source interface name, or an empty string when no interface feeds it.
+std::string resolve_joint_state_source(
+  const std::string & joint_name, const std::string & field,
+  const std::vector<hardware_interface::LoanedStateInterface> & state_interfaces,
+  const std::unordered_map<std::string, std::string> & map_interface_to_joint_state)
+{
+  const auto is_remapped_elsewhere = [&](const std::string & name)
+  {
+    const auto it = map_interface_to_joint_state.find(name);
+    return it != map_interface_to_joint_state.end() && it->second != name;
+  };
+  for (const auto & state_interface : state_interfaces)
+  {
+    if (
+      state_interface.get_data_type() == hardware_interface::HandleDataType::DOUBLE &&
+      state_interface.get_prefix_name() == joint_name &&
+      state_interface.get_interface_name() == field && !is_remapped_elsewhere(field))
+    {
+      return field;
+    }
+  }
+  for (const auto & state_interface : state_interfaces)
+  {
+    if (
+      state_interface.get_data_type() == hardware_interface::HandleDataType::DOUBLE &&
+      state_interface.get_prefix_name() == joint_name)
+    {
+      const auto it = map_interface_to_joint_state.find(state_interface.get_interface_name());
+      if (it != map_interface_to_joint_state.end() && it->second == field)
+      {
+        return state_interface.get_interface_name();
+      }
+    }
+  }
+  return {};
+}
+
 JointStateBroadcaster::JointStateBroadcaster() {}
 
 controller_interface::CallbackReturn JointStateBroadcaster::on_init()
@@ -246,24 +286,28 @@ bool JointStateBroadcaster::init_joint_data()
       continue;
     }
     const std::string prefix_name = si->get_prefix_name();
-    // initialize map if name is new
+    // initialize map if name is new, keyed by the source interface name so
+    // DynamicJointState preserves the original interface identity
     if (name_if_value_mapping_.count(prefix_name) == 0)
     {
       name_if_value_mapping_[prefix_name] = {};
     }
-    // add interface name
-    std::string interface_name = si->get_interface_name();
-    if (map_interface_to_joint_state_.count(interface_name) > 0)
-    {
-      interface_name = map_interface_to_joint_state_[interface_name];
-    }
+    const std::string interface_name = si->get_interface_name();
     name_if_value_mapping_[prefix_name][interface_name] = kUninitializedValue;
 
-    // filter state interfaces that have at least one of the joint_states fields,
+    // filter state interfaces that feed at least one of the joint_states fields,
     // the rest will be ignored for this message
+    const auto mapped_interface = map_interface_to_joint_state_.find(interface_name);
+    const std::string effective_interface =
+      mapped_interface != map_interface_to_joint_state_.end() ? mapped_interface->second
+                                                              : interface_name;
     if (
-      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
-      joint_state_interfaces.end())
+      std::find(
+        joint_state_interfaces.begin(), joint_state_interfaces.end(), effective_interface) !=
+      joint_state_interfaces.end() &&
+      resolve_joint_state_source(
+        prefix_name, effective_interface, state_interfaces_, map_interface_to_joint_state_) ==
+        interface_name)
     {
       if (
         !params_.use_urdf_to_filter || !params_.joints.empty() || !is_model_loaded_ ||
@@ -316,27 +360,34 @@ void JointStateBroadcaster::init_auxiliary_data()
 
   const std::vector<std::string> joint_state_interfaces = {
     HW_IF_POSITION, HW_IF_VELOCITY, HW_IF_EFFORT};
-
   for (auto i = 0u; i < state_interfaces_.size(); ++i)
   {
     if (state_interfaces_[i].get_data_type() != hardware_interface::HandleDataType::DOUBLE)
     {
       continue;
     }
-    std::string interface_name = state_interfaces_[i].get_interface_name();
-    if (map_interface_to_joint_state_.count(interface_name) > 0)
-    {
-      interface_name = map_interface_to_joint_state_[interface_name];
-    }
-    double * value_ptr =
-      &name_if_value_mapping_[state_interfaces_[i].get_prefix_name()][interface_name];
+    const std::string prefix_name = state_interfaces_[i].get_prefix_name();
+    const std::string source_interface_name = state_interfaces_[i].get_interface_name();
+
+    // The single map is keyed by source interface names, so each value has its
+    // own slot; which slot feeds a JointState field is resolved at init time
+    // (see init_joint_state_msg()).
+    double * value_ptr = &name_if_value_mapping_[prefix_name][source_interface_name];
 
     // Track indices and pre-computed pointers for joint state interfaces only, unless
     // dynamic_joint_states is published: it reports every interface, so all must be refreshed
-    if (
-      realtime_dynamic_joint_state_publisher_ ||
-      std::find(joint_state_interfaces.begin(), joint_state_interfaces.end(), interface_name) !=
-        joint_state_interfaces.end())
+    const auto mapped_interface = map_interface_to_joint_state_.find(source_interface_name);
+    const std::string effective_interface =
+      mapped_interface != map_interface_to_joint_state_.end() ? mapped_interface->second
+                                                              : source_interface_name;
+    const bool owns_joint_state_slot =
+      std::find(
+        joint_state_interfaces.begin(), joint_state_interfaces.end(), effective_interface) !=
+      joint_state_interfaces.end() &&
+      resolve_joint_state_source(
+        prefix_name, effective_interface, state_interfaces_, map_interface_to_joint_state_) ==
+        source_interface_name;
+    if (realtime_dynamic_joint_state_publisher_ || owns_joint_state_slot)
     {
       joint_state_interface_indices_.push_back(i);
       joint_state_mapped_values_.push_back(value_ptr);
@@ -362,16 +413,43 @@ void JointStateBroadcaster::init_joint_state_msg()
   auto get_address =
     [&](const std::string & joint_name, const std::string & interface_name) -> const double &
   {
-    const auto & interfaces_and_values = name_if_value_mapping_.at(joint_name);
-    const auto interface_and_value = interfaces_and_values.find(interface_name);
-    if (interface_and_value != interfaces_and_values.cend())
+    const auto joint_it = name_if_value_mapping_.find(joint_name);
+    if (joint_it != name_if_value_mapping_.end())
     {
-      return interface_and_value->second;
+      const std::string source = resolve_joint_state_source(
+        joint_name, interface_name, state_interfaces_, map_interface_to_joint_state_);
+      if (!source.empty())
+      {
+        const auto interface_and_value = joint_it->second.find(source);
+        if (interface_and_value != joint_it->second.end())
+        {
+          return interface_and_value->second;
+        }
+      }
+      else
+      {
+        // Extra joints have no state interfaces; their seeded standard-name
+        // entries are the source slots.
+        bool has_state_interface = false;
+        for (const auto & state_interface : state_interfaces_)
+        {
+          if (state_interface.get_prefix_name() == joint_name)
+          {
+            has_state_interface = true;
+            break;
+          }
+        }
+        if (!has_state_interface)
+        {
+          const auto interface_and_value = joint_it->second.find(interface_name);
+          if (interface_and_value != joint_it->second.end())
+          {
+            return interface_and_value->second;
+          }
+        }
+      }
     }
-    else
-    {
-      return kUninitializedValue;
-    }
+    return kUninitializedValue;
   };
 
   joint_states_data_.clear();
