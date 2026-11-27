@@ -261,7 +261,6 @@ TEST_F(AdmittanceControllerTest, update_success)
     controller_interface::return_type::OK);
 }
 
-
 TEST_F(AdmittanceControllerTest, acceleration_only_command_interface_does_not_crash)
 {
   command_interface_types_ = {"acceleration"};
@@ -287,41 +286,31 @@ TEST_F(AdmittanceControllerTest, acceleration_only_command_interface_does_not_cr
   }
 }
 
-TEST_F(AdmittanceControllerTest, inactive_reference_is_not_replayed_after_activation)
+TEST_F(AdmittanceControllerTest, permuted_interfaces_route_by_name)
 {
-  ASSERT_EQ(SetUpController(), controller_interface::return_type::OK);
+  command_interface_types_ = {"velocity", "position"};
+  state_interface_types_ = {"velocity", "position"};
+  const std::vector<rclcpp::Parameter> overrides = {
+    rclcpp::Parameter("command_interfaces", command_interface_types_),
+    rclcpp::Parameter("state_interfaces", state_interface_types_),
+    rclcpp::Parameter("admittance.selected_axes", std::vector<bool>(6, false)),
+    rclcpp::Parameter("admittance.stiffness", std::vector<double>(6, 0.0)),
+    rclcpp::Parameter("gravity_compensation.CoG.force", 0.0)};
+  ASSERT_EQ(
+    SetUpController("test_admittance_controller", overrides),
+    controller_interface::return_type::OK);
   ASSERT_TRUE(configure_succeeds(controller_));
-
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(controller_->get_node()->get_node_base_interface());
-  for (size_t i = 0; i < 100 &&
-    command_publisher_node_->count_subscribers(joint_command_publisher_->get_topic_name()) == 0;
-    ++i)
-  {
-    executor.spin_some();
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
-  ASSERT_GT(
-    command_publisher_node_->count_subscribers(joint_command_publisher_->get_topic_name()), 0u);
-
-  trajectory_msgs::msg::JointTrajectoryPoint point;
-  for (size_t i = 0; i < joint_state_values_.size(); ++i)
-  {
-    point.positions.push_back(joint_state_values_[i] + 0.05 * static_cast<double>(i + 1));
-  }
-  point.velocities.assign(joint_state_values_.size(), 0.0);
-  joint_command_publisher_->publish(point);
-  controller_->wait_for_commands(executor, std::chrono::milliseconds(100));
-
   ASSERT_TRUE(activate_succeeds(controller_));
-  broadcast_tfs();
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  for (size_t i = 0; i < command_itfs_.size(); ++i)
+  ASSERT_EQ(command_itfs_.size(), 2 * joint_names_.size());
+  for (size_t i = 0; i < joint_names_.size(); ++i)
   {
+    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), 0.0);
     EXPECT_NEAR(
-      command_itfs_[i]->get_optional().value(), joint_state_values_[i], COMMON_THRESHOLD);
+      command_itfs_[joint_names_.size() + i]->get_optional().value(), joint_state_values_[i],
+      COMMON_THRESHOLD);
   }
 }
 

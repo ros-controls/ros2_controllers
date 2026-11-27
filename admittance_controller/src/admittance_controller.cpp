@@ -25,7 +25,6 @@
 
 #include "admittance_controller/admittance_rule_impl.hpp"
 #include "geometry_msgs/msg/wrench.hpp"
-#include "lifecycle_msgs/msg/state.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace
@@ -257,11 +256,11 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   }
 
   // Check if only allowed interface types are used
-  auto contains_interface_type =
-    [](const std::vector<std::string> & interface_type_list, const std::string & interface_type)
+  const auto interface_index =
+    [](const std::vector<std::string> & interface_types, const std::string & type)
   {
-    return std::find(interface_type_list.begin(), interface_type_list.end(), interface_type) !=
-           interface_type_list.end();
+    return static_cast<size_t>(std::distance(
+      interface_types.begin(), std::find(interface_types.begin(), interface_types.end(), type)));
   };
 
   for (const auto & interface : admittance_->parameters_.command_interfaces)
@@ -276,14 +275,16 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     }
   }
 
-  has_position_command_interface_ = contains_interface_type(
-    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_POSITION);
-  has_velocity_command_interface_ = contains_interface_type(
-    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_VELOCITY);
-  has_acceleration_command_interface_ = contains_interface_type(
-    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_ACCELERATION);
-  has_effort_command_interface_ = contains_interface_type(
-    admittance_->parameters_.command_interfaces, hardware_interface::HW_IF_EFFORT);
+  const auto & command_types = admittance_->parameters_.command_interfaces;
+  position_command_index_ = interface_index(command_types, hardware_interface::HW_IF_POSITION);
+  has_position_command_interface_ = position_command_index_ < command_types.size();
+  velocity_command_index_ = interface_index(command_types, hardware_interface::HW_IF_VELOCITY);
+  has_velocity_command_interface_ = velocity_command_index_ < command_types.size();
+  acceleration_command_index_ =
+    interface_index(command_types, hardware_interface::HW_IF_ACCELERATION);
+  has_acceleration_command_interface_ = acceleration_command_index_ < command_types.size();
+  has_effort_command_interface_ =
+    interface_index(command_types, hardware_interface::HW_IF_EFFORT) < command_types.size();
 
   // Check if only allowed interface types are used
   for (const auto & interface : admittance_->parameters_.state_interfaces)
@@ -298,12 +299,13 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
     }
   }
 
-  has_position_state_interface_ = contains_interface_type(
-    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_POSITION);
-  has_velocity_state_interface_ = contains_interface_type(
-    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_VELOCITY);
-  has_acceleration_state_interface_ = contains_interface_type(
-    admittance_->parameters_.state_interfaces, hardware_interface::HW_IF_ACCELERATION);
+  const auto & state_types = admittance_->parameters_.state_interfaces;
+  position_state_index_ = interface_index(state_types, hardware_interface::HW_IF_POSITION);
+  has_position_state_interface_ = position_state_index_ < state_types.size();
+  velocity_state_index_ = interface_index(state_types, hardware_interface::HW_IF_VELOCITY);
+  has_velocity_state_interface_ = velocity_state_index_ < state_types.size();
+  acceleration_state_index_ = interface_index(state_types, hardware_interface::HW_IF_ACCELERATION);
+  has_acceleration_state_interface_ = acceleration_state_index_ < state_types.size();
 
   if (!has_position_state_interface_)
   {
@@ -332,13 +334,7 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
   // setup subscribers and publishers
   auto joint_command_callback =
     [this](const std::shared_ptr<trajectory_msgs::msg::JointTrajectoryPoint> msg)
-  {
-    if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-    {
-      return;
-    }
-    input_joint_command_.set(*msg);
-  };
+  { input_joint_command_.set(*msg); };
   input_joint_command_subscriber_ =
     get_node()->create_subscription<trajectory_msgs::msg::JointTrajectoryPoint>(
       "~/joint_references", rclcpp::SystemDefaultsQoS(), joint_command_callback);
@@ -348,10 +344,6 @@ controller_interface::CallbackReturn AdmittanceController::on_configure(
       "~/wrench_reference", rclcpp::SystemDefaultsQoS(),
       [&](const geometry_msgs::msg::WrenchStamped & msg)
       {
-        if (get_lifecycle_id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-        {
-          return;
-        }
         if (
           msg.header.frame_id != admittance_->parameters_.ft_sensor.frame.id &&
           !msg.header.frame_id.empty())
@@ -562,23 +554,12 @@ void AdmittanceController::read_state_from_hardware(
   bool nan_velocity = false;
   bool nan_acceleration = false;
 
-  const auto & interface_types = admittance_->parameters_.state_interfaces;
-  const auto pos_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(),
-    std::find(interface_types.begin(), interface_types.end(), hardware_interface::HW_IF_POSITION)));
-  const auto vel_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(),
-    std::find(interface_types.begin(), interface_types.end(), hardware_interface::HW_IF_VELOCITY)));
-  const auto acc_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(), std::find(
-                               interface_types.begin(), interface_types.end(),
-                               hardware_interface::HW_IF_ACCELERATION)));
   for (size_t joint_ind = 0; joint_ind < num_joints_; ++joint_ind)
   {
     if (has_position_state_interface_)
     {
       const auto state_current_position_op =
-        state_interfaces_[pos_ind * num_joints_ + joint_ind].get_optional();
+        state_interfaces_[position_state_index_ * num_joints_ + joint_ind].get_optional();
       nan_position |=
         !state_current_position_op.has_value() || std::isnan(state_current_position_op.value());
       if (state_current_position_op.has_value())
@@ -589,7 +570,7 @@ void AdmittanceController::read_state_from_hardware(
     if (has_velocity_state_interface_)
     {
       auto state_current_velocity_op =
-        state_interfaces_[vel_ind * num_joints_ + joint_ind].get_optional();
+        state_interfaces_[velocity_state_index_ * num_joints_ + joint_ind].get_optional();
       nan_velocity |=
         !state_current_velocity_op.has_value() || std::isnan(state_current_velocity_op.value());
 
@@ -601,7 +582,7 @@ void AdmittanceController::read_state_from_hardware(
     if (has_acceleration_state_interface_)
     {
       auto state_current_acceleration_op =
-        state_interfaces_[acc_ind * num_joints_ + joint_ind].get_optional();
+        state_interfaces_[acceleration_state_index_ * num_joints_ + joint_ind].get_optional();
       nan_acceleration |= !state_current_acceleration_op.has_value() ||
                           std::isnan(state_current_acceleration_op.value());
       if (state_current_acceleration_op.has_value())
@@ -639,17 +620,6 @@ void AdmittanceController::write_state_to_hardware(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_commanded)
 {
   // if any interface has nan values, assume state_commanded is the last command state
-  const auto & interface_types = admittance_->parameters_.command_interfaces;
-  const auto pos_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(),
-    std::find(interface_types.begin(), interface_types.end(), hardware_interface::HW_IF_POSITION)));
-  const auto vel_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(),
-    std::find(interface_types.begin(), interface_types.end(), hardware_interface::HW_IF_VELOCITY)));
-  const auto acc_ind = static_cast<size_t>(std::distance(
-    interface_types.begin(), std::find(
-                               interface_types.begin(), interface_types.end(),
-                               hardware_interface::HW_IF_ACCELERATION)));
 
   auto logger = get_node()->get_logger();
 
@@ -658,18 +628,19 @@ void AdmittanceController::write_state_to_hardware(
     bool success = true;
     if (has_position_command_interface_)
     {
-      success &= command_interfaces_[pos_ind * num_joints_ + joint_ind].set_value(
+      success &= command_interfaces_[position_command_index_ * num_joints_ + joint_ind].set_value(
         state_commanded.positions[joint_ind]);
     }
     if (has_velocity_command_interface_)
     {
-      success &= command_interfaces_[vel_ind * num_joints_ + joint_ind].set_value(
+      success &= command_interfaces_[velocity_command_index_ * num_joints_ + joint_ind].set_value(
         state_commanded.velocities[joint_ind]);
     }
     if (has_acceleration_command_interface_)
     {
-      success &= command_interfaces_[acc_ind * num_joints_ + joint_ind].set_value(
-        state_commanded.accelerations[joint_ind]);
+      success &=
+        command_interfaces_[acceleration_command_index_ * num_joints_ + joint_ind].set_value(
+          state_commanded.accelerations[joint_ind]);
     }
     if (!success)
     {
