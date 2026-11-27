@@ -84,17 +84,11 @@ protected:
   std::vector<std::string> command_joint_names_;
 
   bool has_position_state_interface_ = false;
-  size_t position_state_index_ = 0;
   bool has_velocity_state_interface_ = false;
-  size_t velocity_state_index_ = 0;
   bool has_acceleration_state_interface_ = false;
-  size_t acceleration_state_index_ = 0;
   bool has_position_command_interface_ = false;
-  size_t position_command_index_ = 0;
   bool has_velocity_command_interface_ = false;
-  size_t velocity_command_index_ = 0;
   bool has_acceleration_command_interface_ = false;
-  size_t acceleration_command_index_ = 0;
   bool has_effort_command_interface_ = false;
 
   // To reduce number of variables and to make the code shorter the interfaces are ordered in types

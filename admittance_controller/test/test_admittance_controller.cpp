@@ -288,11 +288,12 @@ TEST_F(AdmittanceControllerTest, acceleration_only_command_interface_does_not_cr
 
 TEST_F(AdmittanceControllerTest, permuted_interfaces_route_by_name)
 {
-  command_interface_types_ = {"velocity", "position"};
-  state_interface_types_ = {"velocity", "position"};
+  command_interface_types_ = {"position", "velocity"};
+  state_interface_types_ = {"position", "velocity"};
+  const std::vector<std::string> permuted_interfaces = {"velocity", "position"};
   const std::vector<rclcpp::Parameter> overrides = {
-    rclcpp::Parameter("command_interfaces", command_interface_types_),
-    rclcpp::Parameter("state_interfaces", state_interface_types_),
+    rclcpp::Parameter("command_interfaces", permuted_interfaces),
+    rclcpp::Parameter("state_interfaces", permuted_interfaces),
     rclcpp::Parameter("admittance.selected_axes", std::vector<bool>(6, false)),
     rclcpp::Parameter("admittance.stiffness", std::vector<double>(6, 0.0)),
     rclcpp::Parameter("gravity_compensation.CoG.force", 0.0)};
@@ -300,6 +301,18 @@ TEST_F(AdmittanceControllerTest, permuted_interfaces_route_by_name)
     SetUpController("test_admittance_controller", overrides),
     controller_interface::return_type::OK);
   ASSERT_TRUE(configure_succeeds(controller_));
+  const auto command_names = controller_->command_interface_configuration().names;
+  const auto state_names = controller_->state_interface_configuration().names;
+  ASSERT_EQ(command_names.size(), command_itfs_.size());
+  ASSERT_EQ(state_names.size(), state_itfs_.size());
+  for (size_t i = 0; i < command_names.size(); ++i)
+  {
+    EXPECT_EQ(command_names[i], command_itfs_[i]->get_name());
+  }
+  for (size_t i = 0; i < state_names.size(); ++i)
+  {
+    EXPECT_EQ(state_names[i], state_itfs_[i]->get_name());
+  }
   ASSERT_TRUE(activate_succeeds(controller_));
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0), rclcpp::Duration::from_seconds(0.01)),
@@ -307,10 +320,8 @@ TEST_F(AdmittanceControllerTest, permuted_interfaces_route_by_name)
   ASSERT_EQ(command_itfs_.size(), 2 * joint_names_.size());
   for (size_t i = 0; i < joint_names_.size(); ++i)
   {
-    EXPECT_DOUBLE_EQ(command_itfs_[i]->get_optional().value(), 0.0);
-    EXPECT_NEAR(
-      command_itfs_[joint_names_.size() + i]->get_optional().value(), joint_state_values_[i],
-      COMMON_THRESHOLD);
+    EXPECT_NEAR(command_itfs_[i]->get_optional().value(), joint_state_values_[i], COMMON_THRESHOLD);
+    EXPECT_DOUBLE_EQ(command_itfs_[joint_names_.size() + i]->get_optional().value(), 0.0);
   }
 }
 
