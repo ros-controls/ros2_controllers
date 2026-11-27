@@ -278,11 +278,7 @@ class JointTrajectoryController(Plugin):
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
         if running_jtc and not self._robot_joint_limits:
-            self._robot_joint_limits = {}
-            for jtc_info in running_jtc:
-                self._robot_joint_limits.update(
-                    get_joint_limits(self._node, _jtc_joint_names(jtc_info))
-                )
+            self._robot_joint_limits = get_joint_limits(self._node)
         valid_jtc = []
         if self._robot_joint_limits:
             for jtc_info in running_jtc:
